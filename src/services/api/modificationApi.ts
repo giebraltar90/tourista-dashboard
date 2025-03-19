@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Update tour modifications
@@ -9,7 +10,7 @@ export const updateTourModification = async (
   tourId: string,
   modification: {
     description: string,
-    details?: Record<string, any>
+    details?: Record<string, any> | Json
   }
 ): Promise<boolean> => {
   try {

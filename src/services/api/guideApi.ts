@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourModification } from "./modificationApi";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Assign a guide to a specific tour group

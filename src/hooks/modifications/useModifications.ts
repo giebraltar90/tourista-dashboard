@@ -31,7 +31,7 @@ export const useModifications = (tourId: string) => {
         user: "Current User", // In a real app, get this from auth
         description,
         status: "complete",
-        details
+        details // This can be either Record<string, any> or Json
       };
       
       // Get existing modifications or initialize empty array
