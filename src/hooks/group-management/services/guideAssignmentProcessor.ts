@@ -5,41 +5,8 @@ import { findGuideName } from "../utils/guideNameUtils";
 import { toast } from "sonner";
 import { QueryClient } from "@tanstack/react-query";
 import { GuideInfo } from "@/types/ventrata";
-import { updateGuideInSupabase, updateTourGroups } from "@/services/api/tourGroupApi";
-import { persistGuideAssignment } from "./guideAssignmentService";
-
-/**
- * Prepare updated groups with new guide assignment
- */
-export const prepareGroupUpdate = (
-  tourGroups: VentrataTourGroup[],
-  groupIndex: number,
-  guideId?: string,
-  guideName?: string
-) => {
-  // Create a deep copy of tourGroups to avoid mutation issues
-  const updatedTourGroups = JSON.parse(JSON.stringify(tourGroups));
-  
-  // Ensure the group at the specified index exists
-  if (!updatedTourGroups[groupIndex]) {
-    console.error(`Group at index ${groupIndex} does not exist`);
-    return updatedTourGroups;
-  }
-  
-  // Update the guide ID for the specified group
-  updatedTourGroups[groupIndex].guideId = guideId;
-  
-  // Optionally update the group name if a guide name is provided
-  if (guideName && guideName !== "Unassigned") {
-    // Only update name if it's not already customized
-    if (!updatedTourGroups[groupIndex].name || 
-        updatedTourGroups[groupIndex].name === `Group ${groupIndex + 1}`) {
-      updatedTourGroups[groupIndex].name = `${guideName}'s Group`;
-    }
-  }
-  
-  return updatedTourGroups;
-};
+import { updateTourGroups } from "@/services/api/tourGroupApi";
+import { persistGuideAssignment, prepareGroupUpdate } from "./guideAssignmentService";
 
 /**
  * Process guide assignment and update appropriate data stores
@@ -101,6 +68,11 @@ export const processGuideAssignment = async (
       Array.isArray(guides) ? guides.map(g => ({ id: g.id || "", name: g.name })) : []
     ) : "Unassigned";
     
+    // Get current group data
+    const currentGroup = updatedTourGroups[groupIndex];
+    const groupId = currentGroup?.id;
+    const groupName = currentGroup?.name || `Group ${groupIndex + 1}`;
+    
     // Update the group with new guide ID and possibly new name
     const groupsWithUpdates = prepareGroupUpdate(
       updatedTourGroups,
@@ -114,10 +86,7 @@ export const processGuideAssignment = async (
     // Track if any persistence method succeeded
     let updateSuccess = false;
     
-    // Get the group ID for the direct update
-    const groupId = updatedTourGroups[groupIndex]?.id;
-    
-    // CRITICAL FIX: Immediately update local cache BEFORE API call using deep clone
+    // Apply optimistic update to UI immediately
     queryClient.setQueryData(['tour', tourId], (oldData: any) => {
       if (!oldData) return null;
       const newData = JSON.parse(JSON.stringify(oldData));
@@ -125,10 +94,9 @@ export const processGuideAssignment = async (
       return newData;
     });
     
-    // First, directly try to update the specific group in Supabase if it's a UUID tour
+    // First attempt: direct database update if we have a valid group ID
     if (isUuid(tourId) && groupId) {
       try {
-        // Use the direct persistence function
         updateSuccess = await persistGuideAssignment(
           tourId, 
           groupId, 
@@ -137,27 +105,17 @@ export const processGuideAssignment = async (
         );
         
         console.log(`Direct persistence result: ${updateSuccess ? 'Success' : 'Failed'}`);
-        
-        // If direct persistence failed, try the update method as fallback
-        if (!updateSuccess) {
-          updateSuccess = await updateGuideInSupabase(
-            tourId,
-            groupId,
-            actualGuideId,
-            groupsWithUpdates[groupIndex].name
-          );
-          console.log(`Fallback update result: ${updateSuccess ? 'Success' : 'Failed'}`);
-        }
       } catch (error) {
         console.error("Error with direct persistence:", error);
       }
     }
     
-    // If direct update failed or it's not a UUID tour, try the updateTourGroups API function
+    // Second attempt: if direct update failed, try updating all groups at once
     if (!updateSuccess) {
       console.log("Falling back to updateTourGroups API");
       try {
         updateSuccess = await updateTourGroups(tourId, groupsWithUpdates);
+        console.log(`Full groups update result: ${updateSuccess ? 'Success' : 'Failed'}`);
       } catch (error) {
         console.error("Error with updateTourGroups API:", error);
       }
@@ -172,27 +130,19 @@ export const processGuideAssignment = async (
         toast.success("Guide removed from group");
       }
       
-      // Force a refresh after a short delay to ensure data is fresh
+      // Force a refresh after a delay to ensure data is fresh
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       }, 1000);
     } else {
-      toast.error("Could not persist guide assignment");
-      
-      // CRITICAL FIX: If server update failed, still apply optimistic update to prevent UI flashing
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        const newData = JSON.parse(JSON.stringify(oldData));
-        newData.tourGroups = groupsWithUpdates;
-        return newData;
-      });
+      toast.error("Could not save guide assignment");
     }
     
     return {
-      success: true, // We consider this a UI success even if server persistence failed
+      success: updateSuccess,
       updatedGroups: groupsWithUpdates,
       guideName,
-      groupName: updatedTourGroups[groupIndex].name || ""
+      groupName: groupsWithUpdates[groupIndex].name || ""
     };
     
   } catch (error) {

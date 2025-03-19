@@ -29,14 +29,17 @@ export const prepareGroupUpdate = (
     newGroupName = generateGroupName(groupName, guideName);
   }
   
+  // Create a deep copy of the updatedTourGroups to avoid mutation issues
+  const result = JSON.parse(JSON.stringify(updatedTourGroups));
+  
   // Update the group with new guide ID and possibly new name
-  updatedTourGroups[groupIndex] = {
-    ...updatedTourGroups[groupIndex],
+  result[groupIndex] = {
+    ...result[groupIndex],
     guideId: actualGuideId,
     name: newGroupName
   };
 
-  return updatedTourGroups;
+  return result;
 };
 
 /**
@@ -101,32 +104,25 @@ export const persistGuideAssignment = async (
         name: groupName
       });
 
-      // First, try using the specialized update function with built-in retries
-      success = await updateGuideInSupabase(tourId, groupId, guideId, groupName);
-      
-      if (success) {
+      // Directly update the group in Supabase with a delay between retries
+      const { error } = await supabase
+        .from('tour_groups')
+        .update({
+          guide_id: guideId,
+          name: groupName
+        })
+        .eq('id', groupId)
+        .eq('tour_id', tourId);
+        
+      if (!error) {
         console.log("Successfully persisted guide assignment");
+        success = true;
+        
+        // Force a delay to allow the database to settle
+        await new Promise(resolve => setTimeout(resolve, 300));
         break;
-      }
-      
-      // If failed, try direct Supabase update as a fallback
-      if (!success && attempt === MAX_RETRIES - 1) {
-        console.warn("Trying direct Supabase update as last resort");
-        const { error } = await supabase
-          .from('tour_groups')
-          .update({
-            guide_id: guideId,
-            name: groupName
-          })
-          .eq('id', groupId)
-          .eq('tour_id', tourId);
-
-        if (!error) {
-          console.log("Successfully persisted guide assignment with fallback method");
-          success = true;
-        } else {
-          console.error("Direct Supabase update failed:", error);
-        }
+      } else {
+        console.error(`Failed to persist guide assignment (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
       }
     } catch (error) {
       console.error(`Error persisting guide assignment (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
@@ -137,7 +133,7 @@ export const persistGuideAssignment = async (
     
     // Only wait between retries if we're going to retry
     if (!success && attempt < MAX_RETRIES) {
-      const delay = Math.min(200 * Math.pow(2, attempt), 2000); // Exponential backoff
+      const delay = Math.min(300 * Math.pow(2, attempt), 2000); // Exponential backoff
       console.log(`Waiting ${delay}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }

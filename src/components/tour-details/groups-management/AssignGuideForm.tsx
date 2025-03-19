@@ -65,6 +65,12 @@ export const AssignGuideForm = ({
   });
   
   const handleSubmit = async (values: FormValues) => {
+    // If no change, just close the dialog
+    if (values.guideId === defaultGuideId) {
+      onSuccess();
+      return;
+    }
+    
     try {
       setIsSubmitting(true);
       
@@ -75,9 +81,13 @@ export const AssignGuideForm = ({
       });
       
       // Call the assign guide function with the selected guide ID
-      await assignGuide(groupIndex, values.guideId);
+      const success = await assignGuide(groupIndex, values.guideId);
       
-      onSuccess();
+      if (success) {
+        onSuccess();
+      } else {
+        toast.error("Failed to assign guide. Please try again.");
+      }
     } catch (error) {
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide");
@@ -93,9 +103,13 @@ export const AssignGuideForm = ({
       console.log("Removing guide from group:", { groupIndex });
       
       // Use "_none" as special value to remove the guide
-      await assignGuide(groupIndex, "_none");
+      const success = await assignGuide(groupIndex, "_none");
       
-      onSuccess();
+      if (success) {
+        onSuccess();
+      } else {
+        toast.error("Failed to remove guide. Please try again.");
+      }
     } catch (error) {
       console.error("Error removing guide:", error);
       toast.error("Failed to remove guide");
@@ -155,11 +169,19 @@ export const AssignGuideForm = ({
             </Button>
           )}
           <div className="flex space-x-2 ml-auto">
-            <Button type="button" variant="outline" onClick={onSuccess}>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onSuccess}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Assigning..." : "Assign Guide"}
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || form.getValues().guideId === defaultGuideId}
+            >
+              {isSubmitting ? "Saving..." : "Assign Guide"}
             </Button>
           </div>
         </div>
