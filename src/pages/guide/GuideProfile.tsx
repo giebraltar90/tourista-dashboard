@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useGuideTours } from "@/hooks/useGuideData";
+import { useGuideInfo, useGuideTours } from "@/hooks/useGuideData";
+import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, IdCard } from "lucide-react";
 
 const GuideProfile = () => {
   const { role, guideView } = useRole();
   const { guideName } = useGuideTours();
+  const guideInfo = useGuideInfo(guideName);
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
   if (role === "operator" && !guideView) {
@@ -24,6 +28,22 @@ const GuideProfile = () => {
     .map(name => name[0])
     .join('')
     .toUpperCase();
+  
+  // Function to determine guide type badge color
+  const getGuideTypeBadgeColor = () => {
+    if (!guideInfo) return "bg-gray-100 text-gray-800";
+    
+    switch (guideInfo.guideType) {
+      case "GA Ticket":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "GA Free":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "GC":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
   
   return (
     <DashboardLayout>
@@ -46,7 +66,14 @@ const GuideProfile = () => {
               </Avatar>
               
               <h2 className="text-xl font-semibold">{guideName}</h2>
-              <p className="text-muted-foreground mb-4">Tour Guide</p>
+              <p className="text-muted-foreground mb-2">Tour Guide</p>
+              
+              {guideInfo && (
+                <Badge variant="outline" className={`${getGuideTypeBadgeColor()} mt-1 mb-3`}>
+                  <IdCard className="h-3.5 w-3.5 mr-1.5" />
+                  {guideInfo.guideType}
+                </Badge>
+              )}
               
               <Button variant="outline" size="sm" className="mt-2">
                 Update Profile Picture
@@ -67,7 +94,7 @@ const GuideProfile = () => {
                 
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" value={`${guideName.toLowerCase().replace(' ', '.')}@tourista.com`} readOnly />
+                  <Input id="email" value={`${guideName.toLowerCase().replace(' ', '.')}@boutiquetours.com`} readOnly />
                 </div>
                 
                 <div className="space-y-2">
@@ -76,8 +103,32 @@ const GuideProfile = () => {
                 </div>
                 
                 <div className="space-y-2">
+                  <Label htmlFor="birthday">Birthday</Label>
+                  <div className="flex items-center">
+                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="birthday" 
+                      value={guideInfo ? format(guideInfo.birthday, 'MMMM d, yyyy') : 'N/A'} 
+                      readOnly 
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
                   <Label htmlFor="language">Primary Language</Label>
                   <Input id="language" value="English" readOnly />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="guideType">Guide Type</Label>
+                  <div className="flex items-center">
+                    <IdCard className="mr-2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      id="guideType" 
+                      value={guideInfo?.guideType || 'N/A'} 
+                      readOnly 
+                    />
+                  </div>
                 </div>
               </div>
               
@@ -92,6 +143,23 @@ const GuideProfile = () => {
                 <Label htmlFor="certifications">Certifications</Label>
                 <Input id="certifications" value="Licensed City Guide, First Aid Certified" readOnly />
               </div>
+              
+              {guideInfo && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2">Guide Type Information</h3>
+                  <div className="bg-secondary/20 p-3 rounded-md text-sm">
+                    {guideInfo.guideType === "GA Ticket" && (
+                      <p>Over 26 years old, requires an adult ticket for Versailles tours, cannot guide inside.</p>
+                    )}
+                    {guideInfo.guideType === "GA Free" && (
+                      <p>Under 26 years old, requires a child's ticket for Versailles tours, cannot guide inside.</p>
+                    )}
+                    {guideInfo.guideType === "GC" && (
+                      <p>Can guide inside Versailles, no ticket needed.</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

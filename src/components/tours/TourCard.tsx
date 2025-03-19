@@ -9,7 +9,9 @@ import {
   Users,
   ChevronRight,
   Tag,
-  AlertTriangle
+  AlertTriangle,
+  IdCard,
+  CalendarIcon
 } from "lucide-react";
 import {
   Tooltip,
@@ -56,29 +58,26 @@ export function TourCard({
 }: TourCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
-  // Calculate total participants
+  const { guideData } = require('@/hooks/useGuideData');
+  const guide1Info = guideData[guide1] || null;
+  const guide2Info = guideData[guide2 || ''] || null;
+  
   const totalParticipants = tourGroups.reduce((sum, group) => sum + group.size, 0);
   
-  // Format date to display day and month
   const formattedDate = format(date, 'dd MMM yyyy');
   const dayOfWeek = format(date, 'EEEE');
   
-  // Determine color based on tour type
   const tourColor = 
     tourType === 'food' ? 'tour-food' : 
     tourType === 'private' ? 'tour-private' : 
     'tour-default';
     
-  // Format location for display
   const locationFormatted = location.split(' ')[0].toUpperCase();
   
-  // Determine if the tour has below minimum participants (4)
   const isBelowMinimum = totalParticipants < 4;
   
-  // Determine if high season (3 groups)
   const isHighSeason = tourGroups.length > 2;
   
-  // Determine capacity utilization
   const capacity = isHighSeason ? 36 : 24;
   const capacityPercentage = Math.round((totalParticipants / capacity) * 100);
   
@@ -94,7 +93,6 @@ export function TourCard({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="flex">
-        {/* Left side - Date display */}
         <div className={cn(
           "w-20 flex flex-col items-center justify-center p-4 text-white font-medium",
           `bg-${tourColor}`,
@@ -106,7 +104,6 @@ export function TourCard({
           <span className="text-sm">{format(date, 'MMM')}</span>
         </div>
         
-        {/* Main content */}
         <div className="flex-1">
           <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
             <div>
@@ -132,9 +129,74 @@ export function TourCard({
           
           <CardContent className="p-4 pt-2 pb-3">
             <div className="flex flex-wrap gap-y-2">
-              <div className="w-1/2 flex items-center">
-                <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span className="text-sm">{guide1}{guide2 ? `, ${guide2}` : ''}</span>
+              <div className="w-full flex flex-col">
+                <div className="flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div className="flex items-center">
+                    <span className="text-sm">{guide1}</span>
+                    {guide1Info && (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger>
+                            <Badge variant="outline" className="ml-1.5 text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
+                              <IdCard className="h-3 w-3 mr-1" />
+                              {guide1Info.guideType}
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent className="p-0">
+                            <div className="p-2">
+                              <div className="mb-1 font-medium">{guide1Info.name}</div>
+                              <div className="text-xs flex items-center">
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                <span>Born: {format(guide1Info.birthday, 'MMM d, yyyy')}</span>
+                              </div>
+                              <div className="text-xs mt-1">
+                                {guide1Info.guideType === 'GA Ticket' && 'Needs adult ticket for Versailles'}
+                                {guide1Info.guideType === 'GA Free' && 'Needs child ticket for Versailles'}
+                                {guide1Info.guideType === 'GC' && 'Can guide inside, no ticket needed'}
+                              </div>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                  </div>
+                </div>
+                
+                {guide2 && (
+                  <div className="flex items-center mt-1">
+                    <Users className="h-4 w-4 mr-2 text-muted-foreground opacity-0" />
+                    <div className="flex items-center">
+                      <span className="text-sm">{guide2}</span>
+                      {guide2Info && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Badge variant="outline" className="ml-1.5 text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                <IdCard className="h-3 w-3 mr-1" />
+                                {guide2Info.guideType}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="p-0">
+                              <div className="p-2">
+                                <div className="mb-1 font-medium">{guide2Info.name}</div>
+                                <div className="text-xs flex items-center">
+                                  <CalendarIcon className="h-3 w-3 mr-1" />
+                                  <span>Born: {format(guide2Info.birthday, 'MMM d, yyyy')}</span>
+                                </div>
+                                <div className="text-xs mt-1">
+                                  {guide2Info.guideType === 'GA Ticket' && 'Needs adult ticket for Versailles'}
+                                  {guide2Info.guideType === 'GA Free' && 'Needs child ticket for Versailles'}
+                                  {guide2Info.guideType === 'GC' && 'Can guide inside, no ticket needed'}
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="w-1/2 flex items-center">
@@ -165,7 +227,6 @@ export function TourCard({
               </div>
             </div>
             
-            {/* Capacity meter */}
             <div className="mt-3 w-full">
               <div className="flex items-center justify-between text-xs mb-1">
                 <span className="text-muted-foreground">Capacity</span>

@@ -1,3 +1,4 @@
+
 // Define Ventrata API types based on their documentation
 
 export interface VentrataParticipant {
@@ -57,4 +58,14 @@ export interface VentrataBookingsResponse {
     currentPage: number;
     totalPages: number;
   }
+}
+
+// Guide types
+export type GuideType = 'GA Ticket' | 'GA Free' | 'GC';
+
+// Guide information
+export interface GuideInfo {
+  name: string;
+  birthday: Date;
+  guideType: GuideType;
 }

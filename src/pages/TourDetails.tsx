@@ -16,12 +16,17 @@ import { TourOverview } from "@/components/tour-details/TourOverview";
 import { GroupsManagement } from "@/components/tour-details/GroupsManagement";
 import { TicketsManagement } from "@/components/tour-details/TicketsManagement";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
+import { useGuideInfo } from "@/hooks/useGuideData";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
   
   const { data: tour, isLoading, error } = useTourById(id || "");
+  
+  // Get guide information
+  const guide1Info = tour ? useGuideInfo(tour.guide1) : null;
+  const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   
   if (isLoading) {
     return (
@@ -50,7 +55,7 @@ const TourDetails = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        <TourHeader tour={tour} />
+        <TourHeader tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} />
         
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -61,7 +66,7 @@ const TourDetails = () => {
           </TabsList>
           
           <TabsContent value="overview" className="space-y-4 mt-6">
-            <TourOverview tour={tour} />
+            <TourOverview tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} />
           </TabsContent>
           
           <TabsContent value="groups" className="space-y-4 mt-6">
@@ -69,7 +74,11 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="tickets" className="space-y-4 mt-6">
-            <TicketsManagement tour={tour} />
+            <TicketsManagement 
+              tour={tour} 
+              guide1Info={guide1Info} 
+              guide2Info={guide2Info} 
+            />
           </TabsContent>
           
           <TabsContent value="modifications" className="space-y-4 mt-6">
