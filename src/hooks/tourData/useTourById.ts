@@ -4,6 +4,7 @@ import { fetchTourById } from "@/services/api/tourApi";
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/services/api/tour/guideUtils";
 import { TourCardProps } from "@/components/tours/tour-card/types";
+import { TourModification } from "@/types/ventrata";
 
 export const useTourById = (tourId: string) => {
   console.log("useTourById called with ID:", tourId);
