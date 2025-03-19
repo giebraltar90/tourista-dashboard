@@ -1,12 +1,13 @@
 
 import { useTourById } from "../useTourData";
-import { updateTourGroups } from "@/services/ventrataApi";
+import { updateTourGroups, updateTourModification } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
 import { toast } from "sonner";
 import { useModifications } from "../useModifications";
 import { useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isUuid } from "@/services/ventrataApi";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -114,54 +115,43 @@ export const useAssignGuide = (tourId: string) => {
       // This prevents UI flicker during API request
       queryClient.setQueryData(['tour', tourId], updatedTour);
       
+      // Check if this is a UUID tour ID for direct database updates
+      const tourIsUuid = isUuid(tourId);
+      
       // Track if any persistence method succeeded
       let updateSuccess = false;
       
-      // Try to save to Supabase if it's a UUID tour
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
-      
-      if (isUuid) {
+      // First, directly try to update the specific group in Supabase if it's a UUID tour
+      if (tourIsUuid) {
         try {
-          // For UUID tours, attempt to update the tour_groups table in Supabase
-          console.log("Updating tour group in Supabase:", {
-            name: newGroupName,
-            guide_id: actualGuideId,
-            tour_id: tourId
-          });
-          
-          // Get the group ID if it exists, otherwise just update by index
-          const groupId = updatedTourGroups[groupIndex].id; 
+          const groupId = updatedTourGroups[groupIndex].id;
           
           if (groupId) {
-            // Update existing group
+            // Update existing group with targeted update to just the guide_id
             const { error } = await supabase
               .from('tour_groups')
               .update({
-                name: newGroupName,
-                guide_id: actualGuideId
+                guide_id: actualGuideId,
+                name: newGroupName
               })
               .eq('id', groupId);
               
             if (error) {
-              console.error("Supabase update failed:", error);
+              console.error("Supabase direct group update failed:", error);
             } else {
-              console.log("Successfully updated group in Supabase");
+              console.log("Successfully updated guide assignment in Supabase with direct update");
               updateSuccess = true;
             }
           }
         } catch (error) {
-          console.error("Supabase error:", error);
+          console.error("Error with direct Supabase update:", error);
         }
       }
       
-      // If Supabase failed or it's a mock tour, try the API
+      // If direct update failed or it's not a UUID tour, try the updateTourGroups API function
       if (!updateSuccess) {
-        // Call the API to update tour groups
-        console.log("Falling back to API for tour group update");
-        const result = await updateTourGroups(tourId, updatedTourGroups);
-        if (result) {
-          updateSuccess = true;
-        }
+        console.log("Falling back to updateTourGroups API");
+        updateSuccess = await updateTourGroups(tourId, updatedTourGroups);
       }
       
       // Record this modification if any method succeeded
@@ -170,17 +160,32 @@ export const useAssignGuide = (tourId: string) => {
           ? `Guide ${guideName} assigned to group ${updatedTourGroups[groupIndex].name}`
           : `Guide removed from group ${updatedTourGroups[groupIndex].name}`;
           
-        await addModification(modificationDescription, {
-          type: "guide_assignment",
-          groupIndex,
-          guideId: actualGuideId,
-          guideName,
-          groupName: updatedTourGroups[groupIndex].name
-        });
+        try {
+          await updateTourModification(tourId, {
+            description: modificationDescription,
+            details: {
+              type: "guide_assignment",
+              groupIndex,
+              guideId: actualGuideId,
+              guideName,
+              groupName: updatedTourGroups[groupIndex].name
+            }
+          });
+          
+          // Also add to local modifications
+          addModification(modificationDescription, {
+            type: "guide_assignment",
+            groupIndex,
+            guideId: actualGuideId,
+            guideName,
+            groupName: updatedTourGroups[groupIndex].name
+          });
+        } catch (error) {
+          console.error("Failed to record modification:", error);
+        }
       }
       
-      // Ensure the cache remains updated with this guide assignment
-      // We're avoiding invalidation and manually updating to prevent UI flicker
+      // Ensure the cache remains updated
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return updatedTour;
         
@@ -196,21 +201,20 @@ export const useAssignGuide = (tourId: string) => {
           };
         }
         
-        console.log("Re-updated cache data after API success:", newData);
+        console.log("Re-updated cache data after API call:", newData);
         return newData;
       });
       
       // Clear the pending assignment
       pendingAssignmentsRef.current.delete(groupIndex);
       
-      // Schedule a VERY delayed future refresh, but with much lower priority
-      // This ensures eventual data consistency without disrupting the UX
+      // Schedule a delayed background refresh, but with much lower priority
       setTimeout(() => {
-        // Only refetch if there are no pending assignments to avoid conflicts
         if (pendingAssignmentsRef.current.size === 0) {
+          console.log("Performing delayed background refresh");
           queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
         }
-      }, 5000); // 5 seconds, extremely long to avoid UI issues
+      }, 10000); // 10 seconds - very long to avoid UI issues
       
       // Notify about successful assignment
       if (updateSuccess) {
@@ -231,8 +235,6 @@ export const useAssignGuide = (tourId: string) => {
       // Clear the pending assignment
       pendingAssignmentsRef.current.delete(groupIndex);
       
-      // Don't invalidate the query - that could cause more issues
-      // Just show the error toast and let the user try again
       throw error;
     }
   }, [tour, tourId, findGuideName, generateGroupName, addModification, queryClient]);
