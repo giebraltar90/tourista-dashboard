@@ -30,23 +30,14 @@ export function CalendarView({ date, onDateChange, tours, timeRange }: CalendarV
           selected={date}
           onSelect={onDateChange}
           className="rounded-md border"
-          modifiers={{
-            hasTour: datesWithTours
-          }}
-          modifiersStyles={{
-            hasTour: {
-              fontWeight: 'bold',
-              position: 'relative'
-            }
-          }}
           components={{
-            DayContent: ({ date: dayDate }) => {
+            DayContent: ({ day, date: dayDate }) => {
               const hasTourOnDay = tours.some(tour => isSameDay(tour.date, dayDate));
               return (
-                <div className="relative h-full w-full">
+                <div className="relative h-full w-full flex flex-col items-center justify-center">
                   <div>{dayDate.getDate()}</div>
                   {hasTourOnDay && (
-                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                    <div className="absolute bottom-1 w-1.5 h-1.5 bg-primary rounded-full" />
                   )}
                 </div>
               );
