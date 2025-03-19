@@ -16,6 +16,7 @@ import { GuideInfo } from "@/types/ventrata";
 import { AddGroupForm } from "./AddGroupForm";
 import { EditGroupForm } from "./EditGroupForm";
 import { AssignGuideForm } from "./AssignGuideForm";
+import { toast } from "sonner";
 
 interface GroupsListProps {
   tour: TourCardProps;
@@ -42,6 +43,13 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
   // Helper to get guide name for display
   const getGuideNameAndInfo = (guideId?: string) => {
     if (!guideId) return { name: "Unassigned", info: null };
+    
+    console.log("Looking up guide:", { 
+      guideId, 
+      guide1Id: guide1Info?.id, 
+      guide2Id: guide2Info?.id, 
+      guide3Id: guide3Info?.id 
+    });
     
     if (guide1Info && (guide1Info.id === guideId || guideId === "guide1")) {
       return { name: tour.guide1, info: guide1Info };
@@ -73,7 +81,10 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
             </DialogHeader>
             <AddGroupForm 
               tourId={tour.id} 
-              onSuccess={() => setIsAddGroupOpen(false)}
+              onSuccess={() => {
+                setIsAddGroupOpen(false);
+                toast.success("Group added successfully");
+              }}
             />
           </DialogContent>
         </Dialog>
@@ -184,9 +195,12 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
                   name: tour.guide3, 
                   info: guide3Info 
                 }] : [])
-              ].filter(guide => guide.id && guide.id.trim() !== "")}
+              ].filter(guide => guide.name && guide.id && guide.id.trim() !== "")}
               currentGuideId={tour.tourGroups[selectedGroupIndex].guideId}
-              onSuccess={() => setIsAssignGuideOpen(false)}
+              onSuccess={() => {
+                setIsAssignGuideOpen(false);
+                toast.success("Guide assigned successfully");
+              }}
             />
           )}
         </DialogContent>

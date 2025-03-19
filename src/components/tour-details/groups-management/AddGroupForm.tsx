@@ -74,6 +74,9 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
     }
   };
   
+  // Filter guides to only include those with valid IDs
+  const validGuides = guides.filter(guide => guide.id && guide.id.trim() !== "");
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -121,9 +124,9 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">No guide assigned</SelectItem>
-                  {guides.map((guide) => (
-                    <SelectItem key={guide.id} value={guide.id || ""}>
+                  {/* Removed the empty value SelectItem that was causing the error */}
+                  {validGuides.map((guide) => (
+                    <SelectItem key={guide.id} value={guide.id || "no-guide-id"}>
                       {guide.name} ({guide.guideType})
                     </SelectItem>
                   ))}

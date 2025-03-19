@@ -1,4 +1,3 @@
-
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -14,11 +13,12 @@ export const useAssignGuide = (tourId: string) => {
       // Find guide name for the group name update
       let guideName = "";
       if (guideId) {
-        if (guideId === "guide1") {
+        // Check for primary guides first
+        if (guideId === "guide1" || tour.guide1?.includes(guideId)) {
           guideName = tour.guide1;
-        } else if (guideId === "guide2" && tour.guide2) {
+        } else if (guideId === "guide2" || (tour.guide2 && tour.guide2.includes(guideId))) {
           guideName = tour.guide2;
-        } else if (guideId === "guide3" && tour.guide3) {
+        } else if (guideId === "guide3" || (tour.guide3 && tour.guide3.includes(guideId))) {
           guideName = tour.guide3;
         } else {
           // Try to find the guide by ID in the guides data
@@ -28,6 +28,16 @@ export const useAssignGuide = (tourId: string) => {
           }
         }
       }
+      
+      // Log the guide identification process
+      console.log("Guide assignment debug:", {
+        guideId,
+        guideName,
+        guide1: tour.guide1,
+        guide2: tour.guide2,
+        guide3: tour.guide3,
+        guidesFromContext: guides.map(g => ({ id: g.id, name: g.name }))
+      });
       
       const updatedTourGroups = [...tour.tourGroups];
       
@@ -39,9 +49,8 @@ export const useAssignGuide = (tourId: string) => {
       if (namePattern.test(groupName) || groupName.includes("Group")) {
         if (guideName) {
           groupName = `${guideName}'s Group`;
-        } else {
-          // Keep the existing name if we're removing a guide
         }
+        // Keep the existing name if we're removing a guide or couldn't find a guide name
       }
       
       updatedTourGroups[groupIndex] = {
@@ -58,7 +67,8 @@ export const useAssignGuide = (tourId: string) => {
         updatedGroup: updatedTourGroups[groupIndex]
       });
       
-      await updateTourGroups(tourId, updatedTourGroups);
+      const result = await updateTourGroups(tourId, updatedTourGroups);
+      console.log("Update API response:", result);
       
       // Refetch tour data to update UI
       await refetch();
