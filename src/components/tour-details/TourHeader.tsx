@@ -4,12 +4,14 @@ import { AlertCircle, Calendar, Clock, MapPin, PenSquare, MessageSquare, FileTex
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TourCardProps } from "@/components/tours/TourCard";
+import { useRole } from "@/contexts/RoleContext";
 
 interface TourHeaderProps {
   tour: TourCardProps;
 }
 
 export const TourHeader = ({ tour }: TourHeaderProps) => {
+  const { guideView } = useRole();
   const formattedDate = format(tour.date, 'EEEE, MMMM d, yyyy');
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   const isBelowMinimum = totalParticipants < 4;
@@ -29,23 +31,25 @@ export const TourHeader = ({ tour }: TourHeaderProps) => {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 mt-4 md:mt-0">
-          <Button variant="outline" size="sm">
-            <PenSquare className="mr-2 h-4 w-4" />
-            Edit Tour
-          </Button>
-          <Button variant="outline" size="sm">
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Message Guides
-          </Button>
-          <Button size="sm">
-            <FileText className="mr-2 h-4 w-4" />
-            Generate Report
-          </Button>
-        </div>
+        {!guideView && (
+          <div className="flex items-center gap-2 mt-4 md:mt-0">
+            <Button variant="outline" size="sm">
+              <PenSquare className="mr-2 h-4 w-4" />
+              Edit Tour
+            </Button>
+            <Button variant="outline" size="sm">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Message Guides
+            </Button>
+            <Button size="sm">
+              <FileText className="mr-2 h-4 w-4" />
+              Generate Report
+            </Button>
+          </div>
+        )}
       </div>
       
-      {isBelowMinimum && (
+      {isBelowMinimum && !guideView && (
         <Alert variant="warning">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Below Minimum Participants</AlertTitle>

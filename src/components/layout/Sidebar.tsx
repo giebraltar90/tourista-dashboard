@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useRole } from "@/contexts/RoleContext"; 
 import { 
   Calendar, 
   Bike, 
@@ -11,18 +12,9 @@ import {
   Map, 
   Settings, 
   MessageSquare,
-  ChevronRight
+  ChevronRight,
+  User
 } from "lucide-react";
-
-const navigationItems = [
-  { name: "Dashboard", href: "/", icon: Calendar },
-  { name: "Tours", href: "/tours", icon: Bike },
-  { name: "Guides", href: "/guides", icon: Users },
-  { name: "Tickets", href: "/tickets", icon: Ticket },
-  { name: "Locations", href: "/locations", icon: Map },
-  { name: "Messages", href: "/messages", icon: MessageSquare },
-  { name: "Settings", href: "/settings", icon: Settings },
-];
 
 interface SidebarProps {
   collapsed: boolean;
@@ -31,6 +23,30 @@ interface SidebarProps {
 export function Sidebar({ collapsed }: SidebarProps) {
   const location = useLocation();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { role, guideView } = useRole();
+  
+  // Define navigation items based on role
+  const getNavigationItems = () => {
+    if (role === "guide" || guideView) {
+      return [
+        { name: "My Tours", href: guideView ? "/tours" : "/guide", icon: Bike },
+        { name: "Messages", href: guideView ? "/messages" : "/guide/messages", icon: MessageSquare },
+        { name: "Profile", href: guideView ? "/settings" : "/guide/profile", icon: User },
+      ];
+    }
+    
+    return [
+      { name: "Dashboard", href: "/", icon: Calendar },
+      { name: "Tours", href: "/tours", icon: Bike },
+      { name: "Guides", href: "/guides", icon: Users },
+      { name: "Tickets", href: "/tickets", icon: Ticket },
+      { name: "Locations", href: "/locations", icon: Map },
+      { name: "Messages", href: "/messages", icon: MessageSquare },
+      { name: "Settings", href: "/settings", icon: Settings },
+    ];
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <aside
@@ -42,7 +58,8 @@ export function Sidebar({ collapsed }: SidebarProps) {
     >
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {navigationItems.map((item, index) => {
-          const isActive = location.pathname === item.href;
+          const isActive = location.pathname === item.href || 
+                          (item.href === "/guide" && location.pathname.startsWith("/tours"));
           const isHovered = hoveredItem === item.name;
           
           return (
@@ -95,6 +112,11 @@ export function Sidebar({ collapsed }: SidebarProps) {
         collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
       )}>
         <div className="text-xs text-muted-foreground">
+          {guideView && (
+            <p className="font-semibold text-orange-500 mb-1">
+              Viewing as guide: {guideView.guideName}
+            </p>
+          )}
           <p>Tourista Operations Dashboard</p>
           <p className="mt-1">Version 1.0.0</p>
         </div>

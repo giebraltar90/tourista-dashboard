@@ -1,9 +1,10 @@
 
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Navigate } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/contexts/RoleContext";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -12,6 +13,19 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const location = useLocation();
+  const { role, guideView } = useRole();
+  
+  // Restrict access based on role
+  const isGuideRoute = location.pathname.startsWith("/guide");
+  const isOperatorOnlyRoute = !location.pathname.startsWith("/tours") && 
+                             !location.pathname.startsWith("/guide") &&
+                             !location.pathname.startsWith("/messages") &&
+                             !location.pathname.startsWith("/settings");
+  
+  // If guide tries to access operator-only routes
+  if ((role === "guide" || guideView) && isOperatorOnlyRoute) {
+    return <Navigate to={guideView ? "/tours" : "/guide"} replace />;
+  }
   
   // Set page title based on current route
   useEffect(() => {
@@ -27,6 +41,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       title = "Guide Management";
     } else if (location.pathname.includes("/tickets")) {
       title = "Ticket Management";
+    } else if (location.pathname.includes("/guide")) {
+      title = "Guide Portal";
     }
     
     document.title = `${title} | Tour Operations`;
