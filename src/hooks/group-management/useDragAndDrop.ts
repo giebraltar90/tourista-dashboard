@@ -4,6 +4,7 @@ import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useDragAndDrop = (
   tourId: string,
@@ -20,6 +21,7 @@ export const useDragAndDrop = (
   } | null>(null);
   
   const updateTourGroupsMutation = useUpdateTourGroups(tourId);
+  const queryClient = useQueryClient(); // Get queryClient directly
   
   const handleDragStart = (
     e: React.DragEvent, 
@@ -110,11 +112,9 @@ export const useDragAndDrop = (
       // After a delay, also update the tour groups with our changes
       setTimeout(() => {
         // Cancel any in-flight queries before sending our update
-        const queryClient = updateTourGroupsMutation.context?.queryClient;
-        if (queryClient) {
-          queryClient.cancelQueries({ queryKey: ['tour', tourId] });
-          queryClient.cancelQueries({ queryKey: ['tours'] });
-        }
+        // Access queryClient directly instead of through mutation context
+        queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+        queryClient.cancelQueries({ queryKey: ['tours'] });
         
         // Update tour groups
         updateTourGroupsMutation.mutate(updatedGroups);

@@ -5,6 +5,7 @@ import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
 import { moveParticipant, updateParticipantGroupInDatabase } from "./services/participantService";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useParticipantMovement = (tourId: string, initialGroups: VentrataTourGroup[]) => {
   const [selectedParticipant, setSelectedParticipant] = useState<{
@@ -13,6 +14,7 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
   } | null>(null);
   
   const updateTourGroupsMutation = useUpdateTourGroups(tourId);
+  const queryClient = useQueryClient(); // Get queryClient directly
   
   const handleMoveParticipant = (
     toGroupIndex: number, 
@@ -103,6 +105,11 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
         
         // Then after a delay, also update the tour groups to ensure everything is in sync
         setTimeout(() => {
+          // Cancel any in-flight queries before sending our update
+          // Access queryClient directly instead of through mutation context
+          queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+          queryClient.cancelQueries({ queryKey: ['tours'] });
+          
           updateTourGroups(updatedGroups);
         }, 500);
       } catch (error) {
@@ -125,11 +132,8 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
   const updateTourGroups = async (updatedGroups: VentrataTourGroup[]) => {
     try {
       // Cancel any pending queries to avoid overwriting our optimistic updates
-      const queryClient = updateTourGroupsMutation.context?.queryClient;
-      if (queryClient) {
-        queryClient.cancelQueries({ queryKey: ['tour', tourId] });
-        queryClient.cancelQueries({ queryKey: ['tours'] });
-      }
+      queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      queryClient.cancelQueries({ queryKey: ['tours'] });
       
       // Update the tour groups on the server - don't wait for completion
       updateTourGroupsMutation.mutate(updatedGroups);
