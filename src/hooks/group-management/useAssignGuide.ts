@@ -28,6 +28,8 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
+      console.log("Starting guide assignment:", { groupIndex, guideId, tourId });
+      
       const now = Date.now();
       const pendingAssignment = pendingAssignmentsRef.current.get(groupIndex);
       
@@ -67,6 +69,8 @@ export const useAssignGuide = (tourId: string) => {
         queryClient
       );
       
+      console.log("Guide assignment result:", result);
+      
       if (result.success) {
         // Record the modification
         await recordGuideAssignmentModification(
@@ -88,9 +92,6 @@ export const useAssignGuide = (tourId: string) => {
           pendingAssignmentsRef.current.delete(groupIndex);
         }
       }, 5000);
-      
-      // Avoid forced refreshes that could override our optimistic updates
-      // Move background refreshes to only happen after a much longer delay
       
       return result.success;
     } catch (error) {

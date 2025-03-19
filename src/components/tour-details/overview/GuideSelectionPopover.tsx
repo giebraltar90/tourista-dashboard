@@ -44,6 +44,14 @@ export const GuideSelectionPopover = ({
     try {
       // Close the popover while assigning to prevent multiple selections
       setIsOpen(false);
+      
+      // Log for troubleshooting 
+      console.log("Assigning guide:", {
+        guideId,
+        selectedGuide,
+        guideOptions
+      });
+      
       await onAssignGuide(guideId);
     } catch (error) {
       console.error("Error in GuideSelectionPopover:", error);
@@ -51,9 +59,15 @@ export const GuideSelectionPopover = ({
   };
 
   // Make sure guideOptions is properly filtered to only include valid options
-  const validOptions = guideOptions.filter(guide => guide && guide.id && guide.name).sort((a, b) => {
-    // Sort options by name for better usability
-    return a.name.localeCompare(b.name);
+  const validOptions = guideOptions
+    .filter(guide => guide && guide.id && guide.name)
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  // Debug outputs
+  console.log("GuideSelectionPopover render:", {
+    currentGuideId: selectedGuide,
+    availableOptions: validOptions,
+    isAssigning
   });
 
   return (
@@ -77,7 +91,7 @@ export const GuideSelectionPopover = ({
           <h4 className="font-medium text-sm">Assign Guide to {displayName}</h4>
           <Select 
             onValueChange={(value) => handleAssignGuide(value)}
-            value={selectedGuide}
+            value={selectedGuide || "_none"}
             disabled={isAssigning}
           >
             <SelectTrigger>
@@ -87,7 +101,7 @@ export const GuideSelectionPopover = ({
               <SelectItem value="_none">None (Unassigned)</SelectItem>
               {validOptions.map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
-                  {guide.name}
+                  {guide.name || guide.id}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -38,9 +38,9 @@ export const getGuideNameAndInfo = (
     const guide = allGuides.find(g => g.id === guideId);
     if (guide) {
       return { 
-        name: guide.name, 
+        name: guide.name || `Guide ${guideId.substring(0, 4)}...`, 
         info: {
-          name: guide.name,
+          name: guide.name || `Guide ${guideId.substring(0, 4)}...`,
           birthday: guide.birthday || new Date(),
           guideType: guide.guideType || "GA Ticket"
         } 
@@ -49,18 +49,27 @@ export const getGuideNameAndInfo = (
   }
   
   // Try to match against guide names for fallback
-  if (guide1Name && (guideId.includes(guide1Name) || guide1Name.includes(guideId))) {
+  if (guide1Name && (
+    (guideId.includes(guide1Name) || guide1Name.includes(guideId)) ||
+    (guide1Info && guide1Info.name && (guideId.includes(guide1Info.name) || guide1Info.name.includes(guideId)))
+  )) {
     return { name: guide1Name, info: guide1Info || null };
   }
   
-  if (guide2Name && (guideId.includes(guide2Name) || guide2Name.includes(guideId))) {
+  if (guide2Name && (
+    (guideId.includes(guide2Name) || guide2Name.includes(guideId)) ||
+    (guide2Info && guide2Info.name && (guideId.includes(guide2Info.name) || guide2Info.name.includes(guideId)))
+  )) {
     return { name: guide2Name, info: guide2Info || null };
   }
   
-  if (guide3Name && (guideId.includes(guide3Name) || guide3Name.includes(guideId))) {
+  if (guide3Name && (
+    (guideId.includes(guide3Name) || guide3Name.includes(guideId)) ||
+    (guide3Info && guide3Info.name && (guideId.includes(guide3Info.name) || guide3Info.name.includes(guideId)))
+  )) {
     return { name: guide3Name, info: guide3Info || null };
   }
   
-  // If all else fails, return the guide ID as the name
-  return { name: guideId, info: null };
+  // If all else fails, return a formatted guide ID as the name
+  return { name: `Guide ${guideId.substring(0, 8)}...`, info: null };
 };
