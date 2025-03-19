@@ -31,7 +31,8 @@ export function CalendarView({ date, onDateChange, tours, timeRange }: CalendarV
           onSelect={onDateChange}
           className="rounded-md border"
           components={{
-            DayContent: ({ day, date: dayDate }) => {
+            DayContent: (props) => {
+              const dayDate = props.date;
               const hasTourOnDay = tours.some(tour => isSameDay(tour.date, dayDate));
               return (
                 <div className="relative h-full w-full flex flex-col items-center justify-center">
