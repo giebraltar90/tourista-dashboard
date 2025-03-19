@@ -1,11 +1,12 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { TourCardProps } from "@/components/tours/TourCard";
 import { Calendar } from "@/components/ui/calendar";
 import { UpcomingTours } from "@/components/dashboard/UpcomingTours";
 import { TimeRangeType } from "@/hooks/useTourFilters";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { isSameDay } from "date-fns";
 
 interface CalendarViewProps {
   date: Date | undefined;
@@ -15,6 +16,11 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ date, onDateChange, tours, timeRange }: CalendarViewProps) {
+  // Create a Set of dates that have tours to pass to the Calendar component
+  const datesWithTours = useMemo(() => {
+    return tours.map(tour => tour.date);
+  }, [tours]);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div>
@@ -24,6 +30,28 @@ export function CalendarView({ date, onDateChange, tours, timeRange }: CalendarV
           selected={date}
           onSelect={onDateChange}
           className="rounded-md border"
+          modifiers={{
+            hasTour: datesWithTours
+          }}
+          modifiersStyles={{
+            hasTour: {
+              fontWeight: 'bold',
+              position: 'relative'
+            }
+          }}
+          components={{
+            DayContent: ({ date: dayDate }) => {
+              const hasTourOnDay = tours.some(tour => isSameDay(tour.date, dayDate));
+              return (
+                <div className="relative h-full w-full">
+                  <div>{dayDate.getDate()}</div>
+                  {hasTourOnDay && (
+                    <div className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                  )}
+                </div>
+              );
+            }
+          }}
         />
       </div>
       <div className="md:col-span-2">
