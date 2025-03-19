@@ -31,29 +31,10 @@ export const findGuideName = (
 
 /**
  * Generate a group name based on guide assignment - 
- * IMPORTANT: This now preserves the existing name by default unless 
- * it's a default group name or explicitly following the guide naming pattern
+ * IMPORTANT: Now preserves existing names to prevent unwanted name changes
  */
 export const generateGroupName = (currentName: string, guideName: string): string => {
-  // If we're unassigning (guideName is "Unassigned"), keep the current name
-  if (guideName === "Unassigned") {
-    return currentName;
-  }
-  
-  // Only modify names that follow known patterns
-  const namePattern = /^.+'s Group$/;
-  const defaultGroupPattern = /^Group \d+$/;
-  
-  // Only modify the name if:
-  // 1. It already follows the "[Name]'s Group" pattern
-  // 2. It's a default "Group X" name
-  // 3. It contains the word "Group" (likely a default or generated name)
-  if (namePattern.test(currentName) || defaultGroupPattern.test(currentName) || 
-      (currentName.includes("Group") && !currentName.includes("Custom"))) {
-    return `${guideName}'s Group`;
-  }
-  
-  // Otherwise, preserve the existing name
+  // NEVER change the current name automatically - always preserve it
   return currentName;
 };
 

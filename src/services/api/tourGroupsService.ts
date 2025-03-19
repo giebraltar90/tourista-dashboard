@@ -32,7 +32,7 @@ export const updateTourGroups = async (
               name: group.name,
               size: group.size || 0,
               child_count: group.childCount || 0,
-              guide_id: safeGuideId
+              guide_id: safeGuideId // Use sanitized ID for database
             };
             
             // Add entryTime if it exists
@@ -64,7 +64,7 @@ export const updateTourGroups = async (
                 name: group.name,
                 size: group.size || 0,
                 entry_time: group.entryTime,
-                guide_id: safeGuideId,
+                guide_id: safeGuideId, // Use sanitized ID for database
                 child_count: group.childCount || 0
               });
               

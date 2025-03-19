@@ -18,16 +18,19 @@ export const updateGuideInSupabase = async (
   }
 
   try {
-    // Sanitize guide ID for database storage
+    // Sanitize guide ID for database storage - CRITICAL FIX
+    // This converts special IDs like guide1 to null for database compatibility
+    // while preserving them in the application state
     const safeGuideId = sanitizeGuideId(guideId);
     
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
       guide_id: safeGuideId,
-      name: newGroupName
+      name: newGroupName,
+      original_id: guideId
     });
     
     const updateData: any = {
-      guide_id: safeGuideId
+      guide_id: safeGuideId // Use sanitized ID for database
     };
     
     // Only include name in update if it's provided

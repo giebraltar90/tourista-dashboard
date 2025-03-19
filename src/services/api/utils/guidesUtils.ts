@@ -25,12 +25,24 @@ export const isSpecialGuideId = (guideId: string | undefined): boolean => {
 /**
  * Sanitizes a guide ID for database storage
  * Returns null for invalid IDs, preserves special IDs and valid UUIDs
+ * 
+ * IMPORTANT: Supabase expects UUID format for the guide_id column
+ * However, our application uses special IDs like guide1, guide2, guide3 internally
+ * This function converts special IDs to null when sent to the database
+ * to prevent "invalid input syntax for type uuid" errors
  */
 export const sanitizeGuideId = (guideId: string | undefined | null): string | null => {
   if (!guideId) return null;
   
-  // Allow special guide IDs and valid UUIDs
-  if (isSpecialGuideId(guideId) || isValidUuid(guideId)) {
+  // If it's a special guide ID, convert to null for database storage
+  // This is essential because the database column requires UUID format
+  if (isSpecialGuideId(guideId)) {
+    console.log(`Converting special guide ID ${guideId} to null for database compatibility`);
+    return null;
+  }
+  
+  // Allow valid UUIDs
+  if (isValidUuid(guideId)) {
     return guideId;
   }
   

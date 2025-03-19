@@ -24,6 +24,8 @@ export const persistGuideAssignmentChanges = async (
   const isSpecialGuideId = actualGuideId === "guide1" || actualGuideId === "guide2" || actualGuideId === "guide3";
   
   // Determine what to save in the database
+  // For special IDs (guide1, guide2, guide3), we need to pass them through
+  // but the sanitization utility will convert them to null for database storage
   let safeGuideId: string | null = null;
   if (actualGuideId && (isUuid(actualGuideId) || isSpecialGuideId)) {
     safeGuideId = actualGuideId;
