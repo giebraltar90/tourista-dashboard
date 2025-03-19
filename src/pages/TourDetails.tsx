@@ -6,7 +6,7 @@ import { LoadingState } from "@/components/tour-details/LoadingState";
 import { ErrorState } from "@/components/tour-details/ErrorState";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { useState, useEffect } from "react";
-import { GuideInfo } from "@/types/ventrata";
+import { GuideInfo, GuideType } from "@/types/ventrata";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -42,7 +42,7 @@ const TourDetails = () => {
         const createFallbackGuide = (name: string): GuideInfo => ({
           name,
           birthday: new Date(),
-          guideType: "GA Ticket"
+          guideType: "GA Ticket" as GuideType
         });
         
         // Helper function to safely get guide info
@@ -53,7 +53,7 @@ const TourDetails = () => {
             return {
               name: guideName,
               birthday: new Date(),
-              guideType: "GA Ticket"
+              guideType: "GA Ticket" as GuideType
             };
           } catch (error) {
             console.error(`Error fetching guide info for ${guideName}:`, error);
