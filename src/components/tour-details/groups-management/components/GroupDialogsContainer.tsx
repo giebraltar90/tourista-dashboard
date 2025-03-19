@@ -61,6 +61,7 @@ export const GroupDialogsContainer = ({
     }
   };
 
+  // Return an object with all the dialog states, handlers, and the rendered component
   return {
     // Dialog open states
     isAddGroupOpen,

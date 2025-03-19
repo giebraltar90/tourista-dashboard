@@ -13,7 +13,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useTourById } from "@/hooks/useTourData";
 import { TourHeader } from "@/components/tour-details/TourHeader";
 import { TourOverview } from "@/components/tour-details/TourOverview";
-import { GroupsManagement, GroupGuideManagement } from "@/components/tour-details/groups-management";
+import { GroupGuideManagement, GroupsManagement } from "@/components/tour-details/groups-management";
 import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 import { useGuideInfo } from "@/hooks/guides";

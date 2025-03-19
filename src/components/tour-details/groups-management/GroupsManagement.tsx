@@ -26,10 +26,10 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
 
   // Ensure tourGroups are properly initialized with participants arrays
-  const normalizedTourGroups: VentrataTourGroup[] = tour.tourGroups.map(group => ({
+  const normalizedTourGroups: VentrataTourGroup[] = Array.isArray(tour.tourGroups) ? tour.tourGroups.map(group => ({
     ...group,
     participants: Array.isArray(group.participants) ? group.participants : []
-  }));
+  })) : [];
 
   const {
     localTourGroups,
@@ -47,7 +47,8 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     openAddGroupDialog,
     openDeleteDialog,
     dialogsComponent,
-    isAddGroupOpen
+    isAddGroupOpen,
+    openAssignGuideDialog
   } = GroupDialogsContainer({
     tour,
     guide1Info,
@@ -67,20 +68,20 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         <div className="space-y-6">
           <GroupCapacityInfo 
             tour={tour} 
-            isHighSeason={!!tour.isHighSeason} 
+            isHighSeason={Boolean(tour.isHighSeason)} 
             totalParticipants={tour.tourGroups?.reduce((sum, group) => sum + (group.size || 0), 0) || 0} 
           />
           
           <GroupCapacityAlert 
             tourGroups={localTourGroups} 
-            isHighSeason={!!tour.isHighSeason} 
+            isHighSeason={Boolean(tour.isHighSeason)} 
           />
           
           <GroupActions 
             onAddGroup={openAddGroupDialog} 
             onDeleteGroup={openDeleteDialog}
             hasSelectedGroup={selectedGroupIndex !== null}
-            isHighSeason={!!tour.isHighSeason}
+            isHighSeason={Boolean(tour.isHighSeason)}
           />
           
           <GroupsTable 
