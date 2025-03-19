@@ -45,11 +45,14 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
       return;
     }
     
+    // Make a deep copy of the current groups to avoid reference issues
+    const groupsToUpdate = JSON.parse(JSON.stringify(currentGroups));
+    
     const updatedGroups = moveParticipant(
       fromGroupIndex,
       toGroupIndex,
       participant,
-      currentGroups
+      groupsToUpdate
     );
     
     if (!updatedGroups) {
@@ -69,25 +72,45 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
       return;
     }
     
-    // First, update the participant in the database with retry logic
-    updateParticipantGroupInDatabase(participant.id, destGroupId)
-      .then(success => {
-        if (success) {
-          console.log(`Successfully updated participant ${participant.id} in database`);
-          toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
-        } else {
-          console.error(`Failed to update participant ${participant.id} in database`);
-          toast.error("Failed to save changes in database. Try refreshing the page.");
-        }
-      })
-      .catch(error => {
-        console.error("Exception updating participant in database:", error);
-        toast.error("Error saving changes to database");
-      });
+    // Add retry logic for database updates
+    const maxRetries = 3;
+    let attempts = 0;
     
-    // Then attempt to update the groups on the server
-    // This uses the improved useUpdateTourGroups hook which won't invalidate queries immediately
-    updateTourGroupsMutation.mutate(updatedGroups);
+    const attemptDatabaseUpdate = () => {
+      attempts++;
+      // First, update the participant in the database with retry logic
+      updateParticipantGroupInDatabase(participant.id, destGroupId)
+        .then(success => {
+          if (success) {
+            console.log(`Successfully updated participant ${participant.id} in database`);
+            toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
+            
+            // Then attempt to update the groups on the server with additional delay
+            // to ensure the participant update is processed first
+            setTimeout(() => {
+              updateTourGroupsMutation.mutate(updatedGroups);
+            }, 500);
+          } else if (attempts < maxRetries) {
+            console.warn(`Retry ${attempts}/${maxRetries} for participant ${participant.id} database update`);
+            setTimeout(attemptDatabaseUpdate, 1000);
+          } else {
+            console.error(`Failed to update participant ${participant.id} in database after ${maxRetries} attempts`);
+            toast.error("Failed to save changes in database. Try refreshing the page.");
+          }
+        })
+        .catch(error => {
+          console.error("Exception updating participant in database:", error);
+          if (attempts < maxRetries) {
+            console.warn(`Retry ${attempts}/${maxRetries} for participant ${participant.id} database update after error`);
+            setTimeout(attemptDatabaseUpdate, 1000);
+          } else {
+            toast.error("Error saving changes to database after multiple attempts");
+          }
+        });
+    };
+    
+    // Start the retry process
+    attemptDatabaseUpdate();
     
     setSelectedParticipant(null);
   };

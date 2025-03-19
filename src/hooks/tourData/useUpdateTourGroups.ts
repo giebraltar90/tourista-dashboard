@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
@@ -10,8 +11,11 @@ export const useUpdateTourGroups = (tourId: string) => {
     mutationFn: async (updatedGroups: VentrataTourGroup[]) => {
       console.log("Updating tour groups for:", tourId, updatedGroups);
       try {
+        // Make a deep copy of the updated groups to avoid reference issues
+        const groupsToUpdate = JSON.parse(JSON.stringify(updatedGroups));
+        
         // Use the simplified API for now
-        return await updateTourGroups(tourId, updatedGroups);
+        return await updateTourGroups(tourId, groupsToUpdate);
       } catch (error) {
         console.error("Error updating tour groups:", error);
         throw error;
@@ -39,7 +43,7 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      // CRITICAL: Completely disable query invalidation for up to 30 seconds
+      // CRITICAL: Completely disable query invalidation for a full minute
       // This prevents the UI from reverting to previous state
       
       // This silently confirms the update in the background without triggering a refetch
@@ -58,15 +62,15 @@ export const useUpdateTourGroups = (tourId: string) => {
         // Use fetchQuery instead of invalidateQueries to avoid UI flashing
         queryClient.fetchQuery({ 
           queryKey: ['tour', tourId],
-          staleTime: 30000 // Keep it fresh for 30 seconds
+          staleTime: 60000 // Keep it fresh for a full minute
         });
         
         // Also refresh the tours list to keep it in sync
         queryClient.fetchQuery({ 
           queryKey: ['tours'],
-          staleTime: 30000 // Keep it fresh for 30 seconds
+          staleTime: 60000 // Keep it fresh for a full minute
         });
-      }, 30000); // Extremely long delay (30 seconds)
+      }, 60000); // Extremely long delay (60 seconds)
     },
     onError: (error, _, context) => {
       console.error("Error updating tour groups:", error);

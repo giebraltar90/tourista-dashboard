@@ -24,12 +24,21 @@ export const updateTourGroups = async (
         for (const group of updatedGroups) {
           // Check if the group has an id (existing group) or needs to be created
           if (group.id) {
+            // Convert non-UUID guide IDs to null before saving to the database
+            // This addresses the "invalid input syntax for type uuid" errors
+            let safeGuideId = null;
+            
+            // Only use the guideId if it's a valid UUID
+            if (group.guideId && isUuid(group.guideId)) {
+              safeGuideId = group.guideId;
+            }
+            
             // Update existing group
             const updateData = {
               name: group.name,
               size: group.size,
               entry_time: group.entryTime,
-              guide_id: group.guideId, // This can be null/undefined to unassign
+              guide_id: safeGuideId, // Use null or a valid UUID
               child_count: group.childCount || 0
             };
             
@@ -46,6 +55,12 @@ export const updateTourGroups = async (
               throw error;
             }
           } else {
+            // Handle non-UUID guide IDs for new groups too
+            let safeGuideId = null;
+            if (group.guideId && isUuid(group.guideId)) {
+              safeGuideId = group.guideId;
+            }
+            
             // Insert new group if no ID
             const { error } = await supabase
               .from('tour_groups')
@@ -54,7 +69,7 @@ export const updateTourGroups = async (
                 name: group.name,
                 size: group.size,
                 entry_time: group.entryTime,
-                guide_id: group.guideId, // This can be null/undefined
+                guide_id: safeGuideId, // Use null or a valid UUID
                 child_count: group.childCount || 0
               });
               
@@ -102,13 +117,22 @@ export const updateGuideInSupabase = async (
   }
 
   try {
+    // Convert non-UUID guide IDs to null before saving to the database
+    // This addresses the "invalid input syntax for type uuid" errors
+    let safeGuideId = null;
+    
+    // Only use the guideId if it's a valid UUID
+    if (guideId && isUuid(guideId)) {
+      safeGuideId = guideId;
+    }
+    
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
-      guide_id: guideId,
+      guide_id: safeGuideId,
       name: newGroupName
     });
     
     const updateData: any = {
-      guide_id: guideId
+      guide_id: safeGuideId
     };
     
     // Only include name in update if it's provided

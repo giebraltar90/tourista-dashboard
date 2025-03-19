@@ -92,6 +92,7 @@ export const AssignGuideForm = ({
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide");
     } finally {
+      // Always reset the submitting state, even if there's an error
       setIsSubmitting(false);
     }
   };
@@ -114,6 +115,7 @@ export const AssignGuideForm = ({
       console.error("Error removing guide:", error);
       toast.error("Failed to remove guide");
     } finally {
+      // Always reset the submitting state, even if there's an error
       setIsSubmitting(false);
     }
   };
