@@ -1,5 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Database } from "@/integrations/supabase/types";
+
+// Type aliases for better readability
+export type GuideType = Database["public"]["Enums"]["guide_type"];
+export type TourType = Database["public"]["Enums"]["tour_type"];
+export type ModificationStatus = Database["public"]["Enums"]["modification_status"];
 
 /**
  * Maps guide data to a record of name -> id for easy lookup
