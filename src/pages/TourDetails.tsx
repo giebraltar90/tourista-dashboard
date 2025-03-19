@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { 
@@ -26,6 +25,22 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { format } from "date-fns";
 import { 
   Bike, 
@@ -38,18 +53,40 @@ import {
   AlertCircle,
   CheckCircle2,
   PenSquare,
-  FileText
+  FileText,
+  MoveHorizontal,
+  UserCheck,
+  ArrowLeftRight
 } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { mockTours } from "@/data/mockData";
+import { toast } from "sonner";
+
+interface Participant {
+  id: string;
+  name: string;
+  count: number;
+  bookingRef: string;
+}
+
+interface TourGroup {
+  name: string;
+  size: number;
+  entryTime: string;
+  participants?: Participant[];
+}
 
 const TourDetails = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   
-  // Find the tour from mock data
-  const tour = mockTours.find(tour => tour.id === id);
+  const tourData = mockTours.find(tour => tour.id === id);
+  const [tour, setTour] = useState(tourData);
+  const [selectedParticipant, setSelectedParticipant] = useState<{
+    participant: Participant;
+    fromGroupIndex: number;
+  } | null>(null);
   
   if (!tour) {
     return (
@@ -65,17 +102,43 @@ const TourDetails = () => {
     );
   }
   
-  // Calculate totals
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   const totalGroups = tour.tourGroups.length;
   const formattedDate = format(tour.date, 'EEEE, MMMM d, yyyy');
   
-  // Determine if tour is below minimum participants
   const isBelowMinimum = totalParticipants < 4;
   
-  // Simulate ticket breakdown
   const adultTickets = Math.round(tour.numTickets * 0.7) || Math.round(totalParticipants * 0.7);
   const childTickets = (tour.numTickets || totalParticipants) - adultTickets;
+  
+  const handleMoveParticipant = (toGroupIndex: number) => {
+    if (!selectedParticipant) return;
+    
+    const { participant, fromGroupIndex } = selectedParticipant;
+    
+    if (fromGroupIndex === toGroupIndex) {
+      toast.error("Participant is already in this group");
+      return;
+    }
+    
+    const updatedTour = JSON.parse(JSON.stringify(tour));
+    
+    const sourceGroup = updatedTour.tourGroups[fromGroupIndex];
+    sourceGroup.participants = sourceGroup.participants.filter(
+      (p: Participant) => p.id !== participant.id
+    );
+    sourceGroup.size -= participant.count;
+    
+    const destGroup = updatedTour.tourGroups[toGroupIndex];
+    destGroup.participants.push(participant);
+    destGroup.size += participant.count;
+    
+    setTour(updatedTour);
+    
+    setSelectedParticipant(null);
+    
+    toast.success(`Moved ${participant.name} to ${destGroup.name}`);
+  };
   
   return (
     <DashboardLayout>
@@ -250,32 +313,161 @@ const TourDetails = () => {
                 <CardDescription>Details of participant groups and their assignments</CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Group Name</TableHead>
-                      <TableHead>Size</TableHead>
-                      <TableHead>Entry Time</TableHead>
-                      <TableHead>Guide</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tour.tourGroups.map((group, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{group.name}</TableCell>
-                        <TableCell>{group.size}</TableCell>
-                        <TableCell>{group.entryTime}</TableCell>
-                        <TableCell>{index === 0 ? tour.guide1 : tour.guide2 || tour.guide1}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-green-100 text-green-800">
-                            Confirmed
-                          </Badge>
-                        </TableCell>
+                <div className="space-y-6">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Group Name</TableHead>
+                        <TableHead>Size</TableHead>
+                        <TableHead>Entry Time</TableHead>
+                        <TableHead>Guide</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tour.tourGroups.map((group, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium">{group.name}</TableCell>
+                          <TableCell>{group.size}</TableCell>
+                          <TableCell>{group.entryTime}</TableCell>
+                          <TableCell>{index === 0 ? tour.guide1 : tour.guide2 || tour.guide1}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-green-100 text-green-800">
+                              Confirmed
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setActiveTab("group-details");
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                  
+                  <Separator className="my-4" />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {tour.tourGroups.map((group, groupIndex) => (
+                      <Card key={groupIndex} className="border-2 border-muted">
+                        <CardHeader className="pb-2 bg-muted/30">
+                          <div className="flex justify-between items-center">
+                            <CardTitle className="text-base font-medium">{group.name}</CardTitle>
+                            <Badge variant="outline">
+                              {group.size} {group.size === 1 ? 'person' : 'people'}
+                            </Badge>
+                          </div>
+                          <CardDescription>
+                            Guide: {groupIndex === 0 ? tour.guide1 : tour.guide2 || tour.guide1}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                          <div className="space-y-2">
+                            {group.participants && group.participants.length > 0 ? (
+                              group.participants.map((participant, index) => (
+                                <div 
+                                  key={participant.id} 
+                                  className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-muted"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <UserCheck className="h-4 w-4 text-muted-foreground" />
+                                    <div>
+                                      <div className="font-medium">{participant.name}</div>
+                                      <div className="text-sm text-muted-foreground">
+                                        {participant.count} {participant.count === 1 ? 'person' : 'people'} • Booking #{participant.bookingRef}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  <Sheet>
+                                    <SheetTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        onClick={() => setSelectedParticipant({
+                                          participant,
+                                          fromGroupIndex: groupIndex
+                                        })}
+                                      >
+                                        <MoveHorizontal className="h-4 w-4 mr-2" />
+                                        Move
+                                      </Button>
+                                    </SheetTrigger>
+                                    <SheetContent>
+                                      <SheetHeader>
+                                        <SheetTitle>Move Participant</SheetTitle>
+                                        <SheetDescription>
+                                          Move {participant.name} ({participant.count} {participant.count === 1 ? 'person' : 'people'}) to another group
+                                        </SheetDescription>
+                                      </SheetHeader>
+                                      <div className="py-6">
+                                        <div className="space-y-4">
+                                          <div className="bg-muted/30 p-4 rounded-md">
+                                            <div className="font-medium">{participant.name}</div>
+                                            <div className="text-sm text-muted-foreground">
+                                              Currently in: {group.name}
+                                            </div>
+                                            <div className="text-sm text-muted-foreground">
+                                              Booking Reference: {participant.bookingRef}
+                                            </div>
+                                            <div className="flex items-center mt-2">
+                                              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                                              <span>{participant.count} {participant.count === 1 ? 'person' : 'people'}</span>
+                                            </div>
+                                          </div>
+                                          
+                                          <div className="space-y-2">
+                                            <label className="text-sm font-medium">
+                                              Select Destination Group
+                                            </label>
+                                            <Select onValueChange={(value) => handleMoveParticipant(parseInt(value))}>
+                                              <SelectTrigger className="w-full">
+                                                <SelectValue placeholder="Select a group" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                {tour.tourGroups.map((g, i) => (
+                                                  i !== groupIndex && (
+                                                    <SelectItem key={i} value={i.toString()}>
+                                                      {g.name} ({g.size} {g.size === 1 ? 'person' : 'people'})
+                                                    </SelectItem>
+                                                  )
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <SheetFooter>
+                                        <Button type="submit" onClick={() => {
+                                          // Will be handled by the Select onChange
+                                        }}>
+                                          <ArrowLeftRight className="h-4 w-4 mr-2" />
+                                          Move Participant
+                                        </Button>
+                                      </SheetFooter>
+                                    </SheetContent>
+                                  </Sheet>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-4 text-muted-foreground">
+                                No participants in this group
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
-                  </TableBody>
-                </Table>
+                  </div>
+                </div>
               </CardContent>
               <CardFooter className="flex justify-between border-t p-4">
                 <div className="text-sm text-muted-foreground">
@@ -398,7 +590,6 @@ const TourDetails = () => {
                           </div>
                         </TableCell>
                       </TableRow>
-                      {/* Example modifications - would be populated from actual data */}
                       <TableRow>
                         <TableCell>{format(new Date(), 'MMM d, yyyy')}</TableCell>
                         <TableCell>Operations</TableCell>

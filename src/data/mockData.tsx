@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/TourCard";
 
 // Mock data for tours
@@ -17,12 +16,22 @@ export const mockTours: TourCardProps[] = [
       {
         name: "Noéma's Group",
         size: 6,
-        entryTime: "9:10"
+        entryTime: "9:10",
+        participants: [
+          { id: "p1", name: "Smith Family", count: 2, bookingRef: "BK001" },
+          { id: "p2", name: "John Davis", count: 1, bookingRef: "BK002" },
+          { id: "p3", name: "Rodriguez Family", count: 3, bookingRef: "BK003" }
+        ]
       },
       {
         name: "Jordan's Group",
         size: 4,
-        entryTime: "9:10"
+        entryTime: "9:10",
+        participants: [
+          { id: "p4", name: "Wilson Couple", count: 2, bookingRef: "BK004" },
+          { id: "p5", name: "Laura Chen", count: 1, bookingRef: "BK005" },
+          { id: "p6", name: "Michael Brown", count: 1, bookingRef: "BK006" }
+        ]
       }
     ],
     numTickets: 10
@@ -41,7 +50,10 @@ export const mockTours: TourCardProps[] = [
       {
         name: "Private Tour",
         size: 4,
-        entryTime: "9:10"
+        entryTime: "9:10",
+        participants: [
+          { id: "p7", name: "Johnson Family", count: 4, bookingRef: "BK007" }
+        ]
       }
     ],
     numTickets: 4
