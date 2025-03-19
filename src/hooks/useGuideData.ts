@@ -1,60 +1,63 @@
 
 import { useMemo } from "react";
-import { useTours } from "./useTourData";
+import { useTours } from "./tourData/useTours";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "sonner";
 import { GuideInfo, GuideType } from "@/types/ventrata";
-
-// Mock guide data
-export const guideData: Record<string, GuideInfo> = {
-  "Maria Garcia": {
-    name: "Maria Garcia",
-    birthday: new Date(1995, 6, 15), // July 15, 1995
-    guideType: "GA Free",
-    id: "guide1"
-  },
-  "Jean Dupont": {
-    name: "Jean Dupont",
-    birthday: new Date(1985, 2, 22), // March 22, 1985
-    guideType: "GA Ticket",
-    id: "guide2"
-  },
-  "Sophie Miller": {
-    name: "Sophie Miller",
-    birthday: new Date(1990, 9, 5), // October 5, 1990
-    guideType: "GC",
-    id: "guide3"
-  },
-  "Carlos Martinez": {
-    name: "Carlos Martinez",
-    birthday: new Date(1988, 4, 18), // May 18, 1988
-    guideType: "GA Ticket",
-    id: "guide4"
-  },
-  "Noema Weber": {
-    name: "Noema Weber",
-    birthday: new Date(1998, 11, 3), // December 3, 1998
-    guideType: "GA Free",
-    id: "guide5"
-  },
-  "Tobias Schmidt": {
-    name: "Tobias Schmidt",
-    birthday: new Date(1982, 7, 27), // August 27, 1982
-    guideType: "GC",
-    id: "guide6"
-  }
-};
-
-export function useGuideInfo(guideName: string): GuideInfo | null {
-  return guideData[guideName] || null;
-}
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export function useGuideData() {
-  const guides = useMemo(() => {
-    return Object.values(guideData);
-  }, []);
+  const { data, isLoading } = useQuery({
+    queryKey: ['guides'],
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('guides')
+          .select('*')
+          .order('name');
+          
+        if (error) {
+          console.error("Error fetching guides:", error);
+          throw error;
+        }
+        
+        return data.map(guide => ({
+          id: guide.id,
+          name: guide.name,
+          birthday: new Date(guide.birthday),
+          guideType: guide.guide_type as GuideType
+        }));
+      } catch (error) {
+        console.error("Error in useGuideData:", error);
+        return [];
+      }
+    }
+  });
   
-  return { guides };
+  const guides = useMemo(() => {
+    return data || [];
+  }, [data]);
+  
+  return { guides, isLoading };
+}
+
+export function useGuideInfo(guideName: string): GuideInfo | null {
+  const { guides } = useGuideData();
+  
+  return useMemo(() => {
+    if (!guideName) return null;
+    
+    const guide = guides.find(g => g.name === guideName);
+    if (guide) return guide;
+    
+    // If not found by name, create a basic guide info object
+    return {
+      name: guideName,
+      birthday: new Date(),
+      guideType: "GA Free" as GuideType
+    };
+  }, [guides, guideName]);
 }
 
 export function useGuideTours() {

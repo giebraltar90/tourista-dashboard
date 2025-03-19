@@ -6,7 +6,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { useTours } from "@/hooks/useTourData";
+import { useTours } from "@/hooks/tourData/useTours";
 import { useTourFilters } from "@/hooks/useTourFilters";
 import { ToursPageHeader } from "@/components/tours/ToursPageHeader";
 import { TourFilters } from "@/components/tours/TourFilters";
@@ -15,6 +15,7 @@ import { TabbedToursView } from "@/components/tours/TabbedToursView";
 import { TourBusinessRules } from "@/components/tours/TourBusinessRules";
 import { useGuideTours } from "@/hooks/useGuideData";
 import { useRole } from "@/contexts/RoleContext";
+import { TestDataControls } from "@/components/tours/TestDataControls";
 
 const ToursPage = () => {
   const { guideView } = useRole();
@@ -82,6 +83,9 @@ const ToursPage = () => {
                 <TabbedToursView tours={filteredTours} />
               )
             )}
+            
+            {/* Add test data controls */}
+            <TestDataControls />
           </CardContent>
         </Card>
         
