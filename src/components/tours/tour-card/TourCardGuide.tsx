@@ -9,12 +9,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-interface TourCardGuideProps {
-  guideName: string;
-  guideInfo: any;  // Using any here to match the original implementation
-  isSecondary?: boolean;
-}
+import { TourCardGuideProps } from "./types";
 
 export const TourCardGuide: React.FC<TourCardGuideProps> = ({ 
   guideName, 

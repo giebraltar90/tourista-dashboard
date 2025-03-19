@@ -1,18 +1,10 @@
 
 import React from "react";
-import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { CardHeader } from "@/components/ui/card";
 import { Tag, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface TourCardHeaderProps {
-  tourName: string;
-  location: string;
-  referenceCode: string;
-  startTime: string;
-  isHovered: boolean;
-}
+import { TourCardHeaderProps } from "./types";
 
 export const TourCardHeader: React.FC<TourCardHeaderProps> = ({ 
   tourName, 

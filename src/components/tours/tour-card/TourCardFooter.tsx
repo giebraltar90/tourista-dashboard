@@ -6,15 +6,7 @@ import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
 import { ChevronRight, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface TourCardFooterProps {
-  id: string;
-  totalParticipants: number;
-  numTickets?: number;
-  isBelowMinimum: boolean;
-  isHighSeason: boolean;
-  isHovered: boolean;
-}
+import { TourCardFooterProps } from "./types";
 
 export const TourCardFooter: React.FC<TourCardFooterProps> = ({
   id,

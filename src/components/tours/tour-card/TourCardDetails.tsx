@@ -5,24 +5,13 @@ import { Badge } from "@/components/ui/badge";
 import { MapPin } from "lucide-react";
 import { TourCardGuide } from "./TourCardGuide";
 import { TourCardCapacity } from "./TourCardCapacity";
-import { VentrataTourGroup } from "@/types/ventrata";
+import { TourCardDetailsProps } from "./types";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
-interface TourCardDetailsProps {
-  guide1: string;
-  guide2?: string;
-  guide1Info: any;
-  guide2Info: any;
-  location: string;
-  tourGroups: VentrataTourGroup[];
-  totalParticipants: number;
-  isHighSeason: boolean;
-}
 
 export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
   guide1,

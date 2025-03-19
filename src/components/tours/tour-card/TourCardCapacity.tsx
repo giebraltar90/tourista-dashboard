@@ -1,11 +1,7 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-
-interface TourCardCapacityProps {
-  totalParticipants: number;
-  capacity: number;
-}
+import { TourCardCapacityProps } from "./types";
 
 export const TourCardCapacity: React.FC<TourCardCapacityProps> = ({ 
   totalParticipants, 
