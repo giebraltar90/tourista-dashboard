@@ -4,6 +4,7 @@ import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
 import { moveParticipant, updateParticipantGroupInDatabase } from "./services/participantService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useParticipantMovement = (tourId: string, initialGroups: VentrataTourGroup[]) => {
   const [selectedParticipant, setSelectedParticipant] = useState<{
@@ -76,43 +77,65 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
     const maxRetries = 3;
     let attempts = 0;
     
-    const attemptDatabaseUpdate = () => {
+    const attemptDatabaseUpdate = async () => {
       attempts++;
-      // First, update the participant in the database with retry logic
-      updateParticipantGroupInDatabase(participant.id, destGroupId)
-        .then(success => {
-          if (success) {
-            console.log(`Successfully updated participant ${participant.id} in database`);
-            toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
-            
-            // Then attempt to update the groups on the server with additional delay
-            // to ensure the participant update is processed first
-            setTimeout(() => {
-              updateTourGroupsMutation.mutate(updatedGroups);
-            }, 500);
-          } else if (attempts < maxRetries) {
-            console.warn(`Retry ${attempts}/${maxRetries} for participant ${participant.id} database update`);
-            setTimeout(attemptDatabaseUpdate, 1000);
-          } else {
-            console.error(`Failed to update participant ${participant.id} in database after ${maxRetries} attempts`);
-            toast.error("Failed to save changes in database. Try refreshing the page.");
-          }
-        })
-        .catch(error => {
-          console.error("Exception updating participant in database:", error);
+      try {
+        // First update the participant's group_id in the database
+        const { error } = await supabase
+          .from('participants')
+          .update({ group_id: destGroupId })
+          .eq('id', participant.id);
+          
+        if (error) {
+          console.error(`Database update error (attempt ${attempts}):`, error);
           if (attempts < maxRetries) {
-            console.warn(`Retry ${attempts}/${maxRetries} for participant ${participant.id} database update after error`);
-            setTimeout(attemptDatabaseUpdate, 1000);
+            console.warn(`Retrying participant update ${attempts}/${maxRetries}...`);
+            setTimeout(attemptDatabaseUpdate, 1000); // Wait 1 second before retry
+            return;
           } else {
-            toast.error("Error saving changes to database after multiple attempts");
+            toast.error("Failed to update participant in database after multiple attempts");
+            return;
           }
-        });
+        }
+        
+        console.log(`Successfully updated participant ${participant.id} in database`);
+        toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
+        
+        // Then after a delay, also update the tour groups to ensure everything is in sync
+        setTimeout(() => {
+          updateTourGroups(updatedGroups);
+        }, 500);
+      } catch (error) {
+        console.error("Error updating participant in database:", error);
+        if (attempts < maxRetries) {
+          setTimeout(attemptDatabaseUpdate, 1000);
+        } else {
+          toast.error("Error updating database after multiple attempts");
+        }
+      }
     };
     
-    // Start the retry process
+    // Start the update process
     attemptDatabaseUpdate();
     
     setSelectedParticipant(null);
+  };
+  
+  // A separate function to update tour groups with retry mechanism
+  const updateTourGroups = async (updatedGroups: VentrataTourGroup[]) => {
+    try {
+      // Cancel any pending queries to avoid overwriting our optimistic updates
+      const queryClient = updateTourGroupsMutation.context?.queryClient;
+      if (queryClient) {
+        queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+        queryClient.cancelQueries({ queryKey: ['tours'] });
+      }
+      
+      // Update the tour groups on the server - don't wait for completion
+      updateTourGroupsMutation.mutate(updatedGroups);
+    } catch (error) {
+      console.error("Error updating tour groups:", error);
+    }
   };
   
   return {

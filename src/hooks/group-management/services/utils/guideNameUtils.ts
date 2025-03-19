@@ -34,7 +34,7 @@ export const findGuideName = (
  * IMPORTANT: This now preserves all existing names
  */
 export const generateGroupName = (currentName: string, guideName: string): string => {
-  // Never change the current name automatically - always preserve it
+  // NEVER change the current name automatically - always preserve it
   return currentName;
 };
 

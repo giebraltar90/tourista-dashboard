@@ -1,5 +1,5 @@
 
-import React, { useRef } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import {
@@ -30,28 +30,48 @@ export const TourTabs: React.FC<TourTabsProps> = ({
   activeTab,
   onTabChange
 }) => {
-  // Create stable references to prevent unnecessary re-renders
-  const stableTourGroups = useRef(tour.tourGroups);
-  const stableModifications = useRef(tour.modifications);
+  // Use state to store the most current version of tour data per tab
+  const [tabSpecificTourData, setTabSpecificTourData] = useState<{[key: string]: any}>({
+    overview: tour,
+    groups: tour,
+    tickets: tour,
+    modifications: tour
+  });
   
-  // Only update if the data has actually changed
-  if (JSON.stringify(stableTourGroups.current) !== JSON.stringify(tour.tourGroups)) {
-    stableTourGroups.current = tour.tourGroups;
-  }
+  // When active tab changes, update its data with the latest tour data
+  useEffect(() => {
+    if (activeTab && tour) {
+      setTabSpecificTourData(prevData => ({
+        ...prevData,
+        [activeTab]: JSON.parse(JSON.stringify(tour))
+      }));
+    }
+  }, [activeTab, tour]);
   
-  if (JSON.stringify(stableModifications.current) !== JSON.stringify(tour.modifications)) {
-    stableModifications.current = tour.modifications;
-  }
+  // When leaving a tab, store its data version
+  const handleTabChange = (newTab: string) => {
+    if (activeTab !== newTab) {
+      // Preserve each tab's own version of the data
+      setTabSpecificTourData(prevData => ({
+        ...prevData,
+        [activeTab]: JSON.parse(JSON.stringify(tour))
+      }));
+    }
+    onTabChange(newTab);
+  };
   
-  // Create a stable tour reference to prevent unnecessary re-renders
-  const stableTour = {
-    ...tour,
-    tourGroups: stableTourGroups.current,
-    modifications: stableModifications.current
+  // Get the appropriate tour data based on current tab
+  const getTabTourData = (tabName: string) => {
+    return tabSpecificTourData[tabName] || tour;
   };
 
+  // Log when tab changes for debugging
+  useEffect(() => {
+    console.log("Tab changed to:", activeTab);
+  }, [activeTab]);
+
   return (
-    <Tabs defaultValue="overview" value={activeTab} onValueChange={onTabChange} className="w-full">
+    <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="groups">Groups & Guides</TabsTrigger>
@@ -61,7 +81,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="overview" className="space-y-4 mt-6">
         <TourOverview 
-          tour={stableTour} 
+          tour={getTabTourData("overview")} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -70,14 +90,20 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="groups" className="space-y-4 mt-6">
         <div className="space-y-6">
-          <GroupGuideManagement key={`guide-management-${stableTour.id}`} tour={stableTour} />
-          <GroupsManagement key={`groups-management-${stableTour.id}`} tour={stableTour} />
+          <GroupGuideManagement 
+            key={`guide-management-${activeTab === "groups" ? "active" : "inactive"}`} 
+            tour={getTabTourData("groups")} 
+          />
+          <GroupsManagement 
+            key={`groups-management-${activeTab === "groups" ? "active" : "inactive"}`} 
+            tour={getTabTourData("groups")} 
+          />
         </div>
       </TabsContent>
       
       <TabsContent value="tickets" className="space-y-4 mt-6">
         <TicketsManagement 
-          tour={stableTour} 
+          tour={getTabTourData("tickets")} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -85,7 +111,10 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       </TabsContent>
       
       <TabsContent value="modifications" className="space-y-4 mt-6">
-        <ModificationsTab key={`modifications-${stableTour.id}`} tour={stableTour} />
+        <ModificationsTab 
+          key={`modifications-${activeTab === "modifications" ? "active" : "inactive"}`} 
+          tour={getTabTourData("modifications")} 
+        />
       </TabsContent>
     </Tabs>
   );

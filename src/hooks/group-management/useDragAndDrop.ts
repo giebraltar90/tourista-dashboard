@@ -3,7 +3,7 @@ import { useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
-import { updateParticipantGroupInDatabase } from "./services/participantService";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useDragAndDrop = (
   tourId: string,
@@ -50,7 +50,7 @@ export const useDragAndDrop = (
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (
+  const handleDrop = async (
     e: React.DragEvent, 
     toGroupIndex: number,
     currentGroups: VentrataTourGroup[],
@@ -91,47 +91,67 @@ export const useDragAndDrop = (
       return;
     }
     
-    // Add retry logic for database updates
-    const maxRetries = 3;
-    let attempts = 0;
-    
-    const attemptDatabaseUpdate = () => {
-      attempts++;
-      // First, update the participant in the database with retry logic
-      updateParticipantGroupInDatabase(participant.id, destGroupId)
-        .then(success => {
-          if (success) {
-            console.log(`Successfully updated participant ${participant.id} in database`);
-            toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
-            
-            // Then attempt to update the groups on the server with additional delay
-            // to ensure the participant update is processed first
-            setTimeout(() => {
-              updateTourGroupsMutation.mutate(updatedGroups);
-            }, 500);
-          } else if (attempts < maxRetries) {
-            console.warn(`Retry ${attempts}/${maxRetries} for participant ${participant.id} database update`);
-            setTimeout(attemptDatabaseUpdate, 1000);
-          } else {
-            console.error(`Failed to update participant ${participant.id} in database after ${maxRetries} attempts`);
-            toast.error("Failed to save changes in database. Try refreshing the page.");
-          }
-        })
-        .catch(error => {
-          console.error("Exception updating participant in database:", error);
-          if (attempts < maxRetries) {
-            console.warn(`Retry ${attempts}/${maxRetries} for participant ${participant.id} database update after error`);
-            setTimeout(attemptDatabaseUpdate, 1000);
-          } else {
-            toast.error("Error saving changes to database after multiple attempts");
-          }
-        });
-    };
-    
-    // Start the retry process
-    attemptDatabaseUpdate();
+    // Immediately attempt to update the participant in Supabase
+    const { error } = await supabase
+      .from('participants')
+      .update({ group_id: destGroupId })
+      .eq('id', participant.id);
+      
+    if (error) {
+      console.error("Error updating participant in database:", error);
+      toast.error("Failed to update participant's group in database");
+      
+      // Try again with a retry mechanism
+      retryParticipantUpdate(participant.id, destGroupId, 3);
+    } else {
+      console.log(`Successfully updated participant ${participant.id} to group ${destGroupId}`);
+      toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
+      
+      // After a delay, also update the tour groups with our changes
+      setTimeout(() => {
+        // Cancel any in-flight queries before sending our update
+        const queryClient = updateTourGroupsMutation.context?.queryClient;
+        if (queryClient) {
+          queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+          queryClient.cancelQueries({ queryKey: ['tours'] });
+        }
+        
+        // Update tour groups
+        updateTourGroupsMutation.mutate(updatedGroups);
+      }, 500);
+    }
     
     setDraggedParticipant(null);
+  };
+  
+  // Retry function for participant updates
+  const retryParticipantUpdate = async (participantId: string, destGroupId: string, retriesLeft: number) => {
+    if (retriesLeft <= 0) {
+      toast.error("Failed to update participant after multiple attempts");
+      return;
+    }
+    
+    try {
+      // Wait a bit before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Try update again
+      const { error } = await supabase
+        .from('participants')
+        .update({ group_id: destGroupId })
+        .eq('id', participantId);
+        
+      if (error) {
+        console.error(`Retry update failed (${retriesLeft} left):`, error);
+        retryParticipantUpdate(participantId, destGroupId, retriesLeft - 1);
+      } else {
+        console.log(`Participant update succeeded on retry`);
+        toast.success("Participant moved successfully");
+      }
+    } catch (error) {
+      console.error("Error in retry:", error);
+      retryParticipantUpdate(participantId, destGroupId, retriesLeft - 1);
+    }
   };
   
   return {

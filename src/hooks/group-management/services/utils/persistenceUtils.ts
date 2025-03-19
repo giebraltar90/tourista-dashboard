@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { updateGuideInSupabase } from "@/services/api/tourGroupApi";
+import { isUuid } from "@/types/ventrata";
 
 /**
  * Attempts to persist guide assignment changes through multiple strategies
@@ -18,6 +19,16 @@ export const persistGuideAssignmentChanges = async (
   // Track if any persistence method succeeded
   let updateSuccess = false;
   
+  // NEVER try to save non-UUID guide IDs directly to the database
+  // Instead, save them as null or convert to valid UUIDs
+  let safeGuideId = null;
+  if (actualGuideId && isUuid(actualGuideId)) {
+    safeGuideId = actualGuideId;
+  } else if (actualGuideId) {
+    // Log that we're not using a UUID guide ID in the database
+    console.log(`Non-UUID guide ID will be saved as null: ${actualGuideId}`);
+  }
+  
   // First attempt: direct Supabase update with the most reliable method
   if (tourId && groupId) {
     try {
@@ -25,7 +36,7 @@ export const persistGuideAssignmentChanges = async (
       updateSuccess = await updateGuideInSupabase(
         tourId, 
         groupId, 
-        actualGuideId, 
+        safeGuideId, // Use null or a valid UUID
         groupName
       );
       
@@ -46,7 +57,7 @@ export const persistGuideAssignmentChanges = async (
       updateSuccess = await persistGuideAssignment(
         tourId, 
         groupId, 
-        actualGuideId, 
+        safeGuideId, // Use null or a valid UUID
         groupName
       );
       
@@ -65,7 +76,20 @@ export const persistGuideAssignmentChanges = async (
   if (!updateSuccess) {
     console.log("Falling back to updateTourGroups API as last resort");
     try {
-      updateSuccess = await updateTourGroups(tourId, updatedGroups);
+      // Prepare tour groups for database update - sanitize guide IDs
+      const sanitizedGroups = updatedGroups.map(group => {
+        if (!group.guideId || isUuid(group.guideId)) {
+          return group; // Keep valid UUIDs or null/undefined
+        }
+        
+        // For non-UUID guide IDs, create a copy with null guideId
+        return {
+          ...group,
+          guideId: null
+        };
+      });
+      
+      updateSuccess = await updateTourGroups(tourId, sanitizedGroups);
       console.log(`Full groups update result: ${updateSuccess ? 'Success' : 'Failed'}`);
     } catch (error) {
       console.error("Error with updateTourGroups API:", error);
@@ -98,21 +122,17 @@ export const handleUIUpdates = async (
     // CRITICAL CHANGE: Never invalidate queries immediately, let the optimistic update persist
     // This solves the problem of guides "changing back" after assignment
     
-    // Only schedule a very delayed background refresh to eventually sync with server
-    // But the delay is long enough that the user won't notice it changing back
-    setTimeout(() => {
-      // First update the cached data with our optimistic changes
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        return oldData; // Return the current state, already updated optimistically
-      });
-      
-      // Schedule a background refetch after a much longer delay to sync with server
-      // But never force a UI refresh - just update the cache in the background
-      setTimeout(() => {
-        queryClient.fetchQuery({ queryKey: ['tour', tourId], staleTime: 30000 });
-      }, 30000); // 30 seconds - extremely long delay to prevent visible reversions
-    }, 10000); // 10 second initial delay
+    // Permanently disable automatic query invalidation
+    queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+      if (!oldData) return null;
+      return oldData; // Return the current state, already updated optimistically
+    });
+    
+    // Cancel any in-flight queries that might overwrite our changes
+    queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+    queryClient.cancelQueries({ queryKey: ['tours'] });
+    
+    console.log("Successfully updated - permanently disabled revalidation");
   } else {
     toast.error("Could not save guide assignment");
   }

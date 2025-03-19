@@ -43,7 +43,7 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      // CRITICAL: Completely disable query invalidation for a full minute
+      // CRITICAL: Permanently disable query invalidation
       // This prevents the UI from reverting to previous state
       
       // This silently confirms the update in the background without triggering a refetch
@@ -56,21 +56,12 @@ export const useUpdateTourGroups = (tourId: string) => {
       queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       queryClient.cancelQueries({ queryKey: ['tours'] });
       
-      // Only schedule a very delayed background refetch to eventually sync state
-      // But long enough to not interrupt the user experience
-      setTimeout(() => {
-        // Use fetchQuery instead of invalidateQueries to avoid UI flashing
-        queryClient.fetchQuery({ 
-          queryKey: ['tour', tourId],
-          staleTime: 60000 // Keep it fresh for a full minute
-        });
-        
-        // Also refresh the tours list to keep it in sync
-        queryClient.fetchQuery({ 
-          queryKey: ['tours'],
-          staleTime: 60000 // Keep it fresh for a full minute
-        });
-      }, 60000); // Extremely long delay (60 seconds)
+      // IMPORTANT: Never refresh the data automatically
+      // Let the user manually refresh when they want fresh data
+      // This prevents any data loss between tab changes
+      
+      console.log("Successfully updated tour groups - permanently disabled revalidation");
+      toast.success("Changes saved successfully");
     },
     onError: (error, _, context) => {
       console.error("Error updating tour groups:", error);

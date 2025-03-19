@@ -4,6 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
 
 /**
+ * Check if a string is a valid UUID
+ */
+const isValidUuid = (str: string | undefined): boolean => {
+  if (!str) return false;
+  
+  // UUID v4 regex pattern
+  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidPattern.test(str);
+};
+
+/**
  * Update tour groups (e.g., move participants between groups)
  */
 export const updateTourGroups = async (
@@ -12,7 +23,7 @@ export const updateTourGroups = async (
 ): Promise<boolean> => {
   try {
     // Check if this is a UUID format ID to determine storage approach
-    const tourIsUuid = isUuid(tourId);
+    const tourIsUuid = isValidUuid(tourId);
     let success = false;
     
     if (tourIsUuid) {
@@ -29,18 +40,28 @@ export const updateTourGroups = async (
             let safeGuideId = null;
             
             // Only use the guideId if it's a valid UUID
-            if (group.guideId && isUuid(group.guideId)) {
+            if (group.guideId && isValidUuid(group.guideId)) {
               safeGuideId = group.guideId;
+            } else if (group.guideId) {
+              console.log(`Converting non-UUID guide ID to null: ${group.guideId}`);
             }
             
             // Update existing group
-            const updateData = {
+            const updateData: any = {
               name: group.name,
-              size: group.size,
-              entry_time: group.entryTime,
-              guide_id: safeGuideId, // Use null or a valid UUID
+              size: group.size || 0,
               child_count: group.childCount || 0
             };
+            
+            // Only add guide_id if it's a valid UUID
+            if (safeGuideId !== undefined) {
+              updateData.guide_id = safeGuideId;
+            }
+            
+            // Add entryTime if it exists
+            if (group.entryTime) {
+              updateData.entry_time = group.entryTime;
+            }
             
             console.log(`Updating group ${group.id} with data:`, updateData);
             
@@ -52,12 +73,12 @@ export const updateTourGroups = async (
               
             if (error) {
               console.error(`Error updating group ${group.id}:`, error);
-              throw error;
+              return false;
             }
           } else {
             // Handle non-UUID guide IDs for new groups too
             let safeGuideId = null;
-            if (group.guideId && isUuid(group.guideId)) {
+            if (group.guideId && isValidUuid(group.guideId)) {
               safeGuideId = group.guideId;
             }
             
@@ -67,7 +88,7 @@ export const updateTourGroups = async (
               .insert({
                 tour_id: tourId,
                 name: group.name,
-                size: group.size,
+                size: group.size || 0,
                 entry_time: group.entryTime,
                 guide_id: safeGuideId, // Use null or a valid UUID
                 child_count: group.childCount || 0
@@ -75,7 +96,7 @@ export const updateTourGroups = async (
               
             if (error) {
               console.error(`Error inserting new group:`, error);
-              throw error;
+              return false;
             }
           }
         }
@@ -122,8 +143,10 @@ export const updateGuideInSupabase = async (
     let safeGuideId = null;
     
     // Only use the guideId if it's a valid UUID
-    if (guideId && isUuid(guideId)) {
+    if (guideId && isValidUuid(guideId)) {
       safeGuideId = guideId;
+    } else if (guideId) {
+      console.log(`Converting non-UUID guide ID to null: ${guideId}`);
     }
     
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
