@@ -32,11 +32,11 @@ export const findGuideName = (
 
 /**
  * Generate a group name based on guide assignment - 
- * IMPORTANT: This now preserves all existing names
+ * Now uses sequential numbering
  */
-export const generateGroupName = (currentName: string, guideName: string): string => {
-  // NEVER change the current name automatically - always preserve it
-  return currentName;
+export const generateGroupName = (currentName: string, groupIndex: number): string => {
+  // Always use standardized naming format
+  return `Group ${groupIndex + 1}`;
 };
 
 /**

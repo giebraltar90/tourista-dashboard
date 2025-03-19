@@ -5,6 +5,7 @@ import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourModification } from "@/services/api/modificationApi";
 import { Json } from "@/integrations/supabase/types";
 import { generateGroupName } from "../utils/guideNameUtils";
+import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 
 /**
  * Updates the group with new guide ID and possibly new name

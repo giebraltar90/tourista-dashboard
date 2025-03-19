@@ -62,8 +62,8 @@ export const GroupCard = ({
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
   
-  // Use default group name if not set
-  const displayName = group.name || `Group ${groupIndex + 1}`;
+  // Use standardized group name
+  const displayName = `Group ${groupIndex + 1}`;
   
   return (
     <ParticipantDropZone 
