@@ -51,8 +51,10 @@ export const GroupCard = ({
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
   // Calculate the actual participant count and total people
-  const participantCount = group.participants?.length || 0;
-  const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
+  // Safely access group.participants, defaulting to empty array if undefined
+  const participants = group.participants || [];
+  const participantCount = participants.length || 0;
+  const totalPeople = group.size || 0;
   
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
@@ -119,8 +121,8 @@ export const GroupCard = ({
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-2">
-            {group.participants && group.participants.length > 0 ? (
-              group.participants.map((participant) => (
+            {participants && participants.length > 0 ? (
+              participants.map((participant) => (
                 <DraggableParticipant
                   key={participant.id}
                   participant={participant}

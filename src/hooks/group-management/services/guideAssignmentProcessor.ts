@@ -20,6 +20,12 @@ export const prepareGroupUpdate = (
   // Create a deep copy of tourGroups to avoid mutation issues
   const updatedTourGroups = JSON.parse(JSON.stringify(tourGroups));
   
+  // Ensure the group at the specified index exists
+  if (!updatedTourGroups[groupIndex]) {
+    console.error(`Group at index ${groupIndex} does not exist`);
+    return updatedTourGroups;
+  }
+  
   // Update the guide ID for the specified group
   updatedTourGroups[groupIndex].guideId = guideId;
   
@@ -60,7 +66,19 @@ export const processGuideAssignment = async (
     const actualGuideId = guideId === "_none" ? undefined : guideId;
     
     // Create a deep copy of tourGroups to avoid mutation issues
-    const updatedTourGroups = JSON.parse(JSON.stringify(currentTour.tourGroups));
+    const updatedTourGroups = Array.isArray(currentTour.tourGroups) ? 
+      JSON.parse(JSON.stringify(currentTour.tourGroups)) : [];
+    
+    // Check if the group exists at the specified index
+    if (!updatedTourGroups[groupIndex]) {
+      console.error(`Group at index ${groupIndex} does not exist`);
+      return {
+        success: false,
+        updatedGroups: updatedTourGroups,
+        guideName: "Error",
+        groupName: "Unknown Group"
+      };
+    }
     
     // Get the current group name and guide ID for comparison
     const currentGuideId = updatedTourGroups[groupIndex].guideId;
@@ -80,7 +98,7 @@ export const processGuideAssignment = async (
     const guideName = actualGuideId ? findGuideName(
       actualGuideId, 
       currentTour, 
-      guides.map(g => ({ id: g.id || "", name: g.name }))
+      Array.isArray(guides) ? guides.map(g => ({ id: g.id || "", name: g.name })) : []
     ) : "Unassigned";
     
     // Update the group with new guide ID and possibly new name
@@ -103,7 +121,7 @@ export const processGuideAssignment = async (
     let updateSuccess = false;
     
     // Get the group ID for the direct update
-    const groupId = updatedTourGroups[groupIndex].id;
+    const groupId = updatedTourGroups[groupIndex]?.id;
     
     // First, directly try to update the specific group in Supabase if it's a UUID tour
     if (isUuid(tourId) && groupId) {
