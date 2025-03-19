@@ -35,7 +35,15 @@ import {
   addMonths,
   isSameDay 
 } from "date-fns";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define the time range type
 type TimeRangeType = "all" | "today" | "tomorrow" | "this-week" | "next-week" | "this-month" | "next-month";
@@ -124,38 +132,63 @@ const ToursPage = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle>Tour Overview</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
-                <ToggleGroup type="single" value={timeRange} onValueChange={(value: TimeRangeType) => value && setTimeRange(value)}>
-                  <ToggleGroupItem value="all">
-                    <ListFilter className="mr-2 h-4 w-4" />
-                    All
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="today">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    Today
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="tomorrow">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    Tomorrow
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="this-week">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    This Week
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="next-week">
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    Next Week
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="this-month">
-                    <CalendarRange className="mr-2 h-4 w-4" />
-                    This Month
-                  </ToggleGroupItem>
-                  <ToggleGroupItem value="next-month">
-                    <CalendarRange className="mr-2 h-4 w-4" />
-                    Next Month
-                  </ToggleGroupItem>
-                </ToggleGroup>
+                <Select 
+                  value={timeRange} 
+                  onValueChange={(value: TimeRangeType) => setTimeRange(value)}
+                >
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select time range" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Time Range</SelectLabel>
+                      <SelectItem value="all">
+                        <div className="flex items-center">
+                          <ListFilter className="mr-2 h-4 w-4" />
+                          <span>All</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="today">
+                        <div className="flex items-center">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span>Today</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="tomorrow">
+                        <div className="flex items-center">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span>Tomorrow</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="this-week">
+                        <div className="flex items-center">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span>This Week</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="next-week">
+                        <div className="flex items-center">
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          <span>Next Week</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="this-month">
+                        <div className="flex items-center">
+                          <CalendarRange className="mr-2 h-4 w-4" />
+                          <span>This Month</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="next-month">
+                        <div className="flex items-center">
+                          <CalendarRange className="mr-2 h-4 w-4" />
+                          <span>Next Month</span>
+                        </div>
+                      </SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
                 
-                <div className="flex items-center gap-2 ml-2 mt-2 sm:mt-0">
+                <div className="flex items-center gap-2 ml-2">
                   <Button 
                     variant={viewMode === "all" ? "default" : "outline"} 
                     size="sm"
