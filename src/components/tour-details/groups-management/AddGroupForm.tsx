@@ -27,7 +27,6 @@ import { toast } from "sonner";
 import { VentrataTourGroup } from "@/types/ventrata";
 
 const formSchema = z.object({
-  groupName: z.string().min(1, "Group name is required"),
   entryTime: z.string().min(1, "Entry time is required"),
   guideId: z.string().optional(),
 });
@@ -50,7 +49,6 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      groupName: "",
       entryTime: "",
       guideId: "",
     },
@@ -61,7 +59,6 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
       setIsSubmitting(true);
       
       const groupData = {
-        name: values.groupName,
         entryTime: values.entryTime,
         guideId: values.guideId || undefined,
       };
@@ -87,20 +84,6 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="groupName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Group Name</FormLabel>
-              <FormControl>
-                <Input placeholder="e.g., Group A" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
         <FormField
           control={form.control}
           name="entryTime"

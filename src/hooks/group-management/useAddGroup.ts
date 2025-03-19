@@ -11,7 +11,7 @@ export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] 
   const queryClient = useQueryClient();
   const { addModification } = useModifications(tourId);
 
-  // Function to generate a new group name
+  // Function to generate a new group name based on the sequential group number
   const generateGroupName = () => {
     const groupCount = existingGroups.length;
     return `Group ${groupCount + 1}`;
@@ -78,8 +78,10 @@ export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] 
 
   // Function to add a new group
   const addGroup = async (data: { name?: string; entryTime?: string; guideId?: string }) => {
+    const name = generateGroupName();
+    
     const newGroup: VentrataTourGroup = {
-      name: data.name || generateGroupName(),
+      name: name,
       entryTime: data.entryTime || determineDefaultEntryTime(),
       size: 0, // No participants initially
       childCount: 0,

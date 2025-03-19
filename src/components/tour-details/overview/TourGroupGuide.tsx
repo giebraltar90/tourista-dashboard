@@ -38,8 +38,8 @@ export const TourGroupGuide = ({
   const assignmentAttempts = useRef(0);
   const maxRetries = 3;
   
-  // Display name should default to "Group X" if not set
-  const displayName = group?.name || `Group ${groupIndex + 1}`;
+  // Display standardized group name
+  const displayName = `Group ${groupIndex + 1}`;
   
   // Calculate group size directly from the size property
   const totalGroupSize = group?.size || 0;

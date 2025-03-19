@@ -51,9 +51,12 @@ export const GroupsTable = ({
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
+          // Use standardized group naming
+          const standardizedGroupName = `Group ${index + 1}`;
+          
           return (
             <TableRow key={index}>
-              <TableCell className="font-medium">{group.name || `Group ${index + 1}`}</TableCell>
+              <TableCell className="font-medium">{standardizedGroupName}</TableCell>
               <TableCell>{formattedParticipantCount} participants</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>

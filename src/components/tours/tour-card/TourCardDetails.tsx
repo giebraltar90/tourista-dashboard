@@ -67,7 +67,7 @@ export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
                 <Tooltip>
                   <TooltipTrigger>
                     <Badge variant="secondary" className="flex items-center">
-                      <span className="mr-1">{group.name}</span>
+                      <span className="mr-1">Group {index + 1}</span>
                       <span className="bg-background/80 px-1.5 rounded-sm text-xs">
                         {group.childCount && group.childCount > 0 ? 
                           `${group.size - group.childCount}+${group.childCount}` : 
