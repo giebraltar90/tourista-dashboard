@@ -12,7 +12,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Edit, UserPlus, Users } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { AddGroupForm } from "./AddGroupForm";
 import { EditGroupForm } from "./EditGroupForm";
@@ -169,10 +168,23 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
               tourId={tour.id}
               groupIndex={selectedGroupIndex}
               guides={[
-                { id: guide1Info?.id || "guide1", name: tour.guide1, info: guide1Info },
-                ...(tour.guide2 ? [{ id: guide2Info?.id || "guide2", name: tour.guide2, info: guide2Info }] : []),
-                ...(tour.guide3 ? [{ id: guide3Info?.id || "guide3", name: tour.guide3, info: guide3Info }] : [])
-              ]}
+                // Make sure all guides have valid IDs
+                { 
+                  id: guide1Info?.id || "guide1", 
+                  name: tour.guide1, 
+                  info: guide1Info 
+                },
+                ...(tour.guide2 ? [{ 
+                  id: guide2Info?.id || "guide2", 
+                  name: tour.guide2, 
+                  info: guide2Info 
+                }] : []),
+                ...(tour.guide3 ? [{ 
+                  id: guide3Info?.id || "guide3", 
+                  name: tour.guide3, 
+                  info: guide3Info 
+                }] : [])
+              ].filter(guide => guide.id && guide.id.trim() !== "")}
               currentGuideId={tour.tourGroups[selectedGroupIndex].guideId}
               onSuccess={() => setIsAssignGuideOpen(false)}
             />

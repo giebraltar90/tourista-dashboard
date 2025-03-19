@@ -10,7 +10,7 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { useState } from "react";
-import { useTourById, useUpdateTourGroups } from "@/hooks/useTourData";
+import { useTourById } from "@/hooks/useTourData";
 import { TourHeader } from "@/components/tour-details/TourHeader";
 import { TourOverview } from "@/components/tour-details/TourOverview";
 import { GroupsManagement, GroupGuideManagement } from "@/components/tour-details/groups-management";
@@ -56,7 +56,7 @@ const TourDetails = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        <TourHeader tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} />
+        <TourHeader tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} guide3Info={guide3Info} />
         
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -67,7 +67,12 @@ const TourDetails = () => {
           </TabsList>
           
           <TabsContent value="overview" className="space-y-4 mt-6">
-            <TourOverview tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} />
+            <TourOverview 
+              tour={tour} 
+              guide1Info={guide1Info} 
+              guide2Info={guide2Info}
+              guide3Info={guide3Info}
+            />
           </TabsContent>
           
           <TabsContent value="groups" className="space-y-4 mt-6">
@@ -81,7 +86,8 @@ const TourDetails = () => {
             <TicketsManagement 
               tour={tour} 
               guide1Info={guide1Info} 
-              guide2Info={guide2Info} 
+              guide2Info={guide2Info}
+              guide3Info={guide3Info}
             />
           </TabsContent>
           

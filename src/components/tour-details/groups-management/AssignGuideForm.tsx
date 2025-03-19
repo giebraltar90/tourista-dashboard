@@ -100,6 +100,9 @@ export const AssignGuideForm = ({
     }
   };
   
+  // Filter out any guides with empty ids to avoid the Select.Item error
+  const validGuides = guides.filter(guide => guide.id && guide.id.trim() !== "");
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -116,7 +119,7 @@ export const AssignGuideForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {guides.map((guide) => (
+                  {validGuides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
                       <div className="flex items-center">
                         <span>{guide.name}</span>

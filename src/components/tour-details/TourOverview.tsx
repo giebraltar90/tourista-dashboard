@@ -2,7 +2,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Users, Calendar as CalendarIcon, IdCard } from "lucide-react";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { format } from "date-fns";
 
@@ -10,9 +10,10 @@ interface TourOverviewProps {
   tour: TourCardProps;
   guide1Info: GuideInfo | null;
   guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
 }
 
-export const TourOverview = ({ tour, guide1Info, guide2Info }: TourOverviewProps) => {
+export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   const totalGroups = tour.tourGroups.length;
   
@@ -124,7 +125,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info }: TourOverviewProps
           <CardTitle>Guides Assigned</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-start space-x-4">
               <div className="bg-primary/10 p-3 rounded-full">
                 <Users className="h-6 w-6 text-primary" />
@@ -166,6 +167,31 @@ export const TourOverview = ({ tour, guide1Info, guide2Info }: TourOverviewProps
                       <Badge variant="outline" className={getGuideTypeBadgeColor(guide2Info.guideType)}>
                         <IdCard className="h-3.5 w-3.5 mr-1.5" />
                         {guide2Info.guideType}
+                      </Badge>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {tour.guide3 && (
+              <div className="flex items-start space-x-4">
+                <div className="bg-primary/10 p-3 rounded-full">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">{tour.guide3}</h3>
+                  <p className="text-sm text-muted-foreground">Assistant Guide</p>
+                  
+                  {guide3Info && (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="flex items-center text-sm">
+                        <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
+                        <span>{format(guide3Info.birthday, 'MMMM d, yyyy')}</span>
+                      </div>
+                      <Badge variant="outline" className={getGuideTypeBadgeColor(guide3Info.guideType)}>
+                        <IdCard className="h-3.5 w-3.5 mr-1.5" />
+                        {guide3Info.guideType}
                       </Badge>
                     </div>
                   )}
