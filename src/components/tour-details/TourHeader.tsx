@@ -1,8 +1,8 @@
 
 import { format } from "date-fns";
-import { Calendar, Clock, MapPin, PenSquare, MessageSquare, FileText } from "lucide-react";
+import { AlertCircle, Calendar, Clock, MapPin, PenSquare, MessageSquare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertCircle, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TourCardProps } from "@/components/tours/TourCard";
 
 interface TourHeaderProps {
