@@ -70,7 +70,7 @@ const TourDetails = () => {
     // Set up periodic refreshes with a longer interval to avoid flickering
     refreshTimer.current = setInterval(() => {
       // Use a gentle refetch approach that doesn't discard local changes
-      refetch({ stale: false });
+      refetch();
     }, 30000); // Refresh every 30 seconds instead of 5
     
     return () => {
