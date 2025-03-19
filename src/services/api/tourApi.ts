@@ -7,31 +7,7 @@ import {
   fetchToursFromAPI 
 } from "./tour";
 import { isUuid } from "@/types/ventrata";
-import { supabase } from "@/integrations/supabase/client";
-
-// Helper function to get guide names from their IDs
-const getGuideNames = async (guideIds: string[]) => {
-  if (!guideIds.length) return {};
-  
-  const validIds = guideIds.filter(id => id && isUuid(id));
-  
-  if (!validIds.length) return {};
-  
-  const { data, error } = await supabase
-    .from('guides')
-    .select('id, name')
-    .in('id', validIds);
-    
-  if (error || !data) {
-    console.error("Error fetching guide names:", error);
-    return {};
-  }
-  
-  return data.reduce((map, guide) => {
-    map[guide.id] = guide.name;
-    return map;
-  }, {});
-};
+import { enrichToursWithGuideNames } from "./tour/guideUtils";
 
 /**
  * Fetch tours from Ventrata API or Supabase
@@ -46,24 +22,8 @@ export const fetchTours = async (params?: {
     try {
       const supabaseTours = await fetchToursFromSupabase(params);
       if (supabaseTours && supabaseTours.length > 0) {
-        // Collect guide IDs to fetch their names
-        const guideIds = new Set<string>();
-        supabaseTours.forEach(tour => {
-          if (tour.guide1 && isUuid(tour.guide1)) guideIds.add(tour.guide1);
-          if (tour.guide2 && isUuid(tour.guide2)) guideIds.add(tour.guide2);
-          if (tour.guide3 && isUuid(tour.guide3)) guideIds.add(tour.guide3);
-        });
-        
-        // Get guide names
-        const guideNames = await getGuideNames(Array.from(guideIds));
-        
-        // Replace guide IDs with guide names
-        return supabaseTours.map(tour => ({
-          ...tour,
-          guide1: guideNames[tour.guide1] || tour.guide1,
-          guide2: guideNames[tour.guide2] || tour.guide2,
-          guide3: guideNames[tour.guide3] || tour.guide3
-        }));
+        // Enrich tours with guide names
+        return await enrichToursWithGuideNames(supabaseTours);
       }
     } catch (supabaseError) {
       console.error("Error fetching from Supabase:", supabaseError);
@@ -91,20 +51,9 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
       try {
         const tour = await fetchTourFromSupabase(tourId);
         if (tour) {
-          // Get guide names if they're UUIDs
-          const guideIds = [];
-          if (tour.guide1 && isUuid(tour.guide1)) guideIds.push(tour.guide1);
-          if (tour.guide2 && isUuid(tour.guide2)) guideIds.push(tour.guide2);
-          if (tour.guide3 && isUuid(tour.guide3)) guideIds.push(tour.guide3);
-          
-          const guideNames = await getGuideNames(guideIds);
-          
-          return {
-            ...tour,
-            guide1: guideNames[tour.guide1] || tour.guide1,
-            guide2: guideNames[tour.guide2] || tour.guide2,
-            guide3: guideNames[tour.guide3] || tour.guide3
-          };
+          // Enrich tour with guide names
+          const enrichedTours = await enrichToursWithGuideNames([tour]);
+          return enrichedTours[0];
         }
       } catch (supabaseError) {
         console.error("Error fetching from Supabase:", supabaseError);
