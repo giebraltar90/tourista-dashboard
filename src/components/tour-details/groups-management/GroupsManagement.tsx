@@ -24,7 +24,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const { guides = [] } = useGuideData() || { guides: [] };
-  const { updateTourGroups } = useUpdateTourGroups();
+  const { mutate: updateTourGroups } = useUpdateTourGroups();
 
   const {
     localTourGroups,
@@ -68,7 +68,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       const currentGroup = tour.tourGroups[0];
       const participants = currentGroup.participants || [];
       
-      if (participants.length >= 2) {
+      if (participants && participants.length >= 2) {
         // Calculate roughly half the participants for each group
         const midPoint = Math.ceil(participants.length / 2);
         
@@ -104,10 +104,10 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         ];
         
         // Update tour groups
-        updateTourGroups(tour.id, newGroups);
+        updateTourGroups({ tourId: tour.id, updatedGroups: newGroups });
       }
     }
-  }, [tour.id, tour.tourGroups]);
+  }, [tour.id, tour.tourGroups, updateTourGroups]);
 
   // Create an array of valid guides with properly formatted IDs for use in AssignGuideForm
   const validGuides = getValidGuides({
@@ -160,8 +160,6 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
-            onAssignGuide={handleOpenAssignGuide}
-            onEditGroup={handleOpenEditGroup}
           />
         </div>
       </CardContent>
