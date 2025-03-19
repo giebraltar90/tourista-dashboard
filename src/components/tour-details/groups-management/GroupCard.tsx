@@ -69,9 +69,14 @@ export const GroupCard = ({
                 </Badge>
               ) : null}
             </CardTitle>
-            <Badge variant="outline">
-              {participantTotalCount} {participantTotalCount === 1 ? 'person' : 'people'}
-            </Badge>
+            <div className="flex flex-col items-end">
+              <Badge variant="outline">
+                {participantTotalCount} {participantTotalCount === 1 ? 'person' : 'people'}
+              </Badge>
+              <span className="text-xs text-muted-foreground mt-1">
+                {participantCount} {participantCount === 1 ? 'booking' : 'bookings'}
+              </span>
+            </div>
           </div>
           <CardDescription className="flex items-center">
             <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />

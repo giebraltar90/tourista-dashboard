@@ -37,10 +37,12 @@ export const useGroupManagement = (tour: TourCardProps) => {
     
     const sourceGroup = updatedTourGroups[fromGroupIndex];
     if (sourceGroup.participants) {
+      // Remove participant from source group
       sourceGroup.participants = sourceGroup.participants.filter(
         (p: VentrataParticipant) => p.id !== participant.id
       );
-      // Update source group size to reflect actual participant counts
+      
+      // Update source group's size property based on actual participant count
       sourceGroup.size = sourceGroup.participants.reduce(
         (total: number, p: VentrataParticipant) => total + (p.count || 1),
         0
@@ -48,7 +50,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
       
       // Update child count if needed
       if (participant.childCount) {
-        sourceGroup.childCount = (sourceGroup.childCount || 0) - participant.childCount;
+        sourceGroup.childCount = Math.max(0, (sourceGroup.childCount || 0) - participant.childCount);
       }
     }
     
@@ -56,9 +58,11 @@ export const useGroupManagement = (tour: TourCardProps) => {
     if (!destGroup.participants) {
       destGroup.participants = [];
     }
+    
+    // Add participant to destination group
     destGroup.participants.push(participant);
     
-    // Update destination group size to reflect actual participant counts
+    // Update destination group's size property based on actual participant count
     destGroup.size = destGroup.participants.reduce(
       (total: number, p: VentrataParticipant) => total + (p.count || 1),
       0
@@ -132,11 +136,12 @@ export const useGroupManagement = (tour: TourCardProps) => {
     
     const sourceGroup = updatedTourGroups[fromGroupIndex];
     if (sourceGroup.participants) {
+      // Remove participant from source group
       sourceGroup.participants = sourceGroup.participants.filter(
         (p: VentrataParticipant) => p.id !== participant.id
       );
       
-      // Update source group size to reflect actual participant counts
+      // Update source group's size property based on actual participant count
       sourceGroup.size = sourceGroup.participants.reduce(
         (total: number, p: VentrataParticipant) => total + (p.count || 1),
         0
@@ -144,7 +149,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
       
       // Update child count if needed
       if (participant.childCount) {
-        sourceGroup.childCount = (sourceGroup.childCount || 0) - participant.childCount;
+        sourceGroup.childCount = Math.max(0, (sourceGroup.childCount || 0) - participant.childCount);
       }
     }
     
@@ -152,9 +157,11 @@ export const useGroupManagement = (tour: TourCardProps) => {
     if (!destGroup.participants) {
       destGroup.participants = [];
     }
+    
+    // Add participant to destination group
     destGroup.participants.push(participant);
     
-    // Update destination group size to reflect actual participant counts
+    // Update destination group's size property based on actual participant count
     destGroup.size = destGroup.participants.reduce(
       (total: number, p: VentrataParticipant) => total + (p.count || 1),
       0
