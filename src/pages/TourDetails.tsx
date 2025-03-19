@@ -6,6 +6,7 @@ import { LoadingState } from "@/components/tour-details/LoadingState";
 import { ErrorState } from "@/components/tour-details/ErrorState";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { useGuideInfo } from "@/hooks/guides";
+import { useMemo } from "react";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -23,11 +24,19 @@ const TourDetails = () => {
     handleRefetch
   } = useTourDetailsData(tourId);
   
-  // Process guide information after we have tour data
-  // This ensures consistent hook call order
-  const guide1Info = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
+  // Use useMemo for guide info hooks to maintain consistent references
+  // and prevent unnecessary rerenders
+  const guide1Info = useMemo(() => {
+    return tour?.guide1 ? useGuideInfo(tour.guide1) : null;
+  }, [tour?.guide1]);
+  
+  const guide2Info = useMemo(() => {
+    return tour?.guide2 ? useGuideInfo(tour.guide2) : null;
+  }, [tour?.guide2]);
+  
+  const guide3Info = useMemo(() => {
+    return tour?.guide3 ? useGuideInfo(tour.guide3) : null;
+  }, [tour?.guide3]);
   
   console.log("Tour data loaded:", tour);
 
