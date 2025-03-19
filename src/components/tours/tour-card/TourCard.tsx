@@ -63,6 +63,7 @@ export const TourCard = ({
           location={location}
           referenceCode={referenceCode}
           startTime={startTime}
+          date={date}
           isHovered={isHovered}
         />
         

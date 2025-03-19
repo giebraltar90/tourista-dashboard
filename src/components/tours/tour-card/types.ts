@@ -21,6 +21,7 @@ export interface TourCardHeaderProps {
   location: string;
   referenceCode: string;
   startTime: string;
+  date: Date;
   isHovered?: boolean;
 }
 

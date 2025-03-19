@@ -1,8 +1,9 @@
 
 import React from "react";
+import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { CardHeader } from "@/components/ui/card";
-import { Tag, Clock } from "lucide-react";
+import { Tag, Clock, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TourCardHeaderProps } from "./types";
 
@@ -11,9 +12,11 @@ export const TourCardHeader: React.FC<TourCardHeaderProps> = ({
   location, 
   referenceCode, 
   startTime,
+  date,
   isHovered 
 }) => {
   const locationFormatted = location.split(' ')[0].toUpperCase();
+  const dayOfWeek = format(date, 'EEE'); // This formats the date to show the day of the week (e.g., "Mon", "Tue")
   
   return (
     <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
@@ -33,7 +36,9 @@ export const TourCardHeader: React.FC<TourCardHeaderProps> = ({
       <div className="text-right">
         <div className="flex items-center text-sm font-medium">
           <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-          {startTime}
+          <span>{startTime}</span>
+          <Calendar className="h-3.5 w-3.5 ml-2 mr-1 text-muted-foreground" />
+          <span>{dayOfWeek}</span>
         </div>
       </div>
     </CardHeader>
