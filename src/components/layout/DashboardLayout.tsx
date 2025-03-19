@@ -1,5 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { cn } from "@/lib/utils";
@@ -10,6 +11,26 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const location = useLocation();
+  
+  // Set page title based on current route
+  useEffect(() => {
+    let title = "Operations Dashboard";
+    
+    if (location.pathname.includes("/tours")) {
+      if (location.pathname === "/tours") {
+        title = "Tours Management";
+      } else {
+        title = "Tour Details";
+      }
+    } else if (location.pathname.includes("/guides")) {
+      title = "Guide Management";
+    } else if (location.pathname.includes("/tickets")) {
+      title = "Ticket Management";
+    }
+    
+    document.title = `${title} | Tour Operations`;
+  }, [location]);
   
   return (
     <div className="min-h-screen bg-background flex flex-col">

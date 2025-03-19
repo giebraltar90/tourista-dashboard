@@ -9,7 +9,8 @@ import {
   MapPin,
   Users,
   ChevronRight,
-  Tag
+  Tag,
+  AlertTriangle
 } from "lucide-react";
 import {
   Tooltip,
@@ -75,12 +76,23 @@ export function TourCard({
   // Format location for display
   const locationFormatted = location.split(' ')[0].toUpperCase();
   
+  // Determine if the tour has below minimum participants (4)
+  const isBelowMinimum = totalParticipants < 4;
+  
+  // Determine if high season (3 groups)
+  const isHighSeason = tourGroups.length > 2;
+  
+  // Determine capacity utilization
+  const capacity = isHighSeason ? 36 : 24;
+  const capacityPercentage = Math.round((totalParticipants / capacity) * 100);
+  
   return (
     <Card 
       className={cn(
         "tour-item overflow-hidden transition-all duration-300 border border-border/60",
         "hover:shadow-md hover:border-primary/20",
-        isHovered && "shadow-md border-primary/20"
+        isHovered && "shadow-md border-primary/20",
+        isBelowMinimum && "border-yellow-300"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -156,16 +168,55 @@ export function TourCard({
                 </div>
               </div>
             </div>
+            
+            {/* Capacity meter */}
+            <div className="mt-3 w-full">
+              <div className="flex items-center justify-between text-xs mb-1">
+                <span className="text-muted-foreground">Capacity</span>
+                <span className={cn(
+                  capacityPercentage > 90 ? "text-red-500" : 
+                  capacityPercentage > 75 ? "text-amber-500" : 
+                  "text-green-500"
+                )}>
+                  {totalParticipants}/{capacity}
+                </span>
+              </div>
+              <div className="w-full bg-secondary/30 rounded-full h-1.5">
+                <div 
+                  className={cn(
+                    "h-1.5 rounded-full",
+                    capacityPercentage > 90 ? "bg-red-500" : 
+                    capacityPercentage > 75 ? "bg-amber-500" : 
+                    "bg-green-500"
+                  )} 
+                  style={{ width: `${Math.min(capacityPercentage, 100)}%` }}
+                ></div>
+              </div>
+            </div>
           </CardContent>
           
           <CardFooter className="px-4 py-3 border-t border-border/60 flex justify-between items-center">
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <Badge variant="outline" className="bg-primary/5 text-primary hover:bg-primary/10">
                 {totalParticipants} Participants
               </Badge>
+              
               {numTickets && (
-                <Badge variant="outline" className="ml-2 bg-secondary/50">
+                <Badge variant="outline" className="bg-secondary/50">
                   {numTickets} Tickets
+                </Badge>
+              )}
+              
+              {isBelowMinimum && (
+                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Below Minimum
+                </Badge>
+              )}
+              
+              {isHighSeason && (
+                <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">
+                  High Season
                 </Badge>
               )}
             </div>
