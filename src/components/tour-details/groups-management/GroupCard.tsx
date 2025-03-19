@@ -1,0 +1,98 @@
+
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
+import { TourCardProps } from "@/components/tours/TourCard";
+import { ParticipantDropZone } from "./ParticipantDropZone";
+import { DraggableParticipant } from "./DraggableParticipant";
+import { ParticipantItem } from "./ParticipantItem";
+
+interface GroupCardProps {
+  group: VentrataTourGroup;
+  groupIndex: number;
+  tour: TourCardProps;
+  onDrop: (e: React.DragEvent, toGroupIndex: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
+  onMoveClick: (data: { participant: VentrataParticipant, fromGroupIndex: number }) => void;
+  selectedParticipant: {
+    participant: VentrataParticipant;
+    fromGroupIndex: number;
+  } | null;
+  handleMoveParticipant: (toGroupIndex: number) => void;
+  isMovePending: boolean;
+}
+
+export const GroupCard = ({
+  group,
+  groupIndex,
+  tour,
+  onDrop,
+  onDragOver,
+  onDragStart,
+  onMoveClick,
+  selectedParticipant,
+  handleMoveParticipant,
+  isMovePending
+}: GroupCardProps) => {
+  return (
+    <ParticipantDropZone 
+      groupIndex={groupIndex}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+    >
+      <Card className="border-2 border-muted">
+        <CardHeader className="pb-2 bg-muted/30">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-base font-medium">
+              {group.name}
+              {group.childCount ? (
+                <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
+                  {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
+                </Badge>
+              ) : null}
+            </CardTitle>
+            <Badge variant="outline">
+              {group.size} {group.size === 1 ? 'person' : 'people'}
+            </Badge>
+          </div>
+          <CardDescription>
+            Guide: {groupIndex === 0 ? tour.guide1 : tour.guide2 || tour.guide1}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="space-y-2">
+            {group.participants && group.participants.length > 0 ? (
+              group.participants.map((participant) => (
+                <DraggableParticipant
+                  key={participant.id}
+                  participant={participant}
+                  groupIndex={groupIndex}
+                  onDragStart={onDragStart}
+                >
+                  <ParticipantItem
+                    participant={participant}
+                    group={group}
+                    groupIndex={groupIndex}
+                    tour={tour}
+                    onMoveClick={() => onMoveClick({
+                      participant,
+                      fromGroupIndex: groupIndex
+                    })}
+                    selectedParticipant={selectedParticipant}
+                    handleMoveParticipant={handleMoveParticipant}
+                    isPending={isMovePending}
+                  />
+                </DraggableParticipant>
+              ))
+            ) : (
+              <div className="text-center py-4 text-muted-foreground">
+                No participants in this group
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </ParticipantDropZone>
+  );
+};
