@@ -7,7 +7,7 @@ import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
 import { useGuideData } from "@/hooks/useGuideData";
 import { isUuid } from "@/services/api/tour/guideUtils";
 import { toast } from "sonner";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { GuideBadge } from "./GuideBadge";
 import { GuideSelectionPopover } from "./GuideSelectionPopover";
 import { GroupStatusIndicator } from "./GroupStatusIndicator";
@@ -37,44 +37,19 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
   const previousGuideIdRef = useRef<string | undefined>(group.guideId);
-  const manualUpdateRef = useRef(false);
-  const lastUpdateTimeRef = useRef(Date.now());
   const { guides } = useGuideData();
   
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
-  // Better synchronization of guide ID changes with debounce protection
+  // Update our local state if the group's guideId changes from an external source
   useEffect(() => {
-    // Skip updates if we just manually assigned a guide
-    if (manualUpdateRef.current) {
-      manualUpdateRef.current = false;
-      return;
-    }
-    
-    const now = Date.now();
-    
-    // Ensure we update our local state if the group's guideId changes from an external update
+    // Only update state if the guide ID has actually changed
     if (group.guideId !== previousGuideIdRef.current) {
-      console.log(`TourGroupGuide: Guide ID changed externally from ${previousGuideIdRef.current} to ${group.guideId} for group ${displayName}`);
-      
-      // Check if enough time has passed to prevent rapid oscillation
-      if (now - lastUpdateTimeRef.current > 5000) {
-        console.log(`Updating selectedGuide to ${group.guideId || "_none"}`);
-        setSelectedGuide(group.guideId || "_none");
-        previousGuideIdRef.current = group.guideId;
-        lastUpdateTimeRef.current = now;
-      } else {
-        console.log(`Debounce protection active, not updating UI state yet`);
-      }
+      setSelectedGuide(group.guideId || "_none");
+      previousGuideIdRef.current = group.guideId;
     }
-  }, [group.guideId, displayName]);
-  
-  // Ensure group ID always stays in sync when component first mounts or tour changes
-  useEffect(() => {
-    previousGuideIdRef.current = group.guideId;
-    setSelectedGuide(group.guideId || "_none");
-  }, [tour.id, groupIndex]);
+  }, [group.guideId]);
   
   // Helper to resolve guide name from ID
   const getGuideDisplayName = (guideId?: string) => {
@@ -96,30 +71,17 @@ export const TourGroupGuide = ({
   };
 
   const handleAssignGuide = async (guideId: string) => {
+    if (guideId === selectedGuide) return;
+    
     setIsAssigning(true);
-    lastUpdateTimeRef.current = Date.now(); // Update timestamp to prevent conflicts
     
     try {
-      // Flag that we're doing a manual update to prevent effect from overriding
-      manualUpdateRef.current = true;
-      
       // Optimistically update the UI first
       setSelectedGuide(guideId);
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
       
-      // Get display name for toast
-      const displayGuideName = getGuideDisplayName(guideId);
-      
       // Call the API to update the guide
-      console.log(`TourGroupGuide: Assigning guide with ID ${guideId} to group ${displayName}`);
       await assignGuide(groupIndex, guideId);
-      
-      // Show a success message with proper guide name
-      if (guideId !== "_none") {
-        toast.success(`Guide ${displayGuideName} assigned to group successfully`);
-      } else {
-        toast.success("Guide removed from group");
-      }
     } catch (error) {
       // Revert optimistic update if there was an error
       console.error("Error assigning guide:", error);
@@ -129,10 +91,6 @@ export const TourGroupGuide = ({
       toast.error("Failed to assign guide");
     } finally {
       setIsAssigning(false);
-      // Turn off manual update mode after a short delay
-      setTimeout(() => {
-        manualUpdateRef.current = false;
-      }, 1000);
     }
   };
 
@@ -171,6 +129,3 @@ export const TourGroupGuide = ({
     </div>
   );
 };
-
-// Need to import useState for the component
-import { useState } from "react";

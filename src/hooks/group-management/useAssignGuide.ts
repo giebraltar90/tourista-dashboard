@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { isUuid } from "@/types/ventrata";
 import { findGuideName, generateGroupName } from "./utils/guideNameUtils";
 import { prepareGroupUpdate, updateGuideInSupabase, recordGuideAssignmentModification } from "./services/guideAssignmentService";
-import { updateTourGroups } from "@/services/ventrataApi";
+import { updateTourGroups } from "@/services/api/tourGroupApi";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -61,15 +61,11 @@ export const useAssignGuide = (tourId: string) => {
 
       console.log("Updated tour groups:", groupsWithUpdates);
       
-      // CRITICAL FIX: Save the updated tour groups before making the API call
-      const updatedTour = {
+      // CRITICAL: Immediately update local cache BEFORE API call
+      queryClient.setQueryData(['tour', tourId], {
         ...tour,
         tourGroups: groupsWithUpdates
-      };
-      
-      // IMPORTANT: Immediately update local cache BEFORE API call
-      // This prevents UI flicker during API request
-      queryClient.setQueryData(['tour', tourId], updatedTour);
+      });
       
       // Check if this is a UUID tour ID for direct database updates
       const tourIsUuid = isUuid(tourId);
@@ -103,41 +99,8 @@ export const useAssignGuide = (tourId: string) => {
           updatedTourGroups[groupIndex].name,
           addModification
         );
-      }
-      
-      // Ensure the cache remains updated
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return updatedTour;
         
-        // Create a new deep copy to ensure React detects the change
-        const newData = JSON.parse(JSON.stringify(oldData));
-        
-        // Only update this specific group's data
-        if (newData.tourGroups[groupIndex]) {
-          newData.tourGroups[groupIndex] = {
-            ...newData.tourGroups[groupIndex],
-            guideId: actualGuideId,
-            name: updatedTourGroups[groupIndex].name
-          };
-        }
-        
-        console.log("Re-updated cache data after API call:", newData);
-        return newData;
-      });
-      
-      // Clear the pending assignment
-      pendingAssignmentsRef.current.delete(groupIndex);
-      
-      // Schedule a delayed background refresh, but with much lower priority
-      setTimeout(() => {
-        if (pendingAssignmentsRef.current.size === 0) {
-          console.log("Performing delayed background refresh");
-          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-        }
-      }, 10000); // 10 seconds - very long to avoid UI issues
-      
-      // Notify about successful assignment
-      if (updateSuccess) {
+        // Show a success message with proper guide name
         if (guideName !== "Unassigned") {
           toast.success(`Guide ${guideName} assigned to group successfully`);
         } else {
@@ -146,6 +109,17 @@ export const useAssignGuide = (tourId: string) => {
       } else {
         toast.error("Could not persist guide assignment");
       }
+      
+      // Clear the pending assignment
+      pendingAssignmentsRef.current.delete(groupIndex);
+      
+      // Schedule a delayed background refresh
+      setTimeout(() => {
+        if (pendingAssignmentsRef.current.size === 0) {
+          console.log("Performing delayed background refresh");
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        }
+      }, 5000);
       
       return updateSuccess;
     } catch (error) {
