@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TourCardProps } from "@/components/tours/TourCard";
 import { useRole } from "@/contexts/RoleContext";
+import { GuideInfo } from "@/types/ventrata";
 
-interface TourHeaderProps {
+export interface TourHeaderProps {
   tour: TourCardProps;
+  guide1Info: GuideInfo | null;
+  guide2Info: GuideInfo | null;
 }
 
-export const TourHeader = ({ tour }: TourHeaderProps) => {
+export const TourHeader = ({ tour, guide1Info, guide2Info }: TourHeaderProps) => {
   const { guideView } = useRole();
   const formattedDate = format(tour.date, 'EEEE, MMMM d, yyyy');
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
