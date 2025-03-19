@@ -91,7 +91,6 @@ export const useAssignGuide = (tourId: string) => {
       console.log("Updated tour groups:", updatedTourGroups);
       
       // CRITICAL FIX: Save the updated tour groups before making the API call
-      // This ensures we have the latest state for our optimistic update
       const updatedTour = {
         ...tour,
         tourGroups: updatedTourGroups
@@ -117,11 +116,32 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // After successful backend update, CRITICAL FIX: Wait longer before refreshing data
+      // After successful backend update, delay the refresh of data
       // This prevents race conditions with other components fetching
       setTimeout(() => {
+        // Directly update the cache again to ensure the change persists
+        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+          if (!oldData) return updatedTour;
+          
+          // Make sure tourGroups isn't cleared accidentally
+          const tourGroups = [...oldData.tourGroups];
+          if (tourGroups[groupIndex]) {
+            tourGroups[groupIndex] = {
+              ...tourGroups[groupIndex],
+              guideId: actualGuideId,
+              name: newGroupName
+            };
+          }
+          
+          return {
+            ...oldData,
+            tourGroups
+          };
+        });
+        
+        // Finally, invalidate to refresh from server, but only after our local changes are safe
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 2000); // Increased from 500ms to 2000ms for stability
+      }, 3000); // Increased from 2000ms to 3000ms for stability
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {

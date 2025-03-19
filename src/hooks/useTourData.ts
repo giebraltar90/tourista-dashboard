@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataToursResponse, VentrataTourGroup } from "@/types/ventrata";
 import { fetchTours, fetchTourById, updateTourGroups } from "@/services/ventrataApi";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { mockTours } from "@/data/mockData";
 import { toast } from "sonner";
 
@@ -44,7 +44,7 @@ export const useTourById = (tourId: string) => {
       // Create a clean copy of the tour data
       const cleanedTourData = {...tourData};
       
-      // CRITICAL FIX: Ensure isHighSeason is properly converted to boolean using explicit conversion
+      // CRITICAL FIX: Ensure isHighSeason is properly converted to boolean using strict equality
       cleanedTourData.isHighSeason = tourData.isHighSeason === true;
       
       console.log("Cleaned tour data with isHighSeason:", cleanedTourData.isHighSeason);
@@ -52,8 +52,8 @@ export const useTourById = (tourId: string) => {
       return cleanedTourData;
     },
     // CRITICAL FIX: Increase staleTime and cacheTime dramatically to reduce unnecessary refetches
-    staleTime: 120 * 1000, // 2 minutes (increased from 30 seconds)
-    gcTime: 300 * 1000,   // 5 minutes cache time
+    staleTime: 180 * 1000, // 3 minutes (increased further)
+    gcTime: 600 * 1000,   // 10 minutes cache time
     enabled: !!tourId, // Only run the query if tourId is provided
   });
 };
@@ -84,8 +84,12 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      // Delay the invalidation to prevent race conditions
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        queryClient.invalidateQueries({ queryKey: ['tours'] });
+      }, 1000);
+      
       toast.success("Tour groups updated successfully");
     },
     onError: (error, _, context) => {
@@ -115,6 +119,6 @@ const transformTours = (response: VentrataToursResponse): TourCardProps[] => {
     guide3: tour.guide3,
     tourGroups: tour.tourGroups,
     numTickets: tour.numTickets,
-    isHighSeason: !!tour.isHighSeason // Ensure boolean type
+    isHighSeason: Boolean(tour.isHighSeason) // Ensure boolean type with explicit conversion
   }));
 };

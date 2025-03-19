@@ -16,7 +16,13 @@ export const useUpdateTourCapacity = (tourId: string) => {
       console.log("New high season value:", updatedTour.isHighSeason);
       
       try {
-        // First try to update in Supabase if available
+        // For demo tours with string IDs like "tour-1", skip Supabase and use the API
+        if (tourId.startsWith('tour-')) {
+          console.log("Using mock API for tour-* ID");
+          return updateTourCapacityApi(tourId, updatedTour);
+        }
+        
+        // Only attempt Supabase update for valid UUIDs
         const { error } = await supabase
           .from('tours')
           .update({ is_high_season: updatedTour.isHighSeason })
@@ -86,7 +92,9 @@ export const useUpdateTourCapacity = (tourId: string) => {
     },
     onSettled: () => {
       // Always refetch after error or success to ensure our local data is in sync with server
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 500); // Small delay to allow other operations to complete
     }
   });
   

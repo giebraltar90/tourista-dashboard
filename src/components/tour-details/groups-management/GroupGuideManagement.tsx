@@ -133,18 +133,24 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
                         {isGuideAssigned ? <Users className="h-4 w-4 text-green-600" /> : <UserPlus className="h-4 w-4 text-gray-400" />}
                       </div>
                       <div className="ml-3 flex-1">
-                        <p className="text-sm">
+                        <div className="text-sm">
                           Guide: {isGuideAssigned ? (
-                            <Badge variant="outline" className="ml-1 bg-green-100 text-green-800">
-                              {guideName}
-                              {guideInfo?.guideType && <span className="ml-1">({guideInfo.guideType})</span>}
-                            </Badge>
+                            <span className="ml-1">
+                              <Badge className="bg-green-100 text-green-800">
+                                {guideName}
+                              </Badge>
+                              {guideInfo?.guideType && (
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  ({guideInfo.guideType})
+                                </span>
+                              )}
+                            </span>
                           ) : (
-                            <Badge variant="outline" className="ml-1 bg-yellow-100 text-yellow-800">
+                            <Badge className="ml-1 bg-yellow-100 text-yellow-800">
                               Unassigned
                             </Badge>
                           )}
-                        </p>
+                        </div>
                       </div>
                       <Button 
                         size="sm" 

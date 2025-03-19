@@ -42,18 +42,31 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
   const previousGuideIdRef = useRef(group.guideId);
+  const lastUpdateTimeRef = useRef(Date.now());
   const [isOpen, setIsOpen] = useState(false);
   
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
-  // CRITICAL FIX: Better synchronization of guide ID changes
+  // Debug logs for tracking guide ID changes
+  useEffect(() => {
+    console.log(`TourGroupGuide ${displayName}: Current group.guideId =`, group.guideId);
+    console.log(`TourGroupGuide ${displayName}: Current selectedGuide =`, selectedGuide);
+  }, [group.guideId, selectedGuide, displayName]);
+  
+  // Better synchronization of guide ID changes with debounce protection
   useEffect(() => {
     // Only update if the group's guideId changed and it's different from our selected value
-    if (group.guideId !== previousGuideIdRef.current && group.guideId !== selectedGuide) {
+    // Also add a time-based debounce to prevent rapid changes
+    const now = Date.now();
+    if (group.guideId !== previousGuideIdRef.current && 
+        group.guideId !== selectedGuide && 
+        (now - lastUpdateTimeRef.current > 3000)) {
+        
       console.log(`TourGroupGuide: Guide ID changed from ${previousGuideIdRef.current} to ${group.guideId} for group ${displayName}`);
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
+      lastUpdateTimeRef.current = now;
     }
   }, [group.guideId, selectedGuide, displayName]);
   
@@ -79,9 +92,10 @@ export const TourGroupGuide = ({
     }
     
     setIsAssigning(true);
+    lastUpdateTimeRef.current = Date.now(); // Update timestamp to prevent conflicts
     
     try {
-      // CRITICAL FIX: Save current guideId for potential rollback
+      // Save current guideId for potential rollback
       const previousGuideId = selectedGuide;
       
       // Optimistically update the UI first
@@ -106,7 +120,7 @@ export const TourGroupGuide = ({
     }
   };
 
-  // CRITICAL FIX: Use the local state instead of the potentially outdated group prop
+  // Use the local state instead of the potentially outdated group prop
   const isGuideAssigned = (selectedGuide !== "_none" && selectedGuide !== undefined);
 
   return (
@@ -136,7 +150,7 @@ export const TourGroupGuide = ({
         
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
-            <Button size="sm" variant="outline">
+            <Button size="sm" variant="outline" disabled={isAssigning}>
               {isGuideAssigned ? "Change Guide" : "Assign Guide"}
             </Button>
           </PopoverTrigger>

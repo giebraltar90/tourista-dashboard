@@ -3,7 +3,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { Button } from "@/components/ui/button";
 import { useUpdateTourCapacity } from "@/hooks/useTourCapacity";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,23 @@ export const GroupCapacityInfo = ({
 }: GroupCapacityInfoProps) => {
   const { updateTourCapacity, isUpdating } = useUpdateTourCapacity(tour.id);
   const [openDropdown, setOpenDropdown] = useState(false);
+  const [currentMode, setCurrentMode] = useState(() => {
+    if (isHighSeason) return 'high_season';
+    if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return 'exception';
+    return 'standard';
+  });
+  const lastUpdateTimeRef = useRef(Date.now());
+  
+  // Update current mode when props change (to stay in sync)
+  useEffect(() => {
+    if (isHighSeason) {
+      setCurrentMode('high_season');
+    } else if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) {
+      setCurrentMode('exception');
+    } else {
+      setCurrentMode('standard');
+    }
+  }, [isHighSeason, totalParticipants]);
   
   // Determine the current capacity mode
   const capacity = isHighSeason 
@@ -46,11 +63,23 @@ export const GroupCapacityInfo = ({
   };
     
   const handleModeChange = async (mode: 'standard' | 'exception' | 'high_season') => {
+    // Prevent rapid mode changes by adding a time-based debounce
+    const now = Date.now();
+    if (now - lastUpdateTimeRef.current < 3000) {
+      console.log("Ignoring rapid mode change request");
+      return;
+    }
+    
     console.log(`Changing mode to: ${mode}, current isHighSeason: ${isHighSeason}`);
+    setCurrentMode(mode);
     
     // Only update if there's an actual change
     const newIsHighSeason = mode === 'high_season';
+    lastUpdateTimeRef.current = now;
+    
     if (newIsHighSeason !== isHighSeason) {
+      console.log(`Updating tour to isHighSeason=${newIsHighSeason}`);
+      
       // Update the tour's high season flag
       await updateTourCapacity({
         ...tour,
@@ -85,19 +114,19 @@ export const GroupCapacityInfo = ({
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem 
               onClick={() => handleModeChange('standard')}
-              className={!isHighSeason && totalParticipants <= DEFAULT_CAPACITY_SETTINGS.standard ? "bg-muted/50" : ""}
+              className={currentMode === 'standard' ? "bg-muted/50" : ""}
             >
               Standard Mode (2 groups, 24 people)
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => handleModeChange('exception')}
-              className={!isHighSeason && totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard ? "bg-muted/50" : ""}
+              className={currentMode === 'exception' ? "bg-muted/50" : ""}
             >
               Exception Mode (2 groups, up to 29 people)
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => handleModeChange('high_season')}
-              className={isHighSeason ? "bg-muted/50" : ""}
+              className={currentMode === 'high_season' ? "bg-muted/50" : ""}
             >
               High Season Mode (3 groups, 36 people)
             </DropdownMenuItem>
