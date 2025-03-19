@@ -6,7 +6,6 @@ import { useDeleteGroup } from "@/hooks/group-management";
 import { GroupDialogs } from "./GroupDialogs";
 import { GroupsListHeader } from "./GroupsListHeader";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { UserRound, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -62,61 +61,48 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
       
       <div className="space-y-4">
         {tour.tourGroups.map((group, index) => {
-          const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+          const { name: guideName } = getGuideNameAndInfo(group.guideId);
           
           return (
-            <Card key={index} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-medium">{group.name}</h3>
-                      <Badge variant={group.size > 0 ? "default" : "outline"}>
-                        {group.size} participants
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      {guideName ? (
-                        <div className="flex items-center gap-1">
-                          <UserRound className="h-3 w-3" />
-                          <span>Guide: {guideName}</span>
-                        </div>
-                      ) : (
-                        <span className="text-yellow-600">No guide assigned</span>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleGroupAction(index, 'assignGuide')}
-                    >
-                      <UserRound className="h-4 w-4 mr-1" />
-                      Assign Guide
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleGroupAction(index, 'edit')}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleGroupAction(index, 'delete')}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <div key={index} className="border rounded-lg p-4">
+              <div className="flex justify-between items-center mb-1">
+                <h3 className="text-lg font-medium">{group.name}</h3>
+                <Badge className="bg-blue-500 text-white hover:bg-blue-500">
+                  {group.size} participants
+                </Badge>
+              </div>
+              
+              <div className="flex items-center text-sm text-muted-foreground mb-4">
+                <UserRound className="h-3 w-3 mr-1" />
+                <span>Guide: {guideName || "Unassigned"}</span>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-1"
+                  onClick={() => handleGroupAction(index, 'assignGuide')}
+                >
+                  <UserRound className="h-4 w-4" />
+                  Assign Guide
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGroupAction(index, 'edit')}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleGroupAction(index, 'delete')}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           );
         })}
       </div>
