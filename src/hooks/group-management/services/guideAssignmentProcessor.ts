@@ -28,7 +28,23 @@ export const processGuideAssignment = async (
   groupName: string;
 }> => {
   try {
-    console.log("Assigning guide to group:", { groupIndex, guideId, tourId });
+    console.log("Assigning guide to group:", { 
+      groupIndex, 
+      guideId, 
+      tourId,
+      tourGroupsLength: currentTour.tourGroups?.length
+    });
+    
+    // Verify groupIndex is valid
+    if (groupIndex < 0 || !currentTour.tourGroups || groupIndex >= currentTour.tourGroups.length) {
+      console.error(`Invalid group index: ${groupIndex}. Tour has ${currentTour.tourGroups?.length} groups.`);
+      return {
+        success: false,
+        updatedGroups: [],
+        guideName: "Error",
+        groupName: "Invalid Group"
+      };
+    }
     
     // If guideId is "_none", treat it as undefined to unassign the guide
     const actualGuideId = guideId === "_none" ? undefined : guideId;
@@ -56,6 +72,9 @@ export const processGuideAssignment = async (
     }
     
     const { groupId, groupName } = validation;
+    
+    // Store the original group ID for later reference
+    const originalGroupId = updatedTourGroups[groupIndex].id;
     
     // Get the current group name and guide ID for comparison
     const currentGuideId = updatedTourGroups[groupIndex].guideId;
@@ -91,15 +110,19 @@ export const processGuideAssignment = async (
       guideName
     );
 
-    console.log("Updated tour groups:", groupsWithUpdates);
+    console.log("Updated tour groups:", {
+      groupIndex,
+      originalGroupId,
+      targetGroup: groupsWithUpdates[groupIndex]
+    });
     
     // Apply optimistic update to UI immediately
     performOptimisticUpdate(queryClient, tourId, groupsWithUpdates);
     
-    // Persist changes to the database
+    // Persist changes to the database using the original group ID
     const updateSuccess = await persistGuideAssignmentChanges(
       tourId,
-      groupId as string,
+      originalGroupId,
       actualGuideId,
       groupsWithUpdates[groupIndex].name,
       groupsWithUpdates

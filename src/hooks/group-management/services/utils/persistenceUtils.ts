@@ -7,6 +7,37 @@ import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { isValidUuid, sanitizeGuideId } from "@/services/api/utils/guidesUtils";
 
 /**
+ * Applies an optimistic update to the UI cache
+ */
+export const performOptimisticUpdate = (
+  queryClient: QueryClient,
+  tourId: string,
+  updatedGroups: any[]
+): void => {
+  queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+    if (!oldData) return null;
+    
+    // Create a deep copy to avoid reference issues
+    const newData = JSON.parse(JSON.stringify(oldData));
+    
+    // Apply updated groups by matching IDs instead of simple array replacement
+    if (Array.isArray(updatedGroups) && Array.isArray(newData.tourGroups)) {
+      updatedGroups.forEach(updatedGroup => {
+        // Find the matching group by ID and update it
+        const groupIndex = newData.tourGroups.findIndex((g: any) => g.id === updatedGroup.id);
+        if (groupIndex !== -1) {
+          console.log(`Optimistically updating group ${updatedGroup.id} at index ${groupIndex}:`, updatedGroup);
+          newData.tourGroups[groupIndex] = updatedGroup;
+        }
+      });
+    }
+    
+    console.log("Optimistic update applied to tour data:", newData);
+    return newData;
+  });
+};
+
+/**
  * Attempts to persist guide assignment changes through multiple strategies
  */
 export const persistGuideAssignmentChanges = async (
@@ -128,88 +159,12 @@ export const handleUIUpdates = async (
     if (actualGuideId) {
       toast.success(`Guide ${guideName} assigned to group successfully`);
     } else {
-      toast.success("Guide removed from group");
+      toast.success("Guide removed from group successfully");
     }
-    
-    // CRITICAL FIX: Cancel all in-flight queries immediately
-    // This solves the problem of guides "changing back" after assignment
-    queryClient.cancelQueries();
-    
-    // Invalidate ALL relevant queries after a delay to ensure database consistency
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['tours'] });
-      queryClient.invalidateQueries({ queryKey: ['groups'] });
-      queryClient.invalidateQueries({ queryKey: ['guides'] });
-      
-      // Also invalidate the tour cache to ensure it's fully refreshed
-      const allToursData = queryClient.getQueryData(['tours']);
-      if (allToursData) {
-        queryClient.setQueryData(['tours'], allToursData);
-      }
-    }, 1000);
   } else {
-    toast.error("Could not save guide assignment");
+    toast.error("Failed to update guide assignment on the server");
+    
+    // Force a fresh refetch to ensure UI is accurate despite the failed update
+    queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
   }
-};
-
-/**
- * Performs optimistic UI update with proper deep cloning
- */
-export const performOptimisticUpdate = (
-  queryClient: QueryClient,
-  tourId: string,
-  updatedGroups: any[]
-): void => {
-  // Do a proper deep clone to avoid reference issues
-  const groupsCopy = JSON.parse(JSON.stringify(updatedGroups));
-  
-  // CRITICAL FIX: Apply the update without overwriting other parts of the data
-  queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-    if (!oldData) return null;
-    
-    // Do a proper deep clone to avoid reference issues
-    const newData = JSON.parse(JSON.stringify(oldData));
-    
-    // Replace the tour groups with our updated version
-    newData.tourGroups = groupsCopy;
-    
-    // Check if any of our primary guides changed and sync them
-    if (groupsCopy.length > 0) {
-      // Update guide1 if Group 0 has a guide assigned
-      if (groupsCopy[0]?.guideId) {
-        // Find the guide name based on ID 
-        const guideName = groupsCopy[0].name.includes(':') ? 
-          groupsCopy[0].name.split(':')[1].trim() : undefined;
-        
-        if (guideName) {
-          newData.guide1 = guideName;
-        }
-      }
-      
-      // Update guide2 if Group 1 has a guide assigned
-      if (groupsCopy.length > 1 && groupsCopy[1]?.guideId) {
-        // Find the guide name based on ID
-        const guideName = groupsCopy[1].name.includes(':') ? 
-          groupsCopy[1].name.split(':')[1].trim() : undefined;
-        
-        if (guideName) {
-          newData.guide2 = guideName;
-        }
-      }
-      
-      // Update guide3 if Group 2 has a guide assigned
-      if (groupsCopy.length > 2 && groupsCopy[2]?.guideId) {
-        // Find the guide name based on ID
-        const guideName = groupsCopy[2].name.includes(':') ? 
-          groupsCopy[2].name.split(':')[1].trim() : undefined;
-        
-        if (guideName) {
-          newData.guide3 = guideName;
-        }
-      }
-    }
-    
-    return newData;
-  });
 };

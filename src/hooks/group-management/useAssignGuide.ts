@@ -1,5 +1,5 @@
 
-import { useTourById } from "../useTourData";
+import { useTourById } from "../tourData/useTourById";
 import { useGuideData } from "../useGuideData";
 import { useModifications } from "../useModifications";
 import { useCallback, useRef } from "react";
@@ -31,6 +31,13 @@ export const useAssignGuide = (tourId: string) => {
       
       console.log("Starting guide assignment:", { groupIndex, guideId, tourId });
       
+      // Validate groupIndex is within bounds
+      if (groupIndex < 0 || groupIndex >= (tour.tourGroups?.length || 0)) {
+        console.error(`Invalid group index: ${groupIndex}. Available groups: ${tour.tourGroups?.length}`);
+        toast.error("Cannot assign guide: Invalid group");
+        return false;
+      }
+      
       const now = Date.now();
       const pendingAssignment = pendingAssignmentsRef.current.get(groupIndex);
       
@@ -55,7 +62,8 @@ export const useAssignGuide = (tourId: string) => {
       console.log("Processing guide assignment:", { 
         groupIndex, 
         actualGuideId, 
-        pendingAssignments: [...pendingAssignmentsRef.current.entries()]
+        pendingAssignments: [...pendingAssignmentsRef.current.entries()],
+        tourGroups: tour.tourGroups ? tour.tourGroups.map(g => ({id: g.id, name: g.name, guideId: g.guideId})) : []
       });
       
       // CRITICAL FIX: First cancel any in-flight queries to prevent race conditions
@@ -64,9 +72,31 @@ export const useAssignGuide = (tourId: string) => {
       // Next, get the latest data before making changes
       const latestTour = queryClient.getQueryData(['tour', tourId]) || tour;
       
+      // Verify the group still exists in the latest data
+      if (!latestTour.tourGroups || groupIndex >= latestTour.tourGroups.length) {
+        console.error("Group no longer exists in latest tour data");
+        toast.error("Cannot assign guide: Group not found");
+        return false;
+      }
+      
+      // Verify we're updating the correct group by ID, not just by index
+      const targetGroupId = tour.tourGroups[groupIndex].id;
+      const latestGroupIndex = latestTour.tourGroups.findIndex(g => g.id === targetGroupId);
+      
+      if (latestGroupIndex === -1) {
+        console.error(`Cannot find group with ID ${targetGroupId} in latest tour data`);
+        toast.error("Cannot assign guide: Group not found");
+        return false;
+      }
+      
+      // If group index has changed, use the latest index
+      const finalGroupIndex = latestGroupIndex !== -1 ? latestGroupIndex : groupIndex;
+      
+      console.log(`Group index verification: original=${groupIndex}, latest=${finalGroupIndex}, id=${targetGroupId}`);
+      
       const result = await processGuideAssignment(
         tourId,
-        groupIndex,
+        finalGroupIndex,
         latestTour,
         guides,
         actualGuideId,
@@ -79,7 +109,7 @@ export const useAssignGuide = (tourId: string) => {
         // Record the modification
         await recordGuideAssignmentModification(
           tourId,
-          groupIndex,
+          finalGroupIndex,
           actualGuideId,
           result.guideName,
           result.groupName,
@@ -94,16 +124,25 @@ export const useAssignGuide = (tourId: string) => {
           // Create a deep copy to avoid reference issues
           const newData = JSON.parse(JSON.stringify(oldData));
           
-          // Apply the updated groups to the tour data
-          newData.tourGroups = result.updatedGroups;
+          // Find the group by ID to ensure we're updating the correct one
+          const groupToUpdate = newData.tourGroups.find((g: any) => g.id === targetGroupId);
+          
+          if (groupToUpdate) {
+            // Apply the guide ID update to the specific group
+            groupToUpdate.guideId = actualGuideId;
+            // Apply the name update if it changed
+            if (result.groupName) {
+              groupToUpdate.name = result.groupName;
+            }
+          }
           
           // IMPORTANT: Also sync the main guide assignments if they were affected
           // This ensures the GuidesAssignedSection shows updated data
-          if (groupIndex === 0 && actualGuideId) {
+          if (finalGroupIndex === 0 && actualGuideId) {
             newData.guide1 = result.guideName;
-          } else if (groupIndex === 1 && actualGuideId) {
+          } else if (finalGroupIndex === 1 && actualGuideId) {
             newData.guide2 = result.guideName;
-          } else if (groupIndex === 2 && actualGuideId) {
+          } else if (finalGroupIndex === 2 && actualGuideId) {
             newData.guide3 = result.guideName;
           }
           
