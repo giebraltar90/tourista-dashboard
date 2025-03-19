@@ -38,7 +38,7 @@ export const GroupCapacityInfo = ({
       <CardDescription>
         <div className="flex justify-between mt-4">
           <div>
-            <span className="font-medium">People</span>
+            <span className="font-medium">Participants</span>
             <div className="text-xl font-bold">
               {displayedParticipants} / {capacity}
             </div>

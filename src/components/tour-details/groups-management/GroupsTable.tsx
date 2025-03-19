@@ -33,7 +33,7 @@ export const GroupsTable = ({
       <TableHeader>
         <TableRow>
           <TableHead>Group Name</TableHead>
-          <TableHead>People</TableHead>
+          <TableHead>Participants</TableHead>
           <TableHead>Entry Time</TableHead>
           <TableHead>Guide</TableHead>
           <TableHead>Children</TableHead>
@@ -46,8 +46,8 @@ export const GroupsTable = ({
           // Get guide info using the guideId from the group
           const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
           
-          // Count total people (accounting for families/groups)
-          const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
+          // Count total participants (accounting for families/groups)
+          const totalParticipants = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
           
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
@@ -55,7 +55,7 @@ export const GroupsTable = ({
           return (
             <TableRow key={index}>
               <TableCell className="font-medium">{group.name || `Group ${index + 1}`}</TableCell>
-              <TableCell>{totalPeople} people</TableCell>
+              <TableCell>{totalParticipants} participants</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>
                 {isGuideAssigned ? (

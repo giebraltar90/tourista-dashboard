@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { UserCheck, MoveHorizontal, Users, GripVertical } from "lucide-react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { MoveParticipantSheet } from "./MoveParticipantSheet";
 
 interface ParticipantItemProps {
@@ -47,7 +47,7 @@ export const ParticipantItem = ({
             ) : null}
           </div>
           <div className="text-sm text-muted-foreground">
-            {participant.count} {participant.count === 1 ? 'person' : 'people'} • Booking #{participant.bookingRef}
+            {participant.count} {participant.count === 1 ? 'participant' : 'participants'} • Booking #{participant.bookingRef}
           </div>
         </div>
       </div>

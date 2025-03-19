@@ -41,6 +41,9 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
         // but we show an error toast
         console.error("API Error:", error);
         toast.error("Changes saved locally only. Server update failed.");
+      },
+      onSuccess: () => {
+        toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
       }
     });
     

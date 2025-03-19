@@ -50,11 +50,11 @@ export const GroupCard = ({
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
-  // Calculate the actual participant count and total people
+  // Calculate the actual participant count and total participants
   // Safely access group.participants, defaulting to empty array if undefined
   const participants = group.participants || [];
   const participantCount = participants.length || 0;
-  const totalPeople = group.size || 0;
+  const totalParticipants = group.size || 0;
   
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
@@ -90,7 +90,7 @@ export const GroupCard = ({
               </Button>
             </div>
             <Badge variant="outline">
-              {totalPeople} {totalPeople === 1 ? 'person' : 'people'}
+              {totalParticipants} {totalParticipants === 1 ? 'participant' : 'participants'}
             </Badge>
           </div>
           <div className="flex justify-between items-center">
