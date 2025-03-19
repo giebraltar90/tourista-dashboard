@@ -7,6 +7,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsTable } from "./GroupsTable";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
+import { useGuideInfo } from "@/hooks/useGuideData";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -24,6 +25,11 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     isMovePending
   } = useGroupManagement(tour);
 
+  // Get guide information
+  const guide1Info = useGuideInfo(tour.guide1);
+  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
+
   return (
     <Card>
       <CardHeader>
@@ -34,7 +40,10 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         <div className="space-y-6">
           <GroupsTable 
             tourGroups={localTourGroups} 
-            tour={tour} 
+            tour={tour}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
           />
           
           <Separator className="my-4" />

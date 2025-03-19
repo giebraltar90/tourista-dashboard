@@ -2,20 +2,20 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { VentrataTourGroup } from "@/types/ventrata";
+import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
   tour: TourCardProps;
-  guide1Info: GuideInfo | null;
-  guide2Info: GuideInfo | null;
-  guide3Info: GuideInfo | null;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
 export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3Info }: GroupsTableProps) => {
-  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
   
   return (
     <Table>
