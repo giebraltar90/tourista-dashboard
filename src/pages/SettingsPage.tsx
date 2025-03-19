@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Card,
@@ -24,8 +24,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "@/components/ui/use-toast";
 import { Upload } from "lucide-react";
+import { getAppLogo, updateAppLogo } from "@/services/settingsService";
 
-// Default logo path that's currently used in the system
+// Default logo path that's used as a fallback
 const DEFAULT_LOGO = "/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png";
 
 // Form schema
@@ -37,25 +38,59 @@ type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export default function SettingsPage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Get stored logo from localStorage or use default
-  const savedLogo = localStorage.getItem("appLogo") || DEFAULT_LOGO;
-  
-  // Initialize form with values from localStorage
+  // Initialize form with default values
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsFormSchema),
     defaultValues: {
-      logo: savedLogo,
+      logo: DEFAULT_LOGO,
     },
   });
 
-  function onSubmit(data: SettingsFormValues) {
-    // Save logo to localStorage
-    if (data.logo) {
-      localStorage.setItem("appLogo", data.logo);
+  // Load settings from the database
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        setIsLoading(true);
+        const logoUrl = await getAppLogo();
+        form.setValue("logo", logoUrl);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Failed to load settings:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load settings from the database",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, [form]);
+
+  async function onSubmit(data: SettingsFormValues) {
+    try {
+      // Save logo to database
+      if (data.logo) {
+        const success = await updateAppLogo(data.logo);
+        
+        if (success) {
+          toast({
+            title: "Settings updated",
+            description: "Your logo has been updated successfully.",
+          });
+        } else {
+          throw new Error("Failed to update logo");
+        }
+      }
+    } catch (error) {
+      console.error("Error saving settings:", error);
       toast({
-        title: "Settings updated",
-        description: "Your logo has been updated successfully.",
+        title: "Error",
+        description: "Failed to save settings to the database",
+        variant: "destructive",
       });
     }
   }
@@ -73,6 +108,16 @@ export default function SettingsPage() {
       reader.readAsDataURL(file);
     }
   };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
