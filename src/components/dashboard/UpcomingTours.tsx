@@ -12,13 +12,19 @@ import {
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
 import { useTours } from "@/hooks/useTourData";
+import { UpcomingToursProps } from "./UpcomingTours.d";
 
-export function UpcomingTours() {
+export function UpcomingTours({ tours: propTours }: UpcomingToursProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   
-  // Fetch tours from API using our React Query hook
-  const { data: tours, isLoading, error } = useTours();
+  // Fetch tours from API using our React Query hook only if no tours were provided as props
+  const { data: apiTours, isLoading, error } = useTours({
+    enabled: !propTours
+  });
+  
+  // Use provided tours from props if available, otherwise use tours from API
+  const tours = propTours || apiTours || [];
   
   // Filter tours based on search query and location filter
   const filteredTours = tours.filter((tour) => {
@@ -72,11 +78,11 @@ export function UpcomingTours() {
         </div>
       </div>
 
-      {isLoading ? (
+      {!propTours && isLoading ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
-      ) : error ? (
+      ) : !propTours && error ? (
         <div className="text-center py-8 text-red-500">
           Failed to load tours. Please try again.
         </div>
