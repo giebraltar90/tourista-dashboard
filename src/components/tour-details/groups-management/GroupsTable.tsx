@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
+import { UserPlus } from "lucide-react";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -12,9 +13,17 @@ interface GroupsTableProps {
   guide1Info?: GuideInfo | null;
   guide2Info?: GuideInfo | null;
   guide3Info?: GuideInfo | null;
+  onAssignGuide: (groupIndex: number) => void;
 }
 
-export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3Info }: GroupsTableProps) => {
+export const GroupsTable = ({ 
+  tourGroups, 
+  tour, 
+  guide1Info, 
+  guide2Info, 
+  guide3Info,
+  onAssignGuide
+}: GroupsTableProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
   
   return (
@@ -33,7 +42,7 @@ export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3In
       <TableBody>
         {tourGroups.map((group, index) => {
           // Get guide info using the guideId from the group
-          const { name: guideName } = getGuideNameAndInfo(group.guideId);
+          const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
           
           // Count participants based on the array length
           const bookingCount = group.participants?.length || 0;
@@ -47,8 +56,15 @@ export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3In
               <TableCell>{totalPeople} people ({bookingCount} bookings)</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>
-                {guideName !== "Unassigned" ? guideName : (
-                  <span className="text-muted-foreground">Unassigned</span>
+                {guideName !== "Unassigned" ? (
+                  <Badge variant="outline" className="bg-green-100 text-green-800">
+                    {guideName}
+                    {guideInfo?.guideType && <span className="ml-1">({guideInfo.guideType})</span>}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                    Unassigned
+                  </Badge>
                 )}
               </TableCell>
               <TableCell>
@@ -66,12 +82,22 @@ export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3In
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                >
-                  View Details
-                </Button>
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => onAssignGuide(index)}
+                  >
+                    <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                    Assign Guide
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    View
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           );

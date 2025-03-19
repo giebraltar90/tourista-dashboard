@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -8,12 +9,23 @@ import { GroupsTable } from "./GroupsTable";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
 import { useGuideInfo } from "@/hooks/useGuideData";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from "@/components/ui/dialog";
+import { AssignGuideForm } from "./AssignGuideForm";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
 }
 
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
+  const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+
   const {
     localTourGroups,
     selectedParticipant,
@@ -30,6 +42,44 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
 
+  const handleOpenAssignGuide = (groupIndex: number) => {
+    setSelectedGroupIndex(groupIndex);
+    setIsAssignGuideOpen(true);
+  };
+
+  // Create an array of valid guides with properly formatted IDs for use in AssignGuideForm
+  const getValidGuides = () => {
+    const guides = [];
+    
+    // Primary guides - use consistent IDs
+    if (tour.guide1) {
+      guides.push({ 
+        id: "guide1", 
+        name: tour.guide1, 
+        info: guide1Info 
+      });
+    }
+    
+    if (tour.guide2) {
+      guides.push({ 
+        id: "guide2", 
+        name: tour.guide2, 
+        info: guide2Info 
+      });
+    }
+    
+    if (tour.guide3) {
+      guides.push({ 
+        id: "guide3", 
+        name: tour.guide3, 
+        info: guide3Info 
+      });
+    }
+    
+    // Filter out any guides with empty names or IDs
+    return guides.filter(guide => guide.name && guide.id);
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -44,6 +94,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             guide1Info={guide1Info}
             guide2Info={guide2Info}
             guide3Info={guide3Info}
+            onAssignGuide={handleOpenAssignGuide}
           />
           
           <Separator className="my-4" />
@@ -61,6 +112,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
+            onAssignGuide={handleOpenAssignGuide}
           />
         </div>
       </CardContent>
@@ -76,6 +128,26 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
           Edit Groups
         </Button>
       </CardFooter>
+
+      <Dialog open={isAssignGuideOpen} onOpenChange={setIsAssignGuideOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Guide to Group</DialogTitle>
+            <DialogDescription>
+              Choose a guide to assign to this group
+            </DialogDescription>
+          </DialogHeader>
+          {selectedGroupIndex !== null && localTourGroups[selectedGroupIndex] && (
+            <AssignGuideForm 
+              tourId={tour.id}
+              groupIndex={selectedGroupIndex}
+              guides={getValidGuides()}
+              currentGuideId={localTourGroups[selectedGroupIndex].guideId || "_none"}
+              onSuccess={() => setIsAssignGuideOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

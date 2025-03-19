@@ -1,28 +1,26 @@
 
-import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import React from "react";
+import { VentrataParticipant, VentrataTourGroup, GuideInfo } from "@/types/ventrata";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupCard } from "./GroupCard";
-import { GuideInfo } from "@/types/ventrata";
 
 interface GroupsGridProps {
   tourGroups: VentrataTourGroup[];
   tour: TourCardProps;
-  guide1Info?: GuideInfo | null;
-  guide2Info?: GuideInfo | null;
-  guide3Info?: GuideInfo | null;
+  guide1Info: GuideInfo | null;
+  guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
   onDrop: (e: React.DragEvent, toGroupIndex: number) => void;
   onDragOver: (e: React.DragEvent) => void;
   onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
   onMoveClick: (data: { participant: VentrataParticipant, fromGroupIndex: number }) => void;
-  selectedParticipant: {
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  } | null;
+  selectedParticipant: { participant: VentrataParticipant, fromGroupIndex: number } | null;
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
+  onAssignGuide: (groupIndex: number) => void;
 }
 
-export const GroupsGrid = ({
+export const GroupsGrid: React.FC<GroupsGridProps> = ({
   tourGroups,
   tour,
   guide1Info,
@@ -34,15 +32,16 @@ export const GroupsGrid = ({
   onMoveClick,
   selectedParticipant,
   handleMoveParticipant,
-  isMovePending
-}: GroupsGridProps) => {
+  isMovePending,
+  onAssignGuide
+}) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {tourGroups.map((group, groupIndex) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {tourGroups.map((group, index) => (
         <GroupCard
-          key={groupIndex}
+          key={index}
           group={group}
-          groupIndex={groupIndex}
+          groupIndex={index}
           tour={tour}
           onDrop={onDrop}
           onDragOver={onDragOver}
@@ -51,9 +50,10 @@ export const GroupsGrid = ({
           selectedParticipant={selectedParticipant}
           handleMoveParticipant={handleMoveParticipant}
           isMovePending={isMovePending}
-          guide1Info={guide1Info || null}
-          guide2Info={guide2Info || null}
-          guide3Info={guide3Info || null}
+          guide1Info={guide1Info}
+          guide2Info={guide2Info}
+          guide3Info={guide3Info}
+          onAssignGuide={onAssignGuide}
         />
       ))}
     </div>

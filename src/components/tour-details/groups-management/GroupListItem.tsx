@@ -27,7 +27,7 @@ export const GroupListItem = ({
   const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
   
   return (
-    <div className="p-4 border rounded-md">
+    <div className={`p-4 border rounded-md ${guideName !== "Unassigned" ? "border-green-200" : ""}`}>
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center">

@@ -1,13 +1,14 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { Users } from "lucide-react";
+import { Users, UserPlus } from "lucide-react";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -26,6 +27,7 @@ interface GroupCardProps {
   guide1Info: any;
   guide2Info: any;
   guide3Info: any;
+  onAssignGuide: (groupIndex: number) => void;
 }
 
 export const GroupCard = ({
@@ -41,7 +43,8 @@ export const GroupCard = ({
   isMovePending,
   guide1Info,
   guide2Info,
-  guide3Info
+  guide3Info,
+  onAssignGuide
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
@@ -50,7 +53,7 @@ export const GroupCard = ({
   const participantTotalCount = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
   
   // Get guide info directly using the guideId from the group
-  const { name: guideName } = getGuideNameAndInfo(group.guideId);
+  const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
   
   return (
     <ParticipantDropZone 
@@ -58,7 +61,7 @@ export const GroupCard = ({
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
-      <Card className="border-2 border-muted">
+      <Card className={`border-2 ${guideName !== "Unassigned" ? "border-green-200" : "border-muted"}`}>
         <CardHeader className="pb-2 bg-muted/30">
           <div className="flex justify-between items-center">
             <CardTitle className="text-base font-medium">
@@ -78,10 +81,31 @@ export const GroupCard = ({
               </span>
             </div>
           </div>
-          <CardDescription className="flex items-center">
-            <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />
-            Guide: {guideName !== "Unassigned" ? guideName : "Unassigned"}
-          </CardDescription>
+          <div className="flex justify-between items-center">
+            <CardDescription className="flex items-center">
+              <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />
+              <span>Guide: </span>
+              {guideName !== "Unassigned" ? (
+                <Badge variant="outline" className="ml-1.5 bg-green-100 text-green-800">
+                  {guideName}
+                  {guideInfo?.guideType && <span className="ml-1">({guideInfo.guideType})</span>}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="ml-1.5 bg-yellow-100 text-yellow-800">
+                  Unassigned
+                </Badge>
+              )}
+            </CardDescription>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              className="h-7 px-2" 
+              onClick={() => onAssignGuide(groupIndex)}
+            >
+              <UserPlus className="h-3.5 w-3.5 mr-1" />
+              <span className="text-xs">Assign</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-2">
