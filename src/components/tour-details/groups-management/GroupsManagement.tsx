@@ -17,6 +17,10 @@ interface GroupsManagementProps {
 }
 
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
+  const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>(
+    JSON.parse(JSON.stringify(tour.tourGroups))
+  );
+  
   const [selectedParticipant, setSelectedParticipant] = useState<{
     participant: VentrataParticipant;
     fromGroupIndex: number;
@@ -39,7 +43,8 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       return;
     }
     
-    const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
+    // Create a deep copy of the local tour groups
+    const updatedTourGroups = JSON.parse(JSON.stringify(localTourGroups));
     
     const sourceGroup = updatedTourGroups[fromGroupIndex];
     if (sourceGroup.participants) {
@@ -56,7 +61,18 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     destGroup.participants.push(participant);
     destGroup.size += participant.count;
     
-    updateTourGroupsMutation.mutate(updatedTourGroups);
+    // Update local state immediately for a responsive UI
+    setLocalTourGroups(updatedTourGroups);
+    
+    // Then attempt to update on the server
+    updateTourGroupsMutation.mutate(updatedTourGroups, {
+      onError: (error) => {
+        // If the API call fails, we don't revert the UI
+        // but we show an error toast
+        console.error("API Error:", error);
+        toast.error("Changes saved locally only. Server update failed.");
+      }
+    });
     
     setSelectedParticipant(null);
   };
@@ -103,7 +119,8 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       return;
     }
     
-    const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
+    // Create a deep copy of the local tour groups
+    const updatedTourGroups = JSON.parse(JSON.stringify(localTourGroups));
     
     const sourceGroup = updatedTourGroups[fromGroupIndex];
     if (sourceGroup.participants) {
@@ -120,7 +137,18 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     destGroup.participants.push(participant);
     destGroup.size += participant.count;
     
-    updateTourGroupsMutation.mutate(updatedTourGroups);
+    // Update local state immediately for a responsive UI
+    setLocalTourGroups(updatedTourGroups);
+    
+    // Then attempt to update on the server
+    updateTourGroupsMutation.mutate(updatedTourGroups, {
+      onError: (error) => {
+        // If the API call fails, we don't revert the UI
+        // but we show an error toast
+        console.error("API Error:", error);
+        toast.error("Changes saved locally only. Server update failed.");
+      }
+    });
     
     setDraggedParticipant(null);
     toast.success(`Moved ${participant.name} to ${destGroup.name}`);
@@ -147,7 +175,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {tour.tourGroups.map((group, index) => (
+              {localTourGroups.map((group, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{group.name}</TableCell>
                   <TableCell>{group.size}</TableCell>
@@ -183,7 +211,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
           <Separator className="my-4" />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {tour.tourGroups.map((group, groupIndex) => (
+            {localTourGroups.map((group, groupIndex) => (
               <GroupCard
                 key={groupIndex}
                 group={group}

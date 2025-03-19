@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataToursResponse, VentrataTourGroup } from "@/types/ventrata";
 import { fetchTours, fetchTourById, updateTourGroups } from "@/services/ventrataApi";
@@ -52,7 +51,10 @@ export const useUpdateTourGroups = (tourId: string) => {
     },
     onError: (error) => {
       console.error("Error updating tour groups:", error);
-      toast.error("Failed to update tour groups. Please try again.");
+      toast.error("Failed to update tour groups on the server. Local changes preserved.");
+      
+      // Don't invalidate queries on error, let the UI keep its state
+      return Promise.resolve();
     },
   });
 };
