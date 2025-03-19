@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 // Define form validation schema
 const createTicketSchema = z.object({
-  tourType: z.enum(["versailles", "paris", "private", "other"]),
+  tourType: z.enum(["versailles", "paris", "night", "private", "other"]),
   tourName: z.string().min(3, { message: "Tour name must be at least 3 characters" }),
   referenceCode: z.string().optional(),
   date: z.date({ required_error: "Tour date is required" }),
