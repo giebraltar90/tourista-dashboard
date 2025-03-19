@@ -2,5 +2,5 @@
 export * from './TourHeader';
 export * from './TourOverview';
 export * from './GroupsManagement';
-export * from './TicketsManagement';
+export * from './ticket-management';
 export * from './ModificationsTab';
