@@ -1,4 +1,4 @@
-import { GuideData } from "@/hooks/useGuideData";
+import { GuideInfo } from "@/types/ventrata";
 
 /**
  * Find guide name based on guide ID
@@ -6,7 +6,7 @@ import { GuideData } from "@/hooks/useGuideData";
 export const findGuideName = (
   guideId?: string,
   tour?: any,
-  guides: GuideData[] = []
+  guides: Array<{id: string, name: string}> = []
 ): string => {
   if (!guideId || guideId === "_none") return "Unassigned";
   if (!tour) return "Unknown";

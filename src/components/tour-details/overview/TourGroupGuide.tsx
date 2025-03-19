@@ -1,16 +1,5 @@
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { User, UserPlus } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
-import { useState, useEffect, useRef } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
@@ -18,6 +7,10 @@ import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
 import { useGuideData } from "@/hooks/useGuideData";
 import { isUuid } from "@/services/api/tour/guideUtils";
 import { toast } from "sonner";
+import { useEffect, useRef } from "react";
+import { GuideBadge } from "./GuideBadge";
+import { GuideSelectionPopover } from "./GuideSelectionPopover";
+import { GroupStatusIndicator } from "./GroupStatusIndicator";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
@@ -46,7 +39,6 @@ export const TourGroupGuide = ({
   const previousGuideIdRef = useRef<string | undefined>(group.guideId);
   const manualUpdateRef = useRef(false);
   const lastUpdateTimeRef = useRef(Date.now());
-  const [isOpen, setIsOpen] = useState(false);
   const { guides } = useGuideData();
   
   // Display name should default to "Group X" if not set
@@ -84,21 +76,6 @@ export const TourGroupGuide = ({
     setSelectedGuide(group.guideId || "_none");
   }, [tour.id, groupIndex]);
   
-  const getGuideTypeBadgeColor = (guideType?: string) => {
-    if (!guideType) return "bg-gray-100 text-gray-800";
-    
-    switch (guideType) {
-      case "GA Ticket":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "GA Free":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "GC":
-        return "bg-purple-100 text-purple-800 border-purple-300";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   // Helper to resolve guide name from ID
   const getGuideDisplayName = (guideId?: string) => {
     if (!guideId || guideId === "_none") return "Not assigned";
@@ -119,11 +96,6 @@ export const TourGroupGuide = ({
   };
 
   const handleAssignGuide = async (guideId: string) => {
-    if (guideId === selectedGuide) {
-      setIsOpen(false);
-      return;
-    }
-    
     setIsAssigning(true);
     lastUpdateTimeRef.current = Date.now(); // Update timestamp to prevent conflicts
     
@@ -134,9 +106,6 @@ export const TourGroupGuide = ({
       // Optimistically update the UI first
       setSelectedGuide(guideId);
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
-      
-      // Close the popover 
-      setIsOpen(false);
       
       // Get display name for toast
       const displayGuideName = getGuideDisplayName(guideId);
@@ -180,51 +149,28 @@ export const TourGroupGuide = ({
       </div>
       
       <div className="flex items-center space-x-3 mt-2">
-        <div className={`p-2 rounded-full ${isGuideAssigned ? 'bg-green-100' : 'bg-gray-100'}`}>
-          {isGuideAssigned ? <User className="h-5 w-5 text-green-600" /> : <UserPlus className="h-5 w-5 text-gray-400" />}
-        </div>
+        <GroupStatusIndicator isAssigned={isGuideAssigned} />
         
         <div className="flex-1">
-          <p className="text-sm font-medium">
-            Guide: {isGuideAssigned ? guideName : "Not assigned"}
-          </p>
-          {isGuideAssigned && guideInfo && (
-            <Badge variant="outline" className={`mt-1 text-xs ${getGuideTypeBadgeColor(guideInfo.guideType)}`}>
-              {guideInfo.guideType}
-            </Badge>
-          )}
+          <GuideBadge 
+            guideName={guideName} 
+            guideInfo={guideInfo} 
+            isAssigned={isGuideAssigned} 
+          />
         </div>
         
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
-            <Button size="sm" variant="outline" disabled={isAssigning}>
-              {isGuideAssigned ? "Change Guide" : "Assign Guide"}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-56 p-3">
-            <div className="space-y-3">
-              <h4 className="font-medium text-sm">Assign Guide to {displayName}</h4>
-              <Select 
-                onValueChange={(value) => handleAssignGuide(value)}
-                value={selectedGuide}
-                disabled={isAssigning}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select guide" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="_none">None (Unassigned)</SelectItem>
-                  {guideOptions.filter(guide => guide.name).map((guide) => (
-                    <SelectItem key={guide.id} value={guide.id}>
-                      {guide.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <GuideSelectionPopover
+          isGuideAssigned={isGuideAssigned}
+          isAssigning={isAssigning}
+          selectedGuide={selectedGuide}
+          guideOptions={guideOptions}
+          onAssignGuide={handleAssignGuide}
+          displayName={displayName}
+        />
       </div>
     </div>
   );
 };
+
+// Need to import useState for the component
+import { useState } from "react";
