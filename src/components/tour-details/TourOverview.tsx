@@ -4,13 +4,9 @@ import { GuideInfo } from "@/types/ventrata";
 import { 
   TourInformationCard,
   ParticipantsCard,
-  TicketsCard,
-  TourGroupsSection
+  TicketsCard
 } from "./overview";
-import { useState, useEffect } from "react";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
-import { GroupsManagement } from "./groups-management";
-import { Separator } from "@/components/ui/separator";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -77,20 +73,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
           totalTickets={tour.numTickets || totalParticipants}
         />
       </div>
-      
-      <TourGroupsSection
-        tour={{...tour, isHighSeason}}
-        guide1Info={guide1Info}
-        guide2Info={guide2Info}
-        guide3Info={guide3Info}
-      />
-      
-      <Separator className="my-6" />
-      
-      {/* Integrated group management section */}
-      <GroupsManagement 
-        tour={{...tour, isHighSeason}} 
-      />
     </div>
   );
 };
