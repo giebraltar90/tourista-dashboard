@@ -86,18 +86,7 @@ export const createTestTickets = async (tourData: Array<{id: string}>) => {
     tickets.push(...thirdTourTickets);
   }
   
-  // Check if tickets table exists, if not create it
-  const { error: tableError } = await supabase
-    .from('tickets')
-    .select('id')
-    .limit(1);
-    
-  if (tableError) {
-    console.log("Tickets table doesn't exist yet, skipping ticket creation");
-    return [];
-  }
-  
-  // Insert tickets
+  // Insert tickets into the tickets table
   const { data: ticketData, error: ticketError } = await supabase
     .from('tickets')
     .insert(tickets)

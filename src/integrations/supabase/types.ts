@@ -118,6 +118,47 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          created_at: string
+          id: string
+          quantity: number
+          reference: string | null
+          status: string
+          ticket_type: string
+          tour_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          reference?: string | null
+          status?: string
+          ticket_type: string
+          tour_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          quantity?: number
+          reference?: string | null
+          status?: string
+          ticket_type?: string
+          tour_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tour_groups: {
         Row: {
           child_count: number | null
