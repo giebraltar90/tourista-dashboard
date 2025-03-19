@@ -27,6 +27,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideInfo } from "@/hooks/useGuideData";
 import { useUpdateTourCapacity } from "@/hooks/useTourCapacity";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
+import { GroupCapacityAlert } from "./GroupCapacityAlert";
 
 interface GroupGuideManagementProps {
   tour: TourCardProps;
@@ -134,6 +135,12 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
               </div>
             </div>
           </div>
+          
+          {/* Add the new GroupCapacityAlert component */}
+          <GroupCapacityAlert 
+            tourGroups={tour.tourGroups} 
+            isHighSeason={isHighSeason} 
+          />
           
           {tour.tourGroups.length < requiredGroups && (
             <Alert>

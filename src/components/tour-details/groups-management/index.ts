@@ -11,3 +11,4 @@ export * from './MoveParticipantSheet';
 export * from './AddGroupForm';
 export * from './EditGroupForm';
 export * from './AssignGuideForm';
+export * from './GroupCapacityAlert';
