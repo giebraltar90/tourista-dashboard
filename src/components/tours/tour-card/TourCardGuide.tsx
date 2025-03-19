@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { TourCardGuideProps } from "./types";
+import { isUuid } from "@/services/api/tour/guideUtils";
 
 export const TourCardGuide: React.FC<TourCardGuideProps> = ({ 
   guideName, 
@@ -19,7 +20,6 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
   if (!guideName) return null;
   
   // Handle case when guideName is a UUID instead of an actual name
-  const isUuid = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
   const displayName = isUuid(guideName) ? `Guide ${guideName.substring(0, 4)}...` : guideName;
 
   return (

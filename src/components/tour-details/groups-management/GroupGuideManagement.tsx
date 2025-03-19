@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, Users, UserPlus } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { useGuideInfo } from "@/hooks/useGuideData";
+import { useGuideInfo, useGuideData } from "@/hooks/useGuideData";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { GroupCapacityAlert } from "./GroupCapacityAlert";
 import { GroupCapacityInfo } from "./GroupCapacityInfo";
@@ -21,6 +21,7 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import { AssignGuideForm } from "./AssignGuideForm";
+import { isUuid } from "@/services/api/tour/guideUtils";
 
 interface GroupGuideManagementProps {
   tour: TourCardProps;
@@ -30,8 +31,9 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   const guide1Info = useGuideInfo(tour.guide1);
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
+  const { guides } = useGuideData();
   
-  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+  const { getGuideNameAndInfo } = useGuideNameAndInfo(tour, guide1Info, guide2Info, guide3Info);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
@@ -45,6 +47,23 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   const handleOpenAssignGuide = (groupIndex: number) => {
     setSelectedGroupIndex(groupIndex);
     setIsAssignGuideOpen(true);
+  };
+
+  // Helper to find guide name from ID
+  const getGuideName = (guideId?: string) => {
+    if (!guideId) return "Unassigned";
+    
+    if (isUuid(guideId)) {
+      const guideMatch = guides.find(g => g.id === guideId);
+      if (guideMatch) return guideMatch.name;
+    }
+    
+    // Standard guide references
+    if (guideId === "guide1") return tour.guide1;
+    if (guideId === "guide2") return tour.guide2 || "";
+    if (guideId === "guide3") return tour.guide3 || "";
+    
+    return guideId;
   };
 
   // Create an array of valid guides

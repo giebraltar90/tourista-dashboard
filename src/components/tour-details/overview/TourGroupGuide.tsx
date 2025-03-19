@@ -15,6 +15,8 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
+import { useGuideData } from "@/hooks/useGuideData";
+import { isUuid } from "@/services/api/tour/guideUtils";
 import { toast } from "sonner";
 
 interface TourGroupGuideProps {
@@ -45,6 +47,7 @@ export const TourGroupGuide = ({
   const manualUpdateRef = useRef(false);
   const lastUpdateTimeRef = useRef(Date.now());
   const [isOpen, setIsOpen] = useState(false);
+  const { guides } = useGuideData();
   
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
@@ -96,6 +99,25 @@ export const TourGroupGuide = ({
     }
   };
 
+  // Helper to resolve guide name from ID
+  const getGuideDisplayName = (guideId?: string) => {
+    if (!guideId || guideId === "_none") return "Not assigned";
+    
+    // Check standard guide references first
+    if (guideId === "guide1") return tour.guide1 || "Primary Guide";
+    if (guideId === "guide2") return tour.guide2 || "Secondary Guide";
+    if (guideId === "guide3") return tour.guide3 || "Assistant Guide";
+    
+    // Check if it's a UUID and find in guides list
+    if (isUuid(guideId)) {
+      const guideMatch = guides.find(g => g.id === guideId);
+      if (guideMatch) return guideMatch.name;
+    }
+    
+    // Return original if it seems to be a name already
+    return guideId;
+  };
+
   const handleAssignGuide = async (guideId: string) => {
     if (guideId === selectedGuide) {
       setIsOpen(false);
@@ -116,9 +138,19 @@ export const TourGroupGuide = ({
       // Close the popover 
       setIsOpen(false);
       
+      // Get display name for toast
+      const displayGuideName = getGuideDisplayName(guideId);
+      
       // Call the API to update the guide
       console.log(`TourGroupGuide: Assigning guide with ID ${guideId} to group ${displayName}`);
       await assignGuide(groupIndex, guideId);
+      
+      // Show a success message with proper guide name
+      if (guideId !== "_none") {
+        toast.success(`Guide ${displayGuideName} assigned to group successfully`);
+      } else {
+        toast.success("Guide removed from group");
+      }
     } catch (error) {
       // Revert optimistic update if there was an error
       console.error("Error assigning guide:", error);

@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
+import { useGuideData } from "@/hooks/useGuideData";
 import { UserPlus, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
+import { isUuid } from "@/services/api/tour/guideUtils";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -28,6 +30,7 @@ export const GroupsTable = ({
   onEditGroup
 }: GroupsTableProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
+  const { guides } = useGuideData();
   const [groups, setGroups] = useState(tourGroups);
   
   // Update local state when tourGroups changes

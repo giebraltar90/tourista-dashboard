@@ -3,7 +3,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
+import { useGuideData } from "@/hooks/useGuideData";
 import { TourGroupGuide } from "./TourGroupGuide";
+import { isUuid } from "@/services/api/tour/guideUtils";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
@@ -19,14 +21,26 @@ export const TourGroupsSection = ({
   guide3Info 
 }: TourGroupsSectionProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
-  
+  const { guides } = useGuideData();
+
   // Create guide options for the select dropdown
-  const guideOptions = [
-    { id: "guide1", name: tour.guide1, info: guide1Info },
-    ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: guide2Info }] : []),
-    ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: guide3Info }] : []),
-    { id: "_none", name: "None (Unassigned)", info: null },
-  ].filter(guide => guide.name); // Filter out empty names
+  const getGuideOptions = () => {
+    const options = [
+      { id: "guide1", name: tour.guide1, info: guide1Info },
+      ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: guide2Info }] : []),
+      ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: guide3Info }] : []),
+    ];
+    
+    // Add additional guides from the database that might not be primary guides
+    guides.forEach(guide => {
+      // Skip if this guide is already in the options
+      if (!options.some(g => g.name === guide.name)) {
+        options.push({ id: guide.id, name: guide.name, info: guide });
+      }
+    });
+    
+    return options.filter(guide => guide.name);
+  };
 
   return (
     <Card>
@@ -46,7 +60,7 @@ export const TourGroupsSection = ({
                 groupIndex={index}
                 guideName={guideName}
                 guideInfo={guideInfo}
-                guideOptions={guideOptions}
+                guideOptions={getGuideOptions()}
               />
             );
           })}

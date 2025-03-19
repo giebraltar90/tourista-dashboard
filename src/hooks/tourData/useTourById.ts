@@ -81,6 +81,29 @@ export const useTourById = (tourId: string) => {
               ? tour.tour_groups 
               : [];
             
+            // Also fetch guide IDs for each group
+            const groupGuideIds = tourGroups
+              .map(group => group.guide_id)
+              .filter(Boolean);
+              
+            // Add these to the guide IDs to fetch
+            if (groupGuideIds.length > 0) {
+              const uniqueGuideIds = [...new Set([...guideIds, ...groupGuideIds])];
+              
+              if (uniqueGuideIds.length > guideIds.length) {
+                const additionalGuidesResult = await supabase
+                  .from('guides')
+                  .select('id, name')
+                  .in('id', uniqueGuideIds);
+                  
+                if (!additionalGuidesResult.error && additionalGuidesResult.data) {
+                  additionalGuidesResult.data.forEach(guide => {
+                    guideMap[guide.id] = guide.name;
+                  });
+                }
+              }
+            }
+            
             // Transform to application format with guide names instead of IDs
             const result: TourCardProps = {
               id: tour.id,
