@@ -1,9 +1,19 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { PanelLeft, Bell, Search } from "lucide-react";
+import { PanelLeft, Bell, Search, Settings, User, LogOut } from "lucide-react";
 import { RoleSwitcher } from "./RoleSwitcher";
 import { useRole } from "@/contexts/RoleContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Link } from "react-router-dom";
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
@@ -11,7 +21,22 @@ interface TopBarProps {
 }
 
 export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
-  const { guideView } = useRole();
+  const { guideView, role } = useRole();
+  
+  // Get the profile initials for avatar fallback
+  const getInitials = () => {
+    if (guideView) {
+      return guideView.guideName
+        .split(' ')
+        .map(name => name[0])
+        .join('')
+        .toUpperCase();
+    }
+    return "OP"; // Operator
+  };
+  
+  // Determine profile route based on role
+  const profileRoute = guideView ? "/guide/profile" : "/settings";
   
   return (
     <header className="fixed top-0 left-0 right-0 h-16 border-b border-border bg-background z-40 flex items-center px-4">
@@ -55,6 +80,40 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           </div>
           
           <RoleSwitcher />
+          
+          {/* Profile Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to={profileRoute} className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
