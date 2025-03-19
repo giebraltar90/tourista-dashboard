@@ -18,7 +18,7 @@ export const updateGuideInSupabase = async (
   }
 
   try {
-    // Sanitize guide ID for database storage - CRITICAL FIX
+    // Sanitize guide ID for database storage
     // This converts special IDs like guide1 to null for database compatibility
     // while preserving them in the application state
     const safeGuideId = sanitizeGuideId(guideId);

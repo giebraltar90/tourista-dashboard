@@ -13,7 +13,7 @@ export const moveParticipant = (
   currentGroups: VentrataTourGroup[]
 ): VentrataTourGroup[] | null => {
   if (fromGroupIndex === toGroupIndex) {
-    toast.error("Participant is already in this group");
+    toast.info("Participant is already in this group");
     return null;
   }
   
@@ -32,69 +32,52 @@ export const moveParticipant = (
   const updatedTourGroups = JSON.parse(JSON.stringify(currentGroups));
   
   const sourceGroup = updatedTourGroups[fromGroupIndex];
-  if (!sourceGroup) {
-    toast.error("Source group not found");
+  const destGroup = updatedTourGroups[toGroupIndex];
+  
+  if (!sourceGroup || !destGroup) {
+    toast.error("Group not found");
     return null;
   }
   
-  // Ensure participants array exists
+  // Ensure participants arrays exist
   if (!Array.isArray(sourceGroup.participants)) {
     sourceGroup.participants = [];
   }
   
-  // Remove participant from source group
-  sourceGroup.participants = sourceGroup.participants.filter(
-    (p: VentrataParticipant) => p.id !== participant.id
-  );
-  
-  // Update source group's size property based on actual participant count
-  sourceGroup.size = sourceGroup.participants.reduce(
-    (total: number, p: VentrataParticipant) => total + (p.count || 1),
-    0
-  );
-  
-  // Update child count if needed
-  if (participant.childCount) {
-    sourceGroup.childCount = Math.max(0, (sourceGroup.childCount || 0) - participant.childCount);
-  }
-  
-  const destGroup = updatedTourGroups[toGroupIndex];
-  if (!destGroup) {
-    toast.error("Destination group not found");
-    return null;
-  }
-  
-  // Ensure participants array exists in destination group
   if (!Array.isArray(destGroup.participants)) {
     destGroup.participants = [];
   }
   
-  // Add participant to destination group
-  destGroup.participants.push(participant);
+  // Get participant count values, defaulting to 1 if not specified
+  const participantCount = participant.count || 1;
+  const childCount = participant.childCount || 0;
   
-  // Update destination group's size property based on actual participant count
-  destGroup.size = destGroup.participants.reduce(
-    (total: number, p: VentrataParticipant) => total + (p.count || 1),
-    0
+  // Remove from source group
+  sourceGroup.participants = sourceGroup.participants.filter(
+    (p: VentrataParticipant) => p.id !== participant.id
   );
   
-  // Update child count if needed
-  if (participant.childCount) {
-    destGroup.childCount = (destGroup.childCount || 0) + participant.childCount;
-  }
+  // Update source group's size and child count
+  sourceGroup.size = Math.max(0, (sourceGroup.size || 0) - participantCount);
+  sourceGroup.childCount = Math.max(0, (sourceGroup.childCount || 0) - childCount);
   
-  console.log("Moved participant:", {
-    participant,
-    from: sourceGroup.name || `Group ${fromGroupIndex + 1}`,
-    to: destGroup.name || `Group ${toGroupIndex + 1}`
-  });
+  // Add to destination group with updated group_id
+  const updatedParticipant = {
+    ...participant,
+    group_id: destGroup.id
+  };
+  destGroup.participants.push(updatedParticipant);
+  
+  // Update destination group's size and child count
+  destGroup.size = (destGroup.size || 0) + participantCount;
+  destGroup.childCount = (destGroup.childCount || 0) + childCount;
   
   return updatedTourGroups;
 };
 
 /**
  * Update the participant's group assignment in Supabase database
- * Significantly improved with retry logic and better error handling
+ * With retry logic and better error handling
  */
 export const updateParticipantGroupInDatabase = async (
   participantId: string,
@@ -107,12 +90,10 @@ export const updateParticipantGroupInDatabase = async (
 
   // Maximum retry attempts
   const MAX_RETRIES = 3;
-  let attempt = 0;
-  let success = false;
-
-  while (attempt < MAX_RETRIES && !success) {
+  
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
-      console.log(`Updating participant ${participantId} to group ${newGroupId} in database (attempt ${attempt + 1})`);
+      console.log(`Updating participant ${participantId} to group ${newGroupId} (attempt ${attempt + 1})`);
       
       const { error } = await supabase
         .from('participants')
@@ -120,32 +101,32 @@ export const updateParticipantGroupInDatabase = async (
         .eq('id', participantId);
         
       if (error) {
-        console.error(`Error updating participant in database (attempt ${attempt + 1}):`, error);
-      } else {
-        console.log(`Successfully updated participant ${participantId} in database`);
+        console.error(`Error updating participant (attempt ${attempt + 1}):`, error);
         
-        // Add a delay to let the database update settle
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        success = true;
-        break;
+        if (attempt < MAX_RETRIES - 1) {
+          // Exponential backoff with jitter
+          const backoffTime = Math.min(300 * Math.pow(2, attempt) * (0.8 + Math.random() * 0.4), 2000);
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
+          continue;
+        }
+        return false;
       }
+      
+      console.log(`Successfully updated participant ${participantId} in database`);
+      return true;
     } catch (error) {
-      console.error(`Exception updating participant in database (attempt ${attempt + 1}):`, error);
-    }
-    
-    // Increment attempt counter
-    attempt++;
-    
-    // Only delay if we're going to retry
-    if (!success && attempt < MAX_RETRIES) {
-      const backoffTime = Math.min(300 * Math.pow(2, attempt), 2000); // Exponential backoff
-      console.log(`Waiting ${backoffTime}ms before retry...`);
-      await new Promise(resolve => setTimeout(resolve, backoffTime));
+      console.error(`Exception updating participant (attempt ${attempt + 1}):`, error);
+      
+      if (attempt < MAX_RETRIES - 1) {
+        const backoffTime = Math.min(300 * Math.pow(2, attempt), 2000);
+        await new Promise(resolve => setTimeout(resolve, backoffTime));
+      } else {
+        return false;
+      }
     }
   }
   
-  return success;
+  return false;
 };
 
 /**
@@ -155,6 +136,9 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
   if (!Array.isArray(groups)) return 0;
   
   return groups.reduce((total, group) => {
+    if (Array.isArray(group.participants)) {
+      return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+    }
     return total + (group.size || 0);
   }, 0);
 };
@@ -174,7 +158,14 @@ export const fetchParticipantsForGroup = async (groupId: string) => {
       throw error;
     }
     
-    return data || [];
+    return data ? data.map(p => ({
+      id: p.id,
+      name: p.name,
+      count: p.count || 1,
+      bookingRef: p.booking_ref,
+      childCount: p.child_count || 0,
+      group_id: p.group_id
+    })) : [];
   } catch (error) {
     console.error("Error in fetchParticipantsForGroup:", error);
     return [];

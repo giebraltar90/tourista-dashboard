@@ -44,14 +44,6 @@ export const GuideSelectionPopover = ({
     try {
       // Close the popover while assigning to prevent multiple selections
       setIsOpen(false);
-      
-      // Log for troubleshooting 
-      console.log("Assigning guide:", {
-        guideId,
-        selectedGuide,
-        guideOptions
-      });
-      
       await onAssignGuide(guideId);
     } catch (error) {
       console.error("Error in GuideSelectionPopover:", error);
@@ -59,16 +51,11 @@ export const GuideSelectionPopover = ({
   };
 
   // Make sure guideOptions is properly filtered to only include valid options
-  const validOptions = guideOptions
-    .filter(guide => guide && guide.id && guide.name)
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  // Debug outputs
-  console.log("GuideSelectionPopover render:", {
-    currentGuideId: selectedGuide,
-    availableOptions: validOptions,
-    isAssigning
-  });
+  const validOptions = Array.isArray(guideOptions) 
+    ? guideOptions
+        .filter(guide => guide && guide.id && guide.name)
+        .sort((a, b) => a.name.localeCompare(b.name))
+    : [];
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>

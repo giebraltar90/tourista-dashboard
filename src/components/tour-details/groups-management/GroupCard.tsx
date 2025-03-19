@@ -45,14 +45,14 @@ export const GroupCard = ({
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
-  // Calculate the actual participant count and total participants
-  // Safely access group.participants, defaulting to empty array if undefined
-  const participants = group.participants || [];
-  const participantCount = participants.length || 0;
-  const totalParticipants = group.size || 0;
+  // Safely access participants, defaulting to empty array if undefined
+  const participants = Array.isArray(group.participants) ? group.participants : [];
   
-  // Log to debug
-  console.log(`Group ${groupIndex} participants:`, participants);
+  // Calculate the total number of actual people (accounting for participants with count > 1)
+  const totalParticipants = participants.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
+  
+  // Calculate total child count
+  const totalChildCount = participants.reduce((sum, p) => sum + (p.childCount || 0), 0) || group.childCount || 0;
   
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
@@ -72,11 +72,6 @@ export const GroupCard = ({
             <div className="flex items-center gap-2">
               <CardTitle className="text-base font-medium">
                 {displayName}
-                {group.childCount && group.childCount > 0 ? (
-                  <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
-                    {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
-                  </Badge>
-                ) : null}
               </CardTitle>
             </div>
             <Badge variant="outline">
@@ -90,7 +85,6 @@ export const GroupCard = ({
               {guideName !== "Unassigned" ? (
                 <Badge variant="outline" className="ml-1.5 bg-green-100 text-green-800">
                   {guideName}
-                  {guideInfo?.guideType && <span className="ml-1">({guideInfo.guideType})</span>}
                 </Badge>
               ) : (
                 <Badge variant="outline" className="ml-1.5 bg-yellow-100 text-yellow-800">
@@ -98,11 +92,17 @@ export const GroupCard = ({
                 </Badge>
               )}
             </CardDescription>
+            
+            {totalChildCount > 0 && (
+              <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                {totalChildCount} {totalChildCount === 1 ? 'child' : 'children'}
+              </Badge>
+            )}
           </div>
         </CardHeader>
         <CardContent className="pt-4">
           <div className="space-y-2">
-            {participants && participants.length > 0 ? (
+            {participants.length > 0 ? (
               participants.map((participant) => (
                 <DraggableParticipant
                   key={participant.id}

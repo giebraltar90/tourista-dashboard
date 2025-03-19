@@ -65,29 +65,27 @@ export const useGroupManagement = (tour: TourCardProps) => {
         return;
       }
       
-      if (!participants || participants.length === 0) {
-        console.log("No participants found for these groups");
-        return;
-      }
-      
-      console.log("Found participants:", participants);
-      
       // Update local groups with participants
       setLocalTourGroups(prevGroups => {
         return prevGroups.map(group => {
           const groupParticipants = participants
-            .filter(p => p.group_id === group.id)
-            .map(p => ({
-              id: p.id,
-              name: p.name,
-              count: p.count,
-              bookingRef: p.booking_ref,
-              childCount: p.child_count || 0
-            }));
+            ? participants
+                .filter(p => p.group_id === group.id)
+                .map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  count: p.count || 1,
+                  bookingRef: p.booking_ref,
+                  childCount: p.child_count || 0
+                }))
+            : [];
             
           return {
             ...group,
-            participants: groupParticipants
+            participants: groupParticipants,
+            // Update group size and childCount based on participants
+            size: groupParticipants.reduce((total, p) => total + (p.count || 1), 0),
+            childCount: groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0)
           };
         });
       });
@@ -103,31 +101,35 @@ export const useGroupManagement = (tour: TourCardProps) => {
     isMovePending,
     handleMoveParticipant: moveParticipantToGroup,
     handleOpenMoveDialog: setSelectedParticipant,
-    handleCloseMoveDialog: clearSelectedParticipant,
+    handleCloseMoveDialog: clearSelectedParticipant
   } = useParticipantMovement(tour.id, localTourGroups);
   
-  // Use the correct moveParticipant function from within useParticipantMovement
+  // Use the drag and drop functionality
   const { 
     handleDragStart,
     handleDragOver,
     handleDrop: dropParticipant,
     isDragPending
   } = useDragAndDrop(tour.id, (fromGroupIndex, toGroupIndex, participant, currentGroups) => {
-    // Create a deep copy to avoid mutation
-    const updatedGroups = JSON.parse(JSON.stringify(currentGroups));
-    
+    // Exit early if trying to drop in the same group
     if (fromGroupIndex === toGroupIndex) {
       return null;
     }
     
+    // Create a deep copy to avoid mutation
+    const updatedGroups = JSON.parse(JSON.stringify(currentGroups));
+    
     // Remove from source
-    if (updatedGroups[fromGroupIndex].participants) {
+    if (updatedGroups[fromGroupIndex]?.participants) {
       updatedGroups[fromGroupIndex].participants = 
         updatedGroups[fromGroupIndex].participants.filter((p: any) => p.id !== participant.id);
       
       // Update counts
-      updatedGroups[fromGroupIndex].size = Math.max(0, (updatedGroups[fromGroupIndex].size || 0) - (participant.count || 1));
-      updatedGroups[fromGroupIndex].childCount = Math.max(0, (updatedGroups[fromGroupIndex].childCount || 0) - (participant.childCount || 0));
+      const participantCount = participant.count || 1;
+      const childCount = participant.childCount || 0;
+      
+      updatedGroups[fromGroupIndex].size = Math.max(0, (updatedGroups[fromGroupIndex].size || 0) - participantCount);
+      updatedGroups[fromGroupIndex].childCount = Math.max(0, (updatedGroups[fromGroupIndex].childCount || 0) - childCount);
     }
     
     // Add to destination
@@ -136,17 +138,23 @@ export const useGroupManagement = (tour: TourCardProps) => {
     }
     
     // Update participant's group_id
-    const updatedParticipant = {...participant, group_id: updatedGroups[toGroupIndex].id};
+    const updatedParticipant = {
+      ...participant, 
+      group_id: updatedGroups[toGroupIndex].id
+    };
     updatedGroups[toGroupIndex].participants.push(updatedParticipant);
     
     // Update counts
-    updatedGroups[toGroupIndex].size = (updatedGroups[toGroupIndex].size || 0) + (participant.count || 1);
-    updatedGroups[toGroupIndex].childCount = (updatedGroups[toGroupIndex].childCount || 0) + (participant.childCount || 0);
+    const participantCount = participant.count || 1;
+    const childCount = participant.childCount || 0;
+    
+    updatedGroups[toGroupIndex].size = (updatedGroups[toGroupIndex].size || 0) + participantCount;
+    updatedGroups[toGroupIndex].childCount = (updatedGroups[toGroupIndex].childCount || 0) + childCount;
     
     return updatedGroups;
   });
   
-  // Wrapper functions to pass the current state
+  // Wrapper for moving a participant to a specific group
   const handleMoveParticipant = (toGroupIndex: number) => {
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
       moveParticipantToGroup(toGroupIndex);
@@ -156,6 +164,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
     }
   };
   
+  // Handler for dropping a participant into a group
   const handleDrop = (e: React.DragEvent, toGroupIndex: number) => {
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
       dropParticipant(e, toGroupIndex, localTourGroups, setLocalTourGroups);
