@@ -9,7 +9,6 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { TourOverview } from "@/components/tour-details/TourOverview";
-import { GroupGuideManagement, GroupsManagement } from "@/components/tour-details/groups-management";
 import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 
@@ -34,7 +33,6 @@ export const TourTabs: React.FC<TourTabsProps> = ({
   // This prevents data loss when switching between tabs
   const [tabSpecificTourData, setTabSpecificTourData] = useState<{[key: string]: any}>({
     overview: tour,
-    groups: tour,
     tickets: tour,
     modifications: tour
   });
@@ -83,9 +81,8 @@ export const TourTabs: React.FC<TourTabsProps> = ({
 
   return (
     <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="groups">Groups & Guides</TabsTrigger>
         <TabsTrigger value="tickets">Tickets</TabsTrigger>
         <TabsTrigger value="modifications">Modifications</TabsTrigger>
       </TabsList>
@@ -97,19 +94,6 @@ export const TourTabs: React.FC<TourTabsProps> = ({
           guide2Info={guide2Info}
           guide3Info={guide3Info}
         />
-      </TabsContent>
-      
-      <TabsContent value="groups" className="space-y-4 mt-6">
-        <div className="space-y-6">
-          <GroupGuideManagement 
-            key={`guide-management-${activeTab === "groups" ? Date.now() : "inactive"}`} 
-            tour={getTabTourData("groups")} 
-          />
-          <GroupsManagement 
-            key={`groups-management-${activeTab === "groups" ? Date.now() : "inactive"}`} 
-            tour={getTabTourData("groups")} 
-          />
-        </div>
       </TabsContent>
       
       <TabsContent value="tickets" className="space-y-4 mt-6">

@@ -7,7 +7,10 @@ import {
   TicketsCard,
   TourGroupsSection
 } from "./overview";
+import { useState, useEffect } from "react";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
+import { GroupsManagement } from "./groups-management";
+import { Separator } from "@/components/ui/separator";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -54,7 +57,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   });
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <TourInformationCard 
           referenceCode={tour.referenceCode} 
@@ -80,6 +83,13 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}
+      />
+      
+      <Separator className="my-6" />
+      
+      {/* Integrated group management section */}
+      <GroupsManagement 
+        tour={{...tour, isHighSeason}} 
       />
     </div>
   );
