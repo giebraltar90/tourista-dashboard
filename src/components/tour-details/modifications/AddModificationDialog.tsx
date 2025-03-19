@@ -1,10 +1,9 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useModifications } from "@/hooks/useModifications";
+import { useModifications } from "@/hooks/modifications/useModifications";
 
 interface AddModificationDialogProps {
   isOpen: boolean;
