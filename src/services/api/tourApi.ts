@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { 
   fetchTourFromSupabase, 
@@ -67,6 +66,49 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
   } catch (error) {
     console.error(`Error fetching tour ${tourId}:`, error);
     throw error;
+  }
+};
+
+/**
+ * Fetch participants for a specific tour from Supabase
+ */
+export const fetchParticipantsForTour = async (tourId: string) => {
+  if (!tourId) return [];
+  
+  try {
+    // First, get the tour groups for this tour
+    const { data: groups, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id')
+      .eq('tour_id', tourId);
+      
+    if (groupsError) {
+      console.error("Error fetching tour groups:", groupsError);
+      throw groupsError;
+    }
+    
+    if (!groups || groups.length === 0) {
+      return [];
+    }
+    
+    // Get group IDs
+    const groupIds = groups.map(group => group.id);
+    
+    // Now fetch participants for these groups
+    const { data: participants, error: participantsError } = await supabase
+      .from('participants')
+      .select('*')
+      .in('group_id', groupIds);
+      
+    if (participantsError) {
+      console.error("Error fetching participants:", participantsError);
+      throw participantsError;
+    }
+    
+    return participants || [];
+  } catch (error) {
+    console.error("Error in fetchParticipantsForTour:", error);
+    return [];
   }
 };
 

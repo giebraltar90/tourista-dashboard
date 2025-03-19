@@ -51,6 +51,9 @@ export const GroupCard = ({
   const participantCount = participants.length || 0;
   const totalParticipants = group.size || 0;
   
+  // Log to debug
+  console.log(`Group ${groupIndex} participants:`, participants);
+  
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
   

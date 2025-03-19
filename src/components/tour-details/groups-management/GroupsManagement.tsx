@@ -12,6 +12,8 @@ import { GroupCapacityInfo } from "./GroupCapacityInfo";
 import { GroupActions } from "./components/GroupActions";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { VentrataTourGroup } from "@/types/ventrata";
+import { fetchParticipantsForTour } from "@/services/api/tourApi";
+import { useEffect } from "react";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -39,8 +41,16 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     handleDragOver,
     handleDrop,
     setSelectedParticipant,
-    isMovePending
+    isMovePending,
+    loadParticipants
   } = useGroupManagement(tour);
+
+  // Load participants data when component mounts
+  useEffect(() => {
+    if (tour.id) {
+      loadParticipants(tour.id);
+    }
+  }, [tour.id, loadParticipants]);
 
   // Get dialog management - pass the tour object
   const dialogUtils = GroupDialogsContainer({

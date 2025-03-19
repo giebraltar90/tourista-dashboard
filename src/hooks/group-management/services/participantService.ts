@@ -1,6 +1,7 @@
 
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Move a participant from one group to another
@@ -83,4 +84,60 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
   return groups.reduce((total, group) => {
     return total + (group.size || 0);
   }, 0);
+};
+
+/**
+ * Fetch participants for a tour group from Supabase
+ */
+export const fetchParticipantsForGroup = async (groupId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('participants')
+      .select('*')
+      .eq('group_id', groupId);
+      
+    if (error) {
+      console.error("Error fetching participants:", error);
+      throw error;
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error("Error in fetchParticipantsForGroup:", error);
+    return [];
+  }
+};
+
+/**
+ * Creates test participants for a tour group
+ */
+export const createTestParticipantsForGroup = async (groupId: string, count: number = 3) => {
+  try {
+    const participants = [];
+    
+    for (let i = 0; i < count; i++) {
+      participants.push({
+        group_id: groupId,
+        name: `Test Participant ${i+1}`,
+        count: 1 + (i % 3),
+        booking_ref: `BR-${Math.floor(100000 + Math.random() * 900000)}`,
+        child_count: i % 2
+      });
+    }
+    
+    const { data, error } = await supabase
+      .from('participants')
+      .insert(participants)
+      .select();
+      
+    if (error) {
+      console.error("Error creating test participants:", error);
+      throw error;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error("Error in createTestParticipantsForGroup:", error);
+    return [];
+  }
 };
