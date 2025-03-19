@@ -15,7 +15,16 @@ export const useUpdateTourCapacity = (tourId: string) => {
       return updateTourCapacityApi(tourId, updatedTour);
     },
     onSuccess: (_, variables) => {
-      // Invalidate queries to refetch the data
+      // Update the tour data in the cache immediately for a more responsive UI
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          isHighSeason: variables.isHighSeason
+        };
+      });
+      
+      // Also invalidate queries to ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       

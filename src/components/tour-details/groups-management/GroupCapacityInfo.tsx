@@ -36,7 +36,7 @@ export const GroupCapacityInfo = ({
     DEFAULT_CAPACITY_SETTINGS.highSeasonGroups : 
     DEFAULT_CAPACITY_SETTINGS.standardGroups;
     
-  const handleModeChange = async (mode: 'standard' | 'high_season') => {
+  const handleModeChange = async (mode: 'standard' | 'exception' | 'high_season') => {
     // Update the tour's high season flag
     await updateTourCapacity({
       ...tour,
@@ -60,16 +60,26 @@ export const GroupCapacityInfo = ({
               disabled={isUpdating}
               className="flex items-center gap-2"
             >
-              {isHighSeason ? "High Season Mode" : "Standard Mode"}
+              {isHighSeason 
+                ? "High Season Mode" 
+                : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
+                  ? "Exception Mode" 
+                  : "Standard Mode"}
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuItem 
               onClick={() => handleModeChange('standard')}
-              className={!isHighSeason ? "bg-muted/50" : ""}
+              className={!isHighSeason && totalParticipants <= DEFAULT_CAPACITY_SETTINGS.standard ? "bg-muted/50" : ""}
             >
               Standard Mode (2 groups, 24 people)
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => handleModeChange('exception')}
+              className={!isHighSeason && totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard ? "bg-muted/50" : ""}
+            >
+              Exception Mode (2 groups, up to 29 people)
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => handleModeChange('high_season')}

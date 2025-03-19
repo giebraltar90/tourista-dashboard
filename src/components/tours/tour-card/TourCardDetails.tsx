@@ -12,6 +12,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 
 export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
   guide1,
@@ -23,7 +24,11 @@ export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
   totalParticipants,
   isHighSeason
 }) => {
-  const capacity = isHighSeason ? 36 : 24;
+  const capacity = isHighSeason ? 
+    DEFAULT_CAPACITY_SETTINGS.highSeason : 
+    totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard ? 
+      DEFAULT_CAPACITY_SETTINGS.exception : 
+      DEFAULT_CAPACITY_SETTINGS.standard;
   
   return (
     <CardContent className="p-4 pt-2 pb-3">
