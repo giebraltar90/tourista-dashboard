@@ -66,9 +66,12 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           </Button>
           
           <Link to="/" className="flex items-center">
-            <span className="text-xl font-display font-semibold tracking-tight">
-              Tourista<span className="text-primary">.</span>
-            </span>
+            <img 
+              src="/lovable-uploads/a1beab73-c1ea-4294-b9d8-974e61af4006.png" 
+              alt="Boutique Tours Logo" 
+              className="h-10 w-auto mr-1"
+              style={{ background: 'white', borderRadius: '4px', padding: '2px' }}
+            />
           </Link>
         </div>
         
