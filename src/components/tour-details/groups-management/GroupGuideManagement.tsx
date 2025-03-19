@@ -8,7 +8,6 @@ import { useGuideInfo } from "@/hooks/useGuideData";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { GroupCapacityAlert } from "./GroupCapacityAlert";
 import { GroupCapacityInfo } from "./GroupCapacityInfo";
-import { GroupsList } from "./GroupsList";
 
 interface GroupGuideManagementProps {
   tour: TourCardProps;
@@ -58,12 +57,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
           
           <Separator />
           
-          <GroupsList 
-            tour={tour}
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            guide3Info={guide3Info}
-          />
+          {/* GroupsList component removed */}
         </div>
       </CardContent>
       
