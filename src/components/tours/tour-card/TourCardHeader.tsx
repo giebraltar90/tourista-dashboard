@@ -17,6 +17,7 @@ export const TourCardHeader: React.FC<TourCardHeaderProps> = ({
 }) => {
   const locationFormatted = location.split(' ')[0].toUpperCase();
   const dayOfWeek = format(date, 'EEE'); // This formats the date to show the day of the week (e.g., "Mon", "Tue")
+  const formattedDate = format(date, 'dd.MM.'); // This formats the date as day.month. (e.g., "13.04.")
   
   return (
     <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between">
@@ -38,7 +39,7 @@ export const TourCardHeader: React.FC<TourCardHeaderProps> = ({
           <Clock className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
           <span>{startTime}</span>
           <Calendar className="h-3.5 w-3.5 ml-2 mr-1 text-muted-foreground" />
-          <span>{dayOfWeek}</span>
+          <span>{dayOfWeek}, {formattedDate}</span>
         </div>
       </div>
     </CardHeader>
