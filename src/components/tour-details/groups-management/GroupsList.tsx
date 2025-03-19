@@ -5,9 +5,8 @@ import { GuideInfo } from "@/types/ventrata";
 import { useDeleteGroup } from "@/hooks/group-management";
 import { GroupListItem } from "./GroupListItem";
 import { GroupDialogs } from "./GroupDialogs";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { GroupsListHeader } from "./GroupsListHeader";
+import { useGuideNameInfo } from "@/hooks/group-management";
 
 interface GroupsListProps {
   tour: TourCardProps;
@@ -24,6 +23,7 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
   const { deleteGroup, isDeleting } = useDeleteGroup(tour.id, { redistributeParticipants: true });
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
   const handleGroupAction = (index: number, action: 'edit' | 'assignGuide' | 'delete') => {
     setSelectedGroupIndex(index);
@@ -46,33 +46,16 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
     }
   };
   
-  // Helper to get guide name for display
-  const getGuideNameAndInfo = (guideId?: string) => {
-    if (!guideId) return { name: "Unassigned", info: null };
-    
-    if ((guideId === "guide1" || guideId === guide1Info?.id) && guide1Info) {
-      return { name: tour.guide1, info: guide1Info };
-    } else if ((guideId === "guide2" || guideId === guide2Info?.id) && guide2Info) {
-      return { name: tour.guide2 || "", info: guide2Info };
-    } else if ((guideId === "guide3" || guideId === guide3Info?.id) && guide3Info) {
-      return { name: tour.guide3 || "", info: guide3Info };
-    }
-    
-    return { name: "Unassigned", info: null };
+  const handleAddGroupClick = () => {
+    setIsAddGroupOpen(true);
   };
   
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <h3 className="font-medium">Groups ({tour.tourGroups.length})</h3>
-        <Dialog open={isAddGroupOpen} onOpenChange={setIsAddGroupOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="outline">
-              <PlusCircle className="h-4 w-4 mr-1" /> Add Group
-            </Button>
-          </DialogTrigger>
-        </Dialog>
-      </div>
+      <GroupsListHeader 
+        groupCount={tour.tourGroups.length}
+        onAddGroupClick={handleAddGroupClick}
+      />
       
       <div className="space-y-4">
         {tour.tourGroups.map((group, index) => {

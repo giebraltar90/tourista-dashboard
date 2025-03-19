@@ -1,47 +1,20 @@
 
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { 
-  Dialog, 
-  DialogTrigger, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
-} from "@/components/ui/dialog";
-import { useState } from "react";
-import { AddGroupForm } from "./AddGroupForm";
-import { toast } from "sonner";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 
 interface AddGroupButtonProps {
-  tourId: string;
+  onClick?: () => void;
 }
 
-export const AddGroupButton = ({ tourId }: AddGroupButtonProps) => {
-  const [isOpen, setIsOpen] = useState(false);
-  
+export const AddGroupButton = ({ onClick }: AddGroupButtonProps) => {
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={onClick}>
           <PlusCircle className="h-4 w-4 mr-1" /> Add Group
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add New Group</DialogTitle>
-          <DialogDescription>
-            Create a new group and assign a guide to it.
-          </DialogDescription>
-        </DialogHeader>
-        <AddGroupForm 
-          tourId={tourId} 
-          onSuccess={() => {
-            setIsOpen(false);
-            toast.success("Group added successfully");
-          }}
-        />
-      </DialogContent>
     </Dialog>
   );
 };

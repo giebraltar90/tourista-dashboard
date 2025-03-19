@@ -5,3 +5,4 @@ export { useAddGroup } from './useAddGroup';
 export { useUpdateGroup } from './useUpdateGroup';
 export { useAssignGuide } from './useAssignGuide';
 export { useDeleteGroup } from './useDeleteGroup';
+export { useGuideNameInfo } from './useGuideNameInfo';

@@ -4,33 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { useGuideInfo } from "@/hooks/useGuideData";
+import { useGuideNameInfo } from "@/hooks/group-management";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
   tour: TourCardProps;
+  guide1Info: GuideInfo | null;
+  guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
 }
 
-export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
-  // Get guide infos
-  const guide1Info = useGuideInfo(tour.guide1);
-  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
-  
-  // Helper to get guide name based on guideId
-  const getGuideName = (guideId?: string) => {
-    if (!guideId) return "Unassigned";
-    
-    if ((guideId === "guide1" || guideId === guide1Info?.id) && guide1Info) {
-      return tour.guide1;
-    } else if ((guideId === "guide2" || guideId === guide2Info?.id) && guide2Info) {
-      return tour.guide2 || "";
-    } else if ((guideId === "guide3" || guideId === guide3Info?.id) && guide3Info) {
-      return tour.guide3 || "";
-    }
-    
-    return "Unassigned";
-  };
+export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3Info }: GroupsTableProps) => {
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
   return (
     <Table>
@@ -46,36 +31,40 @@ export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {tourGroups.map((group, index) => (
-          <TableRow key={index}>
-            <TableCell className="font-medium">{group.name}</TableCell>
-            <TableCell>{group.size || 0}</TableCell>
-            <TableCell>{group.entryTime}</TableCell>
-            <TableCell>{getGuideName(group.guideId)}</TableCell>
-            <TableCell>
-              {group.childCount ? (
-                <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                  {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
+        {tourGroups.map((group, index) => {
+          const { name: guideName } = getGuideNameAndInfo(group.guideId);
+          
+          return (
+            <TableRow key={index}>
+              <TableCell className="font-medium">{group.name}</TableCell>
+              <TableCell>{group.size || 0}</TableCell>
+              <TableCell>{group.entryTime}</TableCell>
+              <TableCell>{guideName}</TableCell>
+              <TableCell>
+                {group.childCount ? (
+                  <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                    {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground">None</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <Badge variant="outline" className="bg-green-100 text-green-800">
+                  Confirmed
                 </Badge>
-              ) : (
-                <span className="text-muted-foreground">None</span>
-              )}
-            </TableCell>
-            <TableCell>
-              <Badge variant="outline" className="bg-green-100 text-green-800">
-                Confirmed
-              </Badge>
-            </TableCell>
-            <TableCell className="text-right">
-              <Button 
-                variant="outline" 
-                size="sm"
-              >
-                View Details
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
+              </TableCell>
+              <TableCell className="text-right">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                >
+                  View Details
+                </Button>
+              </TableCell>
+            </TableRow>
+          );
+        })}
       </TableBody>
     </Table>
   );

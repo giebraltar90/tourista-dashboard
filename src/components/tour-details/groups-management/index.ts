@@ -18,3 +18,4 @@ export * from './GroupListItem';
 export * from './DeleteGroupDialog';
 export * from './GroupDialogs';
 export * from './AddGroupButton';
+export * from './GroupsListHeader';
