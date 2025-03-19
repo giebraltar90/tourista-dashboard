@@ -47,13 +47,15 @@ export const TourGroupGuide = ({
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
-  // Update selected guide when group.guideId changes, but only if it's a meaningful change
+  // CRITICAL FIX: Better synchronization of guide ID changes
   useEffect(() => {
-    if (group.guideId !== previousGuideIdRef.current) {
+    // Only update if the group's guideId changed and it's different from our selected value
+    if (group.guideId !== previousGuideIdRef.current && group.guideId !== selectedGuide) {
+      console.log(`TourGroupGuide: Guide ID changed from ${previousGuideIdRef.current} to ${group.guideId} for group ${displayName}`);
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
     }
-  }, [group.guideId]);
+  }, [group.guideId, selectedGuide, displayName]);
   
   const getGuideTypeBadgeColor = (guideType?: string) => {
     if (!guideType) return "bg-gray-100 text-gray-800";
@@ -79,6 +81,9 @@ export const TourGroupGuide = ({
     setIsAssigning(true);
     
     try {
+      // CRITICAL FIX: Save current guideId for potential rollback
+      const previousGuideId = selectedGuide;
+      
       // Optimistically update the UI first
       setSelectedGuide(guideId);
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
@@ -87,21 +92,21 @@ export const TourGroupGuide = ({
       setIsOpen(false);
       
       // Call the API to update the guide
+      console.log(`TourGroupGuide: Assigning guide with ID ${guideId} to group ${displayName}`);
       await assignGuide(groupIndex, guideId);
     } catch (error) {
       // Revert optimistic update if there was an error
+      console.error("Error assigning guide:", error);
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
       
-      console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide");
     } finally {
       setIsAssigning(false);
     }
   };
 
-  // Directly use the state for determining if a guide is assigned
-  // rather than relying only on backend data, to prevent flickering
+  // CRITICAL FIX: Use the local state instead of the potentially outdated group prop
   const isGuideAssigned = (selectedGuide !== "_none" && selectedGuide !== undefined);
 
   return (

@@ -1,4 +1,3 @@
-
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -91,19 +90,16 @@ export const useAssignGuide = (tourId: string) => {
 
       console.log("Updated tour groups:", updatedTourGroups);
       
+      // CRITICAL FIX: Save the updated tour groups before making the API call
+      // This ensures we have the latest state for our optimistic update
+      const updatedTour = {
+        ...tour,
+        tourGroups: updatedTourGroups
+      };
+      
       // IMPORTANT: Immediately update local cache BEFORE API call
       // This prevents UI flicker during API request
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        console.log("Updating query data optimistically:", {
-          ...oldData,
-          tourGroups: updatedTourGroups
-        });
-        return {
-          ...oldData,
-          tourGroups: updatedTourGroups
-        };
-      });
+      queryClient.setQueryData(['tour', tourId], updatedTour);
       
       // Call the API to update tour groups
       await updateTourGroups(tourId, updatedTourGroups);
@@ -121,11 +117,11 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // After successful backend update, refresh the tour data to ensure consistency
-      // but wait a moment to avoid flickering
+      // After successful backend update, CRITICAL FIX: Wait longer before refreshing data
+      // This prevents race conditions with other components fetching
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 500);
+      }, 2000); // Increased from 500ms to 2000ms for stability
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {

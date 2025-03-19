@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AlertCircle } from "lucide-react";
@@ -29,14 +28,12 @@ const TourDetails = () => {
   
   const { data: tour, isLoading, error, refetch } = useTourById(id || "");
   
-  // Get guide information
   const guide1Info = tour ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
-  console.log("TourDetails rendering, tour data:", tour); // Debug log
+  console.log("TourDetails rendering, tour data:", tour);
   
-  // Force data refresh when component mounts, but only once
   useEffect(() => {
     if (id && isInitialLoad.current) {
       console.log("Initial load, invalidating queries for tour:", id);
@@ -46,46 +43,39 @@ const TourDetails = () => {
     }
     
     return () => {
-      // Clear the timer when component unmounts
       if (refreshTimer.current) {
         clearInterval(refreshTimer.current);
       }
     };
   }, [id, queryClient, refetch]);
   
-  // Refresh data when tab changes, but with throttling to prevent flickering
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     
-    // Only force refresh if it's been more than 10 seconds since last refresh
     const now = Date.now();
-    if (id && (now - lastRefetchTime.current) > 10000) { 
-      console.log("Tab changed, refreshing data after timeout");
+    if (id && (now - lastRefetchTime.current) > 30000) { 
+      console.log("Tab changed, refreshing data after long timeout");
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
       lastRefetchTime.current = now;
     }
   };
   
-  // Refresh data very infrequently to avoid flickering and respect optimistic updates
   useEffect(() => {
     if (!id) return;
     
-    // Clear existing timer if any
     if (refreshTimer.current) {
       clearInterval(refreshTimer.current);
     }
     
-    // Set up periodic refreshes with a much longer interval (2 minutes) to avoid disrupting user experience
     refreshTimer.current = setInterval(() => {
-      // Only refetch if no user interaction in the last minute
       const now = Date.now();
-      if ((now - lastRefetchTime.current) > 60000) {
-        console.log("Periodic refresh triggered");
+      if ((now - lastRefetchTime.current) > 120000) {
+        console.log("Periodic refresh triggered after long inactivity");
         refetch();
         lastRefetchTime.current = now;
       }
-    }, 120000); // Refresh every 2 minutes
+    }, 300000);
     
     return () => {
       if (refreshTimer.current) {

@@ -17,24 +17,34 @@ export const ParticipantsCard = ({
 }: ParticipantsCardProps) => {
   const totalGroups = tourGroups.length;
   
-  // Determine capacity based on mode - using boolean for isHighSeason
-  const capacity = Boolean(isHighSeason)
+  // CRITICAL FIX: Use strict equality to ensure proper boolean handling
+  // Since isHighSeason is now explicitly boolean, we can use strict comparison
+  const capacity = isHighSeason === true
     ? DEFAULT_CAPACITY_SETTINGS.highSeason 
     : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
       ? DEFAULT_CAPACITY_SETTINGS.exception 
       : DEFAULT_CAPACITY_SETTINGS.standard;
   
-  // Determine required groups based on mode - using boolean for isHighSeason
-  const requiredGroups = Boolean(isHighSeason)
+  // CRITICAL FIX: Use strict equality for determining required groups
+  const requiredGroups = isHighSeason === true
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
 
-  // Determine mode text for display
+  // CRITICAL FIX: Improve mode text determination with strict comparisons
   const getModeText = () => {
-    if (Boolean(isHighSeason)) return "High Season";
+    if (isHighSeason === true) return "High Season";
     if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception";
     return "Standard";
   };
+  
+  // Debug log for troubleshooting
+  console.log("ParticipantsCard props:", { 
+    isHighSeason, 
+    totalParticipants, 
+    capacity, 
+    requiredGroups,
+    mode: getModeText()
+  });
   
   return (
     <Card>
@@ -62,7 +72,7 @@ export const ParticipantsCard = ({
             <Badge 
               variant="outline" 
               className={`font-medium ${
-                Boolean(isHighSeason)
+                isHighSeason === true
                   ? "bg-blue-100 text-blue-800" 
                   : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard
                     ? "bg-amber-100 text-amber-800"

@@ -44,14 +44,16 @@ export const useTourById = (tourId: string) => {
       // Create a clean copy of the tour data
       const cleanedTourData = {...tourData};
       
-      // Ensure isHighSeason is properly converted to boolean
+      // CRITICAL FIX: Ensure isHighSeason is properly converted to boolean using explicit conversion
       cleanedTourData.isHighSeason = tourData.isHighSeason === true;
       
       console.log("Cleaned tour data with isHighSeason:", cleanedTourData.isHighSeason);
       
       return cleanedTourData;
     },
-    staleTime: 30 * 1000, // 30 seconds (reduce caching time for more responsive UI)
+    // CRITICAL FIX: Increase staleTime and cacheTime dramatically to reduce unnecessary refetches
+    staleTime: 120 * 1000, // 2 minutes (increased from 30 seconds)
+    gcTime: 300 * 1000,   // 5 minutes cache time
     enabled: !!tourId, // Only run the query if tourId is provided
   });
 };
