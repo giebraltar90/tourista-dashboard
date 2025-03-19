@@ -54,6 +54,7 @@ export const useTourById = (tourId: string) => {
                 guideId: group.guide_id
               })) : [],
               numTickets: tour.num_tickets || 0,
+              // Critical fix: normalize the boolean value to ensure consistent behavior
               isHighSeason: tour.is_high_season === true
             };
           }
@@ -65,9 +66,14 @@ export const useTourById = (tourId: string) => {
         
         if (!tourData) return null;
         
-        // Ensure isHighSeason is properly converted to boolean 
+        // Normalize isHighSeason to ensure consistent behavior
         tourData.isHighSeason = tourData.isHighSeason === true;
         console.log("isHighSeason after conversion:", tourData.isHighSeason);
+        
+        // Make sure tourGroups exists
+        if (!tourData.tourGroups) {
+          tourData.tourGroups = [];
+        }
         
         return tourData;
       } catch (error) {

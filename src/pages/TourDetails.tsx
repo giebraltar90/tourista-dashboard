@@ -1,3 +1,4 @@
+
 import { useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { AlertCircle } from "lucide-react";
@@ -26,13 +27,16 @@ const TourDetails = () => {
   const isInitialLoad = useRef(true);
   const lastRefetchTime = useRef(Date.now());
   
+  console.log("TourDetails rendering with ID:", id);
+  
   const { data: tour, isLoading, error, refetch } = useTourById(id || "");
   
-  const guide1Info = tour ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
+  console.log("Tour data loaded:", tour);
   
-  console.log("TourDetails rendering, tour data:", tour);
+  // Only attempt to get guide info if tour data has loaded
+  const guide1Info = tour && tour.guide1 ? useGuideInfo(tour.guide1) : null;
+  const guide2Info = tour && tour.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour && tour.guide3 ? useGuideInfo(tour.guide3) : null;
   
   useEffect(() => {
     if (id && isInitialLoad.current) {
