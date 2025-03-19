@@ -52,53 +52,49 @@ export const useModifications = (tourId: string) => {
       // Optimistically update the tour in the query cache immediately
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
-        return {
+        const updatedTour = {
           ...oldData,
           modifications: updatedModifications
         };
+        console.log("Optimistically updated tour with new modifications:", updatedTour);
+        return updatedTour;
       });
       
-      try {
-        // Check if this is a UUID format ID
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
+      // Try both Supabase and API storage in parallel for maximum reliability
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
+      
+      if (isUuid) {
+        // For real UUID IDs, use Supabase
+        console.log("Storing modification in Supabase for tour:", tourId);
+        const { error } = await supabase
+          .from('modifications')
+          .insert({
+            tour_id: tourId,
+            description: description,
+            details: details || {},
+            status: 'complete',
+          });
         
-        if (!isUuid) {
-          // This is a mock ID, use API fallback
-          console.log("Using API fallback for modification with mock ID:", tourId);
+        if (error) {
+          console.error("Failed to store modification in Supabase:", error);
+          // Fall back to API call (even for UUID tours)
+          console.log("Falling back to API for modifications");
           await updateTourModification(tourId, updatedModifications);
         } else {
-          // For real UUID IDs, use Supabase
-          console.log("Storing modification in Supabase for tour:", tourId);
-          const { error } = await supabase
-            .from('modifications')
-            .insert({
-              tour_id: tourId,
-              description: description,
-              details: details || {},
-              status: 'complete',
-            });
-          
-          if (error) {
-            console.error("Failed to store modification in Supabase:", error);
-            // Fall back to API call
-            console.log("Falling back to API for modifications");
-            await updateTourModification(tourId, updatedModifications);
-          } else {
-            console.log("Successfully stored modification in Supabase");
-          }
+          console.log("Successfully stored modification in Supabase");
         }
-      } catch (err) {
-        console.error("Database error, falling back to API:", err);
-        // Fall back to API call
+      } else {
+        // This is a mock ID, use API fallback
+        console.log("Using API fallback for modification with mock ID:", tourId);
         await updateTourModification(tourId, updatedModifications);
       }
       
       toast.success("Modification recorded successfully");
       
-      // Force a refetch to ensure we have the latest data, but delay it to avoid flickering
+      // Schedule a delayed refetch to ensure we have the latest data
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 2000);
+      }, 1000);
       
       return true;
     } catch (error) {

@@ -15,43 +15,55 @@ export const useUpdateTourCapacity = (tourId: string) => {
       console.log("Updating tour capacity for tour", tourId, updatedTour);
       console.log("New high season value:", updatedTour.isHighSeason);
       
+      // Use a more reliable UUID validation pattern
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
+      
+      // Track success for each attempt
+      let storageSuccess = false;
+      
+      // Convert to boolean explicitly to ensure correct type
+      const highSeasonValue = Boolean(updatedTour.isHighSeason);
+      
       try {
-        // Use a more reliable UUID validation pattern
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
-        
-        if (!isUuid) {
-          console.log("Using mock API for non-UUID tour ID");
-          return await updateTourCapacityApi(tourId, updatedTour);
-        }
-        
-        // Only attempt Supabase update for valid UUIDs
-        console.log("Attempting Supabase update for tour:", tourId);
-        
-        // Convert to boolean explicitly to ensure correct type
-        const highSeasonValue = Boolean(updatedTour.isHighSeason);
-        console.log("Sending to Supabase:", { is_high_season: highSeasonValue });
-        
-        const { data, error } = await supabase
-          .from('tours')
-          .update({ is_high_season: highSeasonValue })
-          .eq('id', tourId)
-          .select();
+        if (isUuid) {
+          console.log("Attempting Supabase update for tour:", tourId);
+          console.log("Sending to Supabase:", { is_high_season: highSeasonValue });
           
-        if (error) {
-          console.error("Supabase update failed:", error.message);
-          console.warn("Falling back to API");
-          // Fall back to API call if Supabase fails
-          return await updateTourCapacityApi(tourId, updatedTour);
+          const { data, error } = await supabase
+            .from('tours')
+            .update({ is_high_season: highSeasonValue })
+            .eq('id', tourId)
+            .select();
+            
+          if (error) {
+            console.error("Supabase update failed:", error.message);
+          } else {
+            console.log("Supabase update successful:", data);
+            storageSuccess = true;
+          }
         }
-        
-        console.log("Supabase update successful:", data);
-        return true;
       } catch (err) {
         console.error("Database error:", err);
-        console.warn("Falling back to API");
-        // Fall back to API call
-        return await updateTourCapacityApi(tourId, updatedTour);
       }
+      
+      // If Supabase failed or it's a non-UUID tour, try the API
+      if (!storageSuccess) {
+        console.log("Using API fallback for capacity update");
+        try {
+          const apiSuccess = await updateTourCapacityApi(tourId, updatedTour);
+          if (apiSuccess) {
+            storageSuccess = true;
+          }
+        } catch (err) {
+          console.error("API update failed:", err);
+          // Let the error bubble up if both methods failed
+          if (!storageSuccess) {
+            throw new Error("Failed to update tour capacity");
+          }
+        }
+      }
+      
+      return storageSuccess;
     },
     onMutate: async (variables) => {
       // Cancel any outgoing refetches to avoid overwriting our optimistic update
@@ -60,7 +72,7 @@ export const useUpdateTourCapacity = (tourId: string) => {
       // Snapshot the previous value
       const previousTour = queryClient.getQueryData(['tour', tourId]);
 
-      // Optimistically update the cache with the new value - use deep copy
+      // Optimistically update the cache with the new value
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return oldData;
         
@@ -78,7 +90,7 @@ export const useUpdateTourCapacity = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: (_, variables) => {
-      // Rather than invalidating, update the data directly
+      // Update the cache directly for consistent UI
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return oldData;
         
@@ -90,19 +102,10 @@ export const useUpdateTourCapacity = (tourId: string) => {
         return updatedData;
       });
       
-      // Delay invalidation to ensure our direct update takes precedence
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-        // After that, refresh the tours list
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['tours'] });
-        }, 1000);
-      }, 5000);
-      
+      // Add a modification record AFTER the update is confirmed successful
       const isHighSeason = Boolean(variables.isHighSeason);
       const modeText = isHighSeason ? 'high season' : 'standard';
       
-      // Add a modification record
       addModification(`Tour capacity mode changed to ${modeText}`, {
         type: "capacity_update",
         oldMode: !isHighSeason ? 'high season' : 'standard',
@@ -110,6 +113,11 @@ export const useUpdateTourCapacity = (tourId: string) => {
       });
       
       toast.success(`Tour capacity updated to ${modeText} mode`);
+      
+      // Schedule a delayed background refresh to sync with server
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 3000);
     },
     onError: (error, _, context) => {
       console.error("Error updating tour capacity:", error);
