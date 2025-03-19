@@ -2,6 +2,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { Database } from "@/integrations/supabase/types";
+
+// Define the guide type from the database schema
+type GuideType = Database["public"]["Enums"]["guide_type"];
+type TourType = Database["public"]["Enums"]["tour_type"];
+type ModificationStatus = Database["public"]["Enums"]["modification_status"];
 
 export const useTestData = () => {
   const queryClient = useQueryClient();
@@ -16,12 +22,12 @@ export const useTestData = () => {
       
       // Create test guides
       const guides = [
-        { name: "Noéma Weber", guide_type: "GA Free", birthday: "1998-12-03" },
-        { name: "Jean Dupont", guide_type: "GA Ticket", birthday: "1985-03-22" },
-        { name: "Sophie Miller", guide_type: "GC", birthday: "1990-10-05" },
-        { name: "Carlos Martinez", guide_type: "GA Ticket", birthday: "1988-05-18" },
-        { name: "Maria Garcia", guide_type: "GA Free", birthday: "1995-07-15" },
-        { name: "Tobias Schmidt", guide_type: "GC", birthday: "1982-08-27" }
+        { name: "Noéma Weber", guide_type: "GA Free" as GuideType, birthday: "1998-12-03" },
+        { name: "Jean Dupont", guide_type: "GA Ticket" as GuideType, birthday: "1985-03-22" },
+        { name: "Sophie Miller", guide_type: "GC" as GuideType, birthday: "1990-10-05" },
+        { name: "Carlos Martinez", guide_type: "GA Ticket" as GuideType, birthday: "1988-05-18" },
+        { name: "Maria Garcia", guide_type: "GA Free" as GuideType, birthday: "1995-07-15" },
+        { name: "Tobias Schmidt", guide_type: "GC" as GuideType, birthday: "1982-08-27" }
       ];
       
       const { data: guideData, error: guideError } = await supabase
@@ -60,7 +66,7 @@ export const useTestData = () => {
           date: "2023-05-07",
           location: "Versailles",
           tour_name: "Food & Palace Bike Tour",
-          tour_type: "food",
+          tour_type: "food" as TourType,
           start_time: "08:00",
           reference_code: "313911645",
           guide1_id: guideMap["Noéma Weber"],
@@ -72,7 +78,7 @@ export const useTestData = () => {
           date: "2023-05-07",
           location: "Versailles",
           tour_name: "Private Versailles Tour",
-          tour_type: "private",
+          tour_type: "private" as TourType,
           start_time: "09:00",
           reference_code: "313911867",
           guide1_id: guideMap["Carlos Martinez"],
@@ -84,7 +90,7 @@ export const useTestData = () => {
           date: "2023-05-07",
           location: "Versailles",
           tour_name: "Food & Palace Bike Tour",
-          tour_type: "food",
+          tour_type: "food" as TourType,
           start_time: "09:00",
           reference_code: "313911867",
           guide1_id: guideMap["Sophie Miller"],
@@ -96,7 +102,7 @@ export const useTestData = () => {
           date: tomorrow.toISOString().split('T')[0],
           location: "Louvre Museum",
           tour_name: "Private Louvre Tour",
-          tour_type: "private",
+          tour_type: "private" as TourType,
           start_time: "10:00",
           reference_code: "324598761",
           guide1_id: guideMap["Sophie Miller"],
@@ -108,7 +114,7 @@ export const useTestData = () => {
           date: dayAfterTomorrow.toISOString().split('T')[0],
           location: "Montmartre",
           tour_name: "Montmartre Walking Tour",
-          tour_type: "default",
+          tour_type: "default" as TourType,
           start_time: "14:00",
           reference_code: "324598799",
           guide1_id: guideMap["Jean Dupont"],
@@ -119,7 +125,7 @@ export const useTestData = () => {
           date: threeDaysLater.toISOString().split('T')[0],
           location: "Versailles",
           tour_name: "Food & Palace Bike Tour",
-          tour_type: "food",
+          tour_type: "food" as TourType,
           start_time: "08:00",
           reference_code: "324598820",
           guide1_id: guideMap["Maria Garcia"],
@@ -131,7 +137,7 @@ export const useTestData = () => {
           date: fourDaysLater.toISOString().split('T')[0],
           location: "Eiffel Tower",
           tour_name: "Eiffel Tower & Seine River Cruise",
-          tour_type: "default",
+          tour_type: "default" as TourType,
           start_time: "16:00",
           reference_code: "324598850",
           guide1_id: guideMap["Maria Garcia"],
@@ -358,19 +364,19 @@ export const useTestData = () => {
           tour_id: tourData[0].id,
           description: "Group sizes adjusted",
           details: { type: "group_size", before: 5, after: 6 },
-          status: "complete"
+          status: "complete" as ModificationStatus
         },
         {
           tour_id: tourData[0].id,
           description: "Guide Noéma assigned to Group 1",
           details: { type: "guide_assignment", groupName: "Group 1", guideName: "Noéma Weber" },
-          status: "complete"
+          status: "complete" as ModificationStatus
         },
         {
           tour_id: tourData[2].id,
           description: "Changed entry time from 15:30 to 16:00",
           details: { type: "entry_time", before: "15:30", after: "16:00" },
-          status: "complete"
+          status: "complete" as ModificationStatus
         }
       ];
       
@@ -408,7 +414,7 @@ export const useTestData = () => {
       
       for (const table of tables) {
         const { error } = await supabase
-          .from(table)
+          .from(table as any)
           .delete()
           .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all rows
           
