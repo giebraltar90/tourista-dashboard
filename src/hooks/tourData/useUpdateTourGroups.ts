@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useUpdateTourGroups = (tourId: string) => {
   const queryClient = useQueryClient();
@@ -12,15 +11,7 @@ export const useUpdateTourGroups = (tourId: string) => {
     mutationFn: async (updatedGroups: VentrataTourGroup[]) => {
       console.log("Updating tour groups for:", tourId, updatedGroups);
       try {
-        // Check if this is a UUID format ID
-        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
-        
-        if (isUuid) {
-          // For real UUID IDs, try Supabase
-          console.log("Would update tour groups in Supabase here");
-        }
-        
-        // For all cases, still use the API function for now
+        // Use the simplified API for now
         return await updateTourGroups(tourId, updatedGroups);
       } catch (error) {
         console.error("Error updating tour groups:", error);

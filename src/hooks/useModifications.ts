@@ -1,12 +1,11 @@
 
 import { useState, useCallback, useEffect } from "react";
-import { TourModification, VentrataTour } from "@/types/ventrata";
+import { TourModification } from "@/types/ventrata";
 import { useTourById } from "./useTourData";
 import { updateTourModification } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useModifications = (tourId: string) => {
   const { data: tour } = useTourById(tourId);
@@ -60,42 +59,11 @@ export const useModifications = (tourId: string) => {
         return updatedTour;
       });
       
-      // Try both Supabase and API storage in parallel for maximum reliability
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
-      
-      if (isUuid) {
-        // For real UUID IDs, use Supabase
-        console.log("Storing modification in Supabase for tour:", tourId);
-        const { error } = await supabase
-          .from('modifications')
-          .insert({
-            tour_id: tourId,
-            description: description,
-            details: details || {},
-            status: 'complete',
-          });
-        
-        if (error) {
-          console.error("Failed to store modification in Supabase:", error);
-          // Fall back to API call (even for UUID tours)
-          console.log("Falling back to API for modifications");
-          // Fix: Pass an object with description and details instead of an array
-          await updateTourModification(tourId, {
-            description,
-            details
-          });
-        } else {
-          console.log("Successfully stored modification in Supabase");
-        }
-      } else {
-        // This is a mock ID, use API fallback
-        console.log("Using API fallback for modification with mock ID:", tourId);
-        // Fix: Pass an object with description and details instead of an array
-        await updateTourModification(tourId, {
-          description,
-          details
-        });
-      }
+      // Store the modification using the API
+      await updateTourModification(tourId, {
+        description,
+        details
+      });
       
       toast.success("Modification recorded successfully");
       

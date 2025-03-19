@@ -4,7 +4,6 @@ import { VentrataTour } from "@/types/ventrata";
 import { updateTourCapacity as updateTourCapacityApi } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { useModifications } from "./useModifications";
-import { supabase } from "@/integrations/supabase/client";
 
 export const useUpdateTourCapacity = (tourId: string) => {
   const queryClient = useQueryClient();
@@ -15,56 +14,11 @@ export const useUpdateTourCapacity = (tourId: string) => {
       console.log("Updating tour capacity for tour", tourId, updatedTour);
       console.log("New high season value:", updatedTour.isHighSeason);
       
-      // Use a more reliable UUID validation pattern
-      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
-      
-      // Track success for each attempt
-      let storageSuccess = false;
-      
       // Convert to boolean explicitly to ensure correct type
       const highSeasonValue = Boolean(updatedTour.isHighSeason);
       
-      try {
-        if (isUuid) {
-          console.log("Attempting Supabase update for tour:", tourId);
-          console.log("Sending to Supabase:", { is_high_season: highSeasonValue });
-          
-          const { data, error } = await supabase
-            .from('tours')
-            .update({ is_high_season: highSeasonValue })
-            .eq('id', tourId)
-            .select();
-            
-          if (error) {
-            console.error("Supabase update failed:", error.message);
-          } else {
-            console.log("Supabase update successful:", data);
-            storageSuccess = true;
-          }
-        }
-      } catch (err) {
-        console.error("Database error:", err);
-      }
-      
-      // If Supabase failed or it's a non-UUID tour, try the API
-      if (!storageSuccess) {
-        console.log("Using API fallback for capacity update");
-        try {
-          // Fix: Pass the boolean value instead of the whole tour object
-          const apiSuccess = await updateTourCapacityApi(tourId, highSeasonValue);
-          if (apiSuccess) {
-            storageSuccess = true;
-          }
-        } catch (err) {
-          console.error("API update failed:", err);
-          // Let the error bubble up if both methods failed
-          if (!storageSuccess) {
-            throw new Error("Failed to update tour capacity");
-          }
-        }
-      }
-      
-      return storageSuccess;
+      // Use simplified API for now
+      return await updateTourCapacityApi(tourId, highSeasonValue);
     },
     onMutate: async (variables) => {
       // Cancel any outgoing refetches to avoid overwriting our optimistic update

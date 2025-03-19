@@ -102,3 +102,8 @@ export const DEFAULT_CAPACITY_SETTINGS: TourCapacitySettings = {
   standardGroups: 2,
   highSeasonGroups: 3
 };
+
+// Helper function to check if a string is a UUID
+export const isUuid = (id: string): boolean => {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
