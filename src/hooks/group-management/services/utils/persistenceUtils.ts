@@ -3,7 +3,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
-import { updateGuideInSupabase } from "@/services/api/tourGroupApi";
+import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { isUuid } from "@/types/ventrata";
 
 /**
