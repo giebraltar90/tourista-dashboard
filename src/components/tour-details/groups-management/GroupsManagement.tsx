@@ -8,7 +8,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsTable } from "./GroupsTable";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
-import { useGuideInfo } from "@/hooks/useGuideData";
+import { useGuideInfo, useGuideData } from "@/hooks/useGuideData";
 import { 
   Dialog, 
   DialogContent, 
@@ -16,8 +16,9 @@ import {
   DialogTitle, 
   DialogDescription 
 } from "@/components/ui/dialog";
-import { AssignGuideForm } from "./AssignGuideForm";
+import { GuideAssignmentDialog } from "./GuideAssignmentDialog";
 import { EditGroupForm } from "./EditGroupForm";
+import { getValidGuides } from "./GuideOptionsList";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -27,6 +28,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+  const { guides } = useGuideData();
 
   const {
     localTourGroups,
@@ -55,37 +57,13 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   };
 
   // Create an array of valid guides with properly formatted IDs for use in AssignGuideForm
-  const getValidGuides = () => {
-    const guides = [];
-    
-    // Primary guides - use consistent IDs
-    if (tour.guide1) {
-      guides.push({ 
-        id: "guide1", 
-        name: tour.guide1, 
-        info: guide1Info 
-      });
-    }
-    
-    if (tour.guide2) {
-      guides.push({ 
-        id: "guide2", 
-        name: tour.guide2, 
-        info: guide2Info 
-      });
-    }
-    
-    if (tour.guide3) {
-      guides.push({ 
-        id: "guide3", 
-        name: tour.guide3, 
-        info: guide3Info 
-      });
-    }
-    
-    // Filter out any guides with empty names or IDs
-    return guides.filter(guide => guide.name && guide.id);
-  };
+  const validGuides = getValidGuides({
+    tour,
+    guide1Info,
+    guide2Info,
+    guide3Info,
+    guides
+  });
 
   return (
     <Card>
@@ -140,25 +118,14 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       </CardFooter>
 
       {/* Guide Assignment Dialog */}
-      <Dialog open={isAssignGuideOpen} onOpenChange={setIsAssignGuideOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Guide to Group</DialogTitle>
-            <DialogDescription>
-              Choose a guide to assign to this group
-            </DialogDescription>
-          </DialogHeader>
-          {selectedGroupIndex !== null && localTourGroups[selectedGroupIndex] && (
-            <AssignGuideForm 
-              tourId={tour.id}
-              groupIndex={selectedGroupIndex}
-              guides={getValidGuides()}
-              currentGuideId={localTourGroups[selectedGroupIndex].guideId || "_none"}
-              onSuccess={() => setIsAssignGuideOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <GuideAssignmentDialog
+        isOpen={isAssignGuideOpen}
+        onOpenChange={setIsAssignGuideOpen}
+        selectedGroupIndex={selectedGroupIndex}
+        tourId={tour.id}
+        tourGroups={localTourGroups}
+        validGuides={validGuides}
+      />
       
       {/* Edit Group Dialog */}
       <Dialog open={isEditGroupOpen} onOpenChange={setIsEditGroupOpen}>

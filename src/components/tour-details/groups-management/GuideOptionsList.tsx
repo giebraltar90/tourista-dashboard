@@ -53,7 +53,11 @@ export const getValidGuides = ({
   guides.forEach(guide => {
     // Skip if this guide is already in the options by name
     if (!options.some(g => g.name === guide.name)) {
-      options.push({ id: guide.id, name: guide.name, info: guide });
+      options.push({ 
+        id: guide.id, 
+        name: guide.name, 
+        info: guide.info || guide 
+      });
     }
   });
   

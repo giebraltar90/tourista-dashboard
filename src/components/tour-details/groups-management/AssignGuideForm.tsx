@@ -128,7 +128,7 @@ export const AssignGuideForm = ({
                     <SelectItem key={guide.id} value={guide.id}>
                       <div className="flex items-center">
                         <span>{guide.name}</span>
-                        {guide.info && (
+                        {guide.info && guide.info.guideType && (
                           <Badge variant="outline" className="ml-2 text-xs">
                             {guide.info.guideType}
                           </Badge>
