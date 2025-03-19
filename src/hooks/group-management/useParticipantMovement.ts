@@ -18,13 +18,32 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
     currentGroups: VentrataTourGroup[],
     setLocalTourGroups: (groups: VentrataTourGroup[]) => void
   ) => {
-    if (!selectedParticipant) return;
+    if (!selectedParticipant) {
+      console.error("Cannot move participant: No participant selected");
+      return;
+    }
+
     if (!currentGroups || currentGroups.length === 0) {
+      console.error("Cannot move participant: No tour groups available");
       toast.error("Cannot move participant: No tour groups available");
       return;
     }
     
     const { participant, fromGroupIndex } = selectedParticipant;
+    
+    // Check if the destination group exists
+    if (toGroupIndex < 0 || toGroupIndex >= currentGroups.length) {
+      console.error(`Invalid destination group index: ${toGroupIndex}`);
+      toast.error("Cannot move participant: Invalid destination group");
+      return;
+    }
+
+    // Check if the source group exists
+    if (fromGroupIndex < 0 || fromGroupIndex >= currentGroups.length) {
+      console.error(`Invalid source group index: ${fromGroupIndex}`);
+      toast.error("Cannot move participant: Invalid source group");
+      return;
+    }
     
     const updatedGroups = moveParticipant(
       fromGroupIndex,
@@ -33,7 +52,10 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
       currentGroups
     );
     
-    if (!updatedGroups) return;
+    if (!updatedGroups) {
+      console.error("Failed to move participant");
+      return;
+    }
     
     // Update local state immediately for a responsive UI
     setLocalTourGroups(updatedGroups);

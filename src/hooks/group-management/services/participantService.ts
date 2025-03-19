@@ -11,9 +11,20 @@ export const moveParticipant = (
   toGroupIndex: number,
   participant: VentrataParticipant,
   currentGroups: VentrataTourGroup[]
-) => {
+): VentrataTourGroup[] | null => {
   if (fromGroupIndex === toGroupIndex) {
     toast.error("Participant is already in this group");
+    return null;
+  }
+  
+  // Validate group indices
+  if (fromGroupIndex < 0 || fromGroupIndex >= currentGroups.length) {
+    toast.error("Source group not found");
+    return null;
+  }
+  
+  if (toGroupIndex < 0 || toGroupIndex >= currentGroups.length) {
+    toast.error("Destination group not found");
     return null;
   }
   
@@ -71,6 +82,12 @@ export const moveParticipant = (
   if (participant.childCount) {
     destGroup.childCount = (destGroup.childCount || 0) + participant.childCount;
   }
+  
+  console.log("Moved participant:", {
+    participant,
+    from: sourceGroup.name || `Group ${fromGroupIndex + 1}`,
+    to: destGroup.name || `Group ${toGroupIndex + 1}`
+  });
   
   return updatedTourGroups;
 };

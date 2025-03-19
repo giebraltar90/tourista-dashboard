@@ -4,7 +4,7 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoveHorizontal, Users, ArrowLeftRight } from "lucide-react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 
 interface MoveParticipantSheetProps {
   participant: VentrataParticipant;
@@ -25,6 +25,11 @@ export const MoveParticipantSheet = ({
   handleMoveParticipant,
   isPending
 }: MoveParticipantSheetProps) => {
+  // Verify tour groups exist before rendering
+  if (!tour.tourGroups || tour.tourGroups.length === 0) {
+    return null;
+  }
+
   return (
     <Sheet>
       <SheetTrigger asChild>
@@ -49,7 +54,7 @@ export const MoveParticipantSheet = ({
             <div className="bg-muted/30 p-4 rounded-md">
               <div className="font-medium">{participant.name}</div>
               <div className="text-sm text-muted-foreground">
-                Currently in: {group.name}
+                Currently in: {group.name || `Group ${groupIndex + 1}`}
               </div>
               <div className="text-sm text-muted-foreground">
                 Booking Reference: {participant.bookingRef}
@@ -80,7 +85,7 @@ export const MoveParticipantSheet = ({
                   {tour.tourGroups.map((g, i) => (
                     i !== groupIndex && (
                       <SelectItem key={i} value={i.toString()}>
-                        {g.name} ({g.size} {g.size === 1 ? 'person' : 'people'})
+                        {g.name || `Group ${i + 1}`} ({g.size || 0} {g.size === 1 ? 'person' : 'people'})
                       </SelectItem>
                     )
                   ))}

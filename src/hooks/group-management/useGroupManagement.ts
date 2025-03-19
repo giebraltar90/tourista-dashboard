@@ -47,6 +47,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
       }
       
       if (!groups || groups.length === 0) {
+        console.log("No groups found for tour ID:", tourId);
         return;
       }
       
@@ -72,29 +73,29 @@ export const useGroupManagement = (tour: TourCardProps) => {
       console.log("Found participants:", participants);
       
       // Update local groups with participants
-      const updatedGroups = localTourGroups.map(group => {
-        const groupParticipants = participants
-          .filter(p => p.group_id === group.id)
-          .map(p => ({
-            id: p.id,
-            name: p.name,
-            count: p.count,
-            bookingRef: p.booking_ref,
-            childCount: p.child_count || 0
-          }));
-          
-        return {
-          ...group,
-          participants: groupParticipants
-        };
+      setLocalTourGroups(prevGroups => {
+        return prevGroups.map(group => {
+          const groupParticipants = participants
+            .filter(p => p.group_id === group.id)
+            .map(p => ({
+              id: p.id,
+              name: p.name,
+              count: p.count,
+              bookingRef: p.booking_ref,
+              childCount: p.child_count || 0
+            }));
+            
+          return {
+            ...group,
+            participants: groupParticipants
+          };
+        });
       });
-      
-      setLocalTourGroups(updatedGroups);
     } catch (error) {
       console.error("Error loading participants:", error);
       toast.error("Failed to load participants");
     }
-  }, [localTourGroups]);
+  }, []);
 
   const {
     selectedParticipant,
@@ -113,11 +114,20 @@ export const useGroupManagement = (tour: TourCardProps) => {
   
   // Wrapper functions to pass the current state
   const handleMoveParticipant = (toGroupIndex: number) => {
-    moveParticipant(toGroupIndex, localTourGroups, setLocalTourGroups);
+    if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
+      moveParticipant(toGroupIndex, localTourGroups, setLocalTourGroups);
+    } else {
+      console.error("Invalid group index for move operation:", toGroupIndex);
+      toast.error("Cannot move participant: Invalid group selection");
+    }
   };
   
   const handleDrop = (e: React.DragEvent, toGroupIndex: number) => {
-    dropParticipant(e, toGroupIndex, localTourGroups, setLocalTourGroups);
+    if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
+      dropParticipant(e, toGroupIndex, localTourGroups, setLocalTourGroups);
+    } else {
+      console.error("Invalid group index for drop operation:", toGroupIndex);
+    }
   };
 
   return {
