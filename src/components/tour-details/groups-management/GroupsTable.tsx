@@ -21,11 +21,11 @@ export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
   const getGuideName = (guideId?: string) => {
     if (!guideId) return "Unassigned";
     
-    if (guide1Info && (guide1Info.id === guideId || guideId === "guide1")) {
+    if ((guideId === "guide1" || guideId === guide1Info?.id) && guide1Info) {
       return tour.guide1;
-    } else if (guide2Info && (guide2Info.id === guideId || guideId === "guide2")) {
+    } else if ((guideId === "guide2" || guideId === guide2Info?.id) && guide2Info) {
       return tour.guide2 || "";
-    } else if (guide3Info && (guide3Info.id === guideId || guideId === "guide3")) {
+    } else if ((guideId === "guide3" || guideId === guide3Info?.id) && guide3Info) {
       return tour.guide3 || "";
     }
     
@@ -49,7 +49,7 @@ export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
         {tourGroups.map((group, index) => (
           <TableRow key={index}>
             <TableCell className="font-medium">{group.name}</TableCell>
-            <TableCell>{group.size}</TableCell>
+            <TableCell>{group.size || 0}</TableCell>
             <TableCell>{group.entryTime}</TableCell>
             <TableCell>{getGuideName(group.guideId)}</TableCell>
             <TableCell>

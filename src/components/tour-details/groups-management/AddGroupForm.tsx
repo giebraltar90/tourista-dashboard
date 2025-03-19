@@ -56,16 +56,21 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
     try {
       setIsSubmitting(true);
       
-      await addGroup({
+      const groupData = {
         name: values.groupName,
         entryTime: values.entryTime,
         size: 0,
         guideId: values.guideId || undefined,
         participants: [],
-      });
+      };
       
-      toast.success("Group added successfully");
+      console.log("Submitting new group:", groupData);
+      
+      await addGroup(groupData);
+      
+      form.reset();
       onSuccess();
+      toast.success("Group added successfully");
     } catch (error) {
       console.error("Error adding group:", error);
       toast.error("Failed to add group");
@@ -74,8 +79,8 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
     }
   };
   
-  // Filter guides to only include those with valid IDs
-  const validGuides = guides.filter(guide => guide.id && guide.id.trim() !== "");
+  // Filter guides to only include those with valid IDs to prevent SelectItem errors
+  const validGuides = guides.filter(guide => guide && guide.id && guide.id.trim() !== "");
   
   return (
     <Form {...form}>
@@ -124,9 +129,9 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {/* Removed the empty value SelectItem that was causing the error */}
+                  <SelectItem value="">None (Unassigned)</SelectItem>
                   {validGuides.map((guide) => (
-                    <SelectItem key={guide.id} value={guide.id || "no-guide-id"}>
+                    <SelectItem key={guide.id} value={guide.id}>
                       {guide.name} ({guide.guideType})
                     </SelectItem>
                   ))}

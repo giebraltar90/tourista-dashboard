@@ -3,6 +3,7 @@ import { useTourById } from "../useTourData";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface UseDeleteGroupOptions {
   redistributeParticipants?: boolean;
@@ -11,13 +12,16 @@ interface UseDeleteGroupOptions {
 export const useDeleteGroup = (tourId: string, options: UseDeleteGroupOptions = {}) => {
   const { data: tour, refetch } = useTourById(tourId);
   const { redistributeParticipants = false } = options;
+  const queryClient = useQueryClient();
   
   const deleteGroup = async (groupIndex: number) => {
     try {
       if (!tour) throw new Error("Tour not found");
       
-      const updatedTourGroups = [...tour.tourGroups];
+      const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
       const groupToDelete = updatedTourGroups[groupIndex];
+      
+      console.log("Deleting group:", { groupIndex, group: groupToDelete });
       
       // If we need to redistribute participants to other groups
       if (redistributeParticipants && groupToDelete.participants?.length > 0) {
@@ -42,7 +46,7 @@ export const useDeleteGroup = (tourId: string, options: UseDeleteGroupOptions = 
           }
           
           targetGroup.participants.push(participant);
-          targetGroup.size += participant.count;
+          targetGroup.size = (targetGroup.size || 0) + participant.count;
           
           // Update child count if applicable
           if (participant.childCount) {
@@ -57,7 +61,12 @@ export const useDeleteGroup = (tourId: string, options: UseDeleteGroupOptions = 
       // Remove the group
       updatedTourGroups.splice(groupIndex, 1);
       
-      await updateTourGroups(tourId, updatedTourGroups);
+      const result = await updateTourGroups(tourId, updatedTourGroups);
+      console.log("Delete group API response:", result);
+      
+      // Forcefully invalidate queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
       
       // Refetch tour data to update UI
       await refetch();

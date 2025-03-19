@@ -53,6 +53,15 @@ const TourDetails = () => {
     );
   }
   
+  // Log tour data for debugging
+  console.log("Tour details:", {
+    tour,
+    guide1Info,
+    guide2Info,
+    guide3Info,
+    tourGroups: tour.tourGroups
+  });
+  
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">

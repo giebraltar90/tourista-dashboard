@@ -1,6 +1,8 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
+import { toast } from "sonner";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
@@ -14,7 +16,7 @@ export const useAssignGuide = (tourId: string) => {
       let guideName = "";
       if (guideId) {
         // Check for primary guides first
-        if (guideId === "guide1" || tour.guide1?.includes(guideId)) {
+        if (guideId === "guide1" || (tour.guide1 && tour.guide1.includes(guideId))) {
           guideName = tour.guide1;
         } else if (guideId === "guide2" || (tour.guide2 && tour.guide2.includes(guideId))) {
           guideName = tour.guide2;
@@ -36,17 +38,19 @@ export const useAssignGuide = (tourId: string) => {
         guide1: tour.guide1,
         guide2: tour.guide2,
         guide3: tour.guide3,
-        guidesFromContext: guides.map(g => ({ id: g.id, name: g.name }))
+        guidesFromContext: guides.map(g => ({ id: g.id, name: g.name })),
+        originalGroup: tour.tourGroups[groupIndex]
       });
       
-      const updatedTourGroups = [...tour.tourGroups];
+      const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
       
       // Check if we should update the group name based on the guide
       let groupName = updatedTourGroups[groupIndex].name;
       
       // If the group name follows the pattern "X's Group", update it with new guide name
+      // or if it's the first assignment, also update the name
       const namePattern = /^.+'s Group$/;
-      if (namePattern.test(groupName) || groupName.includes("Group")) {
+      if (namePattern.test(groupName) || groupName.includes("Group") || !updatedTourGroups[groupIndex].guideId) {
         if (guideName) {
           groupName = `${guideName}'s Group`;
         }
@@ -73,9 +77,16 @@ export const useAssignGuide = (tourId: string) => {
       // Refetch tour data to update UI
       await refetch();
       
+      if (guideName) {
+        toast.success(`Guide ${guideName} assigned to group successfully`);
+      } else {
+        toast.success("Guide removed from group");
+      }
+      
       return true;
     } catch (error) {
       console.error("Error assigning guide:", error);
+      toast.error("Failed to assign guide to group");
       throw error;
     }
   };

@@ -31,7 +31,7 @@ interface GuideOption {
 }
 
 const formSchema = z.object({
-  guideId: z.string(),
+  guideId: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -65,16 +65,15 @@ export const AssignGuideForm = ({
     try {
       setIsSubmitting(true);
       
+      console.log("Assigning guide:", { 
+        groupIndex, 
+        guideId: values.guideId,
+        currentGuideId
+      });
+      
       await assignGuide(groupIndex, values.guideId);
       
-      // Also update the group name based on the guide if it uses the default naming pattern
-      const selectedGuide = guides.find(g => g.id === values.guideId);
-      if (selectedGuide) {
-        toast.success(`Guide ${selectedGuide.name} assigned successfully`);
-      } else {
-        toast.success("Guide assigned successfully");
-      }
-      
+      // Toast is now in the assignGuide hook
       onSuccess();
     } catch (error) {
       console.error("Error assigning guide:", error);
@@ -88,9 +87,11 @@ export const AssignGuideForm = ({
     try {
       setIsSubmitting(true);
       
+      console.log("Removing guide from group:", { groupIndex });
+      
       await assignGuide(groupIndex, undefined);
       
-      toast.success("Guide removed from group");
+      // Toast is in the assignGuide hook now
       onSuccess();
     } catch (error) {
       console.error("Error removing guide:", error);
@@ -103,6 +104,8 @@ export const AssignGuideForm = ({
   // Filter out any guides with empty ids to avoid the Select.Item error
   const validGuides = guides.filter(guide => guide.id && guide.id.trim() !== "");
   
+  console.log("Valid guides for assignment:", validGuides);
+  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -112,13 +115,14 @@ export const AssignGuideForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Select Guide</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a guide" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="">None (Unassigned)</SelectItem>
                   {validGuides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
                       <div className="flex items-center">

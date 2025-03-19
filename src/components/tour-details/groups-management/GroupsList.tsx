@@ -10,13 +10,24 @@ import {
   DialogDescription 
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, Edit, UserPlus, Users } from "lucide-react";
+import { PlusCircle, Edit, UserPlus, Users, Trash2 } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { AddGroupForm } from "./AddGroupForm";
 import { EditGroupForm } from "./EditGroupForm";
 import { AssignGuideForm } from "./AssignGuideForm";
 import { toast } from "sonner";
+import { useDeleteGroup } from "@/hooks/group-management";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 
 interface GroupsListProps {
   tour: TourCardProps;
@@ -29,14 +40,29 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
   const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
-  const handleGroupAction = (index: number, action: 'edit' | 'assignGuide') => {
+  const { deleteGroup } = useDeleteGroup(tour.id, { redistributeParticipants: true });
+  
+  const handleGroupAction = (index: number, action: 'edit' | 'assignGuide' | 'delete') => {
     setSelectedGroupIndex(index);
     if (action === 'edit') {
       setIsEditGroupOpen(true);
-    } else {
+    } else if (action === 'assignGuide') {
       setIsAssignGuideOpen(true);
+    } else if (action === 'delete') {
+      setIsDeleteDialogOpen(true);
+    }
+  };
+  
+  const handleDeleteGroup = async () => {
+    if (selectedGroupIndex === null) return;
+    
+    const success = await deleteGroup(selectedGroupIndex);
+    if (success) {
+      setIsDeleteDialogOpen(false);
+      setSelectedGroupIndex(null);
     }
   };
   
@@ -51,11 +77,11 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
       guide3Id: guide3Info?.id 
     });
     
-    if (guide1Info && (guide1Info.id === guideId || guideId === "guide1")) {
+    if ((guideId === "guide1" || guideId === guide1Info?.id) && guide1Info) {
       return { name: tour.guide1, info: guide1Info };
-    } else if (guide2Info && (guide2Info.id === guideId || guideId === "guide2")) {
+    } else if ((guideId === "guide2" || guideId === guide2Info?.id) && guide2Info) {
       return { name: tour.guide2 || "", info: guide2Info };
-    } else if (guide3Info && (guide3Info.id === guideId || guideId === "guide3")) {
+    } else if ((guideId === "guide3" || guideId === guide3Info?.id) && guide3Info) {
       return { name: tour.guide3 || "", info: guide3Info };
     }
     
@@ -126,6 +152,14 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
                   >
                     <UserPlus className="h-4 w-4" />
                   </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    className="text-red-500 hover:bg-red-50"
+                    onClick={() => handleGroupAction(index, 'delete')}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               
@@ -138,10 +172,16 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
                   </Badge>
                 ) : (
                   <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800">
-                    Unassigned
+                    {guideName}
                   </Badge>
                 )}
               </div>
+              
+              {group.participants && group.participants.length > 0 && (
+                <div className="mt-3">
+                  <span className="text-sm font-medium">Participants: {group.participants.length}</span>
+                </div>
+              )}
             </div>
           );
         })}
@@ -180,11 +220,11 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
               groupIndex={selectedGroupIndex}
               guides={[
                 // Make sure all guides have valid IDs
-                { 
+                ...(tour.guide1 ? [{ 
                   id: guide1Info?.id || "guide1", 
                   name: tour.guide1, 
                   info: guide1Info 
-                },
+                }] : []),
                 ...(tour.guide2 ? [{ 
                   id: guide2Info?.id || "guide2", 
                   name: tour.guide2, 
@@ -197,14 +237,28 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
                 }] : [])
               ].filter(guide => guide.name && guide.id && guide.id.trim() !== "")}
               currentGuideId={tour.tourGroups[selectedGroupIndex].guideId}
-              onSuccess={() => {
-                setIsAssignGuideOpen(false);
-                toast.success("Guide assigned successfully");
-              }}
+              onSuccess={() => setIsAssignGuideOpen(false)}
             />
           )}
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will delete the group. Any participants will be redistributed to other groups.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteGroup} className="bg-red-500 hover:bg-red-600">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

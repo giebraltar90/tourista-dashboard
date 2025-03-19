@@ -2,16 +2,34 @@
 import { useTourById } from "../useTourData";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useAddGroup = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
+  const queryClient = useQueryClient();
   
   const addGroup = async (newGroup: VentrataTourGroup) => {
     try {
       if (!tour) throw new Error("Tour not found");
       
-      const updatedTourGroups = [...tour.tourGroups, newGroup];
-      await updateTourGroups(tourId, updatedTourGroups);
+      // Make sure we initialize all required fields
+      const completeNewGroup = {
+        ...newGroup,
+        size: newGroup.size || 0,
+        participants: newGroup.participants || []
+      };
+      
+      console.log("Adding new group:", completeNewGroup);
+      
+      const updatedTourGroups = [...tour.tourGroups, completeNewGroup];
+      const result = await updateTourGroups(tourId, updatedTourGroups);
+      
+      console.log("Add group API response:", result);
+      
+      // Forcefully invalidate queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
       
       // Refetch tour data to update UI
       await refetch();
@@ -19,6 +37,7 @@ export const useAddGroup = (tourId: string) => {
       return true;
     } catch (error) {
       console.error("Error adding group:", error);
+      toast.error("Failed to add group");
       throw error;
     }
   };
