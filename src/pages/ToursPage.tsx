@@ -190,9 +190,9 @@ const ToursPage = () => {
                 </div>
                 <div className="md:col-span-2">
                   <h3 className="text-sm font-medium mb-3">
-                    {timeRange === "weekly" 
+                    {timeRange === "this-week" || timeRange === "next-week"
                       ? "Tours this Week" 
-                      : timeRange === "monthly" 
+                      : timeRange === "this-month" || timeRange === "next-month"
                         ? "Tours this Month" 
                         : "Tours on Selected Date"}
                   </h3>
@@ -204,9 +204,9 @@ const ToursPage = () => {
                     <div className="flex items-center justify-center h-64 border rounded-md bg-muted/20">
                       <div className="text-center">
                         <p className="text-muted-foreground">
-                          {timeRange === "weekly" 
+                          {timeRange === "this-week" || timeRange === "next-week"
                             ? "No tours scheduled for this week" 
-                            : timeRange === "monthly" 
+                            : timeRange === "this-month" || timeRange === "next-month"
                               ? "No tours scheduled for this month" 
                               : "No tours scheduled for this date"}
                         </p>
