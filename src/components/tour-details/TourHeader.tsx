@@ -11,9 +11,10 @@ export interface TourHeaderProps {
   tour: TourCardProps;
   guide1Info: GuideInfo | null;
   guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
 }
 
-export const TourHeader = ({ tour, guide1Info, guide2Info }: TourHeaderProps) => {
+export const TourHeader = ({ tour, guide1Info, guide2Info, guide3Info }: TourHeaderProps) => {
   const { guideView } = useRole();
   const formattedDate = format(tour.date, 'EEEE, MMMM d, yyyy');
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);

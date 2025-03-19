@@ -10,7 +10,7 @@ import { GuideTicketInfo } from "./GuideTicketInfo";
 import { TicketStatus } from "./TicketStatus";
 import { TicketSufficiencyAlert } from "./TicketSufficiencyAlert";
 
-export const TicketsManagement = ({ tour, guide1Info, guide2Info }: TicketsManagementProps) => {
+export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   const adultTickets = Math.round(tour.numTickets * 0.7) || Math.round(totalParticipants * 0.7);
   const childTickets = (tour.numTickets || totalParticipants) - adultTickets;
@@ -21,19 +21,23 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info }: TicketsManag
   // Calculate guide ticket requirements
   const guide1NeedsTicket = guide1Info ? doesGuideNeedTicket(guide1Info, tour.location) : false;
   const guide2NeedsTicket = guide2Info ? doesGuideNeedTicket(guide2Info, tour.location) : false;
+  const guide3NeedsTicket = guide3Info ? doesGuideNeedTicket(guide3Info, tour.location) : false;
   
   // Get ticket types required for guides
   const guide1TicketType = guide1Info ? getGuideTicketType(guide1Info) : null;
   const guide2TicketType = guide2Info ? getGuideTicketType(guide2Info) : null;
+  const guide3TicketType = guide3Info ? getGuideTicketType(guide3Info) : null;
   
   // Calculate total required tickets
   const requiredAdultTickets = adultTickets + 
     (guide1TicketType === 'adult' ? 1 : 0) + 
-    (guide2TicketType === 'adult' ? 1 : 0);
+    (guide2TicketType === 'adult' ? 1 : 0) +
+    (guide3TicketType === 'adult' ? 1 : 0);
     
   const requiredChildTickets = childTickets + 
     (guide1TicketType === 'child' ? 1 : 0) + 
-    (guide2TicketType === 'child' ? 1 : 0);
+    (guide2TicketType === 'child' ? 1 : 0) +
+    (guide3TicketType === 'child' ? 1 : 0);
   
   // Determine if we have enough tickets
   const availableTickets = tour.numTickets || totalParticipants;
@@ -56,6 +60,13 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info }: TicketsManag
       birthday: undefined
     });
   }
+  if (guide3Info && guide3TicketType === 'adult') {
+    adultGuideTickets.push({
+      guideName: guide3Info.name,
+      guideType: 'GA Ticket',
+      birthday: undefined
+    });
+  }
 
   // Prepare guide child tickets data
   const childGuideTickets = [];
@@ -71,6 +82,13 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info }: TicketsManag
       guideName: guide2Info.name,
       guideType: 'GA Free',
       birthday: guide2Info.birthday
+    });
+  }
+  if (guide3Info && guide3TicketType === 'child') {
+    childGuideTickets.push({
+      guideName: guide3Info.name,
+      guideType: 'GA Free',
+      birthday: guide3Info.birthday
     });
   }
 
@@ -106,7 +124,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info }: TicketsManag
             <>
               <div className="space-y-4">
                 <h3 className="font-medium">Guide Ticket Requirements</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <GuideTicketInfo
                     guideName={tour.guide1}
                     guideInfo={guide1Info}
@@ -120,6 +138,15 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info }: TicketsManag
                       guideInfo={guide2Info}
                       needsTicket={guide2NeedsTicket}
                       ticketType={guide2TicketType}
+                    />
+                  )}
+
+                  {tour.guide3 && (
+                    <GuideTicketInfo
+                      guideName={tour.guide3}
+                      guideInfo={guide3Info}
+                      needsTicket={guide3NeedsTicket}
+                      ticketType={guide3TicketType}
                     />
                   )}
                 </div>

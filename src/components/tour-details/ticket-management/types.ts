@@ -6,6 +6,7 @@ export interface TicketsManagementProps {
   tour: TourCardProps;
   guide1Info: GuideInfo | null;
   guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
 }
 
 export interface TicketCountCardProps {
