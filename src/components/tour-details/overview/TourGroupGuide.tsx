@@ -42,6 +42,7 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
   const previousGuideIdRef = useRef<string | undefined>(group.guideId);
+  const manualUpdateRef = useRef(false);
   const lastUpdateTimeRef = useRef(Date.now());
   const [isOpen, setIsOpen] = useState(false);
   
@@ -50,24 +51,35 @@ export const TourGroupGuide = ({
   
   // Better synchronization of guide ID changes with debounce protection
   useEffect(() => {
-    if (!group.guideId && !previousGuideIdRef.current) {
-      // Both undefined or null, no change
+    // Skip updates if we just manually assigned a guide
+    if (manualUpdateRef.current) {
+      manualUpdateRef.current = false;
       return;
     }
     
     const now = Date.now();
-    // Only update if the group's guideId changed and it's different from our selected value
-    // Also add a time-based debounce to prevent rapid changes
-    if (group.guideId !== previousGuideIdRef.current && 
-        group.guideId !== selectedGuide && 
-        (now - lastUpdateTimeRef.current > 3000)) {
-        
-      console.log(`TourGroupGuide: Guide ID changed from ${previousGuideIdRef.current} to ${group.guideId} for group ${displayName}`);
-      setSelectedGuide(group.guideId || "_none");
-      previousGuideIdRef.current = group.guideId;
-      lastUpdateTimeRef.current = now;
+    
+    // Ensure we update our local state if the group's guideId changes from an external update
+    if (group.guideId !== previousGuideIdRef.current) {
+      console.log(`TourGroupGuide: Guide ID changed externally from ${previousGuideIdRef.current} to ${group.guideId} for group ${displayName}`);
+      
+      // Check if enough time has passed to prevent rapid oscillation
+      if (now - lastUpdateTimeRef.current > 5000) {
+        console.log(`Updating selectedGuide to ${group.guideId || "_none"}`);
+        setSelectedGuide(group.guideId || "_none");
+        previousGuideIdRef.current = group.guideId;
+        lastUpdateTimeRef.current = now;
+      } else {
+        console.log(`Debounce protection active, not updating UI state yet`);
+      }
     }
-  }, [group.guideId, selectedGuide, displayName]);
+  }, [group.guideId, displayName]);
+  
+  // Ensure group ID always stays in sync when component first mounts or tour changes
+  useEffect(() => {
+    previousGuideIdRef.current = group.guideId;
+    setSelectedGuide(group.guideId || "_none");
+  }, [tour.id, groupIndex]);
   
   const getGuideTypeBadgeColor = (guideType?: string) => {
     if (!guideType) return "bg-gray-100 text-gray-800";
@@ -94,8 +106,8 @@ export const TourGroupGuide = ({
     lastUpdateTimeRef.current = Date.now(); // Update timestamp to prevent conflicts
     
     try {
-      // Save current guideId for potential rollback
-      const previousGuideId = selectedGuide;
+      // Flag that we're doing a manual update to prevent effect from overriding
+      manualUpdateRef.current = true;
       
       // Optimistically update the UI first
       setSelectedGuide(guideId);
@@ -116,6 +128,10 @@ export const TourGroupGuide = ({
       toast.error("Failed to assign guide");
     } finally {
       setIsAssigning(false);
+      // Turn off manual update mode after a short delay
+      setTimeout(() => {
+        manualUpdateRef.current = false;
+      }, 1000);
     }
   };
 

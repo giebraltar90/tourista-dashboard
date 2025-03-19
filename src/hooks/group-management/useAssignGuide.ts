@@ -4,7 +4,7 @@ import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
 import { toast } from "sonner";
 import { useModifications } from "../useModifications";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 /**
@@ -15,6 +15,7 @@ export const useAssignGuide = (tourId: string) => {
   const { guides } = useGuideData();
   const { addModification } = useModifications(tourId);
   const queryClient = useQueryClient();
+  const pendingAssignmentsRef = useRef<Map<number, string | undefined>>(new Map());
   
   /**
    * Find guide name based on guide ID
@@ -67,6 +68,9 @@ export const useAssignGuide = (tourId: string) => {
       
       console.log("Assigning guide to group:", { groupIndex, guideId, tourId });
       
+      // Store this pending assignment to protect against race conditions
+      pendingAssignmentsRef.current.set(groupIndex, guideId);
+      
       // If guideId is "_none", treat it as undefined to unassign the guide
       const actualGuideId = guideId === "_none" ? undefined : guideId;
       
@@ -80,6 +84,7 @@ export const useAssignGuide = (tourId: string) => {
       // Skip processing if nothing changes
       if (currentGuideId === actualGuideId) {
         console.log("No change in guide assignment, skipping update");
+        pendingAssignmentsRef.current.delete(groupIndex);
         return true;
       }
       
@@ -127,32 +132,38 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // Only after successful API update, delay the data refresh 
-      // We're intentionally NOT invalidating immediately to prevent flicker
-      // Instead, we'll forcefully update the local cache again
+      // Ensure the cache remains updated with this guide assignment
+      // We're avoiding invalidation and manually updating to prevent UI flicker
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return updatedTour;
         
-        // Create a new copy of the tour groups to ensure React detects the change
-        const newTourGroups = [...oldData.tourGroups];
-        if (newTourGroups[groupIndex]) {
-          newTourGroups[groupIndex] = {
-            ...newTourGroups[groupIndex],
+        // Create a new deep copy to ensure React detects the change
+        const newData = JSON.parse(JSON.stringify(oldData));
+        
+        // Only update this specific group's data
+        if (newData.tourGroups[groupIndex]) {
+          newData.tourGroups[groupIndex] = {
+            ...newData.tourGroups[groupIndex],
             guideId: actualGuideId,
             name: newGroupName
           };
         }
         
-        return {
-          ...oldData,
-          tourGroups: newTourGroups
-        };
+        console.log("Re-updated cache data after API success:", newData);
+        return newData;
       });
       
-      // Set up a delayed invalidation after a longer time
+      // Clear the pending assignment
+      pendingAssignmentsRef.current.delete(groupIndex);
+      
+      // Schedule a VERY delayed future refresh, but with much lower priority
+      // This ensures eventually data consistency without disrupting the UX
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 10000); // 10 seconds, much longer than before
+        // Only refetch if there are no pending assignments to avoid conflicts
+        if (pendingAssignmentsRef.current.size === 0) {
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        }
+      }, 30000); // 30 seconds, extremely long to avoid UI issues
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {
@@ -166,9 +177,11 @@ export const useAssignGuide = (tourId: string) => {
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide to group");
       
-      // Revert optimistic update in case of error
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      // Clear the pending assignment
+      pendingAssignmentsRef.current.delete(groupIndex);
       
+      // Don't invalidate the query - that could cause more issues
+      // Just show the error toast and let the user try again
       throw error;
     }
   }, [tour, tourId, findGuideName, generateGroupName, addModification, queryClient]);

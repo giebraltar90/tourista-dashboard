@@ -16,13 +16,16 @@ export const useUpdateTourCapacity = (tourId: string) => {
       console.log("New high season value:", updatedTour.isHighSeason);
       
       try {
-        // For demo tours with string IDs like "tour-1", skip Supabase and use the API
-        if (!tourId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+        // Determine if this is a demo tour (without a UUID format ID)
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
+        
+        if (!isUuid) {
           console.log("Using mock API for non-UUID tour ID");
           return await updateTourCapacityApi(tourId, updatedTour);
         }
         
         // Only attempt Supabase update for valid UUIDs
+        console.log("Attempting Supabase update for tour:", tourId);
         const { error } = await supabase
           .from('tours')
           .update({ is_high_season: updatedTour.isHighSeason })
@@ -34,6 +37,7 @@ export const useUpdateTourCapacity = (tourId: string) => {
           return await updateTourCapacityApi(tourId, updatedTour);
         }
         
+        console.log("Supabase update successful");
         return true;
       } catch (err) {
         console.warn("Database error, falling back to API", err);
@@ -48,26 +52,40 @@ export const useUpdateTourCapacity = (tourId: string) => {
       // Snapshot the previous value
       const previousTour = queryClient.getQueryData(['tour', tourId]);
 
-      // Optimistically update the cache with the new value
+      // Optimistically update the cache with the new value - use deep copy
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return oldData;
-        console.log("Optimistically updating tour data:", {
-          ...oldData,
-          isHighSeason: variables.isHighSeason
-        });
-        return {
-          ...oldData,
-          isHighSeason: variables.isHighSeason
-        };
+        
+        // Create a new deep copy to ensure React detects the change
+        const newData = JSON.parse(JSON.stringify(oldData));
+        
+        // Explicitly and clearly set the isHighSeason boolean value
+        newData.isHighSeason = Boolean(variables.isHighSeason);
+        
+        console.log("Optimistically updating tour data:", newData);
+        return newData;
       });
 
       // Return the snapshot so we can rollback in case of failure
       return { previousTour };
     },
     onSuccess: (_, variables) => {
-      // Ensure data consistency
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      // Rather than invalidating, update the data directly
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return oldData;
+        
+        // Create a fresh copy with the updated value explicitly set
+        const updatedData = JSON.parse(JSON.stringify(oldData));
+        updatedData.isHighSeason = Boolean(variables.isHighSeason);
+        
+        console.log("Confirmed tour data update:", updatedData);
+        return updatedData;
+      });
+      
+      // Only schedule a delayed background refetch of the tours list
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tours'] });
+      }, 5000);
       
       const isHighSeason = Boolean(variables.isHighSeason);
       const modeText = isHighSeason ? 'high season' : 'standard';
@@ -91,10 +109,10 @@ export const useUpdateTourCapacity = (tourId: string) => {
       }
     },
     onSettled: () => {
-      // Always refetch after error or success to ensure our local data is in sync with server
+      // Only do a background refetch after a longer delay
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 500); // Small delay to allow other operations to complete
+      }, 15000); // Much longer delay to prevent UI flicker
     }
   });
   

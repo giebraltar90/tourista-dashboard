@@ -41,20 +41,37 @@ export const useTourById = (tourId: string) => {
       
       if (!tourData) return null;
       
-      // Create a clean copy of the tour data
-      const cleanedTourData = {...tourData};
+      // Create a deep copy of the tour data to prevent mutations
+      const cleanedTourData = JSON.parse(JSON.stringify(tourData));
       
       // CRITICAL FIX: Ensure isHighSeason is properly converted to boolean using double negation
       cleanedTourData.isHighSeason = !!cleanedTourData.isHighSeason;
       
+      // Ensure guide IDs are properly set on tour groups to maintain guide assignments
+      cleanedTourData.tourGroups = cleanedTourData.tourGroups.map(group => {
+        // If group name clearly indicates a guide, ensure guideId is set appropriately
+        if (cleanedTourData.guide1 && group.name && group.name.includes(cleanedTourData.guide1)) {
+          console.log(`Setting guide1 for group ${group.name}`);
+          group.guideId = group.guideId || "guide1";
+        } else if (cleanedTourData.guide2 && group.name && group.name.includes(cleanedTourData.guide2)) {
+          console.log(`Setting guide2 for group ${group.name}`);
+          group.guideId = group.guideId || "guide2";
+        } else if (cleanedTourData.guide3 && group.name && group.name.includes(cleanedTourData.guide3)) {
+          console.log(`Setting guide3 for group ${group.name}`);
+          group.guideId = group.guideId || "guide3";
+        }
+        return group;
+      });
+      
       console.log("Cleaned tour data with isHighSeason:", cleanedTourData.isHighSeason);
+      console.log("Tour groups after cleaning:", cleanedTourData.tourGroups);
       
       return cleanedTourData;
     },
     // CRITICAL FIX: Increase staleTime and cacheTime dramatically to reduce unnecessary refetches
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000,   // 10 minutes cache time
-    enabled: !!tourId, // Only run the query if tourId is provided
+    staleTime: 15 * 60 * 1000, // 15 minutes (increased from 5)
+    gcTime: 30 * 60 * 1000,    // 30 minutes cache time (increased from 10)
+    enabled: !!tourId,         // Only run the query if tourId is provided
   });
 };
 
@@ -72,13 +89,15 @@ export const useUpdateTourGroups = (tourId: string) => {
       // Snapshot previous value
       const previousTour = queryClient.getQueryData(['tour', tourId]);
       
-      // Optimistically update
+      // Optimistically update with deep clone to avoid mutation issues
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
-        return {
-          ...oldData,
-          tourGroups: updatedGroups
-        };
+        
+        // Create a deep copy to avoid mutation issues
+        const newData = JSON.parse(JSON.stringify(oldData));
+        newData.tourGroups = updatedGroups;
+        
+        return newData;
       });
       
       return { previousTour };
@@ -86,8 +105,18 @@ export const useUpdateTourGroups = (tourId: string) => {
     onSuccess: () => {
       // Delay the invalidation to prevent race conditions
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-        queryClient.invalidateQueries({ queryKey: ['tours'] });
+        // Use setQueryData instead of invalidating to maintain stable references
+        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+          if (!oldData) return null;
+          const updatedData = JSON.parse(JSON.stringify(oldData));
+          console.log("Successfully updated tour groups", updatedData);
+          return updatedData;
+        });
+        
+        // Only then schedule a background refetch
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tours'] });
+        }, 5000);
       }, 1000);
       
       toast.success("Tour groups updated successfully");
