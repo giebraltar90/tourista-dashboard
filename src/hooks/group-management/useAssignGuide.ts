@@ -1,4 +1,3 @@
-
 import { useTourById } from "../useTourData";
 import { updateTourGroups, updateTourModification } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -7,7 +6,7 @@ import { useModifications } from "../useModifications";
 import { useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { isUuid } from "@/services/ventrataApi";
+import { isUuid } from "@/types/ventrata";
 
 /**
  * Hook to assign or unassign guides to tour groups
