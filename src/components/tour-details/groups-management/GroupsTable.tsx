@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { useGuideData } from "@/hooks/useGuideData";
 import { UserPlus, Edit } from "lucide-react";
-import { useEffect, useState } from "react";
-import { isUuid } from "@/services/api/tour/guideUtils";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -30,13 +27,6 @@ export const GroupsTable = ({
   onEditGroup
 }: GroupsTableProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
-  const { guides } = useGuideData();
-  const [groups, setGroups] = useState(tourGroups);
-  
-  // Update local state when tourGroups changes
-  useEffect(() => {
-    setGroups(tourGroups);
-  }, [tourGroups]);
   
   return (
     <Table>
@@ -52,12 +42,12 @@ export const GroupsTable = ({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {groups.map((group, index) => {
+        {tourGroups.map((group, index) => {
           // Get guide info using the guideId from the group
           const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
           
           // Count total people (accounting for families/groups)
-          const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
+          const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
           
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";

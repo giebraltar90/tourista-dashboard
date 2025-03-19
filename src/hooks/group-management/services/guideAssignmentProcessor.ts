@@ -44,11 +44,11 @@ export const processGuideAssignment = async (
   guides: GuideInfo[],
   guideId: string | undefined,
   queryClient: QueryClient
-): Promise<{ 
+): Promise<{
   success: boolean; 
   updatedGroups: any; 
   guideName: string; 
-  groupName: string; 
+  groupName: string;
 }> => {
   try {
     if (!currentTour) throw new Error("Tour not found");

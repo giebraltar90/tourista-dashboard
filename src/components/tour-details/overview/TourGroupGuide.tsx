@@ -38,6 +38,9 @@ export const TourGroupGuide = ({
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
+  // Calculate accurate group size
+  const totalGroupSize = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
+  
   // Update our local state if the group's guideId changes from an external source
   useEffect(() => {
     if (group.guideId !== previousGuideIdRef.current) {
@@ -82,7 +85,7 @@ export const TourGroupGuide = ({
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-medium text-base">{displayName}</h3>
         <Badge variant="outline" className="bg-blue-50">
-          {group.size} people
+          {totalGroupSize} people
         </Badge>
       </div>
       

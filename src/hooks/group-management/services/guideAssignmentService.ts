@@ -14,7 +14,7 @@ export const prepareGroupUpdate = (
   guideName: string
 ) => {
   // Get the current group name
-  let groupName = updatedTourGroups[groupIndex].name;
+  let groupName = updatedTourGroups[groupIndex].name || `Group ${groupIndex + 1}`;
   
   // Generate a new group name only if we're assigning a guide (not unassigning)
   let newGroupName = groupName;
