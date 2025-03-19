@@ -55,9 +55,13 @@ export const GuideAssignmentDisplay = ({
     ? "Primary Guide" 
     : (currentGuideId === "guide2" ? "Secondary Guide" : "Assistant Guide");
 
-  // Determine the assigned group display text
+  // Determine the assigned group display text with the guide's name
   const getGroupAssignmentText = () => {
-    if (groupIndex === -1) return null;
+    if (groupIndex === -1) {
+      // If not assigned to a specific group, show the default group based on guide role
+      const defaultGroupNumber = isPrimary ? 1 : (currentGuideId === "guide2" ? 2 : 3);
+      return `Group ${defaultGroupNumber} (${currentGuideName || "Unassigned"})`;
+    }
     return `Group ${groupIndex + 1} (${currentGuideName || "Unassigned"})`;
   };
 
@@ -71,11 +75,9 @@ export const GuideAssignmentDisplay = ({
       <div className="flex-1">
         <div className="flex justify-between items-start">
           <div>
-            {groupAssignmentText && (
-              <div className="text-sm font-medium text-muted-foreground mb-1">
-                {groupAssignmentText}
-              </div>
-            )}
+            <div className="text-sm font-medium text-muted-foreground mb-1">
+              {groupAssignmentText}
+            </div>
             <h3 className="font-medium">{currentGuideName || "Unassigned"}</h3>
             <p className="text-sm text-muted-foreground">{displayRole}</p>
           </div>
@@ -84,7 +86,7 @@ export const GuideAssignmentDisplay = ({
             tourId={tourId}
             guideId={currentGuideId}
             guideName={currentGuideName}
-            groupIndex={groupIndex >= 0 ? groupIndex : 0}
+            groupIndex={groupIndex >= 0 ? groupIndex : (isPrimary ? 0 : (currentGuideId === "guide2" ? 1 : 2))}
             guides={availableGuides}
             displayName={displayRole}
           />

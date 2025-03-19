@@ -51,8 +51,8 @@ export const GroupsTable = ({
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
-          // Use standardized group naming
-          const standardizedGroupName = `Group ${index + 1}`;
+          // Use standardized group naming that includes guide name
+          const standardizedGroupName = `Group ${index + 1}${isGuideAssigned ? ` (${guideName})` : ''}`;
           
           return (
             <TableRow key={index}>

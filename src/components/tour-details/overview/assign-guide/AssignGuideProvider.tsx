@@ -71,6 +71,7 @@ export function AssignGuideProvider({
       // Cancel any current queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       
+      console.log(`Assigning guide to group ${groupIndex}, guideId: ${selectedGuideId}`);
       const success = await assignGuide(groupIndex, selectedGuideId);
       
       if (success) {
@@ -78,6 +79,10 @@ export function AssignGuideProvider({
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
           queryClient.invalidateQueries({ queryKey: ['tours'] });
+          
+          // Update other components that might display guide assignments
+          queryClient.invalidateQueries({ queryKey: ['groups'] });
+          queryClient.invalidateQueries({ queryKey: ['guides'] });
         }, 500);
       } else {
         // If failed, revert the local state
