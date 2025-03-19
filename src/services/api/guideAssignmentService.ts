@@ -24,6 +24,8 @@ export const updateGuideInSupabase = async (
     const safeGuideId = sanitizeGuideId(guideId);
     
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
+      tour_id: tourId,
+      group_id: groupId, 
       original_id: guideId,
       sanitized_id: safeGuideId,
       name: newGroupName

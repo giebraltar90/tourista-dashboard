@@ -32,7 +32,7 @@ export const isSpecialGuideId = (guideId: string | undefined): boolean => {
  * to prevent "invalid input syntax for type uuid" errors
  */
 export const sanitizeGuideId = (guideId: string | undefined | null): string | null => {
-  if (!guideId) return null;
+  if (!guideId || guideId === "_none") return null;
   
   // If it's a special guide ID, convert to null for database storage
   // This is essential because the database column requires UUID format

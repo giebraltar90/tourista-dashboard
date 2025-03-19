@@ -19,6 +19,21 @@ export const persistGuideAssignmentChanges = async (
   // Track if any persistence method succeeded
   let updateSuccess = false;
   
+  // Log all parameters for debugging
+  console.log("persistGuideAssignmentChanges called with:", { 
+    tourId, 
+    groupId, 
+    actualGuideId, 
+    groupName,
+    groupsCount: updatedGroups?.length || 0
+  });
+  
+  // Validate inputs
+  if (!tourId || !groupId) {
+    console.error("Cannot persist guide assignment: Missing tour or group ID");
+    return false;
+  }
+  
   // Determine what to save in the database
   // CRITICAL: Use sanitizeGuideId to ensure proper database storage
   // This handles special IDs like guide1, guide2, guide3 properly
@@ -27,29 +42,27 @@ export const persistGuideAssignmentChanges = async (
   console.log(`Persisting guide assignment: ${actualGuideId} (sanitized: ${safeGuideId}) for group ${groupId} in tour ${tourId}`);
   
   // First attempt: direct Supabase update with the most reliable method
-  if (tourId && groupId) {
-    try {
-      // Use the improved updateGuideInSupabase method with retry logic
-      updateSuccess = await updateGuideInSupabase(
-        tourId, 
-        groupId, 
-        actualGuideId, // Pass the actual ID - sanitization happens in the function
-        groupName
-      );
-      
-      console.log(`Direct Supabase update result: ${updateSuccess ? 'Success' : 'Failed'}`);
-      
-      // If the direct update succeeded, we're done
-      if (updateSuccess) {
-        return true;
-      }
-    } catch (error) {
-      console.error("Error with direct Supabase update:", error);
+  try {
+    // Use the improved updateGuideInSupabase method with retry logic
+    updateSuccess = await updateGuideInSupabase(
+      tourId, 
+      groupId, 
+      actualGuideId, // Pass the actual ID - sanitization happens in the function
+      groupName
+    );
+    
+    console.log(`Direct Supabase update result: ${updateSuccess ? 'Success' : 'Failed'}`);
+    
+    // If the direct update succeeded, we're done
+    if (updateSuccess) {
+      return true;
     }
+  } catch (error) {
+    console.error("Error with direct Supabase update:", error);
   }
   
   // Second attempt: try the persistGuideAssignment method
-  if (!updateSuccess && tourId && groupId) {
+  if (!updateSuccess) {
     try {
       updateSuccess = await persistGuideAssignment(
         tourId, 

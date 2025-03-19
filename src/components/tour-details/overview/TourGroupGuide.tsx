@@ -61,7 +61,15 @@ export const TourGroupGuide = ({
   }, [group, groupIndex]);
 
   const handleAssignGuide = async (guideId: string) => {
-    if (guideId === selectedGuide || !tour?.id) return;
+    if (!tour?.id) {
+      toast.error("Cannot assign guide: Missing tour ID");
+      return;
+    }
+    
+    if (guideId === selectedGuide) {
+      console.log("Same guide selected, no change needed");
+      return;
+    }
     
     if (assignmentAttempts.current >= maxRetries) {
       toast.error("Too many failed attempts. Please try again later.");

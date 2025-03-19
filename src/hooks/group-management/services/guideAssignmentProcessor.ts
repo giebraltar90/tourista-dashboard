@@ -46,6 +46,7 @@ export const processGuideAssignment = async (
     );
     
     if (!validation.isValid) {
+      console.error("Guide assignment validation failed:", validation);
       return {
         success: false,
         updatedGroups: updatedTourGroups,

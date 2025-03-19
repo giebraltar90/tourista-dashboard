@@ -34,6 +34,12 @@ export const GuideSelectionPopover = ({
   displayName
 }: GuideSelectionPopoverProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [localSelectedGuide, setLocalSelectedGuide] = useState(selectedGuide);
+
+  // Update local state when props change
+  if (selectedGuide !== localSelectedGuide) {
+    setLocalSelectedGuide(selectedGuide);
+  }
 
   const handleAssignGuide = async (guideId: string) => {
     if (guideId === selectedGuide) {
@@ -42,11 +48,20 @@ export const GuideSelectionPopover = ({
     }
     
     try {
+      console.log(`Selecting guide ${guideId} for ${displayName}`);
+      
+      // Update local state first
+      setLocalSelectedGuide(guideId);
+      
       // Close the popover while assigning to prevent multiple selections
       setIsOpen(false);
+      
+      // Call the parent handler to actually assign the guide
       await onAssignGuide(guideId);
     } catch (error) {
       console.error("Error in GuideSelectionPopover:", error);
+      // Revert local state if there was an error
+      setLocalSelectedGuide(selectedGuide);
     }
   };
 
@@ -73,12 +88,12 @@ export const GuideSelectionPopover = ({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-3">
+      <PopoverContent className="w-60 p-3">
         <div className="space-y-3">
           <h4 className="font-medium text-sm">Assign Guide to {displayName}</h4>
           <Select 
             onValueChange={(value) => handleAssignGuide(value)}
-            value={selectedGuide || "_none"}
+            value={localSelectedGuide}
             disabled={isAssigning}
           >
             <SelectTrigger>

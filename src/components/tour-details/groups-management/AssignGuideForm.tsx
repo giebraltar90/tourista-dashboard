@@ -54,8 +54,15 @@ export const AssignGuideForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
   
+  console.log("AssignGuideForm rendering with:", {
+    tourId,
+    groupIndex,
+    guides: guides.length,
+    currentGuideId
+  });
+  
   // Set the default value to "_none" if no guide is assigned
-  const defaultGuideId = currentGuideId === undefined || currentGuideId === "" ? "_none" : currentGuideId;
+  const defaultGuideId = currentGuideId || "_none";
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -84,6 +91,7 @@ export const AssignGuideForm = ({
       const success = await assignGuide(groupIndex, values.guideId);
       
       if (success) {
+        toast.success("Guide assigned successfully");
         onSuccess();
       } else {
         toast.error("Failed to assign guide. Please try again.");
@@ -107,6 +115,7 @@ export const AssignGuideForm = ({
       const success = await assignGuide(groupIndex, "_none");
       
       if (success) {
+        toast.success("Guide removed successfully");
         onSuccess();
       } else {
         toast.error("Failed to remove guide. Please try again.");
