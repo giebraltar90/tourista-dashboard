@@ -8,7 +8,8 @@ import { processGuideAssignment } from "./services/guideAssignmentProcessor";
 import { recordGuideAssignmentModification } from "./services/guideAssignmentService";
 
 /**
- * Hook to assign or unassign guides to tour groups
+ * Hook to assign or unassign guides to tour groups with improved debouncing
+ * and race condition prevention
  */
 export const useAssignGuide = (tourId: string) => {
   const { data: tour } = useTourById(tourId);
@@ -18,18 +19,18 @@ export const useAssignGuide = (tourId: string) => {
   const pendingAssignmentsRef = useRef<Map<number, { guideId: string | undefined, timestamp: number }>>(new Map());
   
   /**
-   * Assign a guide to a specific group
+   * Assign a guide to a specific group with improved race condition prevention
    */
   const assignGuide = useCallback(async (groupIndex: number, guideId?: string) => {
     try {
       const now = Date.now();
       const pendingAssignment = pendingAssignmentsRef.current.get(groupIndex);
       
-      // If there's already a pending assignment for this group that's less than 2 seconds old,
+      // If there's already a pending assignment for this group that's less than 5 seconds old,
       // and it's for the same guide ID, we'll ignore this request to prevent race conditions
       if (pendingAssignment && 
           pendingAssignment.guideId === guideId && 
-          now - pendingAssignment.timestamp < 2000) {
+          now - pendingAssignment.timestamp < 5000) {
         console.log("Ignoring duplicate assignment request:", { groupIndex, guideId });
         return true; // Return success so UI doesn't show error
       }
@@ -68,18 +69,17 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Clear the pending assignment after processing is complete
+      // Use a longer debounce time of 5 seconds to prevent rapid changes
       setTimeout(() => {
         // Only clear if it's the same assignment we started with
         const current = pendingAssignmentsRef.current.get(groupIndex);
         if (current && current.timestamp === now) {
           pendingAssignmentsRef.current.delete(groupIndex);
         }
-      }, 2000);
+      }, 5000);
       
-      // Force a background refresh to ensure data consistency
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 500);
+      // Avoid forced refreshes that could override our optimistic updates
+      // Move background refreshes to only happen after a much longer delay
       
       return result.success;
     } catch (error) {

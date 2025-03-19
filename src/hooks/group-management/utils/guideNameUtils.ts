@@ -29,7 +29,9 @@ export const findGuideName = (
 };
 
 /**
- * Generate a group name based on guide assignment
+ * Generate a group name based on guide assignment - 
+ * IMPORTANT: This now preserves the existing name by default unless 
+ * it's a default group name or explicitly following the guide naming pattern
  */
 export const generateGroupName = (currentName: string, guideName: string): string => {
   // If we're unassigning (guideName is "Unassigned"), keep the current name
@@ -37,16 +39,19 @@ export const generateGroupName = (currentName: string, guideName: string): strin
     return currentName;
   }
   
+  // Only modify names that follow known patterns
   const namePattern = /^.+'s Group$/;
+  const defaultGroupPattern = /^Group \d+$/;
   
-  // If the group name follows the pattern "X's Group", update it with new guide name
-  // or if it's the first assignment or contains "Group", also update the name
-  if (namePattern.test(currentName) || currentName.includes("Group")) {
-    if (guideName && guideName !== "Unassigned") {
-      return `${guideName}'s Group`;
-    }
+  // Only modify the name if:
+  // 1. It already follows the "[Name]'s Group" pattern
+  // 2. It's a default "Group X" name
+  // 3. It contains the word "Group" (likely a default or generated name)
+  if (namePattern.test(currentName) || defaultGroupPattern.test(currentName) || 
+      (currentName.includes("Group") && !currentName.includes("Custom"))) {
+    return `${guideName}'s Group`;
   }
   
-  // Keep the existing name if we're removing a guide or couldn't find a pattern match
+  // Otherwise, preserve the existing name
   return currentName;
 };

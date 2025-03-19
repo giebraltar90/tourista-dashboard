@@ -49,6 +49,7 @@ export const persistGuideAssignmentChanges = async (
 
 /**
  * Updates the UI with optimistic updates and handles success/failure messaging
+ * This now avoids immediate query invalidation which was causing the reversion
  */
 export const handleUIUpdates = async (
   tourId: string,
@@ -66,17 +67,28 @@ export const handleUIUpdates = async (
       toast.success("Guide removed from group");
     }
     
-    // Force a refresh after a delay to ensure data is fresh
+    // Only schedule a background refresh, but don't invalidate immediately
+    // This prevents the UI from reverting while still ensuring data consistency
     setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-    }, 1000);
+      // Use setQueryData instead of invalidating to avoid losing optimistic updates
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return oldData; // Return the current state, already updated optimistically
+      });
+      
+      // Schedule a background refetch after a longer delay to sync with server
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 10000); // 10 seconds - much longer delay to prevent immediate reversions
+    }, 5000); // 5 second delay
   } else {
     toast.error("Could not save guide assignment");
   }
 };
 
 /**
- * Performs optimistic UI update
+ * Performs optimistic UI update - improved to do a proper deep clone 
+ * and preserve all properties without risk of reference issues
  */
 export const performOptimisticUpdate = (
   queryClient: QueryClient,
@@ -85,8 +97,13 @@ export const performOptimisticUpdate = (
 ): void => {
   queryClient.setQueryData(['tour', tourId], (oldData: any) => {
     if (!oldData) return null;
+    
+    // Do a proper deep clone to avoid reference issues
     const newData = JSON.parse(JSON.stringify(oldData));
+    
+    // Replace the tour groups with our updated version
     newData.tourGroups = updatedGroups;
+    
     return newData;
   });
 };
