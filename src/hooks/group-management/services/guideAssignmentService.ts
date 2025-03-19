@@ -1,9 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
-import { updateTourGroups, updateGuideInSupabase } from "@/services/api/tourGroupApi";
-import { findGuideName, generateGroupName } from "../utils/guideNameUtils";
-import { toast } from "sonner";
+import { VentrataTourGroup } from "@/types/ventrata";
+import { updateTourModification } from "@/services/api/modificationApi";
+import { Json } from "@/integrations/supabase/types";
+import { generateGroupName } from "../utils/guideNameUtils";
 
 /**
  * Updates the group with new guide ID and possibly new name
@@ -27,7 +28,8 @@ export const prepareGroupUpdate = (
   // and only if the current name follows the default pattern
   let newGroupName = groupName;
   if (actualGuideId) {
-    newGroupName = generateGroupName(groupName, guideName);
+    // Fixed: Pass the groupIndex parameter as a number instead of guideName as a string
+    newGroupName = generateGroupName(groupName, groupIndex);
   }
   
   // Create a deep copy of the updatedTourGroups to avoid mutation issues
