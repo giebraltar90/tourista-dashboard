@@ -16,21 +16,42 @@ import {
   CalendarDays, 
   ListFilter, 
   Plus,
-  FileText
+  FileText,
+  CalendarRange,
+  Calendar as CalendarIcon
 } from "lucide-react";
+import { addDays, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 
 const ToursPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [viewMode, setViewMode] = useState<"all" | "calendar">("all");
+  const [timeRange, setTimeRange] = useState<"all" | "weekly" | "monthly">("all");
   
   // Filter tours based on selected date if in calendar view
-  const filteredTours = viewMode === "calendar" && date
+  let filteredTours = viewMode === "calendar" && date
     ? mockTours.filter(tour => 
         tour.date.getDate() === date.getDate() &&
         tour.date.getMonth() === date.getMonth() &&
         tour.date.getFullYear() === date.getFullYear()
       )
     : mockTours;
+  
+  // Apply weekly or monthly filter if selected
+  if (timeRange === "weekly" && date) {
+    const weekStart = startOfWeek(date);
+    const weekEnd = endOfWeek(date);
+    
+    filteredTours = mockTours.filter(tour => 
+      isWithinInterval(tour.date, { start: weekStart, end: weekEnd })
+    );
+  } else if (timeRange === "monthly" && date) {
+    const monthStart = startOfMonth(date);
+    const monthEnd = endOfMonth(date);
+    
+    filteredTours = mockTours.filter(tour => 
+      isWithinInterval(tour.date, { start: monthStart, end: monthEnd })
+    );
+  }
   
   return (
     <DashboardLayout>
@@ -57,25 +78,54 @@ const ToursPage = () => {
         
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle>Tour Overview</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant={viewMode === "all" ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setViewMode("all")}
-                >
-                  <ListFilter className="mr-2 h-4 w-4" />
-                  All Tours
-                </Button>
-                <Button 
-                  variant={viewMode === "calendar" ? "default" : "outline"} 
-                  size="sm"
-                  onClick={() => setViewMode("calendar")}
-                >
-                  <CalendarDays className="mr-2 h-4 w-4" />
-                  Calendar View
-                </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 mr-4 border rounded-md p-1">
+                  <Button 
+                    variant={timeRange === "all" ? "default" : "ghost"} 
+                    size="sm"
+                    onClick={() => setTimeRange("all")}
+                  >
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    All
+                  </Button>
+                  <Button 
+                    variant={timeRange === "weekly" ? "default" : "ghost"} 
+                    size="sm"
+                    onClick={() => setTimeRange("weekly")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    Weekly
+                  </Button>
+                  <Button 
+                    variant={timeRange === "monthly" ? "default" : "ghost"} 
+                    size="sm"
+                    onClick={() => setTimeRange("monthly")}
+                  >
+                    <CalendarRange className="mr-2 h-4 w-4" />
+                    Monthly
+                  </Button>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant={viewMode === "all" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setViewMode("all")}
+                  >
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    All Tours
+                  </Button>
+                  <Button 
+                    variant={viewMode === "calendar" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => setViewMode("calendar")}
+                  >
+                    <CalendarDays className="mr-2 h-4 w-4" />
+                    Calendar View
+                  </Button>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -92,7 +142,13 @@ const ToursPage = () => {
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <h3 className="text-sm font-medium mb-3">Tours on Selected Date</h3>
+                  <h3 className="text-sm font-medium mb-3">
+                    {timeRange === "weekly" 
+                      ? "Tours this Week" 
+                      : timeRange === "monthly" 
+                        ? "Tours this Month" 
+                        : "Tours on Selected Date"}
+                  </h3>
                   {filteredTours.length > 0 ? (
                     <div className="space-y-4">
                       <UpcomingTours tours={filteredTours} />
@@ -100,7 +156,13 @@ const ToursPage = () => {
                   ) : (
                     <div className="flex items-center justify-center h-64 border rounded-md bg-muted/20">
                       <div className="text-center">
-                        <p className="text-muted-foreground">No tours scheduled for this date</p>
+                        <p className="text-muted-foreground">
+                          {timeRange === "weekly" 
+                            ? "No tours scheduled for this week" 
+                            : timeRange === "monthly" 
+                              ? "No tours scheduled for this month" 
+                              : "No tours scheduled for this date"}
+                        </p>
                         <Button variant="link" size="sm" className="mt-2">
                           <Plus className="mr-2 h-4 w-4" />
                           Add Tour
@@ -120,7 +182,7 @@ const ToursPage = () => {
                   </TabsList>
                   
                   <TabsContent value="upcoming" className="mt-6">
-                    <UpcomingTours tours={mockTours} />
+                    <UpcomingTours tours={filteredTours} />
                   </TabsContent>
                   
                   <TabsContent value="past" className="mt-6">
@@ -130,7 +192,7 @@ const ToursPage = () => {
                   </TabsContent>
                   
                   <TabsContent value="all" className="mt-6">
-                    <UpcomingTours tours={mockTours} />
+                    <UpcomingTours tours={filteredTours} />
                   </TabsContent>
                 </Tabs>
               </div>
