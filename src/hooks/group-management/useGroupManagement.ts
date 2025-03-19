@@ -6,8 +6,11 @@ import { useParticipantMovement } from "./useParticipantMovement";
 import { useDragAndDrop } from "./useDragAndDrop";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useGroupManagement = (tour: TourCardProps) => {
+  const queryClient = useQueryClient();
+  
   const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>(() => {
     // Create a deep copy of tour groups with participants
     const groups = JSON.parse(JSON.stringify(tour.tourGroups || []));
@@ -67,7 +70,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
       
       // Update local groups with participants
       setLocalTourGroups(prevGroups => {
-        return prevGroups.map(group => {
+        const updatedGroups = prevGroups.map(group => {
           const groupParticipants = participants
             ? participants
                 .filter(p => p.group_id === group.id)
@@ -76,7 +79,8 @@ export const useGroupManagement = (tour: TourCardProps) => {
                   name: p.name,
                   count: p.count || 1,
                   bookingRef: p.booking_ref,
-                  childCount: p.child_count || 0
+                  childCount: p.child_count || 0,
+                  group_id: p.group_id // Keep the group_id for reference
                 }))
             : [];
             
@@ -88,12 +92,19 @@ export const useGroupManagement = (tour: TourCardProps) => {
             childCount: groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0)
           };
         });
+        
+        // Force a refresh of the tour data to reflect these changes
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        }, 500);
+        
+        return updatedGroups;
       });
     } catch (error) {
       console.error("Error loading participants:", error);
       toast.error("Failed to load participants");
     }
-  }, []);
+  }, [queryClient]);
 
   // Get participant movement capabilities from the hook
   const {

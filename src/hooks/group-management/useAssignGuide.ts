@@ -6,13 +6,14 @@ import { useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { processGuideAssignment } from "./services/guideAssignmentProcessor";
 import { recordGuideAssignmentModification } from "./services/guideAssignmentService";
+import { toast } from "sonner";
 
 /**
  * Hook to assign or unassign guides to tour groups with improved debouncing
  * and race condition prevention
  */
 export const useAssignGuide = (tourId: string) => {
-  const { data: tour } = useTourById(tourId);
+  const { data: tour, refetch } = useTourById(tourId);
   const { guides = [] } = useGuideData() || { guides: [] };
   const { addModification } = useModifications(tourId);
   const queryClient = useQueryClient();
@@ -81,6 +82,17 @@ export const useAssignGuide = (tourId: string) => {
           result.groupName,
           addModification
         );
+        
+        // Force a refetch after a delay to ensure UI is updated
+        setTimeout(() => {
+          refetch();
+          // Also invalidate the tours list to update the overview
+          queryClient.invalidateQueries({ queryKey: ['tours'] });
+        }, 1000);
+        
+        toast.success(`Guide ${result.guideName || 'Unknown'} assigned successfully`);
+      } else {
+        toast.error("Failed to assign guide");
       }
       
       // Clear the pending assignment after processing is complete
@@ -96,13 +108,14 @@ export const useAssignGuide = (tourId: string) => {
       return result.success;
     } catch (error) {
       console.error("Error assigning guide:", error);
+      toast.error("Failed to assign guide due to an error");
       
       // Clear the pending assignment
       pendingAssignmentsRef.current.delete(groupIndex);
       
       throw error;
     }
-  }, [tour, tourId, guides, addModification, queryClient]);
+  }, [tour, tourId, guides, addModification, queryClient, refetch]);
   
   return { assignGuide };
 };

@@ -4,6 +4,7 @@ import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { updateParticipantGroupInDatabase } from "./services/participantService";
 import { useUpdateTourGroups } from "@/hooks/tourData/useUpdateTourGroups";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useParticipantMovement = (
   tourId: string, 
@@ -15,6 +16,7 @@ export const useParticipantMovement = (
   } | null>(null);
   const [isMovePending, setIsMovePending] = useState(false);
   const { mutate: updateTourGroups } = useUpdateTourGroups(tourId);
+  const queryClient = useQueryClient();
 
   // Handle moving a participant to another group
   const handleMoveParticipant = useCallback(async (toGroupIndex: number) => {
@@ -85,6 +87,13 @@ export const useParticipantMovement = (
       updateTourGroups(updatedGroups, {
         onSuccess: () => {
           toast.success(`Moved ${participant.name} to ${toGroup.name || `Group ${toGroupIndex + 1}`}`);
+          
+          // Force a refresh of the tour data to reflect these changes in other components
+          setTimeout(() => {
+            queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+            // Also invalidate the tours list to update the overview
+            queryClient.invalidateQueries({ queryKey: ['tours'] });
+          }, 500);
         },
         onError: (error: any) => {
           console.error("Error updating tour groups:", error);
@@ -100,7 +109,7 @@ export const useParticipantMovement = (
     } finally {
       setIsMovePending(false);
     }
-  }, [selectedParticipant, tourGroups, updateTourGroups]);
+  }, [selectedParticipant, tourGroups, tourId, updateTourGroups, queryClient]);
 
   // Function to open the move dialog 
   const handleOpenMoveDialog = useCallback((data: {
