@@ -323,6 +323,7 @@ const TourDetails = () => {
                         <TableHead>Size</TableHead>
                         <TableHead>Entry Time</TableHead>
                         <TableHead>Guide</TableHead>
+                        <TableHead>Children</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -334,6 +335,15 @@ const TourDetails = () => {
                           <TableCell>{group.size}</TableCell>
                           <TableCell>{group.entryTime}</TableCell>
                           <TableCell>{index === 0 ? tour.guide1 : tour.guide2 || tour.guide1}</TableCell>
+                          <TableCell>
+                            {group.childCount ? (
+                              <Badge variant="outline" className="bg-blue-100 text-blue-800">
+                                {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
+                              </Badge>
+                            ) : (
+                              <span className="text-muted-foreground">None</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="bg-green-100 text-green-800">
                               Confirmed
@@ -362,7 +372,14 @@ const TourDetails = () => {
                       <Card key={groupIndex} className="border-2 border-muted">
                         <CardHeader className="pb-2 bg-muted/30">
                           <div className="flex justify-between items-center">
-                            <CardTitle className="text-base font-medium">{group.name}</CardTitle>
+                            <CardTitle className="text-base font-medium">
+                              {group.name}
+                              {group.childCount ? (
+                                <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
+                                  {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
+                                </Badge>
+                              ) : null}
+                            </CardTitle>
                             <Badge variant="outline">
                               {group.size} {group.size === 1 ? 'person' : 'people'}
                             </Badge>
@@ -382,7 +399,14 @@ const TourDetails = () => {
                                   <div className="flex items-center space-x-2">
                                     <UserCheck className="h-4 w-4 text-muted-foreground" />
                                     <div>
-                                      <div className="font-medium">{participant.name}</div>
+                                      <div className="font-medium flex items-center">
+                                        {participant.name}
+                                        {participant.childCount ? (
+                                          <Badge variant="outline" className="ml-2 text-xs bg-blue-50 text-blue-700">
+                                            {participant.childCount} {participant.childCount === 1 ? 'child' : 'children'}
+                                          </Badge>
+                                        ) : null}
+                                      </div>
                                       <div className="text-sm text-muted-foreground">
                                         {participant.count} {participant.count === 1 ? 'person' : 'people'} • Booking #{participant.bookingRef}
                                       </div>
@@ -423,6 +447,11 @@ const TourDetails = () => {
                                             <div className="flex items-center mt-2">
                                               <Users className="h-4 w-4 mr-2 text-muted-foreground" />
                                               <span>{participant.count} {participant.count === 1 ? 'person' : 'people'}</span>
+                                              {participant.childCount ? (
+                                                <span className="ml-2 text-blue-600 text-sm">
+                                                  (incl. {participant.childCount} {participant.childCount === 1 ? 'child' : 'children'})
+                                                </span>
+                                              ) : null}
                                             </div>
                                           </div>
                                           

@@ -1,4 +1,3 @@
-
 // Define Ventrata API types based on their documentation
 
 export interface VentrataParticipant {
@@ -6,6 +5,7 @@ export interface VentrataParticipant {
   name: string;
   count: number;
   bookingRef: string;
+  childCount?: number; // Number of children in this participant group
 }
 
 export interface VentrataTourGroup {
@@ -13,6 +13,7 @@ export interface VentrataTourGroup {
   size: number;
   entryTime: string;
   participants?: VentrataParticipant[];
+  childCount?: number; // Total children in this group
 }
 
 export interface VentrataTour {

@@ -18,20 +18,22 @@ export const mockTours: TourCardProps[] = [
         name: "Noéma's Group",
         size: 6,
         entryTime: "9:10",
+        childCount: 2,
         participants: [
-          { id: "p1", name: "Smith Family", count: 2, bookingRef: "BK001" },
+          { id: "p1", name: "Smith Family", count: 2, bookingRef: "BK001", childCount: 1 },
           { id: "p2", name: "John Davis", count: 1, bookingRef: "BK002" },
-          { id: "p3", name: "Rodriguez Family", count: 3, bookingRef: "BK003" }
+          { id: "p3", name: "Rodriguez Family", count: 3, bookingRef: "BK003", childCount: 1 }
         ]
       },
       {
         name: "Jordan's Group",
         size: 4,
         entryTime: "9:10",
+        childCount: 1,
         participants: [
           { id: "p4", name: "Wilson Couple", count: 2, bookingRef: "BK004" },
           { id: "p5", name: "Laura Chen", count: 1, bookingRef: "BK005" },
-          { id: "p6", name: "Michael Brown", count: 1, bookingRef: "BK006" }
+          { id: "p6", name: "Michael Brown", count: 1, bookingRef: "BK006", childCount: 1 }
         ]
       }
     ],
