@@ -24,6 +24,8 @@ const TourDetails = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
   const refreshTimer = useRef<NodeJS.Timeout | null>(null);
+  const isInitialLoad = useRef(true);
+  const lastRefetchTime = useRef(Date.now());
   
   const { data: tour, isLoading, error, refetch } = useTourById(id || "");
   
@@ -32,11 +34,12 @@ const TourDetails = () => {
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
-  // Force data refresh when component mounts
+  // Force data refresh when component mounts, but only once
   useEffect(() => {
-    if (id) {
+    if (id && isInitialLoad.current) {
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
+      isInitialLoad.current = false;
     }
     
     return () => {
@@ -47,18 +50,20 @@ const TourDetails = () => {
     };
   }, [id, queryClient, refetch]);
   
-  // Refresh data when tab changes
+  // Refresh data when tab changes, but with throttling to prevent flickering
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     
-    // Force refresh data when switching tabs
-    if (id) {
+    // Only force refresh if it's been more than 10 seconds since last refresh
+    const now = Date.now();
+    if (id && (now - lastRefetchTime.current) > 10000) { 
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
+      lastRefetchTime.current = now;
     }
   };
   
-  // Refresh data periodically, but with a longer interval
+  // Refresh data very infrequently to avoid flickering and respect optimistic updates
   useEffect(() => {
     if (!id) return;
     
@@ -67,11 +72,15 @@ const TourDetails = () => {
       clearInterval(refreshTimer.current);
     }
     
-    // Set up periodic refreshes with a longer interval to avoid flickering
+    // Set up periodic refreshes with a much longer interval (2 minutes) to avoid disrupting user experience
     refreshTimer.current = setInterval(() => {
-      // Use a gentle refetch approach that doesn't discard local changes
-      refetch();
-    }, 30000); // Refresh every 30 seconds instead of 5
+      // Only refetch if no user interaction in the last minute
+      const now = Date.now();
+      if ((now - lastRefetchTime.current) > 60000) {
+        refetch();
+        lastRefetchTime.current = now;
+      }
+    }, 120000); // Refresh every 2 minutes
     
     return () => {
       if (refreshTimer.current) {
@@ -128,8 +137,8 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement key={`guide-management-${tour.id}`} tour={tour} />
-              <GroupsManagement key={`groups-management-${tour.id}`} tour={tour} />
+              <GroupGuideManagement key={`guide-management-${tour.id}-${activeTab}`} tour={tour} />
+              <GroupsManagement key={`groups-management-${tour.id}-${activeTab}`} tour={tour} />
             </div>
           </TabsContent>
           

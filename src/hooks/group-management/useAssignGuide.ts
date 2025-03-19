@@ -1,4 +1,3 @@
-
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -11,7 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * Hook to assign or unassign guides to tour groups
  */
 export const useAssignGuide = (tourId: string) => {
-  const { data: tour, refetch } = useTourById(tourId);
+  const { data: tour } = useTourById(tourId);
   const { guides } = useGuideData();
   const { addModification } = useModifications(tourId);
   const queryClient = useQueryClient();
@@ -87,8 +86,8 @@ export const useAssignGuide = (tourId: string) => {
         name: newGroupName
       };
 
-      // IMPORTANT: Update the query cache BEFORE making the API call
-      // This ensures the UI sees the changes immediately
+      // IMPORTANT: Immediately update local cache BEFORE API call
+      // This prevents UI flicker during API request
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
         return {
@@ -113,14 +112,8 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // IMPORTANT: Disable automatic refetching for a short period
-      // to prevent overriding our optimistic updates
-      const timeoutMs = 5000; // 5 seconds
-      
-      setTimeout(() => {
-        // After the timeout, perform a controlled refetch
-        refetch();
-      }, timeoutMs);
+      // Disable automatic refetching to prevent overriding our optimistic updates
+      // We'll let the UI keep our optimistic update in place
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {
@@ -133,9 +126,13 @@ export const useAssignGuide = (tourId: string) => {
     } catch (error) {
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide to group");
+      
+      // Revert optimistic update in case of error
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      
       throw error;
     }
-  }, [tour, tourId, findGuideName, generateGroupName, refetch, addModification, queryClient]);
+  }, [tour, tourId, findGuideName, generateGroupName, addModification, queryClient]);
   
   return { assignGuide };
 };

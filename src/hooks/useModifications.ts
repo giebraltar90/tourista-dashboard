@@ -1,16 +1,18 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { TourModification, VentrataTour } from "@/types/ventrata";
 import { useTourById } from "./useTourData";
 import { updateTourModification } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useModifications = (tourId: string) => {
-  const { data: tour, refetch } = useTourById(tourId);
+  const { data: tour } = useTourById(tourId);
   const [isAddingModification, setIsAddingModification] = useState(false);
+  const queryClient = useQueryClient();
   
-  const addModification = async (description: string, details?: Record<string, any>) => {
+  const addModification = useCallback(async (description: string, details?: Record<string, any>) => {
     try {
       if (!tour) {
         throw new Error("Tour not found");
@@ -34,12 +36,19 @@ export const useModifications = (tourId: string) => {
       // Add new modification to the list
       const updatedModifications = [newModification, ...existingModifications];
       
+      // Optimistically update the tour in the query cache immediately
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return {
+          ...oldData,
+          modifications: updatedModifications
+        };
+      });
+      
       // Update the tour with new modifications
       const result = await updateTourModification(tourId, updatedModifications);
       
       if (result) {
-        // Refetch to update UI
-        await refetch();
         toast.success("Modification recorded successfully");
       }
       
@@ -47,11 +56,15 @@ export const useModifications = (tourId: string) => {
     } catch (error) {
       console.error("Error adding modification:", error);
       toast.error("Failed to record modification");
+      
+      // Revert optimistic update in case of error
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      
       return false;
     } finally {
       setIsAddingModification(false);
     }
-  };
+  }, [tour, tourId, queryClient]);
   
   return { 
     modifications: tour?.modifications || [],
