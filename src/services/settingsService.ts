@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 // Default logo path that's used as a fallback
-const DEFAULT_LOGO = "/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png";
+export const DEFAULT_LOGO = "/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png";
 
 /**
  * Get a setting from the database
