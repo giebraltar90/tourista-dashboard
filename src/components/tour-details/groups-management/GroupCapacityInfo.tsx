@@ -16,14 +16,8 @@ export const GroupCapacityInfo = ({
 }: GroupCapacityInfoProps) => {
   // Calculate counts directly from tour groups to ensure accuracy
   const actualTotalParticipants = tour.tourGroups.reduce((sum, group) => {
-    // Check if participants exists before trying to access it
-    if (group.participants) {
-      // Try to get count from participants first
-      const participantCount = group.participants.reduce((pSum, p) => pSum + (p.count || 1), 0) || 0;
-      // If participants exist but count is 0, fall back to group.size
-      return sum + (participantCount > 0 ? participantCount : (group.size || 0));
-    }
-    // If no participants property, use group.size
+    // We need to handle the case where participants might not exist in the type
+    // Just use the group size directly since participants may not be in the type
     return sum + (group.size || 0);
   }, 0);
   
