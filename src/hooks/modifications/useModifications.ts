@@ -6,6 +6,7 @@ import { updateTourModification } from "@/services/api/modificationApi";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
+import { Json } from "@/integrations/supabase/types";
 
 /**
  * Hook for managing tour modifications
@@ -15,7 +16,7 @@ export const useModifications = (tourId: string) => {
   const [isAddingModification, setIsAddingModification] = useState(false);
   const queryClient = useQueryClient();
   
-  const addModification = useCallback(async (description: string, details?: Record<string, any>) => {
+  const addModification = useCallback(async (description: string, details?: Record<string, any> | Json) => {
     try {
       if (!tour) {
         throw new Error("Tour not found");

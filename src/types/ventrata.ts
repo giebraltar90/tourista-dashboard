@@ -1,5 +1,6 @@
 
 // Define Ventrata API types based on their documentation
+import { Json } from "@/integrations/supabase/types";
 
 export interface VentrataParticipant {
   id: string;
@@ -53,7 +54,7 @@ export interface TourModification {
   user: string;
   description: string;
   status: 'pending' | 'complete';
-  details?: Record<string, any>; // Additional details about the modification
+  details?: Record<string, any> | Json; // Allow both Record<string, any> and Json types
 }
 
 // API response types

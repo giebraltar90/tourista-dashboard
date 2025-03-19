@@ -2,6 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "./helpers";
+import { TourModification } from "@/types/ventrata";
 
 /**
  * Fetch a single tour from Supabase
@@ -64,7 +65,7 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
         user: mod.user_id || "System",
         description: mod.description,
         status: mod.status,
-        details: mod.details
+        details: mod.details || {}
       })) : []
     };
   }

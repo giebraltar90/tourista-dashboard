@@ -1,4 +1,6 @@
+
 import { VentrataTour, VentrataTourGroup, VentrataParticipant, GuideInfo, TourModification } from "@/types/ventrata";
+import { Json } from "@/integrations/supabase/types";
 
 export interface TourCardProps extends VentrataTour {
   isCondensed?: boolean;

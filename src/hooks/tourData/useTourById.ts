@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchTourById } from "@/services/api/tourApi";
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/services/api/tour/guideUtils";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 
 export const useTourById = (tourId: string) => {
   console.log("useTourById called with ID:", tourId);
@@ -80,7 +81,7 @@ export const useTourById = (tourId: string) => {
               : [];
             
             // Transform to application format with guide names instead of IDs
-            return {
+            const result: TourCardProps = {
               id: tour.id,
               date: new Date(tour.date),
               location: tour.location,
@@ -109,9 +110,11 @@ export const useTourById = (tourId: string) => {
                 user: mod.user_id || "System",
                 description: mod.description,
                 status: mod.status,
-                details: mod.details
+                details: mod.details || {}
               })) : []
             };
+            
+            return result;
           }
         }
         
