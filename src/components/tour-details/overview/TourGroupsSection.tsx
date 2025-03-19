@@ -21,10 +21,12 @@ export const TourGroupsSection = ({
   guide3Info 
 }: TourGroupsSectionProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
-  const { guides } = useGuideData();
-
-  // Create guide options for the select dropdown
+  const { guides } = useGuideData() || { guides: [] };
+  
+  // Create guide options for the select dropdown - making sure we handle undefined values
   const getGuideOptions = () => {
+    if (!tour) return [];
+    
     const options = [
       { id: "guide1", name: tour.guide1, info: guide1Info },
       ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: guide2Info }] : []),
@@ -32,16 +34,23 @@ export const TourGroupsSection = ({
     ];
     
     // Add additional guides from the database that might not be primary guides
-    guides.forEach(guide => {
-      // Skip if this guide is already in the options (compare by id and name)
-      if (!options.some(g => g.id === guide.id || g.name === guide.name)) {
-        options.push({ id: guide.id, name: guide.name, info: guide });
-      }
-    });
+    if (guides && Array.isArray(guides)) {
+      guides.forEach(guide => {
+        // Skip if this guide is already in the options (compare by id and name)
+        if (!options.some(g => g.id === guide.id || g.name === guide.name)) {
+          options.push({ id: guide.id, name: guide.name, info: guide });
+        }
+      });
+    }
     
     // Remove any invalid options (no name)
-    return options.filter(guide => guide.name);
+    return options.filter(guide => guide && guide.name);
   };
+
+  // Guard against tour being undefined
+  if (!tour || !tour.tourGroups) {
+    return null;
+  }
 
   return (
     <Card>
