@@ -11,8 +11,6 @@ interface GroupsTableProps {
   guide1Info?: GuideInfo | null;
   guide2Info?: GuideInfo | null;
   guide3Info?: GuideInfo | null;
-  onAssignGuide: (groupIndex: number) => void;
-  onEditGroup: (groupIndex: number) => void;
 }
 
 export const GroupsTable = ({ 

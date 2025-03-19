@@ -20,26 +20,40 @@ export const moveParticipant = (
   const updatedTourGroups = JSON.parse(JSON.stringify(currentGroups));
   
   const sourceGroup = updatedTourGroups[fromGroupIndex];
-  if (sourceGroup.participants) {
-    // Remove participant from source group
-    sourceGroup.participants = sourceGroup.participants.filter(
-      (p: VentrataParticipant) => p.id !== participant.id
-    );
-    
-    // Update source group's size property based on actual participant count
-    sourceGroup.size = sourceGroup.participants.reduce(
-      (total: number, p: VentrataParticipant) => total + (p.count || 1),
-      0
-    );
-    
-    // Update child count if needed
-    if (participant.childCount) {
-      sourceGroup.childCount = Math.max(0, (sourceGroup.childCount || 0) - participant.childCount);
-    }
+  if (!sourceGroup) {
+    toast.error("Source group not found");
+    return null;
+  }
+  
+  // Ensure participants array exists
+  if (!Array.isArray(sourceGroup.participants)) {
+    sourceGroup.participants = [];
+  }
+  
+  // Remove participant from source group
+  sourceGroup.participants = sourceGroup.participants.filter(
+    (p: VentrataParticipant) => p.id !== participant.id
+  );
+  
+  // Update source group's size property based on actual participant count
+  sourceGroup.size = sourceGroup.participants.reduce(
+    (total: number, p: VentrataParticipant) => total + (p.count || 1),
+    0
+  );
+  
+  // Update child count if needed
+  if (participant.childCount) {
+    sourceGroup.childCount = Math.max(0, (sourceGroup.childCount || 0) - participant.childCount);
   }
   
   const destGroup = updatedTourGroups[toGroupIndex];
-  if (!destGroup.participants) {
+  if (!destGroup) {
+    toast.error("Destination group not found");
+    return null;
+  }
+  
+  // Ensure participants array exists in destination group
+  if (!Array.isArray(destGroup.participants)) {
     destGroup.participants = [];
   }
   
@@ -58,4 +72,15 @@ export const moveParticipant = (
   }
   
   return updatedTourGroups;
+};
+
+/**
+ * Calculate the total number of participants in all groups
+ */
+export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
+  if (!Array.isArray(groups)) return 0;
+  
+  return groups.reduce((total, group) => {
+    return total + (group.size || 0);
+  }, 0);
 };

@@ -26,8 +26,6 @@ interface GroupCardProps {
   guide1Info: any;
   guide2Info: any;
   guide3Info: any;
-  onAssignGuide: (groupIndex: number) => void;
-  onEditGroup: (groupIndex: number) => void;
 }
 
 export const GroupCard = ({
@@ -72,7 +70,7 @@ export const GroupCard = ({
               <CardTitle className="text-base font-medium">
                 {displayName}
                 {group.childCount && group.childCount > 0 ? (
-                  <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
+                  <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
                     {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
                   </Badge>
                 ) : null}

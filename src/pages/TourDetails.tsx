@@ -126,7 +126,10 @@ const TourDetails = () => {
   // Normalize tour data to ensure all properties exist
   const normalizedTour = {
     ...tour,
-    tourGroups: Array.isArray(tour.tourGroups) ? tour.tourGroups : [],
+    tourGroups: Array.isArray(tour.tourGroups) ? tour.tourGroups.map(group => ({
+      ...group,
+      participants: Array.isArray(group.participants) ? group.participants : []
+    })) : [],
     modifications: Array.isArray(tour.modifications) ? tour.modifications : []
   };
   
