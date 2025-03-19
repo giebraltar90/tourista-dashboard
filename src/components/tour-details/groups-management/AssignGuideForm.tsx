@@ -122,7 +122,8 @@ export const AssignGuideForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">None (Unassigned)</SelectItem>
+                  {/* Using a special value like "_none" instead of empty string */}
+                  <SelectItem value="_none">None (Unassigned)</SelectItem>
                   {validGuides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
                       <div className="flex items-center">

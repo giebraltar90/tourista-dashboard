@@ -12,19 +12,22 @@ export const useAssignGuide = (tourId: string) => {
     try {
       if (!tour) throw new Error("Tour not found");
       
+      // If guideId is "_none", treat it as undefined to unassign the guide
+      const actualGuideId = guideId === "_none" ? undefined : guideId;
+      
       // Find guide name for the group name update
       let guideName = "";
-      if (guideId) {
+      if (actualGuideId) {
         // Check for primary guides first
-        if (guideId === "guide1" || (tour.guide1 && tour.guide1.includes(guideId))) {
+        if (actualGuideId === "guide1" || (tour.guide1 && tour.guide1.includes(actualGuideId))) {
           guideName = tour.guide1;
-        } else if (guideId === "guide2" || (tour.guide2 && tour.guide2.includes(guideId))) {
+        } else if (actualGuideId === "guide2" || (tour.guide2 && tour.guide2.includes(actualGuideId))) {
           guideName = tour.guide2;
-        } else if (guideId === "guide3" || (tour.guide3 && tour.guide3.includes(guideId))) {
+        } else if (actualGuideId === "guide3" || (tour.guide3 && tour.guide3.includes(actualGuideId))) {
           guideName = tour.guide3;
         } else {
           // Try to find the guide by ID in the guides data
-          const guide = guides.find(g => g.id === guideId);
+          const guide = guides.find(g => g.id === actualGuideId);
           if (guide) {
             guideName = guide.name;
           }
@@ -33,7 +36,7 @@ export const useAssignGuide = (tourId: string) => {
       
       // Log the guide identification process
       console.log("Guide assignment debug:", {
-        guideId,
+        guideId: actualGuideId,
         guideName,
         guide1: tour.guide1,
         guide2: tour.guide2,
@@ -59,14 +62,14 @@ export const useAssignGuide = (tourId: string) => {
       
       updatedTourGroups[groupIndex] = {
         ...updatedTourGroups[groupIndex],
-        guideId,
+        guideId: actualGuideId,
         name: groupName
       };
       
       // Log for debugging
       console.log("Assigning guide to group:", { 
         groupIndex, 
-        guideId, 
+        guideId: actualGuideId, 
         guideName,
         updatedGroup: updatedTourGroups[groupIndex]
       });

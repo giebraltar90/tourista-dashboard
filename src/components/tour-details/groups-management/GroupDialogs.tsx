@@ -50,6 +50,39 @@ export const GroupDialogs = ({
   handleDeleteGroup,
   isDeleting
 }: GroupDialogsProps) => {
+  // Create an array of valid guides with proper ids
+  const getValidGuides = () => {
+    const guides = [];
+    
+    // Only add guides with valid data
+    if (tour.guide1) {
+      guides.push({ 
+        id: guide1Info?.id || "guide1", 
+        name: tour.guide1, 
+        info: guide1Info 
+      });
+    }
+    
+    if (tour.guide2) {
+      guides.push({ 
+        id: guide2Info?.id || "guide2", 
+        name: tour.guide2, 
+        info: guide2Info 
+      });
+    }
+    
+    if (tour.guide3) {
+      guides.push({ 
+        id: guide3Info?.id || "guide3", 
+        name: tour.guide3, 
+        info: guide3Info 
+      });
+    }
+    
+    // Filter out any guides with empty names or IDs
+    return guides.filter(guide => guide.name && guide.id && guide.id.trim() !== "");
+  };
+  
   return (
     <>
       <Dialog open={isAddGroupOpen} onOpenChange={setIsAddGroupOpen}>
@@ -98,24 +131,7 @@ export const GroupDialogs = ({
             <AssignGuideForm 
               tourId={tourId}
               groupIndex={selectedGroupIndex}
-              guides={[
-                // Make sure all guides have valid IDs
-                ...(tour.guide1 ? [{ 
-                  id: guide1Info?.id || "guide1", 
-                  name: tour.guide1, 
-                  info: guide1Info 
-                }] : []),
-                ...(tour.guide2 ? [{ 
-                  id: guide2Info?.id || "guide2", 
-                  name: tour.guide2, 
-                  info: guide2Info 
-                }] : []),
-                ...(tour.guide3 ? [{ 
-                  id: guide3Info?.id || "guide3", 
-                  name: tour.guide3, 
-                  info: guide3Info 
-                }] : [])
-              ].filter(guide => guide.name && guide.id && guide.id.trim() !== "")}
+              guides={getValidGuides()}
               currentGuideId={tour.tourGroups[selectedGroupIndex].guideId}
               onSuccess={() => setIsAssignGuideOpen(false)}
             />
