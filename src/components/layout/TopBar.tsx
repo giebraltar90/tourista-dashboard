@@ -50,9 +50,10 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
 
   return (
     <header className={cn(
-      "fixed top-0 left-0 right-0 h-16 z-40 transition-all duration-300",
-      "bg-white/80 backdrop-blur-md border-b border-border",
+      "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
+      "bg-white/80 dark:bg-sidebar/80 backdrop-blur-md border-b border-border",
       scrolled && "shadow-sm",
+      "h-16" // Fixed height for the header
     )}>
       <div className="h-full max-w-full mx-auto px-4 flex items-center justify-between">
         <div className="flex items-center">
@@ -67,7 +68,7 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           
           <Link to="/" className="flex items-center">
             <img 
-              src="/lovable-uploads/a1beab73-c1ea-4294-b9d8-974e61af4006.png" 
+              src="/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png" 
               alt="Boutique Tours Logo" 
               className="h-10 w-auto mr-1"
               style={{ background: 'white', borderRadius: '4px', padding: '2px' }}

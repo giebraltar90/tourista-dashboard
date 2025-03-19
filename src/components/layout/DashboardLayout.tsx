@@ -38,11 +38,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         sidebarCollapsed={sidebarCollapsed} 
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)} 
       />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden pt-16"> {/* Added pt-16 here to account for the fixed header */}
         <Sidebar collapsed={sidebarCollapsed} />
         <main className={cn(
           "flex-1 transition-all duration-300 ease-in-out overflow-auto",
-          "p-4 md:p-6 pt-24", // Increased from pt-20 to pt-24 for more top padding
+          "p-6", // Simplified padding
           sidebarCollapsed ? "ml-[80px]" : "ml-[280px]"
         )}>
           <div className="max-w-7xl mx-auto animate-fade-in">
