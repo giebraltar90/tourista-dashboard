@@ -7,7 +7,7 @@ import { RotateCcw, CheckCircle2, Clock } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useModifications } from "@/hooks/useModifications";
 import { AddModificationDialog } from "./modifications/AddModificationDialog";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRestoreTour } from "@/hooks/useRestoreTour";
 import {
   AlertDialog,
@@ -27,7 +27,7 @@ interface ModificationsTabProps {
 export const ModificationsTab = ({ tour }: ModificationsTabProps) => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isRestoreDialogOpen, setIsRestoreDialogOpen] = useState(false);
-  const { modifications } = useModifications(tour.id);
+  const { modifications, addModification } = useModifications(tour.id);
   const { restoreToInitial } = useRestoreTour(tour.id);
   
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
@@ -38,6 +38,11 @@ export const ModificationsTab = ({ tour }: ModificationsTabProps) => {
     setIsRestoreDialogOpen(false);
     await restoreToInitial();
   };
+  
+  // For debugging - log modifications on mount and whenever they change
+  useEffect(() => {
+    console.log("Modifications in ModificationsTab:", modifications);
+  }, [modifications]);
 
   return (
     <Card>
@@ -46,14 +51,23 @@ export const ModificationsTab = ({ tour }: ModificationsTabProps) => {
           <CardTitle>Tour Modifications</CardTitle>
           <CardDescription>View and manage all changes made to this tour</CardDescription>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => setIsRestoreDialogOpen(true)}
-        >
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Restore Initial Version
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsAddDialogOpen(true)}
+          >
+            Add Note
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setIsRestoreDialogOpen(true)}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Restore Initial Version
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

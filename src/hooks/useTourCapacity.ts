@@ -14,8 +14,14 @@ export const useUpdateTourCapacity = (tourId: string) => {
       console.log("Updating tour capacity for tour", tourId, updatedTour);
       return updateTourCapacityApi(tourId, updatedTour);
     },
-    onSuccess: (_, variables) => {
-      // Update the tour data in the cache immediately for a more responsive UI
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+
+      // Snapshot the previous value
+      const previousTour = queryClient.getQueryData(['tour', tourId]);
+
+      // Optimistically update the cache with the new value
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return oldData;
         return {
@@ -23,8 +29,12 @@ export const useUpdateTourCapacity = (tourId: string) => {
           isHighSeason: variables.isHighSeason
         };
       });
-      
-      // Also invalidate queries to ensure data consistency
+
+      // Return the snapshot so we can rollback in case of failure
+      return { previousTour };
+    },
+    onSuccess: (_, variables) => {
+      // Ensure data consistency
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       
@@ -40,9 +50,18 @@ export const useUpdateTourCapacity = (tourId: string) => {
       
       toast.success(`Tour capacity updated to ${modeText} mode`);
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
       console.error("Error updating tour capacity:", error);
       toast.error("Failed to update tour capacity");
+      
+      // Roll back to the previous value
+      if (context?.previousTour) {
+        queryClient.setQueryData(['tour', tourId], context.previousTour);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure our local data is in sync with server
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
     }
   });
   

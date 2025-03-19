@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TourModification, VentrataTour } from "@/types/ventrata";
 import { useTourById } from "./useTourData";
 import { updateTourModification } from "@/services/ventrataApi";
@@ -11,6 +11,14 @@ export const useModifications = (tourId: string) => {
   const { data: tour } = useTourById(tourId);
   const [isAddingModification, setIsAddingModification] = useState(false);
   const queryClient = useQueryClient();
+  
+  // For debugging - log modifications whenever tour data changes
+  useEffect(() => {
+    if (tour) {
+      console.log("Tour data in useModifications:", tour);
+      console.log("Modifications from tour data:", tour.modifications || []);
+    }
+  }, [tour]);
   
   const addModification = useCallback(async (description: string, details?: Record<string, any>) => {
     try {
@@ -54,6 +62,9 @@ export const useModifications = (tourId: string) => {
       
       if (result) {
         toast.success("Modification recorded successfully");
+        
+        // Force a refetch to ensure we have the latest data
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       }
       
       return true;

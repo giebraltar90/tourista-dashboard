@@ -26,22 +26,40 @@ export const GroupCapacityInfo = ({
   const { updateTourCapacity, isUpdating } = useUpdateTourCapacity(tour.id);
   const [openDropdown, setOpenDropdown] = useState(false);
   
-  const capacity = isHighSeason ? 
-    DEFAULT_CAPACITY_SETTINGS.highSeason : 
-    totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard ? 
-      DEFAULT_CAPACITY_SETTINGS.exception : 
-      DEFAULT_CAPACITY_SETTINGS.standard;
+  // Determine the current capacity mode
+  const capacity = isHighSeason 
+    ? DEFAULT_CAPACITY_SETTINGS.highSeason 
+    : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
+      ? DEFAULT_CAPACITY_SETTINGS.exception 
+      : DEFAULT_CAPACITY_SETTINGS.standard;
   
-  const requiredGroups = isHighSeason ? 
-    DEFAULT_CAPACITY_SETTINGS.highSeasonGroups : 
-    DEFAULT_CAPACITY_SETTINGS.standardGroups;
+  // Determine required groups based on mode
+  const requiredGroups = isHighSeason 
+    ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
+    : DEFAULT_CAPACITY_SETTINGS.standardGroups;
+  
+  // Get the current mode text for display
+  const getCurrentModeText = () => {
+    if (isHighSeason) return "High Season Mode";
+    if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception Mode";
+    return "Standard Mode";
+  };
     
   const handleModeChange = async (mode: 'standard' | 'exception' | 'high_season') => {
-    // Update the tour's high season flag
-    await updateTourCapacity({
-      ...tour,
-      isHighSeason: mode === 'high_season',
-    });
+    console.log(`Changing mode to: ${mode}, current isHighSeason: ${isHighSeason}`);
+    
+    // Only update if there's an actual change
+    const newIsHighSeason = mode === 'high_season';
+    if (newIsHighSeason !== isHighSeason) {
+      // Update the tour's high season flag
+      await updateTourCapacity({
+        ...tour,
+        isHighSeason: newIsHighSeason,
+      });
+    } else {
+      console.log("No change in high season mode, skipping update");
+    }
+    
     setOpenDropdown(false);
   };
   
@@ -60,11 +78,7 @@ export const GroupCapacityInfo = ({
               disabled={isUpdating}
               className="flex items-center gap-2"
             >
-              {isHighSeason 
-                ? "High Season Mode" 
-                : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
-                  ? "Exception Mode" 
-                  : "Standard Mode"}
+              {getCurrentModeText()}
               <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>

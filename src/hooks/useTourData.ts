@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataToursResponse, VentrataTourGroup } from "@/types/ventrata";
 import { fetchTours, fetchTourById, updateTourGroups } from "@/services/ventrataApi";
@@ -37,9 +38,15 @@ export const useTourById = (tourId: string) => {
       // For now, use mock data but in real app would call API
       const tourData = mockTours.find(tour => tour.id === tourId);
       console.log("Found tour data:", tourData);
-      return tourData || null;
+      
+      // Ensure we're always returning the most up-to-date data
+      return tourData ? { 
+        ...tourData,
+        // Make sure isHighSeason is properly typed as boolean
+        isHighSeason: !!tourData.isHighSeason
+      } : null;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 30 * 1000, // 30 seconds (reduce caching time for more responsive UI)
     enabled: !!tourId, // Only run the query if tourId is provided
   });
 };
@@ -51,18 +58,37 @@ export const useUpdateTourGroups = (tourId: string) => {
   return useMutation({
     mutationFn: (updatedGroups: VentrataTourGroup[]) => 
       updateTourGroups(tourId, updatedGroups),
+    onMutate: async (updatedGroups) => {
+      // Cancel any outgoing refetches to avoid overwriting our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      
+      // Snapshot previous value
+      const previousTour = queryClient.getQueryData(['tour', tourId]);
+      
+      // Optimistically update
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return {
+          ...oldData,
+          tourGroups: updatedGroups
+        };
+      });
+      
+      return { previousTour };
+    },
     onSuccess: () => {
-      // Invalidate and refetch tour data
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       toast.success("Tour groups updated successfully");
     },
-    onError: (error) => {
+    onError: (error, _, context) => {
       console.error("Error updating tour groups:", error);
-      toast.error("Failed to update tour groups on the server. Local changes preserved.");
+      toast.error("Failed to update tour groups on the server.");
       
-      // Don't invalidate queries on error, let the UI keep its state
-      return Promise.resolve();
+      // Revert to previous state on error
+      if (context?.previousTour) {
+        queryClient.setQueryData(['tour', tourId], context.previousTour);
+      }
     },
   });
 };
@@ -79,7 +105,9 @@ const transformTours = (response: VentrataToursResponse): TourCardProps[] => {
     referenceCode: tour.referenceCode,
     guide1: tour.guide1,
     guide2: tour.guide2,
+    guide3: tour.guide3,
     tourGroups: tour.tourGroups,
-    numTickets: tour.numTickets
+    numTickets: tour.numTickets,
+    isHighSeason: !!tour.isHighSeason // Ensure boolean type
   }));
 };

@@ -15,11 +15,18 @@ export const ParticipantsCard = ({
   isHighSeason = false
 }: ParticipantsCardProps) => {
   const totalGroups = tourGroups.length;
-  const capacity = isHighSeason ? 
-    DEFAULT_CAPACITY_SETTINGS.highSeason : 
-    totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard ? 
-      DEFAULT_CAPACITY_SETTINGS.exception : 
-      DEFAULT_CAPACITY_SETTINGS.standard;
+  
+  // Determine capacity based on mode
+  const capacity = isHighSeason 
+    ? DEFAULT_CAPACITY_SETTINGS.highSeason 
+    : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
+      ? DEFAULT_CAPACITY_SETTINGS.exception 
+      : DEFAULT_CAPACITY_SETTINGS.standard;
+  
+  // Determine required groups based on mode
+  const requiredGroups = isHighSeason 
+    ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
+    : DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
   return (
     <Card>
@@ -34,12 +41,22 @@ export const ParticipantsCard = ({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Groups:</span>
-            <span className="font-medium">{totalGroups} groups</span>
+            <span className="font-medium">{totalGroups} / {requiredGroups} groups</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Capacity:</span>
             <span className="font-medium">
               {totalParticipants} / {capacity}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Mode:</span>
+            <span className="font-medium">
+              {isHighSeason 
+                ? "High Season" 
+                : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
+                  ? "Exception" 
+                  : "Standard"}
             </span>
           </div>
         </div>
