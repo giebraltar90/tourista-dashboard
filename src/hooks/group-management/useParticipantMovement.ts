@@ -110,7 +110,21 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
           queryClient.cancelQueries({ queryKey: ['tour', tourId] });
           queryClient.cancelQueries({ queryKey: ['tours'] });
           
+          // Update the tour groups with our changes to ensure consistency
           updateTourGroups(updatedGroups);
+          
+          // Set the query data directly to reinforce our optimistic update
+          queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+            if (!oldData) return null;
+            
+            // Create a deep copy of the old data
+            const newData = JSON.parse(JSON.stringify(oldData));
+            
+            // Update the tour groups with our latest changes
+            newData.tourGroups = updatedGroups;
+            
+            return newData;
+          });
         }, 500);
       } catch (error) {
         console.error("Error updating participant in database:", error);

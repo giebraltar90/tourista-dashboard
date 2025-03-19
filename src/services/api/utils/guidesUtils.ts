@@ -24,7 +24,7 @@ export const isSpecialGuideId = (guideId: string | undefined): boolean => {
 
 /**
  * Sanitizes a guide ID for database storage
- * Returns null for invalid IDs, preserves special IDs and valid UUIDs
+ * Returns null for invalid IDs, preserves valid UUIDs, converts special IDs to null
  * 
  * IMPORTANT: Supabase expects UUID format for the guide_id column
  * However, our application uses special IDs like guide1, guide2, guide3 internally

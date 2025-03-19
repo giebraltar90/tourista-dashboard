@@ -23,13 +23,21 @@ export const useAssignGuide = (tourId: string) => {
    */
   const assignGuide = useCallback(async (groupIndex: number, guideId?: string) => {
     try {
+      if (!tour) {
+        console.error("Cannot assign guide: Tour data not available");
+        return false;
+      }
+      
       const now = Date.now();
       const pendingAssignment = pendingAssignmentsRef.current.get(groupIndex);
+      
+      // Special handling for "_none" which means "remove guide"
+      const actualGuideId = guideId === "_none" ? undefined : guideId;
       
       // If there's already a pending assignment for this group that's less than 5 seconds old,
       // and it's for the same guide ID, we'll ignore this request to prevent race conditions
       if (pendingAssignment && 
-          pendingAssignment.guideId === guideId && 
+          pendingAssignment.guideId === actualGuideId && 
           now - pendingAssignment.timestamp < 5000) {
         console.log("Ignoring duplicate assignment request:", { groupIndex, guideId });
         return true; // Return success so UI doesn't show error
@@ -37,22 +45,25 @@ export const useAssignGuide = (tourId: string) => {
       
       // Store this pending assignment with a timestamp
       pendingAssignmentsRef.current.set(groupIndex, { 
-        guideId: guideId === "_none" ? undefined : guideId,
+        guideId: actualGuideId,
         timestamp: now
       });
       
       console.log("Processing guide assignment:", { 
         groupIndex, 
-        guideId, 
+        actualGuideId, 
         pendingAssignments: [...pendingAssignmentsRef.current.entries()]
       });
+      
+      // Cancel any in-flight queries that might overwrite our optimistic update
+      queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       
       const result = await processGuideAssignment(
         tourId,
         groupIndex,
         tour,
         guides,
-        guideId === "_none" ? undefined : guideId,
+        actualGuideId,
         queryClient
       );
       
@@ -61,7 +72,7 @@ export const useAssignGuide = (tourId: string) => {
         await recordGuideAssignmentModification(
           tourId,
           groupIndex,
-          guideId === "_none" ? undefined : guideId,
+          actualGuideId,
           result.guideName,
           result.groupName,
           addModification

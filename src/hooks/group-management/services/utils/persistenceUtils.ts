@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isUuid } from "@/types/ventrata";
+import { isUuid, sanitizeGuideId } from "@/services/api/utils/guidesUtils";
 
 /**
  * Attempts to persist guide assignment changes through multiple strategies
@@ -19,31 +19,21 @@ export const persistGuideAssignmentChanges = async (
   // Track if any persistence method succeeded
   let updateSuccess = false;
   
-  // NEVER try to save non-UUID guide IDs directly to the database
-  // Special handling for guide1, guide2, guide3 IDs which are not UUIDs
-  const isSpecialGuideId = actualGuideId === "guide1" || actualGuideId === "guide2" || actualGuideId === "guide3";
-  
   // Determine what to save in the database
-  // For special IDs (guide1, guide2, guide3), we need to pass them through
-  // but the sanitization utility will convert them to null for database storage
-  let safeGuideId: string | null = null;
-  if (actualGuideId && (isUuid(actualGuideId) || isSpecialGuideId)) {
-    safeGuideId = actualGuideId;
-  } else if (actualGuideId) {
-    console.log(`Non-standard guide ID format: ${actualGuideId}`);
-  }
+  // CRITICAL: Use sanitizeGuideId to ensure proper database storage
+  // This handles special IDs like guide1, guide2, guide3 properly
+  const safeGuideId = sanitizeGuideId(actualGuideId);
   
-  console.log(`Persisting guide assignment: ${safeGuideId} for group ${groupId} in tour ${tourId}`);
+  console.log(`Persisting guide assignment: ${actualGuideId} (sanitized: ${safeGuideId}) for group ${groupId} in tour ${tourId}`);
   
   // First attempt: direct Supabase update with the most reliable method
   if (tourId && groupId) {
     try {
       // Use the improved updateGuideInSupabase method with retry logic
-      // This function specifically handles special guide IDs
       updateSuccess = await updateGuideInSupabase(
         tourId, 
         groupId, 
-        safeGuideId, 
+        actualGuideId, // Pass the actual ID - sanitization happens in the function
         groupName
       );
       
@@ -64,7 +54,7 @@ export const persistGuideAssignmentChanges = async (
       updateSuccess = await persistGuideAssignment(
         tourId, 
         groupId, 
-        safeGuideId,
+        actualGuideId, // Pass the actual ID - sanitization happens in the function
         groupName
       );
       
@@ -83,18 +73,20 @@ export const persistGuideAssignmentChanges = async (
   if (!updateSuccess) {
     console.log("Falling back to updateTourGroups API as last resort");
     try {
-      // Prepare tour groups for database update - preserve special guide IDs
+      // Prepare tour groups for database update - sanitize all guide IDs
       const sanitizedGroups = updatedGroups.map(group => {
-        // Don't modify the group if it's not the one we're updating
-        if (group.id !== groupId) {
-          return group;
+        // Create a deep copy to avoid mutating the original
+        const sanitizedGroup = {...group};
+        
+        // If this is the group we're updating, ensure it has the new guide ID
+        if (sanitizedGroup.id === groupId) {
+          sanitizedGroup.guideId = actualGuideId;
         }
         
-        // For the group we're updating, set the guide ID correctly
-        return {
-          ...group,
-          guideId: safeGuideId
-        };
+        // Before sending to database, sanitize the guide ID
+        sanitizedGroup.guide_id = sanitizeGuideId(sanitizedGroup.guideId);
+        
+        return sanitizedGroup;
       });
       
       updateSuccess = await updateTourGroups(tourId, sanitizedGroups);
@@ -128,10 +120,18 @@ export const handleUIUpdates = async (
     
     // CRITICAL: Never invalidate queries immediately
     // This solves the problem of guides "changing back" after assignment
-    
     // Cancel any in-flight queries that might overwrite our changes
     queryClient.cancelQueries({ queryKey: ['tour', tourId] });
     queryClient.cancelQueries({ queryKey: ['tours'] });
+    
+    // Ensure the data stays updated by setting the query data again after a delay
+    // This reinforces our optimistic update
+    setTimeout(() => {
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return oldData; // Keep our optimistic update
+      });
+    }, 500);
     
     console.log("Successfully updated - permanently disabled revalidation");
   } else {

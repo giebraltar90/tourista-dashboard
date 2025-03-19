@@ -24,9 +24,9 @@ export const updateGuideInSupabase = async (
     const safeGuideId = sanitizeGuideId(guideId);
     
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
-      guide_id: safeGuideId,
-      name: newGroupName,
-      original_id: guideId
+      original_id: guideId,
+      sanitized_id: safeGuideId,
+      name: newGroupName
     });
     
     const updateData: any = {
@@ -56,14 +56,14 @@ export const updateGuideInSupabase = async (
           return true;
         }
         
-        console.error("Guide assignment update error:", error);
+        console.error(`Guide assignment update error (attempt ${attempt}):`, error);
         
         if (attempt < maxAttempts) {
           const backoffTime = Math.min(500 * Math.pow(2, attempt), 5000); // Exponential backoff with max 5s
-          console.warn(`Attempt ${attempt} failed, retrying in ${backoffTime}ms...`, error);
+          console.warn(`Attempt ${attempt} failed, retrying in ${backoffTime}ms...`);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
         } else {
-          console.error("All attempts to update guide assignment failed:", error);
+          console.error("All attempts to update guide assignment failed");
         }
       } catch (attemptError) {
         console.error(`Error on attempt ${attempt}:`, attemptError);

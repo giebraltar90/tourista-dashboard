@@ -42,8 +42,9 @@ export const GuideSelectionPopover = ({
     }
     
     try {
-      await onAssignGuide(guideId);
+      // Close the popover while assigning to prevent multiple selections
       setIsOpen(false);
+      await onAssignGuide(guideId);
     } catch (error) {
       console.error("Error in GuideSelectionPopover:", error);
     }
@@ -53,7 +54,16 @@ export const GuideSelectionPopover = ({
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="outline" disabled={isAssigning}>
-          {isGuideAssigned ? "Change Guide" : "Assign Guide"}
+          {isAssigning ? (
+            <>
+              <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+              Assigning...
+            </>
+          ) : isGuideAssigned ? (
+            "Change Guide"
+          ) : (
+            "Assign Guide"
+          )}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-56 p-3">
@@ -69,7 +79,7 @@ export const GuideSelectionPopover = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_none">None (Unassigned)</SelectItem>
-              {guideOptions.filter(guide => guide.name).map((guide) => (
+              {guideOptions.filter(guide => guide && guide.name).map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
                   {guide.name}
                 </SelectItem>

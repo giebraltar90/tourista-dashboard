@@ -48,6 +48,7 @@ export const TourGroupGuide = ({
   useEffect(() => {
     if (!group) return;
     
+    // If the guideId has changed externally, update our local state
     if (group.guideId !== previousGuideIdRef.current) {
       console.log(`Guide ID changed externally for group ${groupIndex}:`, { 
         previous: previousGuideIdRef.current, 
@@ -83,6 +84,7 @@ export const TourGroupGuide = ({
       if (success) {
         // Reset attempt counter on success
         assignmentAttempts.current = 0;
+        console.log(`Successfully assigned guide ${guideId} to group ${groupIndex}`);
       } else {
         // If server update failed but we haven't exceeded max retries, try again
         if (assignmentAttempts.current < maxRetries) {

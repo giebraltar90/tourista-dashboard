@@ -31,6 +31,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
   onTabChange
 }) => {
   // Use state to store the most current version of tour data per tab
+  // This prevents data loss when switching between tabs
   const [tabSpecificTourData, setTabSpecificTourData] = useState<{[key: string]: any}>({
     overview: tour,
     groups: tour,
@@ -38,23 +39,33 @@ export const TourTabs: React.FC<TourTabsProps> = ({
     modifications: tour
   });
   
-  // When active tab changes, update its data with the latest tour data
+  // When the tour data changes, update all tab data
   useEffect(() => {
-    if (activeTab && tour) {
-      setTabSpecificTourData(prevData => ({
-        ...prevData,
-        [activeTab]: JSON.parse(JSON.stringify(tour))
-      }));
+    if (tour) {
+      // Don't update the active tab's data directly from incoming tour
+      // as it might overwrite user changes
+      setTabSpecificTourData(prevData => {
+        const newData = { ...prevData };
+        
+        // Update data for inactive tabs only
+        Object.keys(newData).forEach(tabKey => {
+          if (tabKey !== activeTab) {
+            newData[tabKey] = JSON.parse(JSON.stringify(tour));
+          }
+        });
+        
+        return newData;
+      });
     }
-  }, [activeTab, tour]);
+  }, [tour, activeTab]);
   
   // When leaving a tab, store its data version
   const handleTabChange = (newTab: string) => {
     if (activeTab !== newTab) {
-      // Preserve each tab's own version of the data
+      // Preserve the current tab's version of the data before switching
       setTabSpecificTourData(prevData => ({
         ...prevData,
-        [activeTab]: JSON.parse(JSON.stringify(tour))
+        [activeTab]: JSON.parse(JSON.stringify(tabSpecificTourData[activeTab] || tour))
       }));
     }
     onTabChange(newTab);
@@ -91,11 +102,11 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       <TabsContent value="groups" className="space-y-4 mt-6">
         <div className="space-y-6">
           <GroupGuideManagement 
-            key={`guide-management-${activeTab === "groups" ? "active" : "inactive"}`} 
+            key={`guide-management-${activeTab === "groups" ? Date.now() : "inactive"}`} 
             tour={getTabTourData("groups")} 
           />
           <GroupsManagement 
-            key={`groups-management-${activeTab === "groups" ? "active" : "inactive"}`} 
+            key={`groups-management-${activeTab === "groups" ? Date.now() : "inactive"}`} 
             tour={getTabTourData("groups")} 
           />
         </div>
@@ -112,7 +123,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="modifications" className="space-y-4 mt-6">
         <ModificationsTab 
-          key={`modifications-${activeTab === "modifications" ? "active" : "inactive"}`} 
+          key={`modifications-${activeTab === "modifications" ? Date.now() : "inactive"}`} 
           tour={getTabTourData("modifications")} 
         />
       </TabsContent>
