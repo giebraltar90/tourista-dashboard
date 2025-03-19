@@ -1,7 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchTourById } from "@/services/ventrataApi";
-import { mockTours } from "@/data/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
 
@@ -44,22 +43,30 @@ export const useTourById = (tourId: string) => {
             console.log("Found tour data in Supabase:", tour);
             console.log("is_high_season value:", tour.is_high_season, "type:", typeof tour.is_high_season);
             
-            // Transform Supabase data structure to match our app's expected format
             // Now also fetch guide names for each guide ID
-            const guidesResult = await supabase
-              .from('guides')
-              .select('id, name')
-              .in('id', [tour.guide1_id, tour.guide2_id, tour.guide3_id].filter(Boolean));
+            const guideIds = [tour.guide1_id, tour.guide2_id, tour.guide3_id].filter(Boolean);
+            let guideMap = {};
             
-            console.log("Guides result:", guidesResult);
-            
-            // Create a map of guide IDs to names
-            const guideMap = {};
-            if (!guidesResult.error && guidesResult.data) {
-              guidesResult.data.forEach(guide => {
-                guideMap[guide.id] = guide.name;
-              });
+            if (guideIds.length > 0) {
+              const guidesResult = await supabase
+                .from('guides')
+                .select('id, name')
+                .in('id', guideIds);
+              
+              console.log("Guides result:", guidesResult);
+              
+              // Create a map of guide IDs to names
+              if (!guidesResult.error && guidesResult.data) {
+                guidesResult.data.forEach(guide => {
+                  guideMap[guide.id] = guide.name;
+                });
+              }
             }
+            
+            // Ensure tour_groups is an array, even if null
+            const tourGroups = Array.isArray(tour.tour_groups) 
+              ? tour.tour_groups 
+              : [];
             
             // Transform to application format with guide names instead of IDs
             return {
@@ -73,17 +80,17 @@ export const useTourById = (tourId: string) => {
               guide1: guideMap[tour.guide1_id] || tour.guide1_id || "",
               guide2: guideMap[tour.guide2_id] || tour.guide2_id || "",
               guide3: guideMap[tour.guide3_id] || tour.guide3_id || "",
-              tourGroups: Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => ({
+              tourGroups: tourGroups.map(group => ({
                 id: group.id,
                 name: group.name,
                 size: group.size,
                 entryTime: group.entry_time,
                 childCount: group.child_count || 0,
                 guideId: group.guide_id
-              })) : [],
+              })),
               numTickets: tour.num_tickets || 0,
               // Critical fix: normalize the boolean value to ensure consistent behavior
-              isHighSeason: tour.is_high_season === true
+              isHighSeason: Boolean(tour.is_high_season)
             };
           }
         }
@@ -96,10 +103,10 @@ export const useTourById = (tourId: string) => {
         if (!tourData) return null;
         
         // Normalize isHighSeason to ensure consistent behavior
-        tourData.isHighSeason = tourData.isHighSeason === true;
+        tourData.isHighSeason = Boolean(tourData.isHighSeason);
         console.log("isHighSeason after conversion:", tourData.isHighSeason);
         
-        // Make sure tourGroups exists
+        // Make sure tourGroups exists and is an array
         if (!tourData.tourGroups) {
           tourData.tourGroups = [];
         }

@@ -18,8 +18,8 @@ interface TourOverviewProps {
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   
-  // CRITICAL FIX: Explicitly convert to boolean and ensure consistent behavior
-  const isHighSeason = tour.isHighSeason === true;
+  // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
+  const isHighSeason = Boolean(tour.isHighSeason);
   console.log('TourOverview: isHighSeason =', isHighSeason, 'original value =', tour.isHighSeason, 'type =', typeof tour.isHighSeason);
   
   const adultTickets = Math.round(tour.numTickets * 0.7) || Math.round(totalParticipants * 0.7);

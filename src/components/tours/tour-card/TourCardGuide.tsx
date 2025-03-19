@@ -35,7 +35,7 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
         {guideInfo && (
           <TooltipProvider>
             <Tooltip>
-              <TooltipTrigger>
+              <TooltipTrigger asChild>
                 <Badge variant="outline" className="ml-1.5 text-xs bg-blue-100 text-blue-800 hover:bg-blue-100">
                   <IdCard className="h-3 w-3 mr-1" />
                   {guideInfo.guideType}

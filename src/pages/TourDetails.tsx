@@ -9,7 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useTourById } from "@/hooks/useTourData";
 import { TourHeader } from "@/components/tour-details/TourHeader";
 import { TourOverview } from "@/components/tour-details/TourOverview";
@@ -34,37 +34,46 @@ const TourDetails = () => {
   console.log("Tour data loaded:", tour);
   
   // Only attempt to get guide info if tour data has loaded
-  const guide1Info = tour && tour.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour && tour.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour && tour.guide3 ? useGuideInfo(tour.guide3) : null;
+  const guide1Info = tour ? useGuideInfo(tour.guide1) : null;
+  const guide2Info = tour ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour ? useGuideInfo(tour.guide3) : null;
   
+  const handleRefetch = useCallback(() => {
+    if (id) {
+      console.log("Manually refreshing tour data");
+      queryClient.invalidateQueries({ queryKey: ['tour', id] });
+      refetch();
+      lastRefetchTime.current = Date.now();
+    }
+  }, [id, queryClient, refetch]);
+  
+  // Initial load effect
   useEffect(() => {
     if (id && isInitialLoad.current) {
       console.log("Initial load, invalidating queries for tour:", id);
-      queryClient.invalidateQueries({ queryKey: ['tour', id] });
-      refetch();
+      handleRefetch();
       isInitialLoad.current = false;
     }
     
+    // Cleanup function
     return () => {
       if (refreshTimer.current) {
         clearInterval(refreshTimer.current);
       }
     };
-  }, [id, queryClient, refetch]);
+  }, [id, handleRefetch]);
   
-  const handleTabChange = (value: string) => {
+  const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
     
     const now = Date.now();
-    if (id && (now - lastRefetchTime.current) > 30000) { 
+    if (now - lastRefetchTime.current > 30000) { 
       console.log("Tab changed, refreshing data after long timeout");
-      queryClient.invalidateQueries({ queryKey: ['tour', id] });
-      refetch();
-      lastRefetchTime.current = now;
+      handleRefetch();
     }
-  };
+  }, [handleRefetch]);
   
+  // Set up the periodic refresh timer
   useEffect(() => {
     if (!id) return;
     
@@ -74,19 +83,18 @@ const TourDetails = () => {
     
     refreshTimer.current = setInterval(() => {
       const now = Date.now();
-      if ((now - lastRefetchTime.current) > 120000) {
+      if (now - lastRefetchTime.current > 120000) {
         console.log("Periodic refresh triggered after long inactivity");
-        refetch();
-        lastRefetchTime.current = now;
+        handleRefetch();
       }
-    }, 300000);
+    }, 300000); // 5 minutes
     
     return () => {
       if (refreshTimer.current) {
         clearInterval(refreshTimer.current);
       }
     };
-  }, [id, refetch]);
+  }, [id, handleRefetch]);
   
   if (isLoading) {
     return (
@@ -137,8 +145,8 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement key={`guide-management-${tour.id}-${activeTab}`} tour={tour} />
-              <GroupsManagement key={`groups-management-${tour.id}-${activeTab}`} tour={tour} />
+              <GroupGuideManagement key={`guide-management-${tour.id}`} tour={tour} />
+              <GroupsManagement key={`groups-management-${tour.id}`} tour={tour} />
             </div>
           </TabsContent>
           
@@ -152,7 +160,7 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="modifications" className="space-y-4 mt-6">
-            <ModificationsTab key={`modifications-${tour.id}-${activeTab}`} tour={tour} />
+            <ModificationsTab key={`modifications-${tour.id}`} tour={tour} />
           </TabsContent>
         </Tabs>
       </div>
