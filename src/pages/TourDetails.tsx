@@ -35,7 +35,7 @@ const TourDetails = () => {
   
   console.log("Tour data loaded:", tour);
   
-  // Ensure that guide info hooks are only called when tour data is available
+  // Ensure that guide info hooks are only called when tour data is available and guide fields exist
   const guide1Info = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
@@ -133,7 +133,12 @@ const TourDetails = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        <TourHeader tour={normalizedTour} guide1Info={guide1Info} guide2Info={guide2Info} guide3Info={guide3Info} />
+        <TourHeader 
+          tour={normalizedTour} 
+          guide1Info={guide1Info} 
+          guide2Info={guide2Info} 
+          guide3Info={guide3Info} 
+        />
         
         <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-4">

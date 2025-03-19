@@ -56,7 +56,7 @@ export const TourGroupsSection = ({
     if (guides && Array.isArray(guides)) {
       guides.forEach(guide => {
         // Skip if this guide is already in the options (compare by id and name)
-        if (!options.some(g => g.id === guide.id || g.name === guide.name)) {
+        if (!options.some(g => (g.id === guide.id) || (g.name === guide.name))) {
           options.push({ id: guide.id, name: guide.name, info: guide });
         }
       });
@@ -66,7 +66,7 @@ export const TourGroupsSection = ({
     return options.filter(guide => guide && guide.name);
   };
 
-  // Ensure tourGroups is an array
+  // Ensure tourGroups is an array, even if it's undefined
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
   // If no tour groups, display a message
@@ -91,8 +91,11 @@ export const TourGroupsSection = ({
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {tourGroups.map((group, index) => {
+            if (!group) return null;
+            
             // Safe access to guide name and info with a fallback to empty string
             const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group?.guideId || "");
+            const guideOptions = getGuideOptions();
             
             return (
               <TourGroupGuide
@@ -102,7 +105,7 @@ export const TourGroupsSection = ({
                 groupIndex={index}
                 guideName={guideName || ""}
                 guideInfo={guideInfo || null}
-                guideOptions={getGuideOptions()}
+                guideOptions={guideOptions}
               />
             );
           })}
