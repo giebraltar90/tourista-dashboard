@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isUuid, sanitizeGuideId } from "@/services/api/utils/guidesUtils";
+import { isValidUuid, sanitizeGuideId } from "@/services/api/utils/guidesUtils";
 
 /**
  * Attempts to persist guide assignment changes through multiple strategies
@@ -162,3 +162,4 @@ export const performOptimisticUpdate = (
     return newData;
   });
 };
+
