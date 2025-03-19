@@ -6,7 +6,7 @@ import { useModifications } from "../useModifications";
 import { useCallback, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { isUuid } from "@/types/ventrata";
-import { findGuideName, generateGroupName } from "./utils/guideNameUtils";
+import { findGuideName } from "./utils/guideNameUtils";
 import { prepareGroupUpdate, updateGuideInSupabase, recordGuideAssignmentModification } from "./services/guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 
@@ -113,13 +113,10 @@ export const useAssignGuide = (tourId: string) => {
       // Clear the pending assignment
       pendingAssignmentsRef.current.delete(groupIndex);
       
-      // Schedule a delayed background refresh
+      // IMPROVEMENT: Force a more immediate background refresh to ensure data consistency
       setTimeout(() => {
-        if (pendingAssignmentsRef.current.size === 0) {
-          console.log("Performing delayed background refresh");
-          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-        }
-      }, 5000);
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 1000);
       
       return updateSuccess;
     } catch (error) {

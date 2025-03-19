@@ -39,6 +39,11 @@ export const updateGuideInSupabase = async (
   newGroupName: string
 ): Promise<boolean> => {
   try {
+    console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
+      guide_id: actualGuideId,
+      name: newGroupName
+    });
+    
     const { error } = await supabase
       .from('tour_groups')
       .update({

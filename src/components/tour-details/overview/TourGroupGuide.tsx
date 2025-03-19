@@ -4,9 +4,6 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
-import { useGuideData } from "@/hooks/useGuideData";
-import { isUuid } from "@/services/api/tour/guideUtils";
-import { toast } from "sonner";
 import { useEffect, useRef, useState } from "react";
 import { GuideBadge } from "./GuideBadge";
 import { GuideSelectionPopover } from "./GuideSelectionPopover";
@@ -37,38 +34,21 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
   const previousGuideIdRef = useRef<string | undefined>(group.guideId);
-  const { guides } = useGuideData();
   
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
   // Update our local state if the group's guideId changes from an external source
   useEffect(() => {
-    // Only update state if the guide ID has actually changed
     if (group.guideId !== previousGuideIdRef.current) {
+      console.log(`Guide ID changed externally for group ${groupIndex}:`, { 
+        previous: previousGuideIdRef.current, 
+        current: group.guideId 
+      });
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
     }
-  }, [group.guideId]);
-  
-  // Helper to resolve guide name from ID
-  const getGuideDisplayName = (guideId?: string) => {
-    if (!guideId || guideId === "_none") return "Not assigned";
-    
-    // Check standard guide references first
-    if (guideId === "guide1") return tour.guide1 || "Primary Guide";
-    if (guideId === "guide2") return tour.guide2 || "Secondary Guide";
-    if (guideId === "guide3") return tour.guide3 || "Assistant Guide";
-    
-    // Check if it's a UUID and find in guides list
-    if (isUuid(guideId)) {
-      const guideMatch = guides.find(g => g.id === guideId);
-      if (guideMatch) return guideMatch.name;
-    }
-    
-    // Return original if it seems to be a name already
-    return guideId;
-  };
+  }, [group.guideId, groupIndex]);
 
   const handleAssignGuide = async (guideId: string) => {
     if (guideId === selectedGuide) return;
@@ -76,6 +56,8 @@ export const TourGroupGuide = ({
     setIsAssigning(true);
     
     try {
+      console.log(`Assigning guide ${guideId} to group ${groupIndex}`);
+      
       // Optimistically update the UI first
       setSelectedGuide(guideId);
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
@@ -87,8 +69,6 @@ export const TourGroupGuide = ({
       console.error("Error assigning guide:", error);
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
-      
-      toast.error("Failed to assign guide");
     } finally {
       setIsAssigning(false);
     }

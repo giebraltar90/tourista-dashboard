@@ -33,12 +33,13 @@ export const TourGroupsSection = ({
     
     // Add additional guides from the database that might not be primary guides
     guides.forEach(guide => {
-      // Skip if this guide is already in the options
-      if (!options.some(g => g.name === guide.name)) {
+      // Skip if this guide is already in the options (compare by id and name)
+      if (!options.some(g => g.id === guide.id || g.name === guide.name)) {
         options.push({ id: guide.id, name: guide.name, info: guide });
       }
     });
     
+    // Remove any invalid options (no name)
     return options.filter(guide => guide.name);
   };
 
@@ -54,7 +55,7 @@ export const TourGroupsSection = ({
             
             return (
               <TourGroupGuide
-                key={index}
+                key={`group-${index}-${group.id || index}`}
                 tour={tour}
                 group={group}
                 groupIndex={index}

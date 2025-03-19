@@ -6,6 +6,7 @@ import { createTestTours } from "./createTours";
 import { createTestTourGroups } from "./createTourGroups";
 import { createTestParticipants } from "./createParticipants";
 import { createTestModifications } from "./createModifications";
+import { createTestTickets } from "./createTickets";
 import { clearAllTestData } from "./helpers";
 
 /**
@@ -32,6 +33,9 @@ export const createAllTestData = async (): Promise<boolean> => {
     
     // Create test participants
     await createTestParticipants(groupData);
+    
+    // Create test tickets for tours
+    await createTestTickets(tourData);
     
     // Create test modifications
     await createTestModifications(tourData);
