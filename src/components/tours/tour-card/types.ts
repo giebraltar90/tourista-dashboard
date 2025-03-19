@@ -53,4 +53,5 @@ export interface TourCardFooterProps {
   isBelowMinimum: boolean;
   isHighSeason: boolean;
   isHovered?: boolean;
+  childCount?: number;
 }

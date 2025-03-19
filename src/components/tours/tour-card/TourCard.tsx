@@ -26,6 +26,9 @@ export const TourCard = ({
   // Calculate total group size
   const totalSize = tourGroups.reduce((sum, group) => sum + group.size, 0);
   
+  // Calculate total child count across all groups
+  const childCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
+  
   // Determine if high season (example logic - modify as needed)
   const isHighSeason = date.getMonth() >= 5 && date.getMonth() <= 8; // June-September
   
@@ -81,6 +84,7 @@ export const TourCard = ({
           isBelowMinimum={isBelowMinimum}
           isHighSeason={isHighSeason}
           isHovered={isHovered}
+          childCount={childCount}
         />
       </Link>
     </div>

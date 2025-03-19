@@ -14,13 +14,19 @@ export const TourCardFooter: React.FC<TourCardFooterProps> = ({
   numTickets,
   isBelowMinimum,
   isHighSeason,
-  isHovered
+  isHovered,
+  childCount = 0
 }) => {
+  // Format the participant count to show adults + children if there are children
+  const formattedParticipantCount = childCount > 0 
+    ? `${totalParticipants - childCount} + ${childCount} Participants` 
+    : `${totalParticipants} Participants`;
+
   return (
     <CardFooter className="px-4 py-3 border-t border-border/60 flex justify-between items-center">
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="bg-primary/5 text-primary hover:bg-primary/10">
-          {totalParticipants} Participants
+          {formattedParticipantCount}
         </Badge>
         
         {numTickets && (
