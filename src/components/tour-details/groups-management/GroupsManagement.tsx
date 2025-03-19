@@ -3,10 +3,10 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { PenSquare } from "lucide-react";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsTable } from "./GroupsTable";
 import { GroupsGrid } from "./GroupsGrid";
-import { useGroupManagement } from "@/hooks/useGroupManagement";
+import { useGroupManagement } from "@/hooks/group-management";
 
 interface GroupsManagementProps {
   tour: TourCardProps;

@@ -20,7 +20,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { GuideInfo } from "@/types/ventrata";
-import { useAssignGuide } from "@/hooks/useGroupManagement";
+import { useAssignGuide } from "@/hooks/group-management";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 

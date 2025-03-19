@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { useUpdateGroup } from "@/hooks/useGroupManagement";
+import { useUpdateGroup } from "@/hooks/group-management";
 import { toast } from "sonner";
 
 const formSchema = z.object({

@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useGuideData } from "@/hooks/useGuideData";
-import { useAddGroup } from "@/hooks/useGroupManagement";
+import { useAddGroup } from "@/hooks/group-management";
 import { toast } from "sonner";
 
 const formSchema = z.object({
