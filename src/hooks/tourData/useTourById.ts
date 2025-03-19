@@ -25,12 +25,13 @@ export const useTourById = (tourId: string) => {
               tour_groups (id, name, size, entry_time, guide_id, child_count)
             `)
             .eq('id', tourId)
-            .single();
+            .maybeSingle();
           
           if (error) {
             console.error("Error fetching from Supabase:", error);
           } else if (tour) {
             console.log("Found tour data in Supabase:", tour);
+            console.log("is_high_season value:", tour.is_high_season, "type:", typeof tour.is_high_season);
             
             // Transform Supabase data structure to match our app's expected format
             return {
@@ -44,16 +45,16 @@ export const useTourById = (tourId: string) => {
               guide1: tour.guide1_id || "",
               guide2: tour.guide2_id || "",
               guide3: tour.guide3_id || "",
-              tourGroups: tour.tour_groups.map(group => ({
+              tourGroups: tour.tour_groups ? tour.tour_groups.map(group => ({
                 id: group.id,
                 name: group.name,
                 size: group.size,
                 entryTime: group.entry_time,
                 childCount: group.child_count || 0,
                 guideId: group.guide_id
-              })),
+              })) : [],
               numTickets: tour.num_tickets || 0,
-              isHighSeason: !!tour.is_high_season // Convert to boolean with double negation
+              isHighSeason: tour.is_high_season === true
             };
           }
         }
@@ -64,32 +65,14 @@ export const useTourById = (tourId: string) => {
         
         if (!tourData) return null;
         
-        // Ensure isHighSeason is properly converted to boolean using double negation
-        tourData.isHighSeason = !!tourData.isHighSeason;
-        
-        // Ensure guide IDs are properly set on tour groups to maintain guide assignments
-        tourData.tourGroups = tourData.tourGroups.map(group => {
-          // If group name clearly indicates a guide, ensure guideId is set appropriately
-          if (tourData.guide1 && group.name && group.name.includes(tourData.guide1)) {
-            console.log(`Setting guide1 for group ${group.name}`);
-            group.guideId = group.guideId || "guide1";
-          } else if (tourData.guide2 && group.name && group.name.includes(tourData.guide2)) {
-            console.log(`Setting guide2 for group ${group.name}`);
-            group.guideId = group.guideId || "guide2";
-          } else if (tourData.guide3 && group.name && group.name.includes(tourData.guide3)) {
-            console.log(`Setting guide3 for group ${group.name}`);
-            group.guideId = group.guideId || "guide3";
-          }
-          return group;
-        });
-        
-        console.log("Cleaned tour data with isHighSeason:", tourData.isHighSeason);
-        console.log("Tour groups after cleaning:", tourData.tourGroups);
+        // Ensure isHighSeason is properly converted to boolean 
+        tourData.isHighSeason = tourData.isHighSeason === true;
+        console.log("isHighSeason after conversion:", tourData.isHighSeason);
         
         return tourData;
       } catch (error) {
         console.error("Error in useTourById:", error);
-        return null;
+        throw error;
       }
     },
     staleTime: 30 * 60 * 1000, // 30 minutes
