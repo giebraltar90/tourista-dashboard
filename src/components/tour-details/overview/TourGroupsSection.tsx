@@ -47,9 +47,18 @@ export const TourGroupsSection = ({
     return options.filter(guide => guide && guide.name);
   };
 
-  // Guard against tour being undefined
-  if (!tour || !tour.tourGroups) {
-    return null;
+  // Guard against tour being undefined or tourGroups not being an array
+  if (!tour || !Array.isArray(tour.tourGroups)) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Tour Groups & Guides</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">No tour groups available</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

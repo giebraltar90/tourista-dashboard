@@ -119,7 +119,7 @@ export const useTourById = (tourId: string) => {
               tourGroups: tourGroups.map(group => ({
                 id: group.id,
                 name: group.name,
-                size: group.size,
+                size: group.size || 0,
                 entryTime: group.entry_time,
                 childCount: group.child_count || 0,
                 guideId: group.guide_id

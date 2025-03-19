@@ -120,6 +120,11 @@ const TourDetails = () => {
       </DashboardLayout>
     );
   }
+
+  // Ensure tourGroups is an array before rendering components that depend on it
+  if (!Array.isArray(tour.tourGroups)) {
+    tour.tourGroups = [];
+  }
   
   return (
     <DashboardLayout>

@@ -32,7 +32,7 @@ export const TourGroupGuide = ({
 }: TourGroupGuideProps) => {
   const { assignGuide } = useAssignGuide(tour.id);
   const [isAssigning, setIsAssigning] = useState(false);
-  const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
+  const [selectedGuide, setSelectedGuide] = useState<string>(group.guideId || "_none");
   const previousGuideIdRef = useRef<string | undefined>(group.guideId);
   
   // Display name should default to "Group X" if not set
