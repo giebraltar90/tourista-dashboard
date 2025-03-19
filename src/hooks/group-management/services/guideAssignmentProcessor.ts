@@ -42,9 +42,14 @@ export const processGuideAssignment = async (
   groupIndex: number,
   currentTour: any,
   guides: GuideInfo[],
-  guideId?: string,
+  guideId: string | undefined,
   queryClient: QueryClient
-) => {
+): Promise<{ 
+  success: boolean; 
+  updatedGroups: any; 
+  guideName: string; 
+  groupName: string; 
+}> => {
   try {
     if (!currentTour) throw new Error("Tour not found");
     
@@ -62,11 +67,20 @@ export const processGuideAssignment = async (
     // Skip processing if nothing changes
     if (currentGuideId === actualGuideId) {
       console.log("No change in guide assignment, skipping update");
-      return true;
+      return {
+        success: true,
+        updatedGroups: updatedTourGroups,
+        guideName: "Unchanged",
+        groupName: updatedTourGroups[groupIndex].name || ""
+      };
     }
     
     // Find guide name for the modification description
-    const guideName = actualGuideId ? findGuideName(actualGuideId, currentTour, guides) : "Unassigned";
+    const guideName = actualGuideId ? findGuideName(
+      actualGuideId, 
+      currentTour, 
+      guides.map(g => ({ id: g.id || "", name: g.name }))
+    ) : "Unassigned";
     
     // Update the group with new guide ID and possibly new name
     const groupsWithUpdates = prepareGroupUpdate(
@@ -103,7 +117,7 @@ export const processGuideAssignment = async (
     // If direct update failed or it's not a UUID tour, try the updateTourGroups API function
     if (!updateSuccess) {
       console.log("Falling back to updateTourGroups API");
-      updateSuccess = await updateTourGroups(tourId, updatedTourGroups);
+      updateSuccess = await updateTourGroups(tourId, groupsWithUpdates);
     }
     
     // Show success/error messages
@@ -122,7 +136,7 @@ export const processGuideAssignment = async (
       success: updateSuccess,
       updatedGroups: groupsWithUpdates,
       guideName,
-      groupName: updatedTourGroups[groupIndex].name
+      groupName: updatedTourGroups[groupIndex].name || ""
     };
     
   } catch (error) {

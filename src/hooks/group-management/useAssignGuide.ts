@@ -30,7 +30,7 @@ export const useAssignGuide = (tourId: string) => {
         groupIndex,
         tour,
         guides,
-        guideId,
+        guideId === "_none" ? undefined : guideId,
         queryClient
       );
       

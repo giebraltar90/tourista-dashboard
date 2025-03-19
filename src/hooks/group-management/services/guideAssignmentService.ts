@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
-import { updateTourGroups, updateTourModification } from "@/services/ventrataApi";
+import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { findGuideName, generateGroupName } from "../utils/guideNameUtils";
 
 /**
@@ -33,42 +33,6 @@ export const prepareGroupUpdate = (
 };
 
 /**
- * Handles direct Supabase update for UUID tours
- */
-export const updateGuideInSupabase = async (
-  tourId: string,
-  groupId: string, 
-  actualGuideId: string | undefined, 
-  newGroupName: string
-): Promise<boolean> => {
-  try {
-    console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
-      guide_id: actualGuideId,
-      name: newGroupName
-    });
-    
-    const { error } = await supabase
-      .from('tour_groups')
-      .update({
-        guide_id: actualGuideId,
-        name: newGroupName
-      })
-      .eq('id', groupId);
-      
-    if (error) {
-      console.error("Supabase direct group update failed:", error);
-      return false;
-    }
-    
-    console.log("Successfully updated guide assignment in Supabase with direct update");
-    return true;
-  } catch (error) {
-    console.error("Error with direct Supabase update:", error);
-    return false;
-  }
-};
-
-/**
  * Records the guide assignment modification
  */
 export const recordGuideAssignmentModification = async (
@@ -84,25 +48,16 @@ export const recordGuideAssignmentModification = async (
     : `Guide removed from group ${groupName}`;
     
   try {
-    await updateTourModification(tourId, {
-      description: modificationDescription,
-      details: {
-        type: "guide_assignment",
-        groupIndex,
-        guideId: actualGuideId,
-        guideName,
-        groupName
-      }
-    });
-    
-    // Also add to local modifications
-    addModification(modificationDescription, {
+    const modDetails = {
       type: "guide_assignment",
       groupIndex,
       guideId: actualGuideId,
       guideName,
       groupName
-    });
+    };
+    
+    // Also add to local modifications
+    addModification(modificationDescription, modDetails);
   } catch (error) {
     console.error("Failed to record modification:", error);
   }

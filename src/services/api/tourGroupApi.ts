@@ -85,3 +85,45 @@ export const updateTourGroups = async (
     throw error;
   }
 };
+
+/**
+ * Updates a guide's assignment to a group in Supabase directly
+ */
+export const updateGuideInSupabase = async (
+  tourId: string,
+  groupId: string, 
+  guideId: string | undefined, 
+  newGroupName?: string
+): Promise<boolean> => {
+  try {
+    console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
+      guide_id: guideId,
+      name: newGroupName
+    });
+    
+    const updateData: any = {
+      guide_id: guideId
+    };
+    
+    // Only include name in update if it's provided
+    if (newGroupName) {
+      updateData.name = newGroupName;
+    }
+    
+    const { error } = await supabase
+      .from('tour_groups')
+      .update(updateData)
+      .eq('id', groupId);
+      
+    if (error) {
+      console.error("Supabase direct group update failed:", error);
+      return false;
+    }
+    
+    console.log("Successfully updated guide assignment in Supabase with direct update");
+    return true;
+  } catch (error) {
+    console.error("Error with direct Supabase update:", error);
+    return false;
+  }
+};
