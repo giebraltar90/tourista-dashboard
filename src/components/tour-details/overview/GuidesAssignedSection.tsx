@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { GuideAssignmentDisplay } from "./GuideAssignmentDisplay";
+import { useGuideData } from "@/hooks/useGuideData";
 
 interface GuidesAssignedSectionProps {
   tour: TourCardProps;
@@ -19,6 +20,20 @@ export const GuidesAssignedSection = ({
   guide3Info,
   getGuideTypeBadgeColor
 }: GuidesAssignedSectionProps) => {
+  const { guides = [] } = useGuideData() || { guides: [] };
+  
+  // Prepare a list of available guides for selection
+  const availableGuides = [
+    { id: 'guide1', name: tour.guide1 || 'Primary Guide', info: guide1Info },
+    { id: 'guide2', name: tour.guide2 || 'Secondary Guide', info: guide2Info },
+    { id: 'guide3', name: tour.guide3 || 'Assistant Guide', info: guide3Info },
+    ...guides.map(guide => ({
+      id: guide.id,
+      name: guide.name,
+      info: guide
+    }))
+  ].filter(guide => guide.name && guide.id);
+
   return (
     <Card>
       <CardHeader>
@@ -33,6 +48,8 @@ export const GuidesAssignedSection = ({
             isPrimary={true}
             tourGroups={tour.tourGroups}
             getGuideTypeBadgeColor={getGuideTypeBadgeColor}
+            tourId={tour.id}
+            availableGuides={availableGuides}
           />
           
           {tour.guide2 && (
@@ -43,6 +60,8 @@ export const GuidesAssignedSection = ({
               isPrimary={false}
               tourGroups={tour.tourGroups}
               getGuideTypeBadgeColor={getGuideTypeBadgeColor}
+              tourId={tour.id}
+              availableGuides={availableGuides}
             />
           )}
           
@@ -54,6 +73,8 @@ export const GuidesAssignedSection = ({
               isPrimary={false}
               tourGroups={tour.tourGroups}
               getGuideTypeBadgeColor={getGuideTypeBadgeColor}
+              tourId={tour.id}
+              availableGuides={availableGuides}
             />
           )}
         </div>
