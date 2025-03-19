@@ -1,3 +1,4 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -48,6 +49,14 @@ export const useAssignGuide = (tourId: string) => {
         guideId,
         name: groupName
       };
+      
+      // Log for debugging
+      console.log("Assigning guide to group:", { 
+        groupIndex, 
+        guideId, 
+        guideName,
+        updatedGroup: updatedTourGroups[groupIndex]
+      });
       
       await updateTourGroups(tourId, updatedTourGroups);
       

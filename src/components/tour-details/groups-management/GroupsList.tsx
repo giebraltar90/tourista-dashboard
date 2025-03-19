@@ -44,11 +44,11 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
   const getGuideNameAndInfo = (guideId?: string) => {
     if (!guideId) return { name: "Unassigned", info: null };
     
-    if (guide1Info?.id === guideId) {
+    if (guide1Info && (guide1Info.id === guideId || guideId === "guide1")) {
       return { name: tour.guide1, info: guide1Info };
-    } else if (guide2Info?.id === guideId) {
+    } else if (guide2Info && (guide2Info.id === guideId || guideId === "guide2")) {
       return { name: tour.guide2 || "", info: guide2Info };
-    } else if (guide3Info?.id === guideId) {
+    } else if (guide3Info && (guide3Info.id === guideId || guideId === "guide3")) {
       return { name: tour.guide3 || "", info: guide3Info };
     }
     

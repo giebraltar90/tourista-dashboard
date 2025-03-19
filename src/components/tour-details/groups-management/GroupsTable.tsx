@@ -21,11 +21,11 @@ export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
   const getGuideName = (guideId?: string) => {
     if (!guideId) return "Unassigned";
     
-    if (guide1Info?.id === guideId) {
+    if (guide1Info && (guide1Info.id === guideId || guideId === "guide1")) {
       return tour.guide1;
-    } else if (guide2Info?.id === guideId) {
+    } else if (guide2Info && (guide2Info.id === guideId || guideId === "guide2")) {
       return tour.guide2 || "";
-    } else if (guide3Info?.id === guideId) {
+    } else if (guide3Info && (guide3Info.id === guideId || guideId === "guide3")) {
       return tour.guide3 || "";
     }
     
