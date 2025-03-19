@@ -1,3 +1,4 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -119,6 +120,12 @@ export const useAssignGuide = (tourId: string) => {
         guideName,
         groupName: updatedTourGroups[groupIndex].name
       });
+      
+      // After successful backend update, refresh the tour data to ensure consistency
+      // but wait a moment to avoid flickering
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 500);
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {

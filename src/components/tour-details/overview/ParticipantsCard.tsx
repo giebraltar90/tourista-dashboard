@@ -17,21 +17,21 @@ export const ParticipantsCard = ({
 }: ParticipantsCardProps) => {
   const totalGroups = tourGroups.length;
   
-  // Determine capacity based on mode
-  const capacity = isHighSeason 
+  // Determine capacity based on mode - using boolean for isHighSeason
+  const capacity = Boolean(isHighSeason)
     ? DEFAULT_CAPACITY_SETTINGS.highSeason 
     : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
       ? DEFAULT_CAPACITY_SETTINGS.exception 
       : DEFAULT_CAPACITY_SETTINGS.standard;
   
-  // Determine required groups based on mode
-  const requiredGroups = isHighSeason 
+  // Determine required groups based on mode - using boolean for isHighSeason
+  const requiredGroups = Boolean(isHighSeason)
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
 
   // Determine mode text for display
   const getModeText = () => {
-    if (isHighSeason) return "High Season";
+    if (Boolean(isHighSeason)) return "High Season";
     if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception";
     return "Standard";
   };
@@ -62,7 +62,7 @@ export const ParticipantsCard = ({
             <Badge 
               variant="outline" 
               className={`font-medium ${
-                isHighSeason 
+                Boolean(isHighSeason)
                   ? "bg-blue-100 text-blue-800" 
                   : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard
                     ? "bg-amber-100 text-amber-800"

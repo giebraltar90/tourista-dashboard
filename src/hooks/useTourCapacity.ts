@@ -13,6 +13,7 @@ export const useUpdateTourCapacity = (tourId: string) => {
   const mutation = useMutation({
     mutationFn: async (updatedTour: VentrataTour) => {
       console.log("Updating tour capacity for tour", tourId, updatedTour);
+      console.log("New high season value:", updatedTour.isHighSeason);
       
       try {
         // First try to update in Supabase if available
@@ -44,6 +45,10 @@ export const useUpdateTourCapacity = (tourId: string) => {
       // Optimistically update the cache with the new value
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return oldData;
+        console.log("Optimistically updating tour data:", {
+          ...oldData,
+          isHighSeason: variables.isHighSeason
+        });
         return {
           ...oldData,
           isHighSeason: variables.isHighSeason
@@ -58,7 +63,7 @@ export const useUpdateTourCapacity = (tourId: string) => {
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       
-      const isHighSeason = variables.isHighSeason;
+      const isHighSeason = Boolean(variables.isHighSeason);
       const modeText = isHighSeason ? 'high season' : 'standard';
       
       // Add a modification record

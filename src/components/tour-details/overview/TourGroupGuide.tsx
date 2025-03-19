@@ -42,13 +42,13 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
   const previousGuideIdRef = useRef(group.guideId);
+  const [isOpen, setIsOpen] = useState(false);
   
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
   // Update selected guide when group.guideId changes, but only if it's a meaningful change
   useEffect(() => {
-    // Prevent flickering by only updating when we have a real change
     if (group.guideId !== previousGuideIdRef.current) {
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
@@ -71,17 +71,23 @@ export const TourGroupGuide = ({
   };
 
   const handleAssignGuide = async (guideId: string) => {
-    if (guideId === selectedGuide) return;
+    if (guideId === selectedGuide) {
+      setIsOpen(false);
+      return;
+    }
     
     setIsAssigning(true);
     
     try {
-      // Optimistically update the UI to prevent flickering
+      // Optimistically update the UI first
       setSelectedGuide(guideId);
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
       
+      // Close the popover 
+      setIsOpen(false);
+      
+      // Call the API to update the guide
       await assignGuide(groupIndex, guideId);
-      toast.success(`Guide assigned to ${displayName}`);
     } catch (error) {
       // Revert optimistic update if there was an error
       setSelectedGuide(group.guideId || "_none");
@@ -123,7 +129,7 @@ export const TourGroupGuide = ({
           )}
         </div>
         
-        <Popover>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button size="sm" variant="outline">
               {isGuideAssigned ? "Change Guide" : "Assign Guide"}

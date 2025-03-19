@@ -39,12 +39,17 @@ export const useTourById = (tourId: string) => {
       const tourData = mockTours.find(tour => tour.id === tourId);
       console.log("Found tour data:", tourData);
       
-      // Ensure we're always returning the most up-to-date data
-      return tourData ? { 
-        ...tourData,
-        // Make sure isHighSeason is properly typed as boolean
-        isHighSeason: !!tourData.isHighSeason
-      } : null;
+      if (!tourData) return null;
+      
+      // Create a clean copy of the tour data
+      const cleanedTourData = {...tourData};
+      
+      // Ensure isHighSeason is properly converted to boolean
+      cleanedTourData.isHighSeason = tourData.isHighSeason === true;
+      
+      console.log("Cleaned tour data with isHighSeason:", cleanedTourData.isHighSeason);
+      
+      return cleanedTourData;
     },
     staleTime: 30 * 1000, // 30 seconds (reduce caching time for more responsive UI)
     enabled: !!tourId, // Only run the query if tourId is provided

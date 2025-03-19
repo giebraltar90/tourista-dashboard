@@ -59,20 +59,26 @@ export const useModifications = (tourId: string) => {
       });
       
       try {
-        // Try to store in Supabase if available
-        const { error } = await supabase
-          .from('modifications')
-          .insert({
-            tour_id: tourId,
-            description: description,
-            details: details || {},
-            status: 'complete',
-          });
-        
-        if (error) {
-          console.warn("Failed to store modification in database:", error);
-          // Fall back to API call
+        // Try to store in Supabase if available - handle the fact that tour_id might not be a UUID
+        if (tourId.startsWith('tour-')) {
+          // This is a mock ID, use API fallback
+          console.log("Using API fallback for modification with mock ID:", tourId);
           await updateTourModification(tourId, updatedModifications);
+        } else {
+          const { error } = await supabase
+            .from('modifications')
+            .insert({
+              tour_id: tourId,
+              description: description,
+              details: details || {},
+              status: 'complete',
+            });
+          
+          if (error) {
+            console.warn("Failed to store modification in database:", error);
+            // Fall back to API call
+            await updateTourModification(tourId, updatedModifications);
+          }
         }
       } catch (err) {
         console.warn("Database error, falling back to API:", err);
@@ -82,8 +88,10 @@ export const useModifications = (tourId: string) => {
       
       toast.success("Modification recorded successfully");
       
-      // Force a refetch to ensure we have the latest data
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      // Force a refetch to ensure we have the latest data, but delay it to avoid flickering
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 500);
       
       return true;
     } catch (error) {
