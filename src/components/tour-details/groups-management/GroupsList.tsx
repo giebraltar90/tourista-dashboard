@@ -3,10 +3,13 @@ import { useState } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { useDeleteGroup } from "@/hooks/group-management";
-import { GroupListItem } from "./GroupListItem";
 import { GroupDialogs } from "./GroupDialogs";
 import { GroupsListHeader } from "./GroupsListHeader";
 import { useGuideNameInfo } from "@/hooks/group-management";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { UserRound, Pencil, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface GroupsListProps {
   tour: TourCardProps;
@@ -62,14 +65,58 @@ export const GroupsList = ({ tour, guide1Info, guide2Info, guide3Info }: GroupsL
           const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
           
           return (
-            <GroupListItem
-              key={index}
-              group={group}
-              index={index}
-              guideName={guideName}
-              guideInfo={guideInfo}
-              onAction={handleGroupAction}
-            />
+            <Card key={index} className="overflow-hidden">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-medium">{group.name}</h3>
+                      <Badge variant={group.size > 0 ? "default" : "outline"}>
+                        {group.size} participants
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      {guideName ? (
+                        <div className="flex items-center gap-1">
+                          <UserRound className="h-3 w-3" />
+                          <span>Guide: {guideName}</span>
+                        </div>
+                      ) : (
+                        <span className="text-yellow-600">No guide assigned</span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGroupAction(index, 'assignGuide')}
+                    >
+                      <UserRound className="h-4 w-4 mr-1" />
+                      Assign Guide
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGroupAction(index, 'edit')}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      <span className="sr-only">Edit</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleGroupAction(index, 'delete')}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
