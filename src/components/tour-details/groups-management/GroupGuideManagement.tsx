@@ -2,26 +2,17 @@
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Users, UserPlus } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideInfo, useGuideData } from "@/hooks/useGuideData";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { GroupCapacityAlert } from "./GroupCapacityAlert";
 import { GroupCapacityInfo } from "./GroupCapacityInfo";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { useAssignGuide } from "@/hooks/group-management";
 import { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription
-} from "@/components/ui/dialog";
-import { AssignGuideForm } from "./AssignGuideForm";
-import { isUuid } from "@/services/api/tour/guideUtils";
+import { GroupGuideCard } from "./GroupGuideCard";
+import { GuideAssignmentDialog } from "./GuideAssignmentDialog";
+import { getValidGuides } from "./GuideOptionsList";
 
 interface GroupGuideManagementProps {
   tour: TourCardProps;
@@ -49,54 +40,14 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
     setIsAssignGuideOpen(true);
   };
 
-  // Helper to find guide name from ID
-  const getGuideName = (guideId?: string) => {
-    if (!guideId) return "Unassigned";
-    
-    if (isUuid(guideId)) {
-      const guideMatch = guides.find(g => g.id === guideId);
-      if (guideMatch) return guideMatch.name;
-    }
-    
-    // Standard guide references
-    if (guideId === "guide1") return tour.guide1;
-    if (guideId === "guide2") return tour.guide2 || "";
-    if (guideId === "guide3") return tour.guide3 || "";
-    
-    return guideId;
-  };
-
-  // Create an array of valid guides
-  const getValidGuides = () => {
-    const guides = [];
-    
-    // Primary guides - use consistent IDs
-    if (tour.guide1) {
-      guides.push({ 
-        id: "guide1", 
-        name: tour.guide1, 
-        info: guide1Info 
-      });
-    }
-    
-    if (tour.guide2) {
-      guides.push({ 
-        id: "guide2", 
-        name: tour.guide2, 
-        info: guide2Info 
-      });
-    }
-    
-    if (tour.guide3) {
-      guides.push({ 
-        id: "guide3", 
-        name: tour.guide3, 
-        info: guide3Info 
-      });
-    }
-    
-    return guides.filter(guide => guide.name && guide.id);
-  };
+  // Get valid guides for guide selection
+  const validGuides = getValidGuides({
+    tour,
+    guide1Info,
+    guide2Info,
+    guide3Info,
+    guides
+  });
   
   return (
     <Card>
@@ -136,50 +87,16 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {tour.tourGroups.map((group, index) => {
                 const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
-                const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
                 
                 return (
-                  <div key={index} className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium">Group {index + 1}: {group.name}</h4>
-                      <Badge variant="outline" className="bg-blue-50">
-                        {group.size} participants
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex items-center mt-2">
-                      <div className={`p-2 rounded-full ${isGuideAssigned ? 'bg-green-100' : 'bg-gray-100'}`}>
-                        {isGuideAssigned ? <Users className="h-4 w-4 text-green-600" /> : <UserPlus className="h-4 w-4 text-gray-400" />}
-                      </div>
-                      <div className="ml-3 flex-1">
-                        <div className="text-sm">
-                          Guide: {isGuideAssigned ? (
-                            <span className="ml-1">
-                              <Badge className="bg-green-100 text-green-800">
-                                {guideName}
-                              </Badge>
-                              {guideInfo?.guideType && (
-                                <span className="ml-1 text-xs text-muted-foreground">
-                                  ({guideInfo.guideType})
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <Badge className="ml-1 bg-yellow-100 text-yellow-800">
-                              Unassigned
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        onClick={() => handleOpenAssignGuide(index)}
-                      >
-                        {isGuideAssigned ? "Change Guide" : "Assign Guide"}
-                      </Button>
-                    </div>
-                  </div>
+                  <GroupGuideCard
+                    key={index}
+                    index={index}
+                    group={group}
+                    guideName={guideName}
+                    guideInfo={guideInfo}
+                    onAssignGuide={handleOpenAssignGuide}
+                  />
                 );
               })}
             </div>
@@ -193,25 +110,14 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
         </div>
       </CardFooter>
 
-      <Dialog open={isAssignGuideOpen} onOpenChange={setIsAssignGuideOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Guide to Group</DialogTitle>
-            <DialogDescription>
-              Choose a guide to assign to this group
-            </DialogDescription>
-          </DialogHeader>
-          {selectedGroupIndex !== null && tour.tourGroups[selectedGroupIndex] && (
-            <AssignGuideForm 
-              tourId={tour.id}
-              groupIndex={selectedGroupIndex}
-              guides={getValidGuides()}
-              currentGuideId={tour.tourGroups[selectedGroupIndex].guideId}
-              onSuccess={() => setIsAssignGuideOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      <GuideAssignmentDialog
+        isOpen={isAssignGuideOpen}
+        onOpenChange={setIsAssignGuideOpen}
+        selectedGroupIndex={selectedGroupIndex}
+        tourId={tour.id}
+        tourGroups={tour.tourGroups}
+        validGuides={validGuides}
+      />
     </Card>
   );
 };
