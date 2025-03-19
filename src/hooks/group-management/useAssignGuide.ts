@@ -1,3 +1,4 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -69,14 +70,21 @@ export const useAssignGuide = (tourId: string) => {
       // If guideId is "_none", treat it as undefined to unassign the guide
       const actualGuideId = guideId === "_none" ? undefined : guideId;
       
-      // Find guide name for the modification description
-      const guideName = findGuideName(actualGuideId);
-      
       // Create a deep copy of tourGroups to avoid mutation issues
       const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
       
-      // Get the current group name
+      // Get the current group name and guide ID for comparison
       let groupName = updatedTourGroups[groupIndex].name;
+      const currentGuideId = updatedTourGroups[groupIndex].guideId;
+      
+      // Skip processing if nothing changes
+      if (currentGuideId === actualGuideId) {
+        console.log("No change in guide assignment, skipping update");
+        return true;
+      }
+      
+      // Find guide name for the modification description
+      const guideName = findGuideName(actualGuideId);
       
       // Generate a new group name if needed
       const newGroupName = generateGroupName(groupName, guideName);
@@ -101,7 +109,10 @@ export const useAssignGuide = (tourId: string) => {
       queryClient.setQueryData(['tour', tourId], updatedTour);
       
       // Call the API to update tour groups
-      await updateTourGroups(tourId, updatedTourGroups);
+      const result = await updateTourGroups(tourId, updatedTourGroups);
+      if (!result) {
+        throw new Error("Failed to update tour groups");
+      }
       
       // Record this modification
       const modificationDescription = guideName !== "Unassigned"
@@ -116,32 +127,32 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // After successful backend update, delay the refresh of data
-      // This prevents race conditions with other components fetching
-      setTimeout(() => {
-        // Directly update the cache again to ensure the change persists
-        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-          if (!oldData) return updatedTour;
-          
-          // Make sure tourGroups isn't cleared accidentally
-          const tourGroups = [...oldData.tourGroups];
-          if (tourGroups[groupIndex]) {
-            tourGroups[groupIndex] = {
-              ...tourGroups[groupIndex],
-              guideId: actualGuideId,
-              name: newGroupName
-            };
-          }
-          
-          return {
-            ...oldData,
-            tourGroups
-          };
-        });
+      // Only after successful API update, delay the data refresh 
+      // We're intentionally NOT invalidating immediately to prevent flicker
+      // Instead, we'll forcefully update the local cache again
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return updatedTour;
         
-        // Finally, invalidate to refresh from server, but only after our local changes are safe
+        // Create a new copy of the tour groups to ensure React detects the change
+        const newTourGroups = [...oldData.tourGroups];
+        if (newTourGroups[groupIndex]) {
+          newTourGroups[groupIndex] = {
+            ...newTourGroups[groupIndex],
+            guideId: actualGuideId,
+            name: newGroupName
+          };
+        }
+        
+        return {
+          ...oldData,
+          tourGroups: newTourGroups
+        };
+      });
+      
+      // Set up a delayed invalidation after a longer time
+      setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 3000); // Increased from 2000ms to 3000ms for stability
+      }, 10000); // 10 seconds, much longer than before
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {

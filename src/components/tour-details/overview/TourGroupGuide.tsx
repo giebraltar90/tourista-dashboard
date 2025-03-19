@@ -41,24 +41,23 @@ export const TourGroupGuide = ({
   const { assignGuide } = useAssignGuide(tour.id);
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
-  const previousGuideIdRef = useRef(group.guideId);
+  const previousGuideIdRef = useRef<string | undefined>(group.guideId);
   const lastUpdateTimeRef = useRef(Date.now());
   const [isOpen, setIsOpen] = useState(false);
   
   // Display name should default to "Group X" if not set
   const displayName = group.name || `Group ${groupIndex + 1}`;
   
-  // Debug logs for tracking guide ID changes
-  useEffect(() => {
-    console.log(`TourGroupGuide ${displayName}: Current group.guideId =`, group.guideId);
-    console.log(`TourGroupGuide ${displayName}: Current selectedGuide =`, selectedGuide);
-  }, [group.guideId, selectedGuide, displayName]);
-  
   // Better synchronization of guide ID changes with debounce protection
   useEffect(() => {
+    if (!group.guideId && !previousGuideIdRef.current) {
+      // Both undefined or null, no change
+      return;
+    }
+    
+    const now = Date.now();
     // Only update if the group's guideId changed and it's different from our selected value
     // Also add a time-based debounce to prevent rapid changes
-    const now = Date.now();
     if (group.guideId !== previousGuideIdRef.current && 
         group.guideId !== selectedGuide && 
         (now - lastUpdateTimeRef.current > 3000)) {
@@ -167,12 +166,10 @@ export const TourGroupGuide = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_none">None (Unassigned)</SelectItem>
-                  {guideOptions.map((guide) => (
-                    guide.name ? (
-                      <SelectItem key={guide.id} value={guide.id}>
-                        {guide.name}
-                      </SelectItem>
-                    ) : null
+                  {guideOptions.filter(guide => guide.name).map((guide) => (
+                    <SelectItem key={guide.id} value={guide.id}>
+                      {guide.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -34,14 +34,17 @@ export const GroupCapacityInfo = ({
   
   // Update current mode when props change (to stay in sync)
   useEffect(() => {
-    if (isHighSeason) {
-      setCurrentMode('high_season');
-    } else if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) {
-      setCurrentMode('exception');
-    } else {
-      setCurrentMode('standard');
+    const newMode = isHighSeason 
+      ? 'high_season' 
+      : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
+        ? 'exception' 
+        : 'standard';
+    
+    if (newMode !== currentMode) {
+      console.log(`GroupCapacityInfo: Updating mode from ${currentMode} to ${newMode} based on props`);
+      setCurrentMode(newMode);
     }
-  }, [isHighSeason, totalParticipants]);
+  }, [isHighSeason, totalParticipants, currentMode]);
   
   // Determine the current capacity mode
   const capacity = isHighSeason 
@@ -70,26 +73,36 @@ export const GroupCapacityInfo = ({
       return;
     }
     
-    console.log(`Changing mode to: ${mode}, current isHighSeason: ${isHighSeason}`);
+    // Update internal state immediately
     setCurrentMode(mode);
     
-    // Only update if there's an actual change
+    console.log(`Changing mode to: ${mode}, current isHighSeason: ${isHighSeason}`);
+    
+    // Only update if there's an actual change between high season and not high season
     const newIsHighSeason = mode === 'high_season';
     lastUpdateTimeRef.current = now;
     
     if (newIsHighSeason !== isHighSeason) {
       console.log(`Updating tour to isHighSeason=${newIsHighSeason}`);
       
-      // Update the tour's high season flag
-      await updateTourCapacity({
-        ...tour,
-        isHighSeason: newIsHighSeason,
-      });
+      // Close dropdown now to improve UI responsiveness
+      setOpenDropdown(false);
+      
+      try {
+        // Update the tour's high season flag
+        await updateTourCapacity({
+          ...tour,
+          isHighSeason: newIsHighSeason,
+        });
+      } catch (error) {
+        console.error("Error updating tour capacity mode:", error);
+        // If update fails, revert to previous mode
+        setCurrentMode(isHighSeason ? 'high_season' : 'standard');
+      }
     } else {
       console.log("No change in high season mode, skipping update");
+      setOpenDropdown(false);
     }
-    
-    setOpenDropdown(false);
   };
   
   return (

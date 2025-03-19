@@ -35,7 +35,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
-  const isHighSeason = tour.isHighSeason ?? false;
+  const isHighSeason = !!tour.isHighSeason;
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   
   const requiredGroups = isHighSeason ? 

@@ -17,9 +17,9 @@ export const useUpdateTourCapacity = (tourId: string) => {
       
       try {
         // For demo tours with string IDs like "tour-1", skip Supabase and use the API
-        if (tourId.startsWith('tour-')) {
-          console.log("Using mock API for tour-* ID");
-          return updateTourCapacityApi(tourId, updatedTour);
+        if (!tourId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+          console.log("Using mock API for non-UUID tour ID");
+          return await updateTourCapacityApi(tourId, updatedTour);
         }
         
         // Only attempt Supabase update for valid UUIDs
@@ -31,14 +31,14 @@ export const useUpdateTourCapacity = (tourId: string) => {
         if (error) {
           console.warn("Supabase update failed, falling back to API", error);
           // Fall back to API call if Supabase fails
-          return updateTourCapacityApi(tourId, updatedTour);
+          return await updateTourCapacityApi(tourId, updatedTour);
         }
         
         return true;
       } catch (err) {
         console.warn("Database error, falling back to API", err);
         // Fall back to API call
-        return updateTourCapacityApi(tourId, updatedTour);
+        return await updateTourCapacityApi(tourId, updatedTour);
       }
     },
     onMutate: async (variables) => {
