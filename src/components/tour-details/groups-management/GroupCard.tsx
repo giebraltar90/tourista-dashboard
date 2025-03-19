@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
@@ -45,6 +45,10 @@ export const GroupCard = ({
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const { name: guideName } = getGuideNameAndInfo(group.guideId);
   
+  // Calculate the actual participant count and total people
+  const participantCount = group.participants?.length || 0;
+  const participantTotalCount = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
+  
   return (
     <ParticipantDropZone 
       groupIndex={groupIndex}
@@ -56,14 +60,14 @@ export const GroupCard = ({
           <div className="flex justify-between items-center">
             <CardTitle className="text-base font-medium">
               {group.name}
-              {group.childCount ? (
+              {group.childCount && group.childCount > 0 ? (
                 <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
                   {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
                 </Badge>
               ) : null}
             </CardTitle>
             <Badge variant="outline">
-              {group.size} {group.size === 1 ? 'person' : 'people'}
+              {participantTotalCount} {participantTotalCount === 1 ? 'person' : 'people'}
             </Badge>
           </div>
           <CardDescription>

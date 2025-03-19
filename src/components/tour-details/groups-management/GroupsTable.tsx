@@ -33,13 +33,17 @@ export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3In
       <TableBody>
         {tourGroups.map((group, index) => {
           const { name: guideName } = getGuideNameAndInfo(group.guideId);
+          
           // Count participants based on the array length
-          const participantCount = group.participants?.length || 0;
+          const bookingCount = group.participants?.length || 0;
+          
+          // Count total people (accounting for families/groups)
+          const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
           
           return (
             <TableRow key={index}>
               <TableCell className="font-medium">{group.name}</TableCell>
-              <TableCell>{group.size || 0}</TableCell>
+              <TableCell>{totalPeople} people ({bookingCount} bookings)</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>
                 {guideName !== "Unassigned" ? guideName : (

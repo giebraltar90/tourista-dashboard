@@ -22,7 +22,9 @@ export const GroupListItem = ({
 }: GroupListItemProps) => {
   // Calculate the actual participant count from the participants array
   const participantCount = group.participants?.length || 0;
-  const totalPeople = group.size || 0;
+  
+  // Calculate the total people count including family members
+  const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
   
   return (
     <div className="p-4 border rounded-md">
@@ -82,7 +84,7 @@ export const GroupListItem = ({
       </div>
       
       <div className="mt-3">
-        <span className="text-sm font-medium">Participants: {participantCount}</span>
+        <span className="text-sm font-medium">Participants: {participantCount} booking(s), {totalPeople} people</span>
       </div>
     </div>
   );

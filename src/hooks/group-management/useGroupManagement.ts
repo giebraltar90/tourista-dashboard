@@ -40,7 +40,16 @@ export const useGroupManagement = (tour: TourCardProps) => {
       sourceGroup.participants = sourceGroup.participants.filter(
         (p: VentrataParticipant) => p.id !== participant.id
       );
-      sourceGroup.size -= participant.count;
+      // Update source group size to reflect actual participant counts
+      sourceGroup.size = sourceGroup.participants.reduce(
+        (total: number, p: VentrataParticipant) => total + (p.count || 1),
+        0
+      );
+      
+      // Update child count if needed
+      if (participant.childCount) {
+        sourceGroup.childCount = (sourceGroup.childCount || 0) - participant.childCount;
+      }
     }
     
     const destGroup = updatedTourGroups[toGroupIndex];
@@ -48,7 +57,17 @@ export const useGroupManagement = (tour: TourCardProps) => {
       destGroup.participants = [];
     }
     destGroup.participants.push(participant);
-    destGroup.size += participant.count;
+    
+    // Update destination group size to reflect actual participant counts
+    destGroup.size = destGroup.participants.reduce(
+      (total: number, p: VentrataParticipant) => total + (p.count || 1),
+      0
+    );
+    
+    // Update child count if needed
+    if (participant.childCount) {
+      destGroup.childCount = (destGroup.childCount || 0) + participant.childCount;
+    }
     
     // Update local state immediately for a responsive UI
     setLocalTourGroups(updatedTourGroups);
@@ -116,7 +135,17 @@ export const useGroupManagement = (tour: TourCardProps) => {
       sourceGroup.participants = sourceGroup.participants.filter(
         (p: VentrataParticipant) => p.id !== participant.id
       );
-      sourceGroup.size -= participant.count;
+      
+      // Update source group size to reflect actual participant counts
+      sourceGroup.size = sourceGroup.participants.reduce(
+        (total: number, p: VentrataParticipant) => total + (p.count || 1),
+        0
+      );
+      
+      // Update child count if needed
+      if (participant.childCount) {
+        sourceGroup.childCount = (sourceGroup.childCount || 0) - participant.childCount;
+      }
     }
     
     const destGroup = updatedTourGroups[toGroupIndex];
@@ -124,7 +153,17 @@ export const useGroupManagement = (tour: TourCardProps) => {
       destGroup.participants = [];
     }
     destGroup.participants.push(participant);
-    destGroup.size += participant.count;
+    
+    // Update destination group size to reflect actual participant counts
+    destGroup.size = destGroup.participants.reduce(
+      (total: number, p: VentrataParticipant) => total + (p.count || 1),
+      0
+    );
+    
+    // Update child count if needed
+    if (participant.childCount) {
+      destGroup.childCount = (destGroup.childCount || 0) + participant.childCount;
+    }
     
     // Update local state immediately for a responsive UI
     setLocalTourGroups(updatedTourGroups);
