@@ -43,6 +43,9 @@ export const TourGroupGuide = ({
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
   const previousGuideIdRef = useRef(group.guideId);
   
+  // Display name should default to "Group X" if not set
+  const displayName = group.name || `Group ${groupIndex + 1}`;
+  
   // Update selected guide when group.guideId changes, but only if it's a meaningful change
   useEffect(() => {
     // Prevent flickering by only updating when we have a real change
@@ -78,7 +81,7 @@ export const TourGroupGuide = ({
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
       
       await assignGuide(groupIndex, guideId);
-      toast.success(`Guide assigned to Group ${groupIndex + 1}`);
+      toast.success(`Guide assigned to ${displayName}`);
     } catch (error) {
       // Revert optimistic update if there was an error
       setSelectedGuide(group.guideId || "_none");
@@ -98,9 +101,9 @@ export const TourGroupGuide = ({
   return (
     <div className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
       <div className="flex justify-between items-center mb-3">
-        <h3 className="font-medium text-base">Group {groupIndex + 1}: {group.name}</h3>
+        <h3 className="font-medium text-base">{displayName}</h3>
         <Badge variant="outline" className="bg-blue-50">
-          {group.size} participants
+          {group.size} people
         </Badge>
       </div>
       
@@ -128,7 +131,7 @@ export const TourGroupGuide = ({
           </PopoverTrigger>
           <PopoverContent className="w-56 p-3">
             <div className="space-y-3">
-              <h4 className="font-medium text-sm">Assign Guide to Group {groupIndex + 1}</h4>
+              <h4 className="font-medium text-sm">Assign Guide to {displayName}</h4>
               <Select 
                 onValueChange={(value) => handleAssignGuide(value)}
                 value={selectedGuide}

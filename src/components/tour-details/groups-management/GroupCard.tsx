@@ -8,7 +8,7 @@ import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { Users, UserPlus } from "lucide-react";
+import { Users, UserPlus, Edit } from "lucide-react";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -28,6 +28,7 @@ interface GroupCardProps {
   guide2Info: any;
   guide3Info: any;
   onAssignGuide: (groupIndex: number) => void;
+  onEditGroup: (groupIndex: number) => void;
 }
 
 export const GroupCard = ({
@@ -44,16 +45,20 @@ export const GroupCard = ({
   guide1Info,
   guide2Info,
   guide3Info,
-  onAssignGuide
+  onAssignGuide,
+  onEditGroup
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
   // Calculate the actual participant count and total people
   const participantCount = group.participants?.length || 0;
-  const participantTotalCount = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
+  const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
   
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+  
+  // Use default group name if not set
+  const displayName = group.name || `Group ${groupIndex + 1}`;
   
   return (
     <ParticipantDropZone 
@@ -64,22 +69,27 @@ export const GroupCard = ({
       <Card className={`border-2 ${guideName !== "Unassigned" ? "border-green-200" : "border-muted"}`}>
         <CardHeader className="pb-2 bg-muted/30">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-base font-medium">
-              {group.name}
-              {group.childCount && group.childCount > 0 ? (
-                <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
-                  {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
-                </Badge>
-              ) : null}
-            </CardTitle>
-            <div className="flex flex-col items-end">
-              <Badge variant="outline">
-                {participantTotalCount} {participantTotalCount === 1 ? 'person' : 'people'}
-              </Badge>
-              <span className="text-xs text-muted-foreground mt-1">
-                {participantCount} {participantCount === 1 ? 'booking' : 'bookings'}
-              </span>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base font-medium">
+                {displayName}
+                {group.childCount && group.childCount > 0 ? (
+                  <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
+                    {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
+                  </Badge>
+                ) : null}
+              </CardTitle>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="h-7 px-2" 
+                onClick={() => onEditGroup(groupIndex)}
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </Button>
             </div>
+            <Badge variant="outline">
+              {totalPeople} {totalPeople === 1 ? 'person' : 'people'}
+            </Badge>
           </div>
           <div className="flex justify-between items-center">
             <CardDescription className="flex items-center">

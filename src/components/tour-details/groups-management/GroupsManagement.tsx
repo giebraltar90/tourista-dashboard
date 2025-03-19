@@ -17,6 +17,7 @@ import {
   DialogDescription 
 } from "@/components/ui/dialog";
 import { AssignGuideForm } from "./AssignGuideForm";
+import { EditGroupForm } from "./EditGroupForm";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -24,6 +25,7 @@ interface GroupsManagementProps {
 
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
+  const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
 
   const {
@@ -45,6 +47,11 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const handleOpenAssignGuide = (groupIndex: number) => {
     setSelectedGroupIndex(groupIndex);
     setIsAssignGuideOpen(true);
+  };
+  
+  const handleOpenEditGroup = (groupIndex: number) => {
+    setSelectedGroupIndex(groupIndex);
+    setIsEditGroupOpen(true);
   };
 
   // Create an array of valid guides with properly formatted IDs for use in AssignGuideForm
@@ -95,6 +102,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             guide2Info={guide2Info}
             guide3Info={guide3Info}
             onAssignGuide={handleOpenAssignGuide}
+            onEditGroup={handleOpenEditGroup}
           />
           
           <Separator className="my-4" />
@@ -113,6 +121,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
             onAssignGuide={handleOpenAssignGuide}
+            onEditGroup={handleOpenEditGroup}
           />
         </div>
       </CardContent>
@@ -123,12 +132,14 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         <Button 
           variant="outline" 
           size="sm"
+          onClick={() => handleOpenEditGroup(0)}
         >
           <PenSquare className="mr-2 h-4 w-4" />
           Edit Groups
         </Button>
       </CardFooter>
 
+      {/* Guide Assignment Dialog */}
       <Dialog open={isAssignGuideOpen} onOpenChange={setIsAssignGuideOpen}>
         <DialogContent>
           <DialogHeader>
@@ -144,6 +155,26 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
               guides={getValidGuides()}
               currentGuideId={localTourGroups[selectedGroupIndex].guideId || "_none"}
               onSuccess={() => setIsAssignGuideOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Group Dialog */}
+      <Dialog open={isEditGroupOpen} onOpenChange={setIsEditGroupOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Group</DialogTitle>
+            <DialogDescription>
+              Update group name and entry time
+            </DialogDescription>
+          </DialogHeader>
+          {selectedGroupIndex !== null && localTourGroups[selectedGroupIndex] && (
+            <EditGroupForm 
+              tourId={tour.id}
+              group={localTourGroups[selectedGroupIndex]}
+              groupIndex={selectedGroupIndex}
+              onSuccess={() => setIsEditGroupOpen(false)}
             />
           )}
         </DialogContent>

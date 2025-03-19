@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { UserPlus } from "lucide-react";
+import { UserPlus, Edit } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface GroupsTableProps {
@@ -15,6 +15,7 @@ interface GroupsTableProps {
   guide2Info?: GuideInfo | null;
   guide3Info?: GuideInfo | null;
   onAssignGuide: (groupIndex: number) => void;
+  onEditGroup: (groupIndex: number) => void;
 }
 
 export const GroupsTable = ({ 
@@ -23,7 +24,8 @@ export const GroupsTable = ({
   guide1Info, 
   guide2Info, 
   guide3Info,
-  onAssignGuide
+  onAssignGuide,
+  onEditGroup
 }: GroupsTableProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
   const [groups, setGroups] = useState(tourGroups);
@@ -38,7 +40,7 @@ export const GroupsTable = ({
       <TableHeader>
         <TableRow>
           <TableHead>Group Name</TableHead>
-          <TableHead>Size</TableHead>
+          <TableHead>People</TableHead>
           <TableHead>Entry Time</TableHead>
           <TableHead>Guide</TableHead>
           <TableHead>Children</TableHead>
@@ -51,9 +53,6 @@ export const GroupsTable = ({
           // Get guide info using the guideId from the group
           const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
           
-          // Count participants based on the array length
-          const bookingCount = group.participants?.length || 0;
-          
           // Count total people (accounting for families/groups)
           const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
           
@@ -62,8 +61,8 @@ export const GroupsTable = ({
           
           return (
             <TableRow key={index}>
-              <TableCell className="font-medium">{group.name}</TableCell>
-              <TableCell>{totalPeople} people ({bookingCount} bookings)</TableCell>
+              <TableCell className="font-medium">{group.name || `Group ${index + 1}`}</TableCell>
+              <TableCell>{totalPeople} people</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>
                 {isGuideAssigned ? (
@@ -104,8 +103,10 @@ export const GroupsTable = ({
                   <Button 
                     variant="outline" 
                     size="sm"
+                    onClick={() => onEditGroup(index)}
                   >
-                    View
+                    <Edit className="mr-1.5 h-3.5 w-3.5" />
+                    Edit
                   </Button>
                 </div>
               </TableCell>
