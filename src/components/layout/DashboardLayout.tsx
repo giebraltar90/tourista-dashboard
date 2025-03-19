@@ -42,7 +42,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar collapsed={sidebarCollapsed} />
         <main className={cn(
           "flex-1 transition-all duration-300 ease-in-out overflow-auto",
-          "p-4 md:p-6 pt-20", // Added pt-20 for extra top padding to prevent content from being cut off
+          "p-4 md:p-6 pt-24", // Increased from pt-20 to pt-24 for more top padding
           sidebarCollapsed ? "ml-[80px]" : "ml-[280px]"
         )}>
           <div className="max-w-7xl mx-auto animate-fade-in">

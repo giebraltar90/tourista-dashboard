@@ -10,7 +10,7 @@ import { Bike, Ticket, Users, TrendingUp } from "lucide-react";
 const Index = () => {
   return (
     <DashboardLayout>
-      <div className="space-y-8 py-4">
+      <div className="space-y-8">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Operations Dashboard</h1>
           <p className="text-muted-foreground mt-1">
