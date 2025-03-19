@@ -16,7 +16,13 @@ export const fetchTourFromAPI = async (tourId: string): Promise<TourCardProps | 
     
     if (!response.ok) {
       console.log(`API error for tour ${tourId}, using mock data instead`);
-      return mockTours.find(tour => tour.id === tourId) || null;
+      const mockTour = mockTours.find(tour => tour.id === tourId);
+      
+      if (mockTour && !mockTour.modifications) {
+        mockTour.modifications = []; // Ensure modifications exists
+      }
+      
+      return mockTour || null;
     }
     
     const tour: VentrataTour = await response.json();
@@ -34,11 +40,18 @@ export const fetchTourFromAPI = async (tourId: string): Promise<TourCardProps | 
       guide3: tour.guide3,
       tourGroups: tour.tourGroups,
       numTickets: tour.numTickets,
-      isHighSeason: Boolean(tour.isHighSeason)
+      isHighSeason: Boolean(tour.isHighSeason),
+      modifications: tour.modifications || [] // Ensure modifications is included
     };
   } catch (error) {
     console.error(`Error fetching tour ${tourId} from API:`, error);
     // Return mock data as fallback
-    return mockTours.find(tour => tour.id === tourId) || null;
+    const mockTour = mockTours.find(tour => tour.id === tourId);
+      
+    if (mockTour && !mockTour.modifications) {
+      mockTour.modifications = []; // Ensure modifications exists
+    }
+    
+    return mockTour || null;
   }
 };

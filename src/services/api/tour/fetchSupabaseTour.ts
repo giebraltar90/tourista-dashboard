@@ -22,6 +22,17 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
     throw error;
   }
   
+  // Get modifications
+  const { data: modifications, error: modError } = await supabase
+    .from('modifications')
+    .select('*')
+    .eq('tour_id', tourId)
+    .order('created_at', { ascending: false });
+    
+  if (modError) {
+    console.error("Error fetching modifications:", modError);
+  }
+  
   if (tour) {
     console.log("Using Supabase tour data:", tour);
     
@@ -46,7 +57,15 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
         guideId: group.guide_id
       })),
       numTickets: tour.num_tickets || 0,
-      isHighSeason: Boolean(tour.is_high_season)
+      isHighSeason: Boolean(tour.is_high_season),
+      modifications: modifications ? modifications.map(mod => ({
+        id: mod.id,
+        date: new Date(mod.created_at),
+        user: mod.user_id || "System",
+        description: mod.description,
+        status: mod.status,
+        details: mod.details
+      })) : []
     };
   }
   

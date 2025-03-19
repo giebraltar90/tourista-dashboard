@@ -1,8 +1,8 @@
-
-import { VentrataTour, VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
+import { VentrataTour, VentrataTourGroup, VentrataParticipant, GuideInfo, TourModification } from "@/types/ventrata";
 
 export interface TourCardProps extends VentrataTour {
   isCondensed?: boolean;
+  modifications?: TourModification[];
 }
 
 export interface TourCardListProps {

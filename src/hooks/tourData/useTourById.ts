@@ -63,6 +63,17 @@ export const useTourById = (tourId: string) => {
               }
             }
             
+            // Fetch modifications for this tour
+            const { data: modifications, error: modError } = await supabase
+              .from('modifications')
+              .select('*')
+              .eq('tour_id', tourId)
+              .order('created_at', { ascending: false });
+              
+            if (modError) {
+              console.error("Error fetching modifications:", modError);
+            }
+            
             // Ensure tour_groups is an array, even if null
             const tourGroups = Array.isArray(tour.tour_groups) 
               ? tour.tour_groups 
@@ -90,7 +101,16 @@ export const useTourById = (tourId: string) => {
               })),
               numTickets: tour.num_tickets || 0,
               // Critical fix: normalize the boolean value to ensure consistent behavior
-              isHighSeason: Boolean(tour.is_high_season)
+              isHighSeason: Boolean(tour.is_high_season),
+              // Add the modifications array (transforming from Supabase format to our app format)
+              modifications: modifications ? modifications.map(mod => ({
+                id: mod.id,
+                date: new Date(mod.created_at),
+                user: mod.user_id || "System",
+                description: mod.description,
+                status: mod.status,
+                details: mod.details
+              })) : []
             };
           }
         }
@@ -109,6 +129,11 @@ export const useTourById = (tourId: string) => {
         // Make sure tourGroups exists and is an array
         if (!tourData.tourGroups) {
           tourData.tourGroups = [];
+        }
+        
+        // Make sure modifications exists and is an array
+        if (!tourData.modifications) {
+          tourData.modifications = [];
         }
         
         return tourData;

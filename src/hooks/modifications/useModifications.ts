@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { TourModification } from "@/types/ventrata";
-import { useTourById } from "../useTourData";
+import { useTourById } from "../tourData/useTourById";
 import { updateTourModification } from "@/services/api/modificationApi";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
