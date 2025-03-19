@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, UserPlus, Trash2, Users } from "lucide-react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
+import { useEffect, useState } from "react";
 
 interface GroupListItemProps {
   group: VentrataTourGroup;
@@ -26,8 +27,16 @@ export const GroupListItem = ({
   // Calculate the total people count including family members
   const totalPeople = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
   
+  // State to track if guide is assigned
+  const [isGuideAssigned, setIsGuideAssigned] = useState(false);
+  
+  // Update when the guide data changes
+  useEffect(() => {
+    setIsGuideAssigned(!!group.guideId && guideName !== "Unassigned");
+  }, [group.guideId, guideName]);
+  
   return (
-    <div className={`p-4 border rounded-md ${guideName !== "Unassigned" ? "border-green-200" : ""}`}>
+    <div className={`p-4 border rounded-md ${isGuideAssigned ? "border-green-200 bg-green-50" : ""}`}>
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center">
@@ -72,7 +81,7 @@ export const GroupListItem = ({
       <div className="mt-3 flex items-center">
         <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />
         <span className="text-sm font-medium">Guide:</span>
-        {guideName && guideName !== "Unassigned" ? (
+        {isGuideAssigned ? (
           <Badge variant="outline" className="ml-2 bg-green-100 text-green-800">
             {guideName} {guideInfo?.guideType ? `(${guideInfo.guideType})` : ""}
           </Badge>

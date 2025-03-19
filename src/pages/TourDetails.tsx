@@ -9,7 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTourById } from "@/hooks/useTourData";
 import { TourHeader } from "@/components/tour-details/TourHeader";
 import { TourOverview } from "@/components/tour-details/TourOverview";
@@ -17,17 +17,47 @@ import { GroupsManagement, GroupGuideManagement } from "@/components/tour-detail
 import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 import { useGuideInfo } from "@/hooks/useGuideData";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
+  const queryClient = useQueryClient();
   
-  const { data: tour, isLoading, error } = useTourById(id || "");
+  const { data: tour, isLoading, error, refetch } = useTourById(id || "");
   
   // Get guide information
   const guide1Info = tour ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
+  
+  // Refresh data when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    
+    // Force refresh data when switching tabs
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: ['tour', id] });
+      refetch();
+    }
+  };
+  
+  // Refresh data periodically
+  useEffect(() => {
+    if (!id) return;
+    
+    // Refresh data when component mounts
+    queryClient.invalidateQueries({ queryKey: ['tour', id] });
+    refetch();
+    
+    // Set up periodic refreshes
+    const intervalId = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['tour', id] });
+      refetch();
+    }, 10000); // Refresh every 10 seconds
+    
+    return () => clearInterval(intervalId);
+  }, [id, queryClient, refetch]);
   
   if (isLoading) {
     return (
@@ -67,7 +97,7 @@ const TourDetails = () => {
       <div className="space-y-6 animate-fade-in">
         <TourHeader tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} guide3Info={guide3Info} />
         
-        <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="groups">Groups & Guides</TabsTrigger>

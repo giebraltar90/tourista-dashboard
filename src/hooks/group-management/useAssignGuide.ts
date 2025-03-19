@@ -103,12 +103,18 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // Invalidate all tour-related queries to ensure UI updates
+      // Force invalidate all tour-related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       
-      // Immediately refetch tour data to update UI
+      // Immediately refetch tour data with fresh data from server
       await refetch();
+      
+      // Add a small delay before refresh to ensure the UI updates
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tours'] });
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 300);
       
       // Show toast notification based on the action
       if (guideName !== "Unassigned") {

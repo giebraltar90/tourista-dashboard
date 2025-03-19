@@ -36,12 +36,18 @@ export const useRestoreTour = (tourId: string) => {
         action: "restore_initial"
       });
 
-      // Invalidate queries to ensure UI updates
+      // Force invalidate all tour-related queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
 
-      // Immediately refetch tour data
+      // Immediately refetch tour data with fresh data from server
       await refetch();
+      
+      // Add a small delay before refresh to ensure the UI updates
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tours'] });
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 300);
 
       toast.success("Tour restored to initial state");
       return true;
