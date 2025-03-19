@@ -56,3 +56,23 @@ export interface TourCardFooterProps {
   isHovered?: boolean;
   childCount?: number;
 }
+
+// New types for drag and drop functionality
+export interface DraggableParticipantProps {
+  participant: {
+    id: string;
+    name: string;
+    count: number;
+    bookingRef: string;
+    childCount?: number;
+  };
+  groupIndex: number;
+  onDragStart: (e: React.DragEvent, participant: any, fromGroupIndex: number) => void;
+}
+
+export interface ParticipantDropZoneProps {
+  groupIndex: number;
+  onDrop: (e: React.DragEvent, toGroupIndex: number) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  children: React.ReactNode;
+}
