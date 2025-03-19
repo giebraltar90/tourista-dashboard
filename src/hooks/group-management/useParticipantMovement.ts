@@ -19,6 +19,10 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
     setLocalTourGroups: (groups: VentrataTourGroup[]) => void
   ) => {
     if (!selectedParticipant) return;
+    if (!currentGroups || currentGroups.length === 0) {
+      toast.error("Cannot move participant: No tour groups available");
+      return;
+    }
     
     const { participant, fromGroupIndex } = selectedParticipant;
     

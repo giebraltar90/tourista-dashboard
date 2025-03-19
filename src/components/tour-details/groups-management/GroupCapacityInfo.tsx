@@ -14,8 +14,11 @@ export const GroupCapacityInfo = ({
   isHighSeason, 
   totalParticipants 
 }: GroupCapacityInfoProps) => {
+  // Ensure tour.tourGroups exists before trying to access it
+  const tourGroups = tour.tourGroups || [];
+  
   // Calculate counts directly from tour groups to ensure accuracy
-  const actualTotalParticipants = tour.tourGroups.reduce((sum, group) => {
+  const actualTotalParticipants = tourGroups.reduce((sum, group) => {
     // We need to handle the case where participants might not exist in the type
     // Just use the group size directly since participants may not be in the type
     return sum + (group.size || 0);
@@ -46,7 +49,7 @@ export const GroupCapacityInfo = ({
           <div>
             <span className="font-medium">Groups</span>
             <div className="text-xl font-bold">
-              {tour.tourGroups.length} / {requiredGroups}
+              {tourGroups.length} / {requiredGroups}
             </div>
           </div>
         </div>

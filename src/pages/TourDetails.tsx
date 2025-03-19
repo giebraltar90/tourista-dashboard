@@ -130,6 +130,9 @@ const TourDetails = () => {
     modifications: Array.isArray(tour.modifications) ? tour.modifications : []
   };
   
+  // Important: Ensure isHighSeason is a boolean
+  normalizedTour.isHighSeason = Boolean(normalizedTour.isHighSeason);
+  
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
