@@ -16,22 +16,26 @@ export function useGuideData() {
           
         if (error) {
           console.error("Error fetching guides:", error);
-          throw error;
+          return []; // Return empty array on error
         }
         
-        return data.map(guide => ({
+        return data ? data.map(guide => ({
           id: guide.id,
           name: guide.name,
-          birthday: new Date(guide.birthday),
+          birthday: guide.birthday ? new Date(guide.birthday) : new Date(),
           guideType: guide.guide_type as GuideType
-        }));
+        })) : [];
       } catch (error) {
         console.error("Error in useGuideData:", error);
         return [];
       }
-    }
+    },
+    // Add retry and stale time settings
+    retry: 2,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
+  // Use useMemo to prevent unnecessary re-renders
   const guides = useMemo(() => {
     return data || [];
   }, [data]);

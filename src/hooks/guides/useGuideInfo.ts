@@ -9,16 +9,14 @@ import { GuideInfo } from "@/types/ventrata";
 export const useGuideInfo = (guideName: string): GuideInfo | null => {
   // Safely access the guides data with proper error handling
   const guideDataResult = useGuideData();
+  
+  // Early return if no guide name provided
+  if (!guideName) {
+    return null;
+  }
+  
   const guides = guideDataResult?.guides || [];
   
-  if (!guideName || !Array.isArray(guides)) {
-    return {
-      name: guideName || "Unknown",
-      birthday: new Date(),
-      guideType: "GA Ticket" // Default type
-    };
-  }
-
   // Find the guide by name
   const guide = guides.find(g => g?.name === guideName);
   
