@@ -7,6 +7,7 @@ import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
 import { useGuideNameInfo } from "@/hooks/group-management";
+import { Users } from "lucide-react";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -43,11 +44,13 @@ export const GroupCard = ({
   guide3Info
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
-  const { name: guideName } = getGuideNameAndInfo(group.guideId);
   
   // Calculate the actual participant count and total people
   const participantCount = group.participants?.length || 0;
   const participantTotalCount = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || 0;
+  
+  // Get guide info directly using the guideId from the group
+  const { name: guideName } = getGuideNameAndInfo(group.guideId);
   
   return (
     <ParticipantDropZone 
@@ -70,7 +73,8 @@ export const GroupCard = ({
               {participantTotalCount} {participantTotalCount === 1 ? 'person' : 'people'}
             </Badge>
           </div>
-          <CardDescription>
+          <CardDescription className="flex items-center">
+            <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />
             Guide: {guideName !== "Unassigned" ? guideName : "Unassigned"}
           </CardDescription>
         </CardHeader>

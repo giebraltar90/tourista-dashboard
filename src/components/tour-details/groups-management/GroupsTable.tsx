@@ -32,6 +32,7 @@ export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3In
       </TableHeader>
       <TableBody>
         {tourGroups.map((group, index) => {
+          // Get guide info using the guideId from the group
           const { name: guideName } = getGuideNameAndInfo(group.guideId);
           
           // Count participants based on the array length

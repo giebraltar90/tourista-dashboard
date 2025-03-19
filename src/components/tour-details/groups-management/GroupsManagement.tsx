@@ -26,7 +26,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   } = useGroupManagement(tour);
 
   // Get guide information
-  const guide1Info = useGuideInfo(tour.guide1);
+  const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
 

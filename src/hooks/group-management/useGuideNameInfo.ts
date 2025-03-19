@@ -17,15 +17,15 @@ export const useGuideNameInfo = (
     if (!guideId || guideId === "_none") return { name: "Unassigned", info: null };
     
     // For primary guides, check both the ID pattern and direct matches
-    if (guideId === "guide1" || guideId === tour.guide1) {
+    if (guideId === "guide1" || (tour.guide1 && guideId === tour.guide1)) {
       return { name: tour.guide1, info: guide1Info };
     } 
     
-    if (guideId === "guide2" || guideId === tour.guide2) {
+    if (guideId === "guide2" || (tour.guide2 && guideId === tour.guide2)) {
       return { name: tour.guide2 || "", info: guide2Info };
     }
     
-    if (guideId === "guide3" || guideId === tour.guide3) {
+    if (guideId === "guide3" || (tour.guide3 && guideId === tour.guide3)) {
       return { name: tour.guide3 || "", info: guide3Info };
     }
     

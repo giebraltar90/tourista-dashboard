@@ -21,11 +21,11 @@ export const useAssignGuide = (tourId: string) => {
       
       if (actualGuideId) {
         // Primary guides
-        if (actualGuideId === "guide1" || actualGuideId === tour.guide1) {
+        if (actualGuideId === "guide1") {
           guideName = tour.guide1;
-        } else if (actualGuideId === "guide2" || actualGuideId === tour.guide2) {
+        } else if (actualGuideId === "guide2") {
           guideName = tour.guide2 || "Guide 2";
-        } else if (actualGuideId === "guide3" || actualGuideId === tour.guide3) {
+        } else if (actualGuideId === "guide3") {
           guideName = tour.guide3 || "Guide 3";
         } else {
           // Try to find guide by ID
