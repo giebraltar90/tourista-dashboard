@@ -32,6 +32,7 @@ export interface VentrataTour {
   tourGroups: VentrataTourGroup[];
   numTickets?: number;
   isHighSeason?: boolean; // Flag for high season
+  modifications?: TourModification[]; // Array of modifications
 }
 
 export interface VentrataBooking {
@@ -42,6 +43,16 @@ export interface VentrataBooking {
   participantCount: number;
   bookingReference: string;
   status: 'confirmed' | 'pending' | 'cancelled';
+}
+
+// Tour modification tracking
+export interface TourModification {
+  id: string;
+  date: Date;
+  user: string;
+  description: string;
+  status: 'pending' | 'complete';
+  details?: Record<string, any>; // Additional details about the modification
 }
 
 // API response types

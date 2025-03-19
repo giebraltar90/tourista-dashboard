@@ -1,5 +1,4 @@
-
-import { VentrataToursResponse, VentrataBookingsResponse, VentrataTour, VentrataTourGroup } from "@/types/ventrata";
+import { VentrataToursResponse, VentrataBookingsResponse, VentrataTour, VentrataTourGroup, TourModification } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { mockTours } from "@/data/mockData";
 
@@ -183,6 +182,36 @@ export const updateTourCapacity = async (
     return true;
   } catch (error) {
     console.error(`Error updating tour ${tourId} capacity:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Update tour modifications
+ */
+export const updateTourModification = async (
+  tourId: string,
+  modifications: TourModification[]
+): Promise<boolean> => {
+  try {
+    // For demo purposes, simulate an API call with a success response
+    console.log(`Updating modifications for tour ${tourId}`, modifications);
+    
+    // Uncomment this when the real API is ready
+    /*
+    const response = await fetch(`${API_BASE_URL}/tours/${tourId}/modifications`, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ modifications }),
+    });
+    
+    return response.ok;
+    */
+    
+    // Mock success response
+    return true;
+  } catch (error) {
+    console.error(`Error updating tour ${tourId} modifications:`, error);
     throw error;
   }
 };

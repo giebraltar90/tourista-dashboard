@@ -1,11 +1,14 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
 import { toast } from "sonner";
+import { useModifications } from "../useModifications";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
   const { guides } = useGuideData();
+  const { addModification } = useModifications(tourId);
   
   const assignGuide = async (groupIndex: number, guideId?: string) => {
     try {
@@ -81,6 +84,19 @@ export const useAssignGuide = (tourId: string) => {
       
       // Immediately refetch tour data to update UI
       await refetch();
+      
+      // Record this modification
+      const modificationDescription = guideName 
+        ? `Guide ${guideName} assigned to group ${updatedTourGroups[groupIndex].name}`
+        : `Guide removed from group ${updatedTourGroups[groupIndex].name}`;
+        
+      await addModification(modificationDescription, {
+        type: "guide_assignment",
+        groupIndex,
+        guideId: actualGuideId,
+        guideName,
+        groupName: updatedTourGroups[groupIndex].name
+      });
       
       // Show toast notification based on the action
       if (guideName) {

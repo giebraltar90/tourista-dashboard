@@ -4,10 +4,12 @@ import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
+import { useModifications } from "../useModifications";
 
 export const useAddGroup = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
   const queryClient = useQueryClient();
+  const { addModification } = useModifications(tourId);
   
   const addGroup = async (newGroup: VentrataTourGroup) => {
     try {
@@ -26,6 +28,15 @@ export const useAddGroup = (tourId: string) => {
       const result = await updateTourGroups(tourId, updatedTourGroups);
       
       console.log("Add group API response:", result);
+      
+      // Record the modification
+      await addModification(
+        `New group "${completeNewGroup.name}" added`,
+        {
+          type: "group_add",
+          group: completeNewGroup
+        }
+      );
       
       // Forcefully invalidate queries to ensure UI updates
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
