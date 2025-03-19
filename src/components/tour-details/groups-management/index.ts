@@ -13,8 +13,6 @@ export * from './EditGroupForm';
 export * from './AssignGuideForm';
 export * from './GroupCapacityAlert';
 export * from './GroupCapacityInfo';
-export * from './GroupsList';
 export * from './DeleteGroupDialog';
 export * from './GroupDialogs';
 export * from './AddGroupButton';
-export * from './GroupsListHeader';
