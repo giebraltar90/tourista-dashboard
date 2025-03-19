@@ -20,15 +20,15 @@ interface GroupsManagementProps {
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
-  // Get guide information
+  // Get guide information safely with null checks
   const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
 
-  // Ensure tourGroups are properly initialized with participants
+  // Ensure tourGroups are properly initialized with participants arrays
   const normalizedTourGroups: VentrataTourGroup[] = tour.tourGroups.map(group => ({
     ...group,
-    participants: []
+    participants: Array.isArray(group.participants) ? group.participants : []
   }));
 
   const {
