@@ -10,7 +10,7 @@ export const useTourById = (tourId: string) => {
     queryKey: ['tour', tourId],
     queryFn: () => fetchTourData(tourId),
     enabled: !!tourId,
-    staleTime: 5000, // Reduced stale time to just 5 seconds to ensure frequent refreshes
+    staleTime: 30000, // Increased stale time to reduce unnecessary refetches
     gcTime: 300000, // Keep unused data in cache for 5 minutes
     retry: 3, // Retry failed requests 3 times
     retryDelay: attemptIndex => Math.min(1000 * Math.pow(2, attemptIndex), 10000), // Exponential backoff

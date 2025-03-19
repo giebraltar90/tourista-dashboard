@@ -32,6 +32,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
 }) => {
   const queryClient = useQueryClient();
   const previousTabRef = useRef<string>(activeTab);
+  const initialRenderRef = useRef(true);
   
   // Force refresh when switching tabs to ensure consistent data
   useEffect(() => {
@@ -48,14 +49,6 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       previousTabRef.current = activeTab;
     }
   }, [activeTab, tour?.id, queryClient]);
-  
-  // Use React Query cache for the single source of truth
-  // This ensures guide changes persist between tab switches
-  const getCurrentTourData = () => {
-    // Always try to get the latest data from the cache
-    const cachedTour = queryClient.getQueryData(['tour', tour.id]);
-    return cachedTour || tour;
-  };
   
   // Log when tour data changes for debugging
   useEffect(() => {
@@ -77,18 +70,22 @@ export const TourTabs: React.FC<TourTabsProps> = ({
     console.log("Tab changed to:", activeTab);
   }, [activeTab]);
 
-  // Critical: Force update the query cache when the component mounts
-  // This ensures we have the latest data when switching tabs
+  // Critical: Update the query cache when the component mounts or tour data changes
+  // But avoid the infinite loop by using a ref to track initial render
   useEffect(() => {
-    if (tour && tour.id) {
-      // We'll update the cache with the current tour data
-      // but first ensure we're not overwriting newer data
+    if (!tour || !tour.id) return;
+    
+    // Only run this effect on mount, not on every render
+    if (initialRenderRef.current) {
       const cachedTour = queryClient.getQueryData(['tour', tour.id]) as TourCardProps | undefined;
       
+      // Only update if there's no cached data or if the tour data is newer
       if (!cachedTour || new Date(cachedTour.date) <= new Date(tour.date)) {
-        console.log("Updating query cache with latest tour data");
+        console.log("Initial update to query cache with latest tour data");
         queryClient.setQueryData(['tour', tour.id], tour);
       }
+      
+      initialRenderRef.current = false;
     }
   }, [tour, queryClient]);
 
@@ -102,7 +99,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="overview" className="space-y-4 mt-6">
         <TourOverview 
-          tour={getCurrentTourData() as TourCardProps} 
+          tour={tour} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -111,7 +108,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="tickets" className="space-y-4 mt-6">
         <TicketsManagement 
-          tour={getCurrentTourData() as TourCardProps} 
+          tour={tour} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -121,7 +118,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       <TabsContent value="modifications" className="space-y-4 mt-6">
         <ModificationsTab 
           key={`modifications-${activeTab === "modifications" ? Date.now() : "inactive"}`} 
-          tour={getCurrentTourData() as TourCardProps} 
+          tour={tour} 
         />
       </TabsContent>
     </Tabs>
