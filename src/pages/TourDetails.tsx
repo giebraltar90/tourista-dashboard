@@ -18,6 +18,7 @@ import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 import { useGuideInfo } from "@/hooks/guides";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "@/components/ui/use-toast";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -35,7 +36,7 @@ const TourDetails = () => {
   
   console.log("Tour data loaded:", tour);
   
-  // Ensure that guide info hooks are only called when tour data is available and guide fields exist
+  // Ensure that guide info hooks are only called when tour data is available
   const guide1Info = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
@@ -44,7 +45,14 @@ const TourDetails = () => {
     if (tourId) {
       console.log("Manually refreshing tour data");
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      refetch();
+      refetch().catch(err => {
+        console.error("Error refetching tour:", err);
+        toast({
+          title: "Refresh failed",
+          description: "Failed to refresh tour data. Please try again.",
+          variant: "destructive"
+        });
+      });
       lastRefetchTime.current = Date.now();
     }
   }, [tourId, queryClient, refetch]);
@@ -119,24 +127,46 @@ const TourDetails = () => {
             Failed to load tour details (ID: {tourId}). Please try again.
           </AlertDescription>
         </Alert>
+        <div className="mt-4 flex justify-center">
+          <button 
+            onClick={handleRefetch}
+            className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+          >
+            Retry
+          </button>
+        </div>
       </DashboardLayout>
     );
   }
 
-  // Normalize tour data to ensure all properties exist
+  // CRITICAL: Normalize tour data to ensure all properties exist with proper defaults
   const normalizedTour = {
     ...tour,
+    id: tour.id || tourId,
+    date: tour.date instanceof Date ? tour.date : new Date(),
+    location: tour.location || "",
+    tourName: tour.tourName || "",
+    tourType: tour.tourType || "default",
+    startTime: tour.startTime || "",
+    referenceCode: tour.referenceCode || "",
+    guide1: tour.guide1 || "",
+    guide2: tour.guide2 || "",
+    guide3: tour.guide3 || "",
     tourGroups: Array.isArray(tour.tourGroups) ? tour.tourGroups.map(group => ({
-      ...group,
+      id: group.id || "",
+      name: group.name || "",
+      size: group.size || 0,
+      entryTime: group.entryTime || "",
+      guideId: group.guideId,
+      childCount: group.childCount || 0,
       participants: Array.isArray(group.participants) ? group.participants : []
     })) : [],
+    numTickets: tour.numTickets || 0,
+    isHighSeason: Boolean(tour.isHighSeason),
     modifications: Array.isArray(tour.modifications) ? tour.modifications : []
   };
   
-  // Important: Ensure isHighSeason is a boolean
-  normalizedTour.isHighSeason = Boolean(normalizedTour.isHighSeason);
-  
-  // CRITICAL FIX: Stable reference to ensure components don't re-render unnecessarily
+  // CRITICAL: Create stable references to prevent unnecessary re-renders
   const stableTourGroups = useRef(normalizedTour.tourGroups);
   const stableModifications = useRef(normalizedTour.modifications);
   
@@ -185,8 +215,8 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement key={`guide-management-${normalizedTour.id}`} tour={stableTour} />
-              <GroupsManagement key={`groups-management-${normalizedTour.id}`} tour={stableTour} />
+              <GroupGuideManagement key={`guide-management-${stableTour.id}`} tour={stableTour} />
+              <GroupsManagement key={`groups-management-${stableTour.id}`} tour={stableTour} />
             </div>
           </TabsContent>
           
@@ -200,7 +230,7 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="modifications" className="space-y-4 mt-6">
-            <ModificationsTab key={`modifications-${normalizedTour.id}`} tour={stableTour} />
+            <ModificationsTab key={`modifications-${stableTour.id}`} tour={stableTour} />
           </TabsContent>
         </Tabs>
       </div>

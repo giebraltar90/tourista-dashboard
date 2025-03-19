@@ -88,6 +88,7 @@ export const updateTourGroups = async (
 
 /**
  * Updates a guide's assignment to a group in Supabase directly
+ * Implements multiple retries with exponential backoff to ensure the update goes through
  */
 export const updateGuideInSupabase = async (
   tourId: string,
@@ -95,6 +96,11 @@ export const updateGuideInSupabase = async (
   guideId: string | undefined, 
   newGroupName?: string
 ): Promise<boolean> => {
+  if (!tourId || !groupId) {
+    console.error("Missing required parameters for updateGuideInSupabase");
+    return false;
+  }
+
   try {
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
       guide_id: guideId,
@@ -110,24 +116,36 @@ export const updateGuideInSupabase = async (
       updateData.name = newGroupName;
     }
     
-    // CRITICAL FIX: Multiple attempts to ensure the update goes through
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      const { error } = await supabase
-        .from('tour_groups')
-        .update(updateData)
-        .eq('id', groupId)
-        .eq('tour_id', tourId);
+    // IMPROVED RETRY MECHANISM: Multiple attempts with exponential backoff
+    const maxAttempts = 5;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        const { error, data } = await supabase
+          .from('tour_groups')
+          .update(updateData)
+          .eq('id', groupId)
+          .eq('tour_id', tourId)
+          .select();
+          
+        if (!error) {
+          console.log(`Successfully updated guide assignment in Supabase on attempt ${attempt}`, data);
+          // Force a delay to let the data settle in the database
+          await new Promise(resolve => setTimeout(resolve, 200));
+          return true;
+        }
         
-      if (!error) {
-        console.log(`Successfully updated guide assignment in Supabase on attempt ${attempt}`);
-        return true;
-      }
-      
-      if (attempt < 3) {
-        console.warn(`Attempt ${attempt} failed, retrying...`, error);
-        await new Promise(resolve => setTimeout(resolve, 300)); // Wait 300ms before retrying
-      } else {
-        console.error("All attempts to update guide assignment failed:", error);
+        if (attempt < maxAttempts) {
+          const backoffTime = Math.min(100 * Math.pow(2, attempt), 3000); // Exponential backoff with max 3s
+          console.warn(`Attempt ${attempt} failed, retrying in ${backoffTime}ms...`, error);
+          await new Promise(resolve => setTimeout(resolve, backoffTime));
+        } else {
+          console.error("All attempts to update guide assignment failed:", error);
+        }
+      } catch (attemptError) {
+        console.error(`Error on attempt ${attempt}:`, attemptError);
+        if (attempt === maxAttempts) {
+          return false;
+        }
       }
     }
     

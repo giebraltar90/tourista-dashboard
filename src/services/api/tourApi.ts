@@ -73,11 +73,17 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
 
 /**
  * Fetch participants for a specific tour from Supabase
+ * Improved with better error handling and retries
  */
-export const fetchParticipantsForTour = async (tourId: string) => {
-  if (!tourId) return [];
+export const fetchParticipantsForTour = async (tourId: string, retryCount = 0) => {
+  if (!tourId) {
+    console.warn("fetchParticipantsForTour called with empty tourId");
+    return [];
+  }
   
   try {
+    console.log(`Fetching participants for tour ${tourId}`);
+    
     // First, get the tour groups for this tour
     const { data: groups, error: groupsError } = await supabase
       .from('tour_groups')
@@ -86,10 +92,19 @@ export const fetchParticipantsForTour = async (tourId: string) => {
       
     if (groupsError) {
       console.error("Error fetching tour groups:", groupsError);
+      
+      // Retry logic for transient errors
+      if (retryCount < 3) {
+        console.log(`Retrying fetchParticipantsForTour (${retryCount + 1}/3)...`);
+        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+        return fetchParticipantsForTour(tourId, retryCount + 1);
+      }
+      
       throw groupsError;
     }
     
     if (!groups || groups.length === 0) {
+      console.log(`No groups found for tour ${tourId}`);
       return [];
     }
     
@@ -104,9 +119,18 @@ export const fetchParticipantsForTour = async (tourId: string) => {
       
     if (participantsError) {
       console.error("Error fetching participants:", participantsError);
+      
+      // Retry logic for transient errors
+      if (retryCount < 3) {
+        console.log(`Retrying participant fetch (${retryCount + 1}/3)...`);
+        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+        return fetchParticipantsForTour(tourId, retryCount + 1);
+      }
+      
       throw participantsError;
     }
     
+    console.log(`Found ${participants?.length || 0} participants for tour ${tourId}`);
     return participants || [];
   } catch (error) {
     console.error("Error in fetchParticipantsForTour:", error);

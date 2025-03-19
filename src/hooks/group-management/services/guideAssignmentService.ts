@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
-import { updateTourGroups } from "@/services/api/tourGroupApi";
+import { updateTourGroups, updateGuideInSupabase } from "@/services/api/tourGroupApi";
 import { findGuideName, generateGroupName } from "../utils/guideNameUtils";
 
 /**
@@ -65,6 +65,7 @@ export const recordGuideAssignmentModification = async (
 
 /**
  * Persist guide ID to make sure it doesn't revert back
+ * Enhanced with multiple retry attempts
  */
 export const persistGuideAssignment = async (
   tourId: string,
@@ -83,31 +84,32 @@ export const persistGuideAssignment = async (
       name: groupName
     });
 
-    // CRITICAL FIX: Multiple attempts to ensure the update goes through
-    for (let attempt = 1; attempt <= 2; attempt++) {
-      const { error } = await supabase
-        .from('tour_groups')
-        .update({
-          guide_id: guideId,
-          name: groupName
-        })
-        .eq('id', groupId)
-        .eq('tour_id', tourId);
-
-      if (!error) {
-        console.log(`Successfully persisted guide assignment on attempt ${attempt}`);
-        return true;
-      }
-      
-      if (attempt < 2) {
-        console.warn(`Attempt ${attempt} to persist guide assignment failed, retrying...`, error);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retrying
-      } else {
-        console.error("All attempts to persist guide assignment failed:", error);
-      }
+    // First, try using the specialized update function with built-in retries
+    const result = await updateGuideInSupabase(tourId, groupId, guideId, groupName);
+    
+    if (result) {
+      console.log("Successfully persisted guide assignment using updateGuideInSupabase");
+      return true;
     }
     
-    return false;
+    // Fallback: try direct Supabase update as a last resort
+    console.warn("Fallback: attempting direct Supabase update");
+    const { error } = await supabase
+      .from('tour_groups')
+      .update({
+        guide_id: guideId,
+        name: groupName
+      })
+      .eq('id', groupId)
+      .eq('tour_id', tourId);
+
+    if (!error) {
+      console.log("Successfully persisted guide assignment with fallback method");
+      return true;
+    } else {
+      console.error("All attempts to persist guide assignment failed:", error);
+      return false;
+    }
   } catch (error) {
     console.error("Error persisting guide assignment:", error);
     return false;

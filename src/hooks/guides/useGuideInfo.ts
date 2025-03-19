@@ -1,22 +1,33 @@
 
-import { useMemo } from "react";
-import { GuideInfo, GuideType } from "@/types/ventrata";
 import { useGuideData } from "./useGuideData";
+import { GuideInfo } from "@/types/ventrata";
 
-export function useGuideInfo(guideName: string): GuideInfo | null {
+/**
+ * Returns information about a guide based on the guide name
+ */
+export const useGuideInfo = (guideName: string): GuideInfo | null => {
+  // Safely access the guides data
   const { guides = [] } = useGuideData() || { guides: [] };
   
-  return useMemo(() => {
-    if (!guideName) return null;
-    
-    const guide = guides.find(g => g.name === guideName);
-    if (guide) return guide;
-    
-    // If not found by name, create a basic guide info object
+  if (!guideName || !Array.isArray(guides)) {
+    return null;
+  }
+
+  // Find the guide by name
+  const guide = guides.find(g => g.name === guideName);
+  
+  if (!guide) {
+    // Return a fallback object with just the name if guide not found
     return {
       name: guideName,
       birthday: new Date(),
-      guideType: "GA Free" as GuideType
+      guideType: "GA Ticket" // Default type
     };
-  }, [guides, guideName]);
-}
+  }
+
+  return {
+    name: guide.name,
+    birthday: guide.birthday,
+    guideType: guide.guideType
+  };
+};
