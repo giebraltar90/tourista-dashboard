@@ -1,7 +1,11 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { fetchTourFromSupabase, fetchTourFromAPI } from "./tourFetchApi";
-import { fetchToursFromSupabase, fetchToursFromAPI } from "./tourFetchApi";
+import { 
+  fetchTourFromSupabase, 
+  fetchTourFromAPI,
+  fetchToursFromSupabase, 
+  fetchToursFromAPI 
+} from "./tour";
 import { isUuid } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 
