@@ -45,7 +45,7 @@ export const GroupCard = ({
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
-  // Safely access participants, defaulting to empty array if undefined
+  // Calculate participant counts from the participants array directly for accuracy
   const participants = Array.isArray(group.participants) ? group.participants : [];
   
   // Calculate the total number of actual people (accounting for participants with count > 1)
@@ -53,6 +53,11 @@ export const GroupCard = ({
   
   // Calculate total child count
   const totalChildCount = participants.reduce((sum, p) => sum + (p.childCount || 0), 0) || group.childCount || 0;
+  
+  // Format participant counts consistently with the (adults+children) format
+  const formattedParticipantCount = totalChildCount > 0 
+    ? `${totalParticipants - totalChildCount}+${totalChildCount}`
+    : `${totalParticipants}`;
   
   // Get guide info directly using the guideId from the group
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
@@ -75,7 +80,7 @@ export const GroupCard = ({
               </CardTitle>
             </div>
             <Badge variant="outline">
-              {totalParticipants} {totalParticipants === 1 ? 'participant' : 'participants'}
+              {formattedParticipantCount} {totalParticipants === 1 ? 'participant' : 'participants'}
             </Badge>
           </div>
           <div className="flex justify-between items-center">

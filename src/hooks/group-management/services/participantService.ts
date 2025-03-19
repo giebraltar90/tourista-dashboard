@@ -1,4 +1,3 @@
-
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,14 +130,17 @@ export const updateParticipantGroupInDatabase = async (
 
 /**
  * Calculate the total number of participants in all groups
+ * Improved to accurately count from participants array when available
  */
 export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
   if (!Array.isArray(groups)) return 0;
   
   return groups.reduce((total, group) => {
-    if (Array.isArray(group.participants)) {
+    // If we have a participants array, calculate from it for maximum accuracy
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
       return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
     }
+    // Otherwise fall back to the group size property
     return total + (group.size || 0);
   }, 0);
 };

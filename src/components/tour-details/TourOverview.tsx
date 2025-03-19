@@ -7,6 +7,7 @@ import {
   TicketsCard,
   TourGroupsSection
 } from "./overview";
+import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -16,14 +17,41 @@ interface TourOverviewProps {
 }
 
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
-  const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
+  // Ensure tourGroups exists to prevent errors
+  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
+  
+  // Calculate total participants directly from groups for accuracy
+  const totalParticipants = calculateTotalParticipants(tourGroups);
+  
+  // Calculate total child count across all groups
+  const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
   
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
-  console.log('TourOverview: isHighSeason =', isHighSeason, 'original value =', tour.isHighSeason, 'type =', typeof tour.isHighSeason);
+  console.log('TourOverview: isHighSeason =', isHighSeason, 'original value =', tour.isHighSeason);
   
-  const adultTickets = Math.round(tour.numTickets * 0.7) || Math.round(totalParticipants * 0.7);
-  const childTickets = (tour.numTickets || totalParticipants) - adultTickets;
+  // Calculate tickets based on actual participant counts
+  const adultTickets = tour.numTickets 
+    ? Math.round(tour.numTickets * 0.7) 
+    : Math.round((totalParticipants - totalChildCount) * 0.7);
+    
+  const childTickets = tour.numTickets 
+    ? (tour.numTickets - adultTickets) 
+    : totalChildCount;
+
+  // Log for debugging synchronization issues
+  console.log("TourOverview rendering with counts:", {
+    totalParticipants,
+    totalChildCount,
+    adultParticipants: totalParticipants - totalChildCount,
+    adultTickets,
+    childTickets,
+    groupSizes: tourGroups.map(g => ({
+      name: g.name, 
+      size: g.size, 
+      childCount: g.childCount
+    }))
+  });
 
   return (
     <div className="space-y-4">
@@ -34,8 +62,9 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         />
         
         <ParticipantsCard 
-          tourGroups={tour.tourGroups}
+          tourGroups={tourGroups}
           totalParticipants={totalParticipants}
+          totalChildCount={totalChildCount}
           isHighSeason={isHighSeason}
         />
         

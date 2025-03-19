@@ -7,18 +7,24 @@ import { Badge } from "@/components/ui/badge";
 interface ParticipantsCardProps {
   tourGroups: VentrataTourGroup[];
   totalParticipants: number;
+  totalChildCount?: number;
   isHighSeason?: boolean;
 }
 
 export const ParticipantsCard = ({ 
   tourGroups, 
   totalParticipants,
+  totalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
   const totalGroups = tourGroups.length;
   
+  // Format participant count to show adults + children if there are children
+  const formattedParticipantCount = totalChildCount > 0 
+    ? `${totalParticipants - totalChildCount}+${totalChildCount}` 
+    : `${totalParticipants}`;
+  
   // CRITICAL FIX: Use strict equality to ensure proper boolean handling
-  // Since isHighSeason is now explicitly boolean, we can use strict comparison
   const capacity = isHighSeason === true
     ? DEFAULT_CAPACITY_SETTINGS.highSeason 
     : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
@@ -40,7 +46,9 @@ export const ParticipantsCard = ({
   // Debug log for troubleshooting
   console.log("ParticipantsCard props:", { 
     isHighSeason, 
-    totalParticipants, 
+    totalParticipants,
+    totalChildCount,
+    formattedParticipantCount,
     capacity, 
     requiredGroups,
     mode: getModeText()
@@ -55,7 +63,9 @@ export const ParticipantsCard = ({
         <div className="grid gap-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Total:</span>
-            <span className="font-medium">{totalParticipants} participants</span>
+            <span className="font-medium">
+              {formattedParticipantCount} participants
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Groups:</span>

@@ -3,6 +3,7 @@ import { AlertTriangle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
+import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 
 interface GroupCapacityAlertProps {
   tourGroups: VentrataTourGroup[];
@@ -13,7 +14,9 @@ export const GroupCapacityAlert = ({ tourGroups, isHighSeason }: GroupCapacityAl
   // Early return if no groups
   if (!tourGroups.length) return null;
   
-  const totalParticipants = tourGroups.reduce((sum, group) => sum + group.size, 0);
+  // Calculate total participants from groups for consistency
+  const totalParticipants = calculateTotalParticipants(tourGroups);
+  
   const standardCapacity = DEFAULT_CAPACITY_SETTINGS.standard;
   const highSeasonCapacity = DEFAULT_CAPACITY_SETTINGS.highSeason;
   const capacity = isHighSeason ? highSeasonCapacity : standardCapacity;
@@ -21,7 +24,12 @@ export const GroupCapacityAlert = ({ tourGroups, isHighSeason }: GroupCapacityAl
   // Calculate group imbalance (if difference is more than 25% of average)
   const averageGroupSize = totalParticipants / tourGroups.length;
   const isUnbalanced = tourGroups.some(group => {
-    const sizeDifference = Math.abs(group.size - averageGroupSize);
+    // Calculate actual size from participants if available
+    const groupSize = Array.isArray(group.participants) && group.participants.length > 0
+      ? group.participants.reduce((sum, p) => sum + (p.count || 1), 0)
+      : group.size || 0;
+      
+    const sizeDifference = Math.abs(groupSize - averageGroupSize);
     const percentDifference = (sizeDifference / averageGroupSize) * 100;
     return percentDifference > 25; // More than 25% difference from average
   });

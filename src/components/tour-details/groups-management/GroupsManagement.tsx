@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { TourCardProps } from "@/components/tours/tour-card/types";
@@ -12,8 +12,7 @@ import { GroupCapacityInfo } from "./GroupCapacityInfo";
 import { GroupActions } from "./components/GroupActions";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { fetchParticipantsForTour } from "@/services/api/tourApi";
-import { useEffect } from "react";
+import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -32,6 +31,9 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     ...group,
     participants: Array.isArray(group.participants) ? group.participants : []
   })) : [];
+  
+  // Calculate initial total participants from the normalized groups
+  const initialTotalParticipants = calculateTotalParticipants(normalizedTourGroups);
 
   const {
     localTourGroups,
@@ -51,6 +53,26 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       loadParticipants(tour.id);
     }
   }, [tour.id, loadParticipants]);
+
+  // Calculate total participants from localTourGroups
+  const totalParticipants = calculateTotalParticipants(localTourGroups);
+  
+  // Log for debugging synchronization issues
+  console.log("GroupsManagement rendering with counts:", {
+    initialTotalParticipants,
+    currentTotalParticipants: totalParticipants,
+    normalizedGroups: normalizedTourGroups.map(g => ({
+      name: g.name, 
+      size: g.size, 
+      childCount: g.childCount
+    })),
+    localGroups: localTourGroups.map(g => ({
+      name: g.name, 
+      size: g.size, 
+      childCount: g.childCount,
+      participantsLength: Array.isArray(g.participants) ? g.participants.length : 'N/A'
+    }))
+  });
 
   // Get dialog management - pass the tour object
   const dialogUtils = GroupDialogsContainer({
@@ -81,7 +103,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
           <GroupCapacityInfo 
             tour={tour} 
             isHighSeason={Boolean(tour.isHighSeason)} 
-            totalParticipants={tour.tourGroups?.reduce((sum, group) => sum + (group.size || 0), 0) || 0} 
+            totalParticipants={totalParticipants} 
           />
           
           <GroupCapacityAlert 

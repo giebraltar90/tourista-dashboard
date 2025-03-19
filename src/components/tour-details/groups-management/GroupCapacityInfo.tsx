@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { CardTitle, CardDescription } from "@/components/ui/card";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
@@ -14,17 +13,20 @@ export const GroupCapacityInfo = ({
   isHighSeason, 
   totalParticipants 
 }: GroupCapacityInfoProps) => {
-  // Ensure tour.tourGroups exists before trying to access it
+  // Ensure tour.tourGroups exists and recalculate totals from the source of truth
   const tourGroups = tour.tourGroups || [];
   
   // Calculate counts directly from tour groups to ensure accuracy
   const actualTotalParticipants = tourGroups.reduce((sum, group) => {
-    // We need to handle the case where participants might not exist in the type
-    // Just use the group size directly since participants may not be in the type
+    // Calculate from participants array if available for maximum accuracy
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return sum + group.participants.reduce((pSum, p) => pSum + (p.count || 1), 0);
+    }
+    // Otherwise use the group size
     return sum + (group.size || 0);
   }, 0);
   
-  // Use calculated participant count instead of passed-in value
+  // Use the most accurate count available
   const displayedParticipants = actualTotalParticipants || totalParticipants;
   
   const capacity = isHighSeason 
@@ -34,6 +36,20 @@ export const GroupCapacityInfo = ({
   const requiredGroups = isHighSeason 
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
+  
+  // Log for debugging synchronization issues
+  console.log("GroupCapacityInfo rendering with counts:", {
+    actualTotalParticipants,
+    providedTotalParticipants: totalParticipants,
+    groupSizes: tourGroups.map(g => ({
+      name: g.name, 
+      size: g.size, 
+      childCount: g.childCount,
+      participantsCount: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
+        : 'N/A'
+    }))
+  });
   
   return (
     <>
