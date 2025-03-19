@@ -71,7 +71,7 @@ export const GroupDialogsContainer = ({
     // Dialog open handlers
     openAddGroupDialog,
     openEditGroupDialog,
-    openAssignGuideOpen,
+    openAssignGuideDialog,
     openDeleteDialog,
     
     // Dialog control
