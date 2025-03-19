@@ -73,7 +73,13 @@ export function AssignGuideProvider({
       
       const success = await assignGuide(groupIndex, selectedGuideId);
       
-      if (!success) {
+      if (success) {
+        // Force invalidate all related queries to ensure UI consistency across the app
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+          queryClient.invalidateQueries({ queryKey: ['tours'] });
+        }, 500);
+      } else {
         // If failed, revert the local state
         setLocalGuideId(guideId);
         toast.error("Failed to assign guide");

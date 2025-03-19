@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
@@ -37,9 +37,11 @@ export const GuideSelectionPopover = ({
   const [localSelectedGuide, setLocalSelectedGuide] = useState(selectedGuide);
 
   // Update local state when props change
-  if (selectedGuide !== localSelectedGuide) {
-    setLocalSelectedGuide(selectedGuide);
-  }
+  useEffect(() => {
+    if (selectedGuide !== localSelectedGuide) {
+      setLocalSelectedGuide(selectedGuide);
+    }
+  }, [selectedGuide]);
 
   const handleAssignGuide = async (guideId: string) => {
     if (guideId === selectedGuide) {
@@ -50,7 +52,7 @@ export const GuideSelectionPopover = ({
     try {
       console.log(`Selecting guide ${guideId} for ${displayName}`);
       
-      // Update local state first
+      // Update local state first for immediate UI feedback
       setLocalSelectedGuide(guideId);
       
       // Close the popover while assigning to prevent multiple selections
