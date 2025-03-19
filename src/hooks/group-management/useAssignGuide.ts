@@ -86,7 +86,7 @@ export const useAssignGuide = (tourId: string) => {
           addModification
         );
         
-        // CRITICAL FIX: Apply optimistic update directly to the cache
+        // CRITICAL FIX: Apply optimistic update directly to the cache for all related components
         // This ensures the change is visible immediately AND persists between tab switches
         queryClient.setQueryData(['tour', tourId], (oldData: any) => {
           if (!oldData) return null;
@@ -97,14 +97,32 @@ export const useAssignGuide = (tourId: string) => {
           // Apply the updated groups to the tour data
           newData.tourGroups = result.updatedGroups;
           
+          // IMPORTANT: Also sync the main guide assignments if they were affected
+          // This ensures the GuidesAssignedSection shows updated data
+          if (groupIndex === 0 && actualGuideId) {
+            newData.guide1 = result.guideName;
+          } else if (groupIndex === 1 && actualGuideId) {
+            newData.guide2 = result.guideName;
+          } else if (groupIndex === 2 && actualGuideId) {
+            newData.guide3 = result.guideName;
+          }
+          
           return newData;
         });
         
-        // Force a refetch after a delay to ensure server data is synced
+        // Force a more comprehensive refetch to ensure server data is synced
         setTimeout(() => {
-          refetch();
-          // Also invalidate the tours list to update the overview
+          // Cancel any in-flight queries first to prevent race conditions
+          queryClient.cancelQueries();
+          
+          // Invalidate ALL related queries to ensure complete synchronization
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
           queryClient.invalidateQueries({ queryKey: ['tours'] });
+          queryClient.invalidateQueries({ queryKey: ['groups'] });
+          queryClient.invalidateQueries({ queryKey: ['guides'] });
+          
+          // Force a full refetch
+          refetch();
         }, 1000);
         
         toast.success(`Guide ${result.guideName || 'Unknown'} assigned successfully`);

@@ -31,6 +31,23 @@ export const TourTabs: React.FC<TourTabsProps> = ({
   onTabChange
 }) => {
   const queryClient = useQueryClient();
+  const previousTabRef = useRef<string>(activeTab);
+  
+  // Force refresh when switching tabs to ensure consistent data
+  useEffect(() => {
+    if (previousTabRef.current !== activeTab) {
+      // Only refresh when actually changing tabs
+      console.log(`Tab changed from ${previousTabRef.current} to ${activeTab} - refreshing data`);
+      
+      // Force fetch fresh data when tab changes
+      if (tour && tour.id) {
+        queryClient.invalidateQueries({ queryKey: ['tour', tour.id] });
+      }
+      
+      // Update the ref
+      previousTabRef.current = activeTab;
+    }
+  }, [activeTab, tour?.id, queryClient]);
   
   // Use React Query cache for the single source of truth
   // This ensures guide changes persist between tab switches
@@ -64,9 +81,16 @@ export const TourTabs: React.FC<TourTabsProps> = ({
   // This ensures we have the latest data when switching tabs
   useEffect(() => {
     if (tour && tour.id) {
-      queryClient.setQueryData(['tour', tour.id], tour);
+      // We'll update the cache with the current tour data
+      // but first ensure we're not overwriting newer data
+      const cachedTour = queryClient.getQueryData(['tour', tour.id]) as TourCardProps | undefined;
+      
+      if (!cachedTour || new Date(cachedTour.date) <= new Date(tour.date)) {
+        console.log("Updating query cache with latest tour data");
+        queryClient.setQueryData(['tour', tour.id], tour);
+      }
     }
-  }, []);
+  }, [tour, queryClient]);
 
   return (
     <Tabs defaultValue="overview" value={activeTab} onValueChange={onTabChange} className="w-full">
