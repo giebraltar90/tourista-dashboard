@@ -1,14 +1,13 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { Users, UserPlus, Edit } from "lucide-react";
+import { Users } from "lucide-react";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -44,9 +43,7 @@ export const GroupCard = ({
   isMovePending,
   guide1Info,
   guide2Info,
-  guide3Info,
-  onAssignGuide,
-  onEditGroup
+  guide3Info
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
@@ -80,14 +77,6 @@ export const GroupCard = ({
                   </Badge>
                 ) : null}
               </CardTitle>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="h-7 px-2" 
-                onClick={() => onEditGroup(groupIndex)}
-              >
-                <Edit className="h-3.5 w-3.5" />
-              </Button>
             </div>
             <Badge variant="outline">
               {totalParticipants} {totalParticipants === 1 ? 'participant' : 'participants'}
@@ -108,15 +97,6 @@ export const GroupCard = ({
                 </Badge>
               )}
             </CardDescription>
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="h-7 px-2" 
-              onClick={() => onAssignGuide(groupIndex)}
-            >
-              <UserPlus className="h-3.5 w-3.5 mr-1" />
-              <span className="text-xs">Assign</span>
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-4">

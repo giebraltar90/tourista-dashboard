@@ -1,11 +1,9 @@
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
-import { UserPlus, Edit } from "lucide-react";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -22,9 +20,7 @@ export const GroupsTable = ({
   tour, 
   guide1Info, 
   guide2Info, 
-  guide3Info,
-  onAssignGuide,
-  onEditGroup
+  guide3Info
 }: GroupsTableProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
   
@@ -38,7 +34,6 @@ export const GroupsTable = ({
           <TableHead>Guide</TableHead>
           <TableHead>Children</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -82,26 +77,6 @@ export const GroupsTable = ({
                 <Badge variant="outline" className="bg-green-100 text-green-800">
                   Confirmed
                 </Badge>
-              </TableCell>
-              <TableCell className="text-right">
-                <div className="flex justify-end space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onAssignGuide(index)}
-                  >
-                    <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                    {isGuideAssigned ? "Change Guide" : "Assign Guide"}
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onEditGroup(index)}
-                  >
-                    <Edit className="mr-1.5 h-3.5 w-3.5" />
-                    Edit
-                  </Button>
-                </div>
               </TableCell>
             </TableRow>
           );

@@ -1,9 +1,7 @@
 
 import { useState } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { PenSquare } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsTable } from "./GroupsTable";
 import { GroupsGrid } from "./GroupsGrid";
@@ -103,19 +101,6 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
           />
         </div>
       </CardContent>
-      <CardFooter className="flex justify-between border-t p-4">
-        <div className="text-sm text-muted-foreground">
-          Group division is based on families or couples + singles and further divided into adults + children.
-        </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => handleOpenEditGroup(0)}
-        >
-          <PenSquare className="mr-2 h-4 w-4" />
-          Edit Groups
-        </Button>
-      </CardFooter>
 
       {/* Guide Assignment Dialog */}
       <GuideAssignmentDialog
