@@ -1,0 +1,57 @@
+
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { GuideInfo } from "@/types/ventrata";
+import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
+import { TourGroupGuide } from "./TourGroupGuide";
+
+interface TourGroupsSectionProps {
+  tour: TourCardProps;
+  guide1Info: GuideInfo | null;
+  guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
+}
+
+export const TourGroupsSection = ({ 
+  tour, 
+  guide1Info, 
+  guide2Info, 
+  guide3Info 
+}: TourGroupsSectionProps) => {
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+  
+  // Create guide options for the select dropdown
+  const guideOptions = [
+    { id: "guide1", name: tour.guide1, info: guide1Info },
+    ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: guide2Info }] : []),
+    ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: guide3Info }] : []),
+    { id: "_none", name: "None (Unassigned)", info: null },
+  ].filter(guide => guide.name); // Filter out empty names
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Tour Groups & Guides</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {tour.tourGroups.map((group, index) => {
+            const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+            
+            return (
+              <TourGroupGuide
+                key={index}
+                tour={tour}
+                group={group}
+                groupIndex={index}
+                guideName={guideName}
+                guideInfo={guideInfo}
+                guideOptions={guideOptions}
+              />
+            );
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
