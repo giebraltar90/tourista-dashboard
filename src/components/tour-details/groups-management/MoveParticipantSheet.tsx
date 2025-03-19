@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoveHorizontal, Users, ArrowLeftRight } from "lucide-react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
+import { useState } from "react";
 
 interface MoveParticipantSheetProps {
   participant: VentrataParticipant;
@@ -25,10 +26,21 @@ export const MoveParticipantSheet = ({
   handleMoveParticipant,
   isPending
 }: MoveParticipantSheetProps) => {
+  // State to track selected target group
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  
   // Verify tour groups exist before rendering
   if (!tour.tourGroups || tour.tourGroups.length === 0) {
     return null;
   }
+
+  // Handle move confirmation
+  const confirmMove = () => {
+    if (selectedGroup !== null) {
+      const targetGroupIndex = parseInt(selectedGroup);
+      handleMoveParticipant(targetGroupIndex);
+    }
+  };
 
   return (
     <Sheet>
@@ -75,7 +87,7 @@ export const MoveParticipantSheet = ({
                 Select Destination Group
               </label>
               <Select 
-                onValueChange={(value) => handleMoveParticipant(parseInt(value))}
+                onValueChange={(value) => setSelectedGroup(value)}
                 disabled={isPending}
               >
                 <SelectTrigger className="w-full">
@@ -97,7 +109,8 @@ export const MoveParticipantSheet = ({
         <SheetFooter>
           <Button 
             type="submit" 
-            disabled={isPending}
+            disabled={isPending || selectedGroup === null}
+            onClick={confirmMove}
           >
             {isPending ? (
               <>

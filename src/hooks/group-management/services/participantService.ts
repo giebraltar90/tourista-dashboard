@@ -93,6 +93,34 @@ export const moveParticipant = (
 };
 
 /**
+ * Update the participant's group assignment in Supabase database
+ */
+export const updateParticipantGroupInDatabase = async (
+  participantId: string,
+  newGroupId: string
+): Promise<boolean> => {
+  try {
+    console.log(`Updating participant ${participantId} to group ${newGroupId} in database`);
+    
+    const { error } = await supabase
+      .from('participants')
+      .update({ group_id: newGroupId })
+      .eq('id', participantId);
+      
+    if (error) {
+      console.error("Error updating participant in database:", error);
+      return false;
+    }
+    
+    console.log(`Successfully updated participant ${participantId} in database`);
+    return true;
+  } catch (error) {
+    console.error("Exception updating participant in database:", error);
+    return false;
+  }
+};
+
+/**
  * Calculate the total number of participants in all groups
  */
 export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
