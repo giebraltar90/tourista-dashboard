@@ -49,9 +49,10 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Find guide name for the modification description
-      const guideName = findGuideName(actualGuideId, tour, guides);
+      const guideName = actualGuideId ? findGuideName(actualGuideId, tour, guides) : "Unassigned";
       
       // Update the group with new guide ID and possibly new name
+      // Don't update the name if we're unassigning (actualGuideId is undefined)
       const groupsWithUpdates = prepareGroupUpdate(
         updatedTourGroups,
         groupIndex,
@@ -101,7 +102,7 @@ export const useAssignGuide = (tourId: string) => {
         );
         
         // Show a success message with proper guide name
-        if (guideName !== "Unassigned") {
+        if (actualGuideId) {
           toast.success(`Guide ${guideName} assigned to group successfully`);
         } else {
           toast.success("Guide removed from group");

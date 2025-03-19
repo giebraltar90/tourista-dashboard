@@ -16,8 +16,11 @@ export const prepareGroupUpdate = (
   // Get the current group name
   let groupName = updatedTourGroups[groupIndex].name;
   
-  // Generate a new group name if needed
-  const newGroupName = generateGroupName(groupName, guideName);
+  // Generate a new group name only if we're assigning a guide (not unassigning)
+  let newGroupName = groupName;
+  if (actualGuideId) {
+    newGroupName = generateGroupName(groupName, guideName);
+  }
   
   // Update the group with new guide ID and possibly new name
   updatedTourGroups[groupIndex] = {
@@ -76,7 +79,7 @@ export const recordGuideAssignmentModification = async (
   groupName: string,
   addModification: (description: string, details: any) => void
 ): Promise<void> => {
-  const modificationDescription = guideName !== "Unassigned"
+  const modificationDescription = actualGuideId
     ? `Guide ${guideName} assigned to group ${groupName}`
     : `Guide removed from group ${groupName}`;
     

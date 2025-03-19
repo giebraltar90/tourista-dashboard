@@ -32,6 +32,11 @@ export const findGuideName = (
  * Generate a group name based on guide assignment
  */
 export const generateGroupName = (currentName: string, guideName: string): string => {
+  // If we're unassigning (guideName is "Unassigned"), keep the current name
+  if (guideName === "Unassigned") {
+    return currentName;
+  }
+  
   const namePattern = /^.+'s Group$/;
   
   // If the group name follows the pattern "X's Group", update it with new guide name

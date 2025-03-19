@@ -29,7 +29,7 @@ export const updateTourGroups = async (
               name: group.name,
               size: group.size,
               entry_time: group.entryTime,
-              guide_id: group.guideId,
+              guide_id: group.guideId, // This can be null/undefined to unassign
               child_count: group.childCount || 0
             };
             
@@ -54,7 +54,7 @@ export const updateTourGroups = async (
                 name: group.name,
                 size: group.size,
                 entry_time: group.entryTime,
-                guide_id: group.guideId,
+                guide_id: group.guideId, // This can be null/undefined
                 child_count: group.childCount || 0
               });
               

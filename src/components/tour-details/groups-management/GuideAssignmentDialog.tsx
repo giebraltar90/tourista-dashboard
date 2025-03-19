@@ -7,6 +7,7 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import { AssignGuideForm } from "./AssignGuideForm";
+import { useGuideData } from "@/hooks/useGuideData";
 
 interface GuideAssignmentDialogProps {
   isOpen: boolean;
@@ -29,6 +30,28 @@ export const GuideAssignmentDialog = ({
   tourGroups,
   validGuides
 }: GuideAssignmentDialogProps) => {
+  // Load all guides from the database to supplement valid guides list
+  const { guides: allDatabaseGuides } = useGuideData();
+  
+  // Combine validGuides with allDatabaseGuides, ensuring no duplicates
+  const allAvailableGuides = [...validGuides];
+  
+  // Add database guides that aren't already in the validGuides list
+  if (allDatabaseGuides && Array.isArray(allDatabaseGuides)) {
+    allDatabaseGuides.forEach(dbGuide => {
+      // Only add if not already in the list (check by ID and name)
+      if (!allAvailableGuides.some(g => 
+          g.id === dbGuide.id || 
+          g.name === dbGuide.name)) {
+        allAvailableGuides.push({
+          id: dbGuide.id,
+          name: dbGuide.name,
+          info: dbGuide
+        });
+      }
+    });
+  }
+  
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -42,7 +65,7 @@ export const GuideAssignmentDialog = ({
           <AssignGuideForm 
             tourId={tourId}
             groupIndex={selectedGroupIndex}
-            guides={validGuides}
+            guides={allAvailableGuides}
             currentGuideId={tourGroups[selectedGroupIndex].guideId}
             onSuccess={() => onOpenChange(false)}
           />
