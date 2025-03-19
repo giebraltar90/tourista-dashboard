@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { useUpdateTourGroups } from "../useTourData";
+import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
 import { moveParticipant, updateParticipantGroupInDatabase } from "./services/participantService";
 
@@ -60,23 +60,20 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
     // Update local state immediately for a responsive UI
     setLocalTourGroups(updatedGroups);
     
-    // Get source and destination group IDs for database update
-    const sourceGroupId = currentGroups[fromGroupIndex].id;
+    // Get destination group ID for database update
     const destGroupId = currentGroups[toGroupIndex].id;
     
-    if (!sourceGroupId || !destGroupId) {
-      console.error("Missing group IDs for database update", { sourceGroupId, destGroupId });
+    if (!destGroupId) {
+      console.error("Missing destination group ID for database update");
       toast.error("Cannot update database: Missing group information");
       return;
     }
     
-    // First, update the participant in the database
+    // First, update the participant in the database with retry logic
     updateParticipantGroupInDatabase(participant.id, destGroupId)
       .then(success => {
         if (success) {
           console.log(`Successfully updated participant ${participant.id} in database`);
-          
-          // Only show success message for database update
           toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
         } else {
           console.error(`Failed to update participant ${participant.id} in database`);
@@ -90,12 +87,7 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
     
     // Then attempt to update the groups on the server
     // This uses the improved useUpdateTourGroups hook which won't invalidate queries immediately
-    updateTourGroupsMutation.mutate(updatedGroups, {
-      onError: (error) => {
-        console.error("API Error:", error);
-        toast.error("Changes saved locally only. Server update failed.");
-      }
-    });
+    updateTourGroupsMutation.mutate(updatedGroups);
     
     setSelectedParticipant(null);
   };

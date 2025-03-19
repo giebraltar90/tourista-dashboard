@@ -1,8 +1,9 @@
 
 import { useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { useUpdateTourGroups } from "../useTourData";
+import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
+import { updateParticipantGroupInDatabase } from "./services/participantService";
 
 export const useDragAndDrop = (
   tourId: string,
@@ -78,18 +79,33 @@ export const useDragAndDrop = (
     // Update local state immediately for a responsive UI
     setLocalTourGroups(updatedGroups);
     
-    // Then attempt to update on the server
-    updateTourGroupsMutation.mutate(updatedGroups, {
-      onError: (error) => {
-        // If the API call fails, we don't revert the UI
-        // but we show an error toast
-        console.error("API Error:", error);
-        toast.error("Changes saved locally only. Server update failed.");
-      },
-      onSuccess: () => {
-        toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
-      }
-    });
+    // Get source and destination group IDs for database update
+    const destGroupId = currentGroups[toGroupIndex].id;
+    
+    if (!destGroupId) {
+      console.error("Missing destination group ID for database update");
+      toast.error("Cannot update database: Missing group information");
+      return;
+    }
+    
+    // First, update the participant in the database with retry logic
+    updateParticipantGroupInDatabase(participant.id, destGroupId)
+      .then(success => {
+        if (success) {
+          console.log(`Successfully updated participant ${participant.id} in database`);
+          toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
+        } else {
+          console.error(`Failed to update participant ${participant.id} in database`);
+          toast.error("Failed to save changes in database. Try refreshing the page.");
+        }
+      })
+      .catch(error => {
+        console.error("Exception updating participant in database:", error);
+        toast.error("Error saving changes to database");
+      });
+    
+    // Then attempt to update the groups on the server
+    updateTourGroupsMutation.mutate(updatedGroups);
     
     setDraggedParticipant(null);
   };

@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
@@ -21,6 +20,7 @@ export const useUpdateTourGroups = (tourId: string) => {
     onMutate: async (updatedGroups) => {
       // Cancel any outgoing refetches to avoid overwriting our optimistic update
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      await queryClient.cancelQueries({ queryKey: ['tours'] });
       
       // Snapshot previous value
       const previousTour = queryClient.getQueryData(['tour', tourId]);
@@ -39,7 +39,7 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      // CRITICAL CHANGE: Completely disable query invalidation for up to 30 seconds
+      // CRITICAL: Completely disable query invalidation for up to 30 seconds
       // This prevents the UI from reverting to previous state
       
       // This silently confirms the update in the background without triggering a refetch
@@ -48,9 +48,20 @@ export const useUpdateTourGroups = (tourId: string) => {
         return oldData; // Keep our optimistic update
       });
       
-      // Only schedule a very delayed background refetch
+      // Cancel any pending queries that might still be in flight
+      queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      queryClient.cancelQueries({ queryKey: ['tours'] });
+      
+      // Only schedule a very delayed background refetch to eventually sync state
+      // But long enough to not interrupt the user experience
       setTimeout(() => {
         // Use fetchQuery instead of invalidateQueries to avoid UI flashing
+        queryClient.fetchQuery({ 
+          queryKey: ['tour', tourId],
+          staleTime: 30000 // Keep it fresh for 30 seconds
+        });
+        
+        // Also refresh the tours list to keep it in sync
         queryClient.fetchQuery({ 
           queryKey: ['tours'],
           staleTime: 30000 // Keep it fresh for 30 seconds
