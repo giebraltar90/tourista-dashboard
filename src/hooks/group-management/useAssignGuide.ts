@@ -1,9 +1,11 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
 import { toast } from "sonner";
 import { useModifications } from "../useModifications";
 import { useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -12,6 +14,7 @@ export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
   const { guides } = useGuideData();
   const { addModification } = useModifications(tourId);
+  const queryClient = useQueryClient();
   
   /**
    * Find guide name based on guide ID
@@ -87,9 +90,6 @@ export const useAssignGuide = (tourId: string) => {
       // Call the API to update tour groups
       await updateTourGroups(tourId, updatedTourGroups);
       
-      // Immediately refetch tour data to update UI
-      await refetch();
-      
       // Record this modification
       const modificationDescription = guideName !== "Unassigned"
         ? `Guide ${guideName} assigned to group ${updatedTourGroups[groupIndex].name}`
@@ -102,6 +102,13 @@ export const useAssignGuide = (tourId: string) => {
         guideName,
         groupName: updatedTourGroups[groupIndex].name
       });
+      
+      // Invalidate all tour-related queries to ensure UI updates
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      
+      // Immediately refetch tour data to update UI
+      await refetch();
       
       // Show toast notification based on the action
       if (guideName !== "Unassigned") {
@@ -116,7 +123,7 @@ export const useAssignGuide = (tourId: string) => {
       toast.error("Failed to assign guide to group");
       throw error;
     }
-  }, [tour, tourId, findGuideName, generateGroupName, refetch, addModification]);
+  }, [tour, tourId, findGuideName, generateGroupName, refetch, addModification, queryClient]);
   
   return { assignGuide };
 };
