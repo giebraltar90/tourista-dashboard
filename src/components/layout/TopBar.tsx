@@ -19,6 +19,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// Default logo path
+const DEFAULT_LOGO = "/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png";
+
 interface TopBarProps {
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
@@ -28,17 +31,45 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
   const [mounted, setMounted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [scrolled, setScrolled] = useState(false);
+  const [logo, setLogo] = useState(DEFAULT_LOGO);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Load logo from localStorage if available
+    const savedLogo = localStorage.getItem("appLogo");
+    if (savedLogo) {
+      setLogo(savedLogo);
+    }
     
     const handleScroll = () => {
       setScrolled(window.scrollY > 10);
     };
     
+    // Listen for localStorage changes for logo updates
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "appLogo" && e.newValue) {
+        setLogo(e.newValue);
+      }
+    };
+    
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Check for logo changes every second (for same-window updates)
+    const interval = setInterval(() => {
+      const currentLogo = localStorage.getItem("appLogo");
+      if (currentLogo && currentLogo !== logo) {
+        setLogo(currentLogo);
+      }
+    }, 1000);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [logo]);
 
   const toggleTheme = () => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
@@ -68,8 +99,8 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           
           <Link to="/" className="flex items-center">
             <img 
-              src="/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png" 
-              alt="Boutique Tours Logo" 
+              src={logo}
+              alt="Company Logo" 
               className="h-10 w-auto mr-1"
               style={{ background: 'white', borderRadius: '4px', padding: '2px' }}
             />
