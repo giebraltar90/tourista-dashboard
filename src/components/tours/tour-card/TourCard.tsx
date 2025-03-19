@@ -1,99 +1,83 @@
 
-import { useState } from "react";
-import { format } from "date-fns";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Link } from "react-router-dom";
 import { TourCardProps } from "./types";
 import { TourCardHeader } from "./TourCardHeader";
 import { TourCardDetails } from "./TourCardDetails";
+import { TourCardCapacity } from "./TourCardCapacity";
+import { TourCardGuide } from "./TourCardGuide";
 import { TourCardFooter } from "./TourCardFooter";
 
-export function TourCard({
+export const TourCard = ({ 
   id,
-  date,
-  location,
   tourName,
-  tourType,
+  date,
   startTime,
-  referenceCode,
+  tourGroups,
+  location,
   guide1,
   guide2,
-  tourGroups,
-  numTickets
-}: TourCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
+  referenceCode,
+  numTickets,
+  isCondensed = false
+}: TourCardProps) => {
+  // Calculate total group size
+  const totalSize = tourGroups.reduce((sum, group) => sum + group.size, 0);
   
-  const { guideData } = require('@/hooks/useGuideData');
-  const guide1Info = guideData[guide1] || null;
-  const guide2Info = guideData[guide2 || ''] || null;
+  // Calculate total capacity based on guide presence
+  const maxCapacity = guide2 ? 30 : 15;
   
-  const totalParticipants = tourGroups.reduce((sum, group) => sum + group.size, 0);
+  // Calculate capacity percentage
+  const capacityPercentage = Math.min(Math.round((totalSize / maxCapacity) * 100), 100);
   
-  const formattedDate = format(date, 'dd MMM yyyy');
-  const dayOfWeek = format(date, 'EEEE');
-  
-  const tourColor = 
-    tourType === 'food' ? 'tour-food' : 
-    tourType === 'private' ? 'tour-private' : 
-    'tour-default';
-    
-  const isBelowMinimum = totalParticipants < 4;
-  
-  const isHighSeason = tourGroups.length > 2;
+  // Determine if tour is at or over capacity
+  const isAtCapacity = capacityPercentage >= 100;
+  const isNearCapacity = capacityPercentage >= 80 && capacityPercentage < 100;
   
   return (
-    <Card 
-      className={cn(
-        "tour-item overflow-hidden transition-all duration-300 border border-border/60",
-        "hover:shadow-md hover:border-primary/20",
-        isHovered && "shadow-md border-primary/20",
-        isBelowMinimum && "border-yellow-300"
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="flex">
-        <div className={cn(
-          "w-20 flex flex-col items-center justify-center p-4 text-white font-medium",
-          `bg-${tourColor}`,
-          "transition-all duration-300",
-          isHovered && "w-24"
-        )}>
-          <span className="text-xs font-light opacity-80">{dayOfWeek}</span>
-          <span className="text-xl mt-1">{format(date, 'd')}</span>
-          <span className="text-sm">{format(date, 'MMM')}</span>
-        </div>
+    <div className={`bg-white border rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden ${isCondensed ? 'h-full' : ''}`}>
+      <Link to={`/tours/${id}`} className="flex flex-col h-full">
+        <TourCardHeader 
+          tourName={tourName} 
+          date={date} 
+          startTime={startTime} 
+          location={location}
+          referenceCode={referenceCode}
+        />
         
-        <div className="flex-1">
-          <TourCardHeader 
-            tourName={tourName}
+        <div className="flex-1 px-4 py-3 space-y-3">
+          <TourCardCapacity 
+            capacityPercentage={capacityPercentage}
+            isAtCapacity={isAtCapacity}
+            isNearCapacity={isNearCapacity}
+            totalSize={totalSize}
+            maxCapacity={maxCapacity}
+          />
+          
+          <TourCardDetails 
+            date={date}
+            startTime={startTime}
             location={location}
             referenceCode={referenceCode}
-            startTime={startTime}
-            isHovered={isHovered}
-          />
-          
-          <TourCardDetails
-            guide1={guide1}
-            guide2={guide2}
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            location={location}
-            tourGroups={tourGroups}
-            totalParticipants={totalParticipants}
-            isHighSeason={isHighSeason}
-          />
-          
-          <TourCardFooter
-            id={id}
-            totalParticipants={totalParticipants}
             numTickets={numTickets}
-            isBelowMinimum={isBelowMinimum}
-            isHighSeason={isHighSeason}
-            isHovered={isHovered}
+            totalSize={totalSize}
+            isCondensed={isCondensed}
           />
         </div>
-      </div>
-    </Card>
+        
+        <div className="px-4 pb-3 space-y-3">
+          <TourCardGuide 
+            guide1={guide1}
+            guide2={guide2}
+            isCondensed={isCondensed}
+          />
+        </div>
+        
+        <TourCardFooter 
+          isCondensed={isCondensed}
+          tourId={id}
+          referenceCode={referenceCode}
+        />
+      </Link>
+    </div>
   );
-}
+};
