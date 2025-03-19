@@ -6,6 +6,7 @@ import { updateTourModification } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useModifications = (tourId: string) => {
   const { data: tour } = useTourById(tourId);
@@ -57,15 +58,32 @@ export const useModifications = (tourId: string) => {
         };
       });
       
-      // Update the tour with new modifications
-      const result = await updateTourModification(tourId, updatedModifications);
-      
-      if (result) {
-        toast.success("Modification recorded successfully");
+      try {
+        // Try to store in Supabase if available
+        const { error } = await supabase
+          .from('modifications')
+          .insert({
+            tour_id: tourId,
+            description: description,
+            details: details || {},
+            status: 'complete',
+          });
         
-        // Force a refetch to ensure we have the latest data
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        if (error) {
+          console.warn("Failed to store modification in database:", error);
+          // Fall back to API call
+          await updateTourModification(tourId, updatedModifications);
+        }
+      } catch (err) {
+        console.warn("Database error, falling back to API:", err);
+        // Fall back to API call
+        await updateTourModification(tourId, updatedModifications);
       }
+      
+      toast.success("Modification recorded successfully");
+      
+      // Force a refetch to ensure we have the latest data
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       
       return true;
     } catch (error) {

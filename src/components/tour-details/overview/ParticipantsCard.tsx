@@ -2,6 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
+import { Badge } from "@/components/ui/badge";
 
 interface ParticipantsCardProps {
   tourGroups: VentrataTourGroup[];
@@ -27,6 +28,13 @@ export const ParticipantsCard = ({
   const requiredGroups = isHighSeason 
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
+
+  // Determine mode text for display
+  const getModeText = () => {
+    if (isHighSeason) return "High Season";
+    if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception";
+    return "Standard";
+  };
   
   return (
     <Card>
@@ -51,13 +59,18 @@ export const ParticipantsCard = ({
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Mode:</span>
-            <span className="font-medium">
-              {isHighSeason 
-                ? "High Season" 
-                : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
-                  ? "Exception" 
-                  : "Standard"}
-            </span>
+            <Badge 
+              variant="outline" 
+              className={`font-medium ${
+                isHighSeason 
+                  ? "bg-blue-100 text-blue-800" 
+                  : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard
+                    ? "bg-amber-100 text-amber-800"
+                    : "bg-green-100 text-green-800"
+              }`}
+            >
+              {getModeText()} Mode
+            </Badge>
           </div>
         </div>
       </CardContent>

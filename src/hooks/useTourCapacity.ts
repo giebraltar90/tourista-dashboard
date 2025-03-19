@@ -4,15 +4,35 @@ import { VentrataTour } from "@/types/ventrata";
 import { updateTourCapacity as updateTourCapacityApi } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { useModifications } from "./useModifications";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useUpdateTourCapacity = (tourId: string) => {
   const queryClient = useQueryClient();
   const { addModification } = useModifications(tourId);
   
   const mutation = useMutation({
-    mutationFn: (updatedTour: VentrataTour) => {
+    mutationFn: async (updatedTour: VentrataTour) => {
       console.log("Updating tour capacity for tour", tourId, updatedTour);
-      return updateTourCapacityApi(tourId, updatedTour);
+      
+      try {
+        // First try to update in Supabase if available
+        const { error } = await supabase
+          .from('tours')
+          .update({ is_high_season: updatedTour.isHighSeason })
+          .eq('id', tourId);
+          
+        if (error) {
+          console.warn("Supabase update failed, falling back to API", error);
+          // Fall back to API call if Supabase fails
+          return updateTourCapacityApi(tourId, updatedTour);
+        }
+        
+        return true;
+      } catch (err) {
+        console.warn("Database error, falling back to API", err);
+        // Fall back to API call
+        return updateTourCapacityApi(tourId, updatedTour);
+      }
     },
     onMutate: async (variables) => {
       // Cancel any outgoing refetches to avoid overwriting our optimistic update

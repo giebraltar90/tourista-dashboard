@@ -9,7 +9,269 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      guides: {
+        Row: {
+          birthday: string | null
+          created_at: string
+          guide_type: Database["public"]["Enums"]["guide_type"]
+          id: string
+          name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          birthday?: string | null
+          created_at?: string
+          guide_type: Database["public"]["Enums"]["guide_type"]
+          id?: string
+          name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          birthday?: string | null
+          created_at?: string
+          guide_type?: Database["public"]["Enums"]["guide_type"]
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      modifications: {
+        Row: {
+          created_at: string
+          description: string
+          details: Json | null
+          id: string
+          status: Database["public"]["Enums"]["modification_status"]
+          tour_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          details?: Json | null
+          id?: string
+          status?: Database["public"]["Enums"]["modification_status"]
+          tour_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          details?: Json | null
+          id?: string
+          status?: Database["public"]["Enums"]["modification_status"]
+          tour_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "modifications_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participants: {
+        Row: {
+          booking_ref: string
+          child_count: number | null
+          count: number
+          created_at: string
+          group_id: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          booking_ref: string
+          child_count?: number | null
+          count: number
+          created_at?: string
+          group_id: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          booking_ref?: string
+          child_count?: number | null
+          count?: number
+          created_at?: string
+          group_id?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participants_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "tour_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tour_groups: {
+        Row: {
+          child_count: number | null
+          created_at: string
+          entry_time: string
+          guide_id: string | null
+          id: string
+          name: string
+          size: number
+          tour_id: string
+          updated_at: string
+        }
+        Insert: {
+          child_count?: number | null
+          created_at?: string
+          entry_time: string
+          guide_id?: string | null
+          id?: string
+          name: string
+          size: number
+          tour_id: string
+          updated_at?: string
+        }
+        Update: {
+          child_count?: number | null
+          created_at?: string
+          entry_time?: string
+          guide_id?: string | null
+          id?: string
+          name?: string
+          size?: number
+          tour_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tour_groups_guide_id_fkey"
+            columns: ["guide_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_groups_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tours: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          date: string
+          guide1_id: string | null
+          guide2_id: string | null
+          guide3_id: string | null
+          id: string
+          is_high_season: boolean | null
+          location: string
+          num_tickets: number | null
+          reference_code: string
+          start_time: string
+          tour_name: string
+          tour_type: Database["public"]["Enums"]["tour_type"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          date: string
+          guide1_id?: string | null
+          guide2_id?: string | null
+          guide3_id?: string | null
+          id?: string
+          is_high_season?: boolean | null
+          location: string
+          num_tickets?: number | null
+          reference_code: string
+          start_time: string
+          tour_name: string
+          tour_type?: Database["public"]["Enums"]["tour_type"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          date?: string
+          guide1_id?: string | null
+          guide2_id?: string | null
+          guide3_id?: string | null
+          id?: string
+          is_high_season?: boolean | null
+          location?: string
+          num_tickets?: number | null
+          reference_code?: string
+          start_time?: string
+          tour_name?: string
+          tour_type?: Database["public"]["Enums"]["tour_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tours_guide1_id_fkey"
+            columns: ["guide1_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tours_guide2_id_fkey"
+            columns: ["guide2_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tours_guide3_id_fkey"
+            columns: ["guide3_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -18,7 +280,9 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      guide_type: "GA Ticket" | "GA Free" | "GC"
+      modification_status: "pending" | "complete"
+      tour_type: "food" | "private" | "default"
     }
     CompositeTypes: {
       [_ in never]: never
