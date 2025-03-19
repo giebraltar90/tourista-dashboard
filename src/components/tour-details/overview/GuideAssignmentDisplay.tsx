@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import { GuideInfo } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { AssignGuideButton } from "./AssignGuideButton";
+import { useState, useEffect } from "react";
 
 interface GuideAssignmentDisplayProps {
   guideName: string;
@@ -31,14 +32,28 @@ export const GuideAssignmentDisplay = ({
   tourId,
   availableGuides
 }: GuideAssignmentDisplayProps) => {
+  // Track the most current guideName and guideId to prevent UI flickering during updates
+  const [currentGuideName, setCurrentGuideName] = useState(guideName);
+  const [currentGuideId, setCurrentGuideId] = useState(guideId);
+  
+  // When parent props change, update our local state to reflect them
+  useEffect(() => {
+    if (guideName !== currentGuideName) {
+      setCurrentGuideName(guideName);
+    }
+    if (guideId !== currentGuideId) {
+      setCurrentGuideId(guideId);
+    }
+  }, [guideName, guideId]);
+  
   // Find corresponding group index for this guide
   const groupIndex = tourGroups.findIndex(group => 
-    group.guideId === guideId || (guideName && group.guideId === guideName)
+    group.guideId === currentGuideId || (currentGuideName && group.guideId === currentGuideName)
   );
   
   const displayRole = isPrimary 
     ? "Primary Guide" 
-    : (guideId === "guide2" ? "Secondary Guide" : "Assistant Guide");
+    : (currentGuideId === "guide2" ? "Secondary Guide" : "Assistant Guide");
 
   return (
     <div className="flex items-start space-x-4">
@@ -48,14 +63,14 @@ export const GuideAssignmentDisplay = ({
       <div className="flex-1">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="font-medium">{guideName || "Unassigned"}</h3>
+            <h3 className="font-medium">{currentGuideName || "Unassigned"}</h3>
             <p className="text-sm text-muted-foreground">{displayRole}</p>
           </div>
           
           <AssignGuideButton
             tourId={tourId}
-            guideId={guideId}
-            guideName={guideName}
+            guideId={currentGuideId}
+            guideName={currentGuideName}
             groupIndex={groupIndex >= 0 ? groupIndex : 0}
             guides={availableGuides}
             displayName={displayRole}
@@ -77,7 +92,7 @@ export const GuideAssignmentDisplay = ({
         
         {/* Show which group this guide is assigned to */}
         {tourGroups.map((group, index) => {
-          if (group.guideId === guideId || (guideName && group.guideId === guideName)) {
+          if (group.guideId === currentGuideId || (currentGuideName && group.guideId === currentGuideName)) {
             return (
               <Badge key={index} className="mt-2 bg-green-100 text-green-800 border-green-300">
                 Assigned to Group {index + 1}

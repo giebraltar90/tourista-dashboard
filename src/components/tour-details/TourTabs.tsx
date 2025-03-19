@@ -11,6 +11,7 @@ import {
 import { TourOverview } from "@/components/tour-details/TourOverview";
 import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TourTabsProps {
   tour: TourCardProps;
@@ -29,58 +30,46 @@ export const TourTabs: React.FC<TourTabsProps> = ({
   activeTab,
   onTabChange
 }) => {
-  // Use state to store the most current version of tour data per tab
-  // This prevents data loss when switching between tabs
-  const [tabSpecificTourData, setTabSpecificTourData] = useState<{[key: string]: any}>({
-    overview: tour,
-    tickets: tour,
-    modifications: tour
-  });
+  const queryClient = useQueryClient();
   
-  // When the tour data changes, update all tab data
+  // Use React Query cache for the single source of truth
+  // This ensures guide changes persist between tab switches
+  const getCurrentTourData = () => {
+    // Always try to get the latest data from the cache
+    const cachedTour = queryClient.getQueryData(['tour', tour.id]);
+    return cachedTour || tour;
+  };
+  
+  // Log when tour data changes for debugging
   useEffect(() => {
-    if (tour) {
-      // Don't update the active tab's data directly from incoming tour
-      // as it might overwrite user changes
-      setTabSpecificTourData(prevData => {
-        const newData = { ...prevData };
-        
-        // Update data for inactive tabs only
-        Object.keys(newData).forEach(tabKey => {
-          if (tabKey !== activeTab) {
-            newData[tabKey] = JSON.parse(JSON.stringify(tour));
-          }
-        });
-        
-        return newData;
-      });
-    }
-  }, [tour, activeTab]);
+    console.log("TourTabs received updated tour data:", {
+      tourId: tour.id,
+      guide1: tour.guide1,
+      guide2: tour.guide2,
+      guide3: tour.guide3,
+      groupCount: tour.tourGroups?.length,
+      groupGuides: tour.tourGroups?.map(g => ({ 
+        name: g.name, 
+        guideId: g.guideId 
+      }))
+    });
+  }, [tour]);
   
-  // When leaving a tab, store its data version
-  const handleTabChange = (newTab: string) => {
-    if (activeTab !== newTab) {
-      // Preserve the current tab's version of the data before switching
-      setTabSpecificTourData(prevData => ({
-        ...prevData,
-        [activeTab]: JSON.parse(JSON.stringify(tabSpecificTourData[activeTab] || tour))
-      }));
-    }
-    onTabChange(newTab);
-  };
-  
-  // Get the appropriate tour data based on current tab
-  const getTabTourData = (tabName: string) => {
-    return tabSpecificTourData[tabName] || tour;
-  };
-
   // Log when tab changes for debugging
   useEffect(() => {
     console.log("Tab changed to:", activeTab);
   }, [activeTab]);
 
+  // Critical: Force update the query cache when the component mounts
+  // This ensures we have the latest data when switching tabs
+  useEffect(() => {
+    if (tour && tour.id) {
+      queryClient.setQueryData(['tour', tour.id], tour);
+    }
+  }, []);
+
   return (
-    <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
+    <Tabs defaultValue="overview" value={activeTab} onValueChange={onTabChange} className="w-full">
       <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="overview">Overview</TabsTrigger>
         <TabsTrigger value="tickets">Tickets</TabsTrigger>
@@ -89,7 +78,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="overview" className="space-y-4 mt-6">
         <TourOverview 
-          tour={getTabTourData("overview")} 
+          tour={getCurrentTourData()} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -98,7 +87,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="tickets" className="space-y-4 mt-6">
         <TicketsManagement 
-          tour={getTabTourData("tickets")} 
+          tour={getCurrentTourData()} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -108,7 +97,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       <TabsContent value="modifications" className="space-y-4 mt-6">
         <ModificationsTab 
           key={`modifications-${activeTab === "modifications" ? Date.now() : "inactive"}`} 
-          tour={getTabTourData("modifications")} 
+          tour={getCurrentTourData()} 
         />
       </TabsContent>
     </Tabs>

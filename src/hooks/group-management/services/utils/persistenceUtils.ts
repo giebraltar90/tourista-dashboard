@@ -131,22 +131,17 @@ export const handleUIUpdates = async (
       toast.success("Guide removed from group");
     }
     
-    // CRITICAL: Never invalidate queries immediately
+    // CRITICAL FIX: Never invalidate queries immediately
     // This solves the problem of guides "changing back" after assignment
     // Cancel any in-flight queries that might overwrite our changes
     queryClient.cancelQueries({ queryKey: ['tour', tourId] });
     queryClient.cancelQueries({ queryKey: ['tours'] });
     
-    // Ensure the data stays updated by setting the query data again after a delay
-    // This reinforces our optimistic update
+    // Invalidate queries after a delay to ensure database consistency
     setTimeout(() => {
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        return oldData; // Keep our optimistic update
-      });
-    }, 500);
-    
-    console.log("Successfully updated - permanently disabled revalidation");
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+    }, 2000);
   } else {
     toast.error("Could not save guide assignment");
   }
@@ -163,6 +158,7 @@ export const performOptimisticUpdate = (
   // Do a proper deep clone to avoid reference issues
   const groupsCopy = JSON.parse(JSON.stringify(updatedGroups));
   
+  // CRITICAL FIX: Apply the update without overwriting other parts of the data
   queryClient.setQueryData(['tour', tourId], (oldData: any) => {
     if (!oldData) return null;
     

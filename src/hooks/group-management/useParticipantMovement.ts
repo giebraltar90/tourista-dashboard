@@ -59,6 +59,9 @@ export const useParticipantMovement = (
         return;
       }
       
+      // Cancel any in-flight queries to avoid race conditions
+      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      
       // 2. Update local state with modified groups
       // First remove from the source group
       if (Array.isArray(updatedGroups[fromGroupIndex].participants)) {
@@ -83,21 +86,36 @@ export const useParticipantMovement = (
       updatedGroups[toGroupIndex].size = (updatedGroups[toGroupIndex].size || 0) + participantCount;
       updatedGroups[toGroupIndex].childCount = (updatedGroups[toGroupIndex].childCount || 0) + childCount;
       
+      // Apply optimistic update to the query cache
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        
+        // Deep clone the tour data
+        const newData = JSON.parse(JSON.stringify(oldData));
+        
+        // Update tourGroups with our changed values
+        newData.tourGroups = updatedGroups;
+        
+        return newData;
+      });
+      
       // 3. Call updateTourGroups to persist changes
       updateTourGroups(updatedGroups, {
         onSuccess: () => {
           toast.success(`Moved ${participant.name} to ${toGroup.name || `Group ${toGroupIndex + 1}`}`);
           
-          // Force a refresh of the tour data to reflect these changes in other components
+          // Force a full refresh after a short delay
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-            // Also invalidate the tours list to update the overview
             queryClient.invalidateQueries({ queryKey: ['tours'] });
-          }, 500);
+          }, 1000);
         },
         onError: (error: any) => {
           console.error("Error updating tour groups:", error);
           toast.error("Failed to save group changes");
+          
+          // Revert optimistic update on error
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
         }
       });
       

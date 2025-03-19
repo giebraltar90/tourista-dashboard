@@ -58,13 +58,16 @@ export const useAssignGuide = (tourId: string) => {
         pendingAssignments: [...pendingAssignmentsRef.current.entries()]
       });
       
-      // Cancel any in-flight queries that might overwrite our optimistic update
-      queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      // CRITICAL FIX: First cancel any in-flight queries to prevent race conditions
+      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      
+      // Next, get the latest data before making changes
+      const latestTour = queryClient.getQueryData(['tour', tourId]) || tour;
       
       const result = await processGuideAssignment(
         tourId,
         groupIndex,
-        tour,
+        latestTour,
         guides,
         actualGuideId,
         queryClient
@@ -83,7 +86,21 @@ export const useAssignGuide = (tourId: string) => {
           addModification
         );
         
-        // Force a refetch after a delay to ensure UI is updated
+        // CRITICAL FIX: Apply optimistic update directly to the cache
+        // This ensures the change is visible immediately AND persists between tab switches
+        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+          if (!oldData) return null;
+          
+          // Create a deep copy to avoid reference issues
+          const newData = JSON.parse(JSON.stringify(oldData));
+          
+          // Apply the updated groups to the tour data
+          newData.tourGroups = result.updatedGroups;
+          
+          return newData;
+        });
+        
+        // Force a refetch after a delay to ensure server data is synced
         setTimeout(() => {
           refetch();
           // Also invalidate the tours list to update the overview
