@@ -11,15 +11,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search, Filter } from "lucide-react";
+import { useTours } from "@/hooks/useTourData";
 
-interface UpcomingToursProps {
-  tours: TourCardProps[];
-}
-
-export function UpcomingTours({ tours }: UpcomingToursProps) {
+export function UpcomingTours() {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
-
+  
+  // Fetch tours from API using our React Query hook
+  const { data: tours, isLoading, error } = useTours();
+  
   // Filter tours based on search query and location filter
   const filteredTours = tours.filter((tour) => {
     const matchesSearch =
@@ -72,19 +72,31 @@ export function UpcomingTours({ tours }: UpcomingToursProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {filteredTours.length > 0 ? (
-          filteredTours.map((tour) => <TourCard key={tour.id} {...tour} />)
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            No tours found matching your search criteria.
+      {isLoading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-8 text-red-500">
+          Failed to load tours. Please try again.
+        </div>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4">
+            {filteredTours.length > 0 ? (
+              filteredTours.map((tour) => <TourCard key={tour.id} {...tour} />)
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                No tours found matching your search criteria.
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <div className="flex justify-center mt-6">
-        <Button variant="outline">View All Tours</Button>
-      </div>
+          <div className="flex justify-center mt-6">
+            <Button variant="outline">View All Tours</Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { mockTours } from "@/data/mockData";
+import { useTours } from "@/hooks/useTourData";
 import { useTourFilters } from "@/hooks/useTourFilters";
 import { ToursPageHeader } from "@/components/tours/ToursPageHeader";
 import { TourFilters } from "@/components/tours/TourFilters";
@@ -15,6 +15,9 @@ import { TabbedToursView } from "@/components/tours/TabbedToursView";
 import { TourBusinessRules } from "@/components/tours/TourBusinessRules";
 
 const ToursPage = () => {
+  // Fetch tours from API
+  const { data: tours, isLoading, error } = useTours();
+  
   const {
     date,
     setDate,
@@ -23,7 +26,7 @@ const ToursPage = () => {
     timeRange,
     setTimeRange,
     filteredTours
-  } = useTourFilters(mockTours);
+  } = useTourFilters(tours);
   
   return (
     <DashboardLayout>
@@ -43,15 +46,29 @@ const ToursPage = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {viewMode === "calendar" ? (
-              <CalendarView 
-                date={date}
-                onDateChange={setDate}
-                tours={filteredTours}
-                timeRange={timeRange}
-              />
-            ) : (
-              <TabbedToursView tours={filteredTours} />
+            {isLoading && (
+              <div className="flex justify-center py-10">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            )}
+            
+            {error && (
+              <div className="text-center text-red-500 py-10">
+                Error loading tours. Please try again.
+              </div>
+            )}
+            
+            {!isLoading && !error && (
+              viewMode === "calendar" ? (
+                <CalendarView 
+                  date={date}
+                  onDateChange={setDate}
+                  tours={filteredTours}
+                  timeRange={timeRange}
+                />
+              ) : (
+                <TabbedToursView tours={filteredTours} />
+              )
             )}
           </CardContent>
         </Card>

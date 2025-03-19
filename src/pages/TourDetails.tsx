@@ -60,42 +60,41 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { mockTours } from "@/data/mockData";
 import { toast } from "sonner";
-
-interface Participant {
-  id: string;
-  name: string;
-  count: number;
-  bookingRef: string;
-}
-
-interface TourGroup {
-  name: string;
-  size: number;
-  entryTime: string;
-  participants?: Participant[];
-}
+import { useTourById, useUpdateTourGroups } from "@/hooks/useTourData";
+import { VentrataParticipant } from "@/types/ventrata";
 
 const TourDetails = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
   
-  const tourData = mockTours.find(tour => tour.id === id);
-  const [tour, setTour] = useState(tourData);
+  const { data: tour, isLoading, error } = useTourById(id || "");
+  
   const [selectedParticipant, setSelectedParticipant] = useState<{
-    participant: Participant;
+    participant: VentrataParticipant;
     fromGroupIndex: number;
   } | null>(null);
   
-  if (!tour) {
+  const updateTourGroupsMutation = useUpdateTourGroups(id || "");
+  
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+  
+  if (error || !tour) {
     return (
       <DashboardLayout>
         <Alert variant="destructive" className="mt-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Tour not found. Please check the tour ID and try again.
+            Failed to load tour details. Please try again.
           </AlertDescription>
         </Alert>
       </DashboardLayout>
@@ -112,7 +111,7 @@ const TourDetails = () => {
   const childTickets = (tour.numTickets || totalParticipants) - adultTickets;
   
   const handleMoveParticipant = (toGroupIndex: number) => {
-    if (!selectedParticipant) return;
+    if (!selectedParticipant || !id) return;
     
     const { participant, fromGroupIndex } = selectedParticipant;
     
@@ -121,23 +120,26 @@ const TourDetails = () => {
       return;
     }
     
-    const updatedTour = JSON.parse(JSON.stringify(tour));
+    const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
     
-    const sourceGroup = updatedTour.tourGroups[fromGroupIndex];
-    sourceGroup.participants = sourceGroup.participants.filter(
-      (p: Participant) => p.id !== participant.id
-    );
-    sourceGroup.size -= participant.count;
+    const sourceGroup = updatedTourGroups[fromGroupIndex];
+    if (sourceGroup.participants) {
+      sourceGroup.participants = sourceGroup.participants.filter(
+        (p: VentrataParticipant) => p.id !== participant.id
+      );
+      sourceGroup.size -= participant.count;
+    }
     
-    const destGroup = updatedTour.tourGroups[toGroupIndex];
+    const destGroup = updatedTourGroups[toGroupIndex];
+    if (!destGroup.participants) {
+      destGroup.participants = [];
+    }
     destGroup.participants.push(participant);
     destGroup.size += participant.count;
     
-    setTour(updatedTour);
+    updateTourGroupsMutation.mutate(updatedTourGroups);
     
     setSelectedParticipant(null);
-    
-    toast.success(`Moved ${participant.name} to ${destGroup.name}`);
   };
   
   return (
@@ -372,7 +374,7 @@ const TourDetails = () => {
                         <CardContent className="pt-4">
                           <div className="space-y-2">
                             {group.participants && group.participants.length > 0 ? (
-                              group.participants.map((participant, index) => (
+                              group.participants.map((participant) => (
                                 <div 
                                   key={participant.id} 
                                   className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-muted"
@@ -428,7 +430,10 @@ const TourDetails = () => {
                                             <label className="text-sm font-medium">
                                               Select Destination Group
                                             </label>
-                                            <Select onValueChange={(value) => handleMoveParticipant(parseInt(value))}>
+                                            <Select 
+                                              onValueChange={(value) => handleMoveParticipant(parseInt(value))}
+                                              disabled={updateTourGroupsMutation.isPending}
+                                            >
                                               <SelectTrigger className="w-full">
                                                 <SelectValue placeholder="Select a group" />
                                               </SelectTrigger>
@@ -446,11 +451,21 @@ const TourDetails = () => {
                                         </div>
                                       </div>
                                       <SheetFooter>
-                                        <Button type="submit" onClick={() => {
-                                          // Will be handled by the Select onChange
-                                        }}>
-                                          <ArrowLeftRight className="h-4 w-4 mr-2" />
-                                          Move Participant
+                                        <Button 
+                                          type="submit" 
+                                          disabled={updateTourGroupsMutation.isPending}
+                                        >
+                                          {updateTourGroupsMutation.isPending ? (
+                                            <>
+                                              <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-opacity-20 border-t-white rounded-full"></div>
+                                              Moving...
+                                            </>
+                                          ) : (
+                                            <>
+                                              <ArrowLeftRight className="h-4 w-4 mr-2" />
+                                              Move Participant
+                                            </>
+                                          )}
                                         </Button>
                                       </SheetFooter>
                                     </SheetContent>
@@ -473,7 +488,10 @@ const TourDetails = () => {
                 <div className="text-sm text-muted-foreground">
                   Group division is based on families or couples + singles and further divided into adults + children.
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                >
                   <PenSquare className="mr-2 h-4 w-4" />
                   Edit Groups
                 </Button>

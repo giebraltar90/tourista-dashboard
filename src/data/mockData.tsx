@@ -1,4 +1,5 @@
 import { TourCardProps } from "@/components/tours/TourCard";
+import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 
 // Mock data for tours
 export const mockTours: TourCardProps[] = [

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
@@ -26,6 +25,7 @@ import {
   CardFooter,
   CardHeader
 } from "@/components/ui/card";
+import { VentrataTourGroup } from "@/types/ventrata";
 
 export interface TourCardProps {
   id: string;
@@ -37,11 +37,7 @@ export interface TourCardProps {
   referenceCode: string;
   guide1: string;
   guide2?: string;
-  tourGroups: {
-    name: string;
-    size: number;
-    entryTime: string;
-  }[];
+  tourGroups: VentrataTourGroup[];
   numTickets?: number;
 }
 
