@@ -6,13 +6,17 @@ import { GuideInfo } from "@/types/ventrata";
  * Returns information about a guide based on the guide name
  * Improved with better error handling and fallbacks
  */
-export const useGuideInfo = (guideName: string): GuideInfo | null => {
+export const useGuideInfo = (guideName: string): GuideInfo => {
   // Safely access the guides data with proper error handling
   const guideDataResult = useGuideData();
   
-  // Early return if no guide name provided
+  // Early return fallback if no guide name provided
   if (!guideName) {
-    return null;
+    return {
+      name: "Unknown Guide",
+      birthday: new Date(),
+      guideType: "GA Ticket"
+    };
   }
   
   const guides = guideDataResult?.guides || [];
