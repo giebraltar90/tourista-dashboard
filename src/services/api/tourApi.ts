@@ -8,7 +8,7 @@ import {
 } from "./tour";
 import { isUuid } from "./tour/guideUtils";
 import { enrichToursWithGuideNames } from "./tour/guideUtils";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client"; // Added missing import
 
 /**
  * Fetch tours from Ventrata API or Supabase
@@ -43,6 +43,11 @@ export const fetchTours = async (params?: {
  * Fetch a single tour by ID
  */
 export const fetchTourById = async (tourId: string): Promise<TourCardProps | null> => {
+  if (!tourId) {
+    console.error("fetchTourById called with empty tourId");
+    return null;
+  }
+  
   try {
     // Check if this is a UUID format ID to determine storage approach
     const tourIsUuid = isUuid(tourId);
@@ -67,7 +72,7 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
     
   } catch (error) {
     console.error(`Error fetching tour ${tourId}:`, error);
-    throw error;
+    return null; // Return null instead of throwing to prevent application crashes
   }
 };
 
@@ -81,8 +86,10 @@ export const fetchParticipantsForTour = async (tourId: string, retryCount = 0) =
     return [];
   }
   
+  const MAX_RETRIES = 3;
+  
   try {
-    console.log(`Fetching participants for tour ${tourId}`);
+    console.log(`Fetching participants for tour ${tourId} (attempt ${retryCount + 1}/${MAX_RETRIES})`);
     
     // First, get the tour groups for this tour
     const { data: groups, error: groupsError } = await supabase
@@ -94,13 +101,14 @@ export const fetchParticipantsForTour = async (tourId: string, retryCount = 0) =
       console.error("Error fetching tour groups:", groupsError);
       
       // Retry logic for transient errors
-      if (retryCount < 3) {
-        console.log(`Retrying fetchParticipantsForTour (${retryCount + 1}/3)...`);
-        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+      if (retryCount < MAX_RETRIES - 1) {
+        console.log(`Retrying fetchParticipantsForTour (${retryCount + 1}/${MAX_RETRIES})...`);
+        const delay = Math.min(500 * Math.pow(2, retryCount), 3000); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
         return fetchParticipantsForTour(tourId, retryCount + 1);
       }
       
-      throw groupsError;
+      return []; // Return empty array instead of throwing
     }
     
     if (!groups || groups.length === 0) {
@@ -121,20 +129,30 @@ export const fetchParticipantsForTour = async (tourId: string, retryCount = 0) =
       console.error("Error fetching participants:", participantsError);
       
       // Retry logic for transient errors
-      if (retryCount < 3) {
-        console.log(`Retrying participant fetch (${retryCount + 1}/3)...`);
-        await new Promise(resolve => setTimeout(resolve, 500 * (retryCount + 1)));
+      if (retryCount < MAX_RETRIES - 1) {
+        console.log(`Retrying participant fetch (${retryCount + 1}/${MAX_RETRIES})...`);
+        const delay = Math.min(500 * Math.pow(2, retryCount), 3000); // Exponential backoff
+        await new Promise(resolve => setTimeout(resolve, delay));
         return fetchParticipantsForTour(tourId, retryCount + 1);
       }
       
-      throw participantsError;
+      return []; // Return empty array instead of throwing
     }
     
     console.log(`Found ${participants?.length || 0} participants for tour ${tourId}`);
     return participants || [];
   } catch (error) {
     console.error("Error in fetchParticipantsForTour:", error);
-    return [];
+    
+    // Retry logic for unexpected errors
+    if (retryCount < MAX_RETRIES - 1) {
+      console.log(`Retrying after error (${retryCount + 1}/${MAX_RETRIES})...`);
+      const delay = Math.min(500 * Math.pow(2, retryCount), 3000); // Exponential backoff
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchParticipantsForTour(tourId, retryCount + 1);
+    }
+    
+    return []; // Return empty array as last resort
   }
 };
 

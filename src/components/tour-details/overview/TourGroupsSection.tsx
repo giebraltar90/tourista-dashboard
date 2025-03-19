@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { useGuideData } from "@/hooks/useGuideData";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 import { TourGroupGuide } from "./TourGroupGuide";
 import { isUuid } from "@/services/api/tour/guideUtils";
 
@@ -46,24 +46,35 @@ export const TourGroupsSection = ({
   const getGuideOptions = () => {
     if (!tour) return [];
     
-    const options = [
-      { id: "guide1", name: tour.guide1 || "", info: safeGuide1Info },
-      ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: safeGuide2Info }] : []),
-      ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: safeGuide3Info }] : []),
-    ];
+    // Start with primary guides
+    const options = [];
+    
+    // Only add guides that exist
+    if (tour.guide1) {
+      options.push({ id: "guide1", name: tour.guide1, info: safeGuide1Info });
+    }
+    
+    if (tour.guide2) {
+      options.push({ id: "guide2", name: tour.guide2, info: safeGuide2Info });
+    }
+    
+    if (tour.guide3) {
+      options.push({ id: "guide3", name: tour.guide3, info: safeGuide3Info });
+    }
     
     // Add additional guides from the database that might not be primary guides
     if (guides && Array.isArray(guides)) {
       guides.forEach(guide => {
-        // Skip if this guide is already in the options (compare by id and name)
-        if (!options.some(g => (g.id === guide.id) || (g.name === guide.name))) {
-          options.push({ id: guide.id, name: guide.name, info: guide });
+        if (guide && guide.name) {
+          // Skip if this guide is already in the options (compare by name)
+          if (!options.some(g => g.name === guide.name)) {
+            options.push({ id: guide.id || guide.name, name: guide.name, info: guide });
+          }
         }
       });
     }
     
-    // Remove any invalid options (no name)
-    return options.filter(guide => guide && guide.name);
+    return options;
   };
 
   // Ensure tourGroups is an array, even if it's undefined

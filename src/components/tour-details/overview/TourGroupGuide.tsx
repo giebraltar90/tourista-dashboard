@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { GuideBadge } from "./GuideBadge";
 import { GuideSelectionPopover } from "./GuideSelectionPopover";
 import { GroupStatusIndicator } from "./GroupStatusIndicator";
+import { toast } from "sonner";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
@@ -34,6 +35,8 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState<string>(group?.guideId || "_none");
   const previousGuideIdRef = useRef<string | undefined>(group?.guideId);
+  const assignmentAttempts = useRef(0);
+  const maxRetries = 3;
   
   // Display name should default to "Group X" if not set
   const displayName = group?.name || `Group ${groupIndex + 1}`;
@@ -52,13 +55,20 @@ export const TourGroupGuide = ({
       });
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
+      assignmentAttempts.current = 0;
     }
   }, [group, groupIndex]);
 
   const handleAssignGuide = async (guideId: string) => {
     if (guideId === selectedGuide || !tour?.id) return;
     
+    if (assignmentAttempts.current >= maxRetries) {
+      toast.error("Too many failed attempts. Please try again later.");
+      return;
+    }
+    
     setIsAssigning(true);
+    assignmentAttempts.current += 1;
     
     try {
       console.log(`Assigning guide ${guideId} to group ${groupIndex}`);
@@ -68,12 +78,32 @@ export const TourGroupGuide = ({
       previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
       
       // Call the API to update the guide
-      await assignGuide(groupIndex, guideId);
+      const success = await assignGuide(groupIndex, guideId);
+      
+      if (success) {
+        // Reset attempt counter on success
+        assignmentAttempts.current = 0;
+      } else {
+        // If server update failed but we haven't exceeded max retries, try again
+        if (assignmentAttempts.current < maxRetries) {
+          console.log(`Assignment attempt ${assignmentAttempts.current} failed, retrying...`);
+          setTimeout(() => handleAssignGuide(guideId), 1000);
+          return;
+        } else {
+          toast.error("Failed to assign guide after multiple attempts");
+          // Revert optimistic update
+          setSelectedGuide(group?.guideId || "_none");
+          previousGuideIdRef.current = group?.guideId;
+        }
+      }
     } catch (error) {
-      // Revert optimistic update if there was an error
       console.error("Error assigning guide:", error);
+      
+      // Revert optimistic update if there was an error
       setSelectedGuide(group?.guideId || "_none");
       previousGuideIdRef.current = group?.guideId;
+      
+      toast.error("Failed to assign guide: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
       setIsAssigning(false);
     }
@@ -96,7 +126,7 @@ export const TourGroupGuide = ({
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-medium text-base">{displayName}</h3>
         <Badge variant="outline" className="bg-blue-50">
-          {totalGroupSize} people
+          {totalGroupSize} {totalGroupSize === 1 ? 'person' : 'people'}
         </Badge>
       </div>
       
