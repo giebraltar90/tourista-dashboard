@@ -14,8 +14,16 @@ export const useTourById = (tourId: string) => {
       console.log("Fetching tour data for ID:", tourId);
       
       try {
+        // First, validate tourId to avoid unnecessary DB calls
+        if (!tourId || tourId.trim() === '') {
+          console.log("Invalid tour ID provided");
+          return null;
+        }
+        
         // Try to fetch from Supabase first if it's a UUID
         if (isUuid(tourId)) {
+          console.log("Attempting to fetch from Supabase for UUID:", tourId);
+          
           const { data: tour, error } = await supabase
             .from('tours')
             .select(`
@@ -29,11 +37,31 @@ export const useTourById = (tourId: string) => {
           
           if (error) {
             console.error("Error fetching from Supabase:", error);
-          } else if (tour) {
+            throw error;
+          }
+          
+          if (tour) {
             console.log("Found tour data in Supabase:", tour);
             console.log("is_high_season value:", tour.is_high_season, "type:", typeof tour.is_high_season);
             
             // Transform Supabase data structure to match our app's expected format
+            // Now also fetch guide names for each guide ID
+            const guidesResult = await supabase
+              .from('guides')
+              .select('id, name')
+              .in('id', [tour.guide1_id, tour.guide2_id, tour.guide3_id].filter(Boolean));
+            
+            console.log("Guides result:", guidesResult);
+            
+            // Create a map of guide IDs to names
+            const guideMap = {};
+            if (!guidesResult.error && guidesResult.data) {
+              guidesResult.data.forEach(guide => {
+                guideMap[guide.id] = guide.name;
+              });
+            }
+            
+            // Transform to application format with guide names instead of IDs
             return {
               id: tour.id,
               date: new Date(tour.date),
@@ -42,10 +70,10 @@ export const useTourById = (tourId: string) => {
               tourType: tour.tour_type,
               startTime: tour.start_time,
               referenceCode: tour.reference_code,
-              guide1: tour.guide1_id || "",
-              guide2: tour.guide2_id || "",
-              guide3: tour.guide3_id || "",
-              tourGroups: tour.tour_groups ? tour.tour_groups.map(group => ({
+              guide1: guideMap[tour.guide1_id] || tour.guide1_id || "",
+              guide2: guideMap[tour.guide2_id] || tour.guide2_id || "",
+              guide3: guideMap[tour.guide3_id] || tour.guide3_id || "",
+              tourGroups: Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => ({
                 id: group.id,
                 name: group.name,
                 size: group.size,
@@ -61,6 +89,7 @@ export const useTourById = (tourId: string) => {
         }
         
         // If not found in Supabase or if it's not a UUID, fall back to the API/mock data
+        console.log("Falling back to API/mock data");
         const tourData = await fetchTourById(tourId);
         console.log("Found tour data from API/mock:", tourData);
         

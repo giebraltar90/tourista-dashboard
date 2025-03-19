@@ -17,6 +17,10 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
   isSecondary = false 
 }) => {
   if (!guideName) return null;
+  
+  // Handle case when guideName is a UUID instead of an actual name
+  const isUuid = (str: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+  const displayName = isUuid(guideName) ? `Guide ${guideName.substring(0, 4)}...` : guideName;
 
   return (
     <div className="flex items-center mt-1">
@@ -27,7 +31,7 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
         <Users className="h-4 w-4 mr-2 text-muted-foreground opacity-0" />
       )}
       <div className="flex items-center">
-        <span className="text-sm">{guideName}</span>
+        <span className="text-sm">{displayName}</span>
         {guideInfo && (
           <TooltipProvider>
             <Tooltip>

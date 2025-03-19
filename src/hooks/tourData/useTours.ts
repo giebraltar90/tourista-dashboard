@@ -38,6 +38,32 @@ export const useTours = (options: UseToursOptions = {}) => {
         
         console.log("Successfully fetched tours from Supabase:", supabaseTours);
         
+        // Collect all guide IDs to fetch them in a single request
+        const guideIds = new Set<string>();
+        supabaseTours.forEach(tour => {
+          if (tour.guide1_id) guideIds.add(tour.guide1_id);
+          if (tour.guide2_id) guideIds.add(tour.guide2_id);
+          if (tour.guide3_id) guideIds.add(tour.guide3_id);
+        });
+        
+        // Fetch guide names in a single request
+        const guideIdsArray = Array.from(guideIds);
+        let guideMap = {};
+        
+        if (guideIdsArray.length > 0) {
+          const { data: guides, error: guidesError } = await supabase
+            .from('guides')
+            .select('id, name')
+            .in('id', guideIdsArray);
+            
+          if (!guidesError && guides) {
+            guideMap = guides.reduce((map, guide) => {
+              map[guide.id] = guide.name;
+              return map;
+            }, {});
+          }
+        }
+        
         // Transform the Supabase data to match our TourCardProps structure
         return supabaseTours.map(tour => ({
           id: tour.id,
@@ -47,26 +73,26 @@ export const useTours = (options: UseToursOptions = {}) => {
           tourType: tour.tour_type,
           startTime: tour.start_time,
           referenceCode: tour.reference_code,
-          guide1: tour.guide1_id || "",
-          guide2: tour.guide2_id || "",
-          guide3: tour.guide3_id || "",
-          tourGroups: tour.tour_groups.map(group => ({
+          guide1: guideMap[tour.guide1_id] || tour.guide1_id || "",
+          guide2: guideMap[tour.guide2_id] || tour.guide2_id || "",
+          guide3: guideMap[tour.guide3_id] || tour.guide3_id || "",
+          tourGroups: Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => ({
             id: group.id,
             name: group.name,
             size: group.size,
             entryTime: group.entry_time,
             childCount: group.child_count || 0,
             guideId: group.guide_id,
-            participants: group.participants?.map(p => ({
+            participants: Array.isArray(group.participants) ? group.participants.map(p => ({
               id: p.id,
               name: p.name,
               count: p.count,
               bookingRef: p.booking_ref,
               childCount: p.child_count || 0
-            })) || []
-          })),
+            })) : []
+          })) : [],
           numTickets: tour.num_tickets || 0,
-          isHighSeason: tour.is_high_season || false
+          isHighSeason: tour.is_high_season === true
         }));
       } catch (error) {
         console.error("Error fetching tours:", error);
