@@ -1,6 +1,14 @@
 
-import { isUuid } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
+
+/**
+ * UUID validation helper
+ * Used to determine whether a value is a UUID
+ */
+export const isUuid = (id: string): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
 
 /**
  * Get guide names from their IDs

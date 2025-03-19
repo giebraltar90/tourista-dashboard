@@ -6,7 +6,7 @@ import {
   fetchToursFromSupabase, 
   fetchToursFromAPI 
 } from "./tour";
-import { isUuid } from "@/types/ventrata";
+import { isUuid } from "./tour/guideUtils";
 import { enrichToursWithGuideNames } from "./tour/guideUtils";
 
 /**
@@ -73,4 +73,4 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
 // Re-export from other files
 export { updateTourGroups } from "./tourGroupApi";
 export { updateTourCapacity } from "./tourCapacityApi";
-export { isUuid } from "@/types/ventrata";
+export { isUuid } from "./tour/guideUtils";

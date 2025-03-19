@@ -1,8 +1,8 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { fetchTourById } from "@/services/ventrataApi";
+import { fetchTourById } from "@/services/api/tourApi";
 import { supabase } from "@/integrations/supabase/client";
-import { isUuid } from "@/types/ventrata";
+import { isUuid } from "@/services/api/tour/guideUtils";
 
 export const useTourById = (tourId: string) => {
   console.log("useTourById called with ID:", tourId);
