@@ -20,6 +20,7 @@ export const GroupListItem = ({
   guideInfo, 
   onAction 
 }: GroupListItemProps) => {
+  // Calculate the actual participant count from the participants array
   const participantCount = group.participants?.length || 0;
   const totalPeople = group.size || 0;
   

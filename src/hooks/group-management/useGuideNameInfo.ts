@@ -14,7 +14,7 @@ export const useGuideNameInfo = (
   // Helper to get guide name for display
   const getGuideNameAndInfo = (guideId?: string) => {
     // Default fallback case
-    if (!guideId) return { name: "Unassigned", info: null };
+    if (!guideId || guideId === "_none") return { name: "Unassigned", info: null };
     
     // For primary guides, check both the ID pattern and direct matches
     if (guideId === "guide1" || guideId === tour.guide1) {
@@ -29,7 +29,7 @@ export const useGuideNameInfo = (
       return { name: tour.guide3 || "", info: guide3Info };
     }
     
-    // Check if guideId contains guide names as fallback
+    // Additional checks for guides that might use full names as IDs
     if (tour.guide1 && guideId.includes(tour.guide1)) {
       return { name: tour.guide1, info: guide1Info };
     }

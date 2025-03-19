@@ -51,6 +51,9 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
           <GroupsGrid
             tourGroups={localTourGroups}
             tour={tour}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onDragStart={handleDragStart}

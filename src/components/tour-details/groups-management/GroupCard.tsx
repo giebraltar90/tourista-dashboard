@@ -6,6 +6,7 @@ import { TourCardProps } from "@/components/tours/TourCard";
 import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
+import { useGuideNameInfo } from "@/hooks/group-management";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -21,6 +22,9 @@ interface GroupCardProps {
   } | null;
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
+  guide1Info: any;
+  guide2Info: any;
+  guide3Info: any;
 }
 
 export const GroupCard = ({
@@ -33,8 +37,14 @@ export const GroupCard = ({
   onMoveClick,
   selectedParticipant,
   handleMoveParticipant,
-  isMovePending
+  isMovePending,
+  guide1Info,
+  guide2Info,
+  guide3Info
 }: GroupCardProps) => {
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+  const { name: guideName } = getGuideNameAndInfo(group.guideId);
+  
   return (
     <ParticipantDropZone 
       groupIndex={groupIndex}
@@ -57,7 +67,7 @@ export const GroupCard = ({
             </Badge>
           </div>
           <CardDescription>
-            Guide: {groupIndex === 0 ? tour.guide1 : tour.guide2 || tour.guide1}
+            Guide: {guideName !== "Unassigned" ? guideName : "Unassigned"}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-4">
