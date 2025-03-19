@@ -1,4 +1,3 @@
-
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { 
   Card, 
@@ -13,7 +12,7 @@ import { TourFilters } from "@/components/tours/TourFilters";
 import { CalendarView } from "@/components/tours/CalendarView";
 import { TabbedToursView } from "@/components/tours/TabbedToursView";
 import { TourBusinessRules } from "@/components/tours/TourBusinessRules";
-import { useGuideTours } from "@/hooks/useGuideData";
+import { useGuideTours } from "@/hooks/guides";
 import { useRole } from "@/contexts/RoleContext";
 import { TestDataControls } from "@/components/tours/TestDataControls";
 

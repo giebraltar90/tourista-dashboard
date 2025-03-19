@@ -16,7 +16,7 @@ import { TourOverview } from "@/components/tour-details/TourOverview";
 import { GroupsManagement, GroupGuideManagement } from "@/components/tour-details/groups-management";
 import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
-import { useGuideInfo } from "@/hooks/useGuideData";
+import { useGuideInfo } from "@/hooks/guides";
 import { useQueryClient } from "@tanstack/react-query";
 
 const TourDetails = () => {

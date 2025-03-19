@@ -8,7 +8,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsTable } from "./GroupsTable";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
-import { useGuideInfo, useGuideData } from "@/hooks/useGuideData";
+import { useGuideInfo, useGuideData } from "@/hooks/guides";
 import { 
   Dialog, 
   DialogContent, 

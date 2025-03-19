@@ -4,7 +4,7 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { useGuideInfo, useGuideData } from "@/hooks/useGuideData";
+import { useGuideInfo, useGuideData } from "@/hooks/guides";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { GroupCapacityAlert } from "./GroupCapacityAlert";
 import { GroupCapacityInfo } from "./GroupCapacityInfo";

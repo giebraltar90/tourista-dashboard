@@ -1,17 +1,10 @@
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription 
-} from "@/components/ui/dialog";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
-import { AddGroupForm } from "./AddGroupForm";
-import { EditGroupForm } from "./EditGroupForm";
-import { AssignGuideForm } from "./AssignGuideForm";
 import { DeleteGroupDialog } from "./DeleteGroupDialog";
+import { AddGroupDialog } from "./dialogs/AddGroupDialog";
+import { EditGroupDialog } from "./dialogs/EditGroupDialog";
+import { AssignGuideDialog } from "./dialogs/AssignGuideDialog";
 
 interface GroupDialogsProps {
   tourId: string;
@@ -85,59 +78,32 @@ export const GroupDialogs = ({
   
   return (
     <>
-      <Dialog open={isAddGroupOpen} onOpenChange={setIsAddGroupOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Group</DialogTitle>
-            <DialogDescription>
-              Create a new group and assign a guide to it.
-            </DialogDescription>
-          </DialogHeader>
-          <AddGroupForm 
-            tourId={tourId} 
-            onSuccess={() => setIsAddGroupOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <AddGroupDialog
+        tourId={tourId}
+        isOpen={isAddGroupOpen}
+        onOpenChange={setIsAddGroupOpen}
+      />
       
-      <Dialog open={isEditGroupOpen} onOpenChange={setIsEditGroupOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Group</DialogTitle>
-            <DialogDescription>
-              Modify group details and assignment.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedGroupIndex !== null && tour.tourGroups[selectedGroupIndex] && (
-            <EditGroupForm 
-              tourId={tourId}
-              group={tour.tourGroups[selectedGroupIndex]}
-              groupIndex={selectedGroupIndex}
-              onSuccess={() => setIsEditGroupOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedGroupIndex !== null && tour.tourGroups[selectedGroupIndex] && (
+        <EditGroupDialog
+          tourId={tourId}
+          group={tour.tourGroups[selectedGroupIndex]}
+          groupIndex={selectedGroupIndex}
+          isOpen={isEditGroupOpen}
+          onOpenChange={setIsEditGroupOpen}
+        />
+      )}
       
-      <Dialog open={isAssignGuideOpen} onOpenChange={setIsAssignGuideOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Assign Guide</DialogTitle>
-            <DialogDescription>
-              Choose a guide to assign to this group.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedGroupIndex !== null && tour.tourGroups[selectedGroupIndex] && (
-            <AssignGuideForm 
-              tourId={tourId}
-              groupIndex={selectedGroupIndex}
-              guides={getValidGuides()}
-              currentGuideId={tour.tourGroups[selectedGroupIndex].guideId || "_none"}
-              onSuccess={() => setIsAssignGuideOpen(false)}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+      {selectedGroupIndex !== null && tour.tourGroups[selectedGroupIndex] && (
+        <AssignGuideDialog
+          tourId={tourId}
+          groupIndex={selectedGroupIndex}
+          guides={getValidGuides()}
+          currentGuideId={tour.tourGroups[selectedGroupIndex].guideId || "_none"}
+          isOpen={isAssignGuideOpen}
+          onOpenChange={setIsAssignGuideOpen}
+        />
+      )}
       
       <DeleteGroupDialog
         isOpen={isDeleteDialogOpen}
