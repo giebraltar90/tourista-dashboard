@@ -67,7 +67,14 @@ export const AssignGuideForm = ({
       
       await assignGuide(groupIndex, values.guideId);
       
-      toast.success("Guide assigned successfully");
+      // Also update the group name based on the guide if it uses the default naming pattern
+      const selectedGuide = guides.find(g => g.id === values.guideId);
+      if (selectedGuide) {
+        toast.success(`Guide ${selectedGuide.name} assigned successfully`);
+      } else {
+        toast.success("Guide assigned successfully");
+      }
+      
       onSuccess();
     } catch (error) {
       console.error("Error assigning guide:", error);

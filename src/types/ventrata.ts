@@ -20,7 +20,7 @@ export interface VentrataTourGroup {
 
 export interface VentrataTour {
   id: string;
-  date: Date; // Changed from string to Date
+  date: Date; // Date object
   location: string;
   tourName: string;
   tourType: 'food' | 'private' | 'default';
@@ -31,7 +31,7 @@ export interface VentrataTour {
   guide3?: string; // Added third guide for high season
   tourGroups: VentrataTourGroup[];
   numTickets?: number;
-  isHighSeason?: boolean; // Added flag for high season
+  isHighSeason?: boolean; // Flag for high season
 }
 
 export interface VentrataBooking {

@@ -3,7 +3,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { useGuideInfo } from "@/hooks/useGuideData";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -11,6 +12,26 @@ interface GroupsTableProps {
 }
 
 export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
+  // Get guide infos
+  const guide1Info = useGuideInfo(tour.guide1);
+  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
+  
+  // Helper to get guide name based on guideId
+  const getGuideName = (guideId?: string) => {
+    if (!guideId) return "Unassigned";
+    
+    if (guide1Info?.id === guideId) {
+      return tour.guide1;
+    } else if (guide2Info?.id === guideId) {
+      return tour.guide2 || "";
+    } else if (guide3Info?.id === guideId) {
+      return tour.guide3 || "";
+    }
+    
+    return "Unassigned";
+  };
+  
   return (
     <Table>
       <TableHeader>
@@ -30,7 +51,7 @@ export const GroupsTable = ({ tourGroups, tour }: GroupsTableProps) => {
             <TableCell className="font-medium">{group.name}</TableCell>
             <TableCell>{group.size}</TableCell>
             <TableCell>{group.entryTime}</TableCell>
-            <TableCell>{index === 0 ? tour.guide1 : tour.guide2 || tour.guide1}</TableCell>
+            <TableCell>{getGuideName(group.guideId)}</TableCell>
             <TableCell>
               {group.childCount ? (
                 <Badge variant="outline" className="bg-blue-100 text-blue-800">

@@ -11,12 +11,13 @@ export const useUpdateTourCapacity = (tourId: string) => {
     mutationFn: (updatedTour: VentrataTour) => {
       return updateTourCapacityApi(tourId, updatedTour);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       // Invalidate queries to refetch the data
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       
-      toast.success("Tour capacity updated successfully");
+      const isHighSeason = variables.isHighSeason;
+      toast.success(`Tour capacity updated to ${isHighSeason ? 'high season' : 'standard'} mode`);
     },
     onError: (error) => {
       console.error("Error updating tour capacity:", error);

@@ -6,7 +6,6 @@ import {
   PlusCircle, 
   UserPlus, 
   Users, 
-  Minus, 
   Edit, 
   AlertTriangle 
 } from "lucide-react";
@@ -68,10 +67,26 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   };
 
   const handleToggleHighSeason = async () => {
+    // Update the tour's high season flag
     await updateTourCapacity({
       ...tour,
       isHighSeason: !isHighSeason,
     });
+  };
+
+  // Helper to get guide name for display
+  const getGuideNameAndInfo = (guideId?: string) => {
+    if (!guideId) return { name: "Unassigned", info: null };
+    
+    if (guide1Info?.id === guideId) {
+      return { name: tour.guide1, info: guide1Info };
+    } else if (guide2Info?.id === guideId) {
+      return { name: tour.guide2 || "", info: guide2Info };
+    } else if (guide3Info?.id === guideId) {
+      return { name: tour.guide3 || "", info: guide3Info };
+    }
+    
+    return { name: "Unassigned", info: null };
   };
   
   return (
@@ -160,20 +175,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
             
             <div className="space-y-4">
               {tour.tourGroups.map((group, index) => {
-                const assignedGuideId = group.guideId;
-                let guideName = "Unassigned";
-                let guideInfo = null;
-                
-                if (assignedGuideId === guide1Info?.id) {
-                  guideName = tour.guide1;
-                  guideInfo = guide1Info;
-                } else if (assignedGuideId === guide2Info?.id) {
-                  guideName = tour.guide2 || "";
-                  guideInfo = guide2Info;
-                } else if (assignedGuideId === guide3Info?.id) {
-                  guideName = tour.guide3 || "";
-                  guideInfo = guide3Info;
-                }
+                const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
                 
                 return (
                   <div key={index} className="p-4 border rounded-md">
@@ -202,7 +204,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
                         </Button>
                         <Button 
                           size="sm" 
-                          variant="ghost"
+                          variant="outline"
                           onClick={() => handleGroupAction(index, 'assignGuide')}
                         >
                           <UserPlus className="h-4 w-4" />
