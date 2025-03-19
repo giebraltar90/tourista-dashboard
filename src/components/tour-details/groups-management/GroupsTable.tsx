@@ -33,13 +33,18 @@ export const GroupsTable = ({ tourGroups, tour, guide1Info, guide2Info, guide3In
       <TableBody>
         {tourGroups.map((group, index) => {
           const { name: guideName } = getGuideNameAndInfo(group.guideId);
+          const participantCount = group.participants?.length || 0;
           
           return (
             <TableRow key={index}>
               <TableCell className="font-medium">{group.name}</TableCell>
               <TableCell>{group.size || 0}</TableCell>
               <TableCell>{group.entryTime}</TableCell>
-              <TableCell>{guideName}</TableCell>
+              <TableCell>
+                {guideName !== "Unassigned" ? guideName : (
+                  <span className="text-muted-foreground">Unassigned</span>
+                )}
+              </TableCell>
               <TableCell>
                 {group.childCount ? (
                   <Badge variant="outline" className="bg-blue-100 text-blue-800">

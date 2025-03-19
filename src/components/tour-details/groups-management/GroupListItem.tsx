@@ -20,13 +20,16 @@ export const GroupListItem = ({
   guideInfo, 
   onAction 
 }: GroupListItemProps) => {
+  const participantCount = group.participants?.length || 0;
+  const totalPeople = group.size || 0;
+  
   return (
     <div className="p-4 border rounded-md">
       <div className="flex justify-between items-start">
         <div>
           <div className="flex items-center">
             <h4 className="font-medium">{group.name}</h4>
-            <Badge className="ml-2">{group.size} participants</Badge>
+            <Badge className="ml-2">{totalPeople} participants</Badge>
             {group.childCount && group.childCount > 0 && (
               <Badge variant="outline" className="ml-2 bg-blue-100 text-blue-800">
                 {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
@@ -66,22 +69,20 @@ export const GroupListItem = ({
       <div className="mt-3 flex items-center">
         <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />
         <span className="text-sm font-medium">Guide:</span>
-        {guideInfo ? (
+        {guideName && guideName !== "Unassigned" ? (
           <Badge variant="outline" className="ml-2 bg-green-100 text-green-800">
-            {guideName} ({guideInfo.guideType})
+            {guideName} {guideInfo?.guideType ? `(${guideInfo.guideType})` : ""}
           </Badge>
         ) : (
           <Badge variant="outline" className="ml-2 bg-yellow-100 text-yellow-800">
-            {guideName}
+            Unassigned
           </Badge>
         )}
       </div>
       
-      {group.participants && group.participants.length > 0 && (
-        <div className="mt-3">
-          <span className="text-sm font-medium">Participants: {group.participants.length}</span>
-        </div>
-      )}
+      <div className="mt-3">
+        <span className="text-sm font-medium">Participants: {participantCount}</span>
+      </div>
     </div>
   );
 };

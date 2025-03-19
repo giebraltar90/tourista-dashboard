@@ -13,17 +13,37 @@ export const useGuideNameInfo = (
 ) => {
   // Helper to get guide name for display
   const getGuideNameAndInfo = (guideId?: string) => {
+    // Default fallback case
     if (!guideId) return { name: "Unassigned", info: null };
     
-    if ((guideId === "guide1" || guideId === guide1Info?.id) && guide1Info) {
+    // For primary guides, check both the ID pattern and direct matches
+    if (guideId === "guide1" || guideId === tour.guide1) {
       return { name: tour.guide1, info: guide1Info };
-    } else if ((guideId === "guide2" || guideId === guide2Info?.id) && guide2Info) {
+    } 
+    
+    if (guideId === "guide2" || guideId === tour.guide2) {
       return { name: tour.guide2 || "", info: guide2Info };
-    } else if ((guideId === "guide3" || guideId === guide3Info?.id) && guide3Info) {
+    }
+    
+    if (guideId === "guide3" || guideId === tour.guide3) {
       return { name: tour.guide3 || "", info: guide3Info };
     }
     
-    return { name: "Unassigned", info: null };
+    // Check if guideId contains guide names as fallback
+    if (tour.guide1 && guideId.includes(tour.guide1)) {
+      return { name: tour.guide1, info: guide1Info };
+    }
+    
+    if (tour.guide2 && guideId.includes(tour.guide2)) {
+      return { name: tour.guide2, info: guide2Info };
+    }
+    
+    if (tour.guide3 && guideId.includes(tour.guide3)) {
+      return { name: tour.guide3, info: guide3Info };
+    }
+    
+    // If we still couldn't find a match, return the ID as name
+    return { name: guideId, info: null };
   };
   
   return { getGuideNameAndInfo };

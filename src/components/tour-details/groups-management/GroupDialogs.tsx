@@ -50,14 +50,14 @@ export const GroupDialogs = ({
   handleDeleteGroup,
   isDeleting
 }: GroupDialogsProps) => {
-  // Create an array of valid guides with proper ids
+  // Create an array of valid guides with properly formatted IDs for use in AssignGuideForm
   const getValidGuides = () => {
     const guides = [];
     
-    // Only add guides with valid data
+    // Primary guides - use consistent IDs
     if (tour.guide1) {
       guides.push({ 
-        id: guide1Info?.id || "guide1", 
+        id: "guide1", 
         name: tour.guide1, 
         info: guide1Info 
       });
@@ -65,7 +65,7 @@ export const GroupDialogs = ({
     
     if (tour.guide2) {
       guides.push({ 
-        id: guide2Info?.id || "guide2", 
+        id: "guide2", 
         name: tour.guide2, 
         info: guide2Info 
       });
@@ -73,17 +73,14 @@ export const GroupDialogs = ({
     
     if (tour.guide3) {
       guides.push({ 
-        id: guide3Info?.id || "guide3", 
+        id: "guide3", 
         name: tour.guide3, 
         info: guide3Info 
       });
     }
     
-    // Log for debugging
-    console.log("Available guides:", guides);
-    
     // Filter out any guides with empty names or IDs
-    return guides.filter(guide => guide.name && guide.id && guide.id.trim() !== "");
+    return guides.filter(guide => guide.name && guide.id);
   };
   
   return (
@@ -135,7 +132,7 @@ export const GroupDialogs = ({
               tourId={tourId}
               groupIndex={selectedGroupIndex}
               guides={getValidGuides()}
-              currentGuideId={tour.tourGroups[selectedGroupIndex].guideId}
+              currentGuideId={tour.tourGroups[selectedGroupIndex].guideId || "_none"}
               onSuccess={() => setIsAssignGuideOpen(false)}
             />
           )}

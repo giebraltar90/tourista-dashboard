@@ -1,4 +1,3 @@
-
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -17,35 +16,31 @@ export const useAssignGuide = (tourId: string) => {
       // If guideId is "_none", treat it as undefined to unassign the guide
       const actualGuideId = guideId === "_none" ? undefined : guideId;
       
-      // Find guide name for the group name update
-      let guideName = "";
+      // Find guide name for the modification description
+      let guideName = "Unassigned";
+      
       if (actualGuideId) {
-        // Check for primary guides first
-        if (actualGuideId === "guide1" || (tour.guide1 && actualGuideId.includes(tour.guide1))) {
+        // Primary guides
+        if (actualGuideId === "guide1" || actualGuideId === tour.guide1) {
           guideName = tour.guide1;
-        } else if (actualGuideId === "guide2" || (tour.guide2 && actualGuideId.includes(tour.guide2))) {
-          guideName = tour.guide2;
-        } else if (actualGuideId === "guide3" || (tour.guide3 && actualGuideId.includes(tour.guide3))) {
-          guideName = tour.guide3;
+        } else if (actualGuideId === "guide2" || actualGuideId === tour.guide2) {
+          guideName = tour.guide2 || "Guide 2";
+        } else if (actualGuideId === "guide3" || actualGuideId === tour.guide3) {
+          guideName = tour.guide3 || "Guide 3";
         } else {
-          // Try to find the guide by ID in the guides data
+          // Try to find guide by ID
           const guide = guides.find(g => g.id === actualGuideId);
           if (guide) {
             guideName = guide.name;
+          } else if (tour.guide1 && actualGuideId.includes(tour.guide1)) {
+            guideName = tour.guide1;
+          } else if (tour.guide2 && actualGuideId.includes(tour.guide2)) {
+            guideName = tour.guide2;
+          } else if (tour.guide3 && actualGuideId.includes(tour.guide3)) {
+            guideName = tour.guide3;
           }
         }
       }
-      
-      // Log the guide identification process
-      console.log("Guide assignment debug:", {
-        guideId: actualGuideId,
-        guideName,
-        guide1: tour.guide1,
-        guide2: tour.guide2,
-        guide3: tour.guide3,
-        guidesFromContext: guides.map(g => ({ id: g.id, name: g.name })),
-        originalGroup: tour.tourGroups[groupIndex]
-      });
       
       // Create a deep copy of tourGroups to avoid mutation issues
       const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
@@ -57,7 +52,7 @@ export const useAssignGuide = (tourId: string) => {
       // or if it's the first assignment, also update the name
       const namePattern = /^.+'s Group$/;
       if (namePattern.test(groupName) || groupName.includes("Group") || !updatedTourGroups[groupIndex].guideId) {
-        if (guideName) {
+        if (guideName && guideName !== "Unassigned") {
           groupName = `${guideName}'s Group`;
         }
         // Keep the existing name if we're removing a guide or couldn't find a guide name
@@ -79,14 +74,13 @@ export const useAssignGuide = (tourId: string) => {
       });
       
       // Call the API to update tour groups
-      const result = await updateTourGroups(tourId, updatedTourGroups);
-      console.log("Update API response:", result);
+      await updateTourGroups(tourId, updatedTourGroups);
       
       // Immediately refetch tour data to update UI
       await refetch();
       
       // Record this modification
-      const modificationDescription = guideName 
+      const modificationDescription = guideName !== "Unassigned"
         ? `Guide ${guideName} assigned to group ${updatedTourGroups[groupIndex].name}`
         : `Guide removed from group ${updatedTourGroups[groupIndex].name}`;
         
@@ -99,7 +93,7 @@ export const useAssignGuide = (tourId: string) => {
       });
       
       // Show toast notification based on the action
-      if (guideName) {
+      if (guideName !== "Unassigned") {
         toast.success(`Guide ${guideName} assigned to group successfully`);
       } else {
         toast.success("Guide removed from group");

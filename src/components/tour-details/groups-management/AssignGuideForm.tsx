@@ -54,10 +54,13 @@ export const AssignGuideForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
   
+  // Set the default value to "_none" if no guide is assigned
+  const defaultGuideId = currentGuideId === undefined || currentGuideId === "" ? "_none" : currentGuideId;
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      guideId: currentGuideId || "",
+      guideId: defaultGuideId,
     },
   });
   
@@ -104,8 +107,6 @@ export const AssignGuideForm = ({
   // Filter out any guides with empty ids to avoid the Select.Item error
   const validGuides = guides.filter(guide => guide.id && guide.id.trim() !== "");
   
-  console.log("Valid guides for assignment:", validGuides);
-  
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -115,7 +116,7 @@ export const AssignGuideForm = ({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Select Guide</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+              <Select onValueChange={field.onChange} defaultValue={field.value || "_none"}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose a guide" />
@@ -143,7 +144,7 @@ export const AssignGuideForm = ({
         />
         
         <div className="flex justify-between pt-2">
-          {currentGuideId && (
+          {currentGuideId && currentGuideId !== "_none" && (
             <Button 
               type="button" 
               variant="outline" 
