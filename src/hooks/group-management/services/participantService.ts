@@ -94,30 +94,58 @@ export const moveParticipant = (
 
 /**
  * Update the participant's group assignment in Supabase database
+ * Significantly improved with retry logic and better error handling
  */
 export const updateParticipantGroupInDatabase = async (
   participantId: string,
   newGroupId: string
 ): Promise<boolean> => {
-  try {
-    console.log(`Updating participant ${participantId} to group ${newGroupId} in database`);
-    
-    const { error } = await supabase
-      .from('participants')
-      .update({ group_id: newGroupId })
-      .eq('id', participantId);
-      
-    if (error) {
-      console.error("Error updating participant in database:", error);
-      return false;
-    }
-    
-    console.log(`Successfully updated participant ${participantId} in database`);
-    return true;
-  } catch (error) {
-    console.error("Exception updating participant in database:", error);
+  if (!participantId || !newGroupId) {
+    console.error("Missing required parameters for updateParticipantGroupInDatabase");
     return false;
   }
+
+  // Maximum retry attempts
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+  let success = false;
+
+  while (attempt < MAX_RETRIES && !success) {
+    try {
+      console.log(`Updating participant ${participantId} to group ${newGroupId} in database (attempt ${attempt + 1})`);
+      
+      const { error } = await supabase
+        .from('participants')
+        .update({ group_id: newGroupId })
+        .eq('id', participantId);
+        
+      if (error) {
+        console.error(`Error updating participant in database (attempt ${attempt + 1}):`, error);
+      } else {
+        console.log(`Successfully updated participant ${participantId} in database`);
+        
+        // Add a delay to let the database update settle
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        success = true;
+        break;
+      }
+    } catch (error) {
+      console.error(`Exception updating participant in database (attempt ${attempt + 1}):`, error);
+    }
+    
+    // Increment attempt counter
+    attempt++;
+    
+    // Only delay if we're going to retry
+    if (!success && attempt < MAX_RETRIES) {
+      const backoffTime = Math.min(300 * Math.pow(2, attempt), 2000); // Exponential backoff
+      console.log(`Waiting ${backoffTime}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, backoffTime));
+    }
+  }
+  
+  return success;
 };
 
 /**
@@ -149,40 +177,6 @@ export const fetchParticipantsForGroup = async (groupId: string) => {
     return data || [];
   } catch (error) {
     console.error("Error in fetchParticipantsForGroup:", error);
-    return [];
-  }
-};
-
-/**
- * Creates test participants for a tour group
- */
-export const createTestParticipantsForGroup = async (groupId: string, count: number = 3) => {
-  try {
-    const participants = [];
-    
-    for (let i = 0; i < count; i++) {
-      participants.push({
-        group_id: groupId,
-        name: `Test Participant ${i+1}`,
-        count: 1 + (i % 3),
-        booking_ref: `BR-${Math.floor(100000 + Math.random() * 900000)}`,
-        child_count: i % 2
-      });
-    }
-    
-    const { data, error } = await supabase
-      .from('participants')
-      .insert(participants)
-      .select();
-      
-    if (error) {
-      console.error("Error creating test participants:", error);
-      throw error;
-    }
-    
-    return data;
-  } catch (error) {
-    console.error("Error in createTestParticipantsForGroup:", error);
     return [];
   }
 };

@@ -24,6 +24,7 @@ export const prepareGroupUpdate = (
   let groupName = updatedTourGroups[groupIndex].name || `Group ${groupIndex + 1}`;
   
   // Generate a new group name only if we're assigning a guide (not unassigning)
+  // and only if the current name follows the default pattern
   let newGroupName = groupName;
   if (actualGuideId) {
     newGroupName = generateGroupName(groupName, guideName);
@@ -80,6 +81,7 @@ export const recordGuideAssignmentModification = async (
 
 /**
  * Persist guide ID with improved error handling and multiple retry attempts
+ * This is a more aggressive approach that will try multiple times with exponential backoff
  */
 export const persistGuideAssignment = async (
   tourId: string,
@@ -93,7 +95,7 @@ export const persistGuideAssignment = async (
   }
 
   // Maximum number of retry attempts
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
   let attempt = 0;
   let success = false;
 
@@ -104,7 +106,15 @@ export const persistGuideAssignment = async (
         name: groupName
       });
 
-      // Directly update the group in Supabase with a delay between retries
+      // First, try the direct updateGuideInSupabase function which has its own retry mechanism
+      success = await updateGuideInSupabase(tourId, groupId, guideId, groupName);
+      
+      if (success) {
+        console.log("Successfully persisted guide assignment using updateGuideInSupabase");
+        break;
+      }
+      
+      // If that fails, try a direct Supabase call
       const { error } = await supabase
         .from('tour_groups')
         .update({
@@ -115,11 +125,11 @@ export const persistGuideAssignment = async (
         .eq('tour_id', tourId);
         
       if (!error) {
-        console.log("Successfully persisted guide assignment");
+        console.log("Successfully persisted guide assignment with direct Supabase call");
         success = true;
         
         // Force a delay to allow the database to settle
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 500));
         break;
       } else {
         console.error(`Failed to persist guide assignment (attempt ${attempt + 1}/${MAX_RETRIES}):`, error);
@@ -133,7 +143,7 @@ export const persistGuideAssignment = async (
     
     // Only wait between retries if we're going to retry
     if (!success && attempt < MAX_RETRIES) {
-      const delay = Math.min(300 * Math.pow(2, attempt), 2000); // Exponential backoff
+      const delay = Math.min(500 * Math.pow(2, attempt), 5000); // Exponential backoff with max 5s
       console.log(`Waiting ${delay}ms before retry...`);
       await new Promise(resolve => setTimeout(resolve, delay));
     }

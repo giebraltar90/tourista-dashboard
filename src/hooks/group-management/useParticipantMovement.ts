@@ -75,6 +75,9 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
       .then(success => {
         if (success) {
           console.log(`Successfully updated participant ${participant.id} in database`);
+          
+          // Only show success message for database update
+          toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
         } else {
           console.error(`Failed to update participant ${participant.id} in database`);
           toast.error("Failed to save changes in database. Try refreshing the page.");
@@ -86,13 +89,11 @@ export const useParticipantMovement = (tourId: string, initialGroups: VentrataTo
       });
     
     // Then attempt to update the groups on the server
+    // This uses the improved useUpdateTourGroups hook which won't invalidate queries immediately
     updateTourGroupsMutation.mutate(updatedGroups, {
       onError: (error) => {
         console.error("API Error:", error);
         toast.error("Changes saved locally only. Server update failed.");
-      },
-      onSuccess: () => {
-        toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
       }
     });
     

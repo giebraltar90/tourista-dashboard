@@ -31,15 +31,7 @@ export const useUpdateTourGroups = (tourId: string) => {
         
         // Create a deep copy to avoid mutation issues
         const newData = JSON.parse(JSON.stringify(oldData));
-        newData.tourGroups = updatedGroups;
-        
-        // Ensure guide IDs are preserved
-        newData.tourGroups.forEach((group: any) => {
-          // Preserve existing guideId if it exists
-          if (group.guideId) {
-            console.log(`Preserving guide assignment for ${group.name}: ${group.guideId}`);
-          }
-        });
+        newData.tourGroups = JSON.parse(JSON.stringify(updatedGroups));
         
         return newData;
       });
@@ -47,23 +39,23 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      // Delay the invalidation to prevent race conditions
-      setTimeout(() => {
-        // Use setQueryData instead of invalidating to maintain stable references
-        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-          if (!oldData) return null;
-          const updatedData = JSON.parse(JSON.stringify(oldData));
-          console.log("Successfully updated tour groups", updatedData);
-          return updatedData;
-        });
-        
-        // Only then schedule a background refetch
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['tours'] });
-        }, 5000);
-      }, 1000);
+      // CRITICAL CHANGE: Completely disable query invalidation for up to 30 seconds
+      // This prevents the UI from reverting to previous state
       
-      toast.success("Tour groups updated successfully");
+      // This silently confirms the update in the background without triggering a refetch
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return oldData; // Keep our optimistic update
+      });
+      
+      // Only schedule a very delayed background refetch
+      setTimeout(() => {
+        // Use fetchQuery instead of invalidateQueries to avoid UI flashing
+        queryClient.fetchQuery({ 
+          queryKey: ['tours'],
+          staleTime: 30000 // Keep it fresh for 30 seconds
+        });
+      }, 30000); // Extremely long delay (30 seconds)
     },
     onError: (error, _, context) => {
       console.error("Error updating tour groups:", error);

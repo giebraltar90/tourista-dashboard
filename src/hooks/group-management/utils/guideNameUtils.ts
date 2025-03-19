@@ -1,3 +1,4 @@
+
 import { GuideInfo } from "@/types/ventrata";
 
 /**
@@ -54,4 +55,19 @@ export const generateGroupName = (currentName: string, guideName: string): strin
   
   // Otherwise, preserve the existing name
   return currentName;
+};
+
+/**
+ * Get guide name for assignment records and modifications
+ */
+export const getGuideNameForAssignment = (
+  actualGuideId: string | undefined,
+  currentTour: any,
+  guides: any[]
+): string => {
+  // For unassignment, use a standard name
+  if (!actualGuideId) return "Unassigned";
+  
+  // Find the guide name using the utility function
+  return findGuideName(actualGuideId, currentTour, guides);
 };

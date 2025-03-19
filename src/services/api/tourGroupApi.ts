@@ -130,12 +130,12 @@ export const updateGuideInSupabase = async (
         if (!error) {
           console.log(`Successfully updated guide assignment in Supabase on attempt ${attempt}`, data);
           // Force a delay to let the data settle in the database
-          await new Promise(resolve => setTimeout(resolve, 200));
+          await new Promise(resolve => setTimeout(resolve, 500));
           return true;
         }
         
         if (attempt < maxAttempts) {
-          const backoffTime = Math.min(100 * Math.pow(2, attempt), 3000); // Exponential backoff with max 3s
+          const backoffTime = Math.min(500 * Math.pow(2, attempt), 5000); // Exponential backoff with max 5s
           console.warn(`Attempt ${attempt} failed, retrying in ${backoffTime}ms...`, error);
           await new Promise(resolve => setTimeout(resolve, backoffTime));
         } else {
