@@ -17,8 +17,6 @@ interface GroupsGridProps {
   selectedParticipant: { participant: VentrataParticipant, fromGroupIndex: number } | null;
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
-  onAssignGuide?: (groupIndex: number) => void;
-  onEditGroup?: (groupIndex: number) => void;
 }
 
 export const GroupsGrid: React.FC<GroupsGridProps> = ({
@@ -33,9 +31,7 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
   onMoveClick,
   selectedParticipant,
   handleMoveParticipant,
-  isMovePending,
-  onAssignGuide,
-  onEditGroup
+  isMovePending
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

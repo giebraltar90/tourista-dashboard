@@ -6,7 +6,7 @@ import { VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { useModifications } from "@/hooks/useModifications";
 
-export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[]) => {
+export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] = []) => {
   const [isLoading, setIsLoading] = useState(false);
   const queryClient = useQueryClient();
   const { addModification } = useModifications(tourId);
@@ -77,12 +77,13 @@ export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[])
   });
 
   // Function to add a new group
-  const addGroup = async (data: { name?: string; entryTime?: string }) => {
+  const addGroup = async (data: { name?: string; entryTime?: string; guideId?: string }) => {
     const newGroup: VentrataTourGroup = {
       name: data.name || generateGroupName(),
       entryTime: data.entryTime || determineDefaultEntryTime(),
       size: 0, // No participants initially
       childCount: 0,
+      guideId: data.guideId,
       participants: [] // Initialize with empty participants array
     };
 

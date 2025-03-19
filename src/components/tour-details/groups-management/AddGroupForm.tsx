@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Form,
@@ -41,7 +40,7 @@ interface AddGroupFormProps {
 export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { guides } = useGuideData();
-  const { addGroup } = useAddGroup(tourId);
+  const { addGroup, isLoading } = useAddGroup(tourId, []);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -59,9 +58,7 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
       const groupData = {
         name: values.groupName,
         entryTime: values.entryTime,
-        size: 0,
         guideId: values.guideId || undefined,
-        participants: [],
       };
       
       console.log("Submitting new group:", groupData);
@@ -80,7 +77,7 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   };
   
   // Filter guides to only include those with valid IDs to prevent SelectItem errors
-  const validGuides = guides.filter(guide => guide && guide.id && guide.id.trim() !== "");
+  const validGuides = guides ? guides.filter(guide => guide && guide.id && guide.id.trim() !== "") : [];
   
   return (
     <Form {...form}>
@@ -146,8 +143,8 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
           <Button type="button" variant="outline" onClick={onSuccess}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Adding..." : "Add Group"}
+          <Button type="submit" disabled={isSubmitting || isLoading}>
+            {isSubmitting || isLoading ? "Adding..." : "Add Group"}
           </Button>
         </div>
       </form>
