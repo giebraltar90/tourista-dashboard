@@ -62,3 +62,45 @@ export const recordGuideAssignmentModification = async (
     console.error("Failed to record modification:", error);
   }
 };
+
+/**
+ * Persist guide ID to make sure it doesn't revert back
+ */
+export const persistGuideAssignment = async (
+  tourId: string,
+  groupId: string,
+  guideId: string | undefined,
+  groupName: string
+): Promise<boolean> => {
+  if (!isUuid(tourId) || !groupId) {
+    console.error("Cannot persist guide assignment: Invalid tour or group ID");
+    return false;
+  }
+
+  try {
+    console.log(`Persisting guide assignment for group ${groupId}:`, {
+      guide_id: guideId,
+      name: groupName
+    });
+
+    const { error } = await supabase
+      .from('tour_groups')
+      .update({
+        guide_id: guideId,
+        name: groupName
+      })
+      .eq('id', groupId)
+      .eq('tour_id', tourId);
+
+    if (error) {
+      console.error("Failed to persist guide assignment:", error);
+      return false;
+    }
+
+    console.log("Successfully persisted guide assignment");
+    return true;
+  } catch (error) {
+    console.error("Error persisting guide assignment:", error);
+    return false;
+  }
+};

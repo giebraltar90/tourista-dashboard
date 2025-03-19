@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { QueryClient } from "@tanstack/react-query";
 import { GuideInfo } from "@/types/ventrata";
 import { updateGuideInSupabase, updateTourGroups } from "@/services/api/tourGroupApi";
+import { persistGuideAssignment } from "./guideAssignmentService";
 
 /**
  * Prepare updated groups with new guide assignment
@@ -98,20 +99,21 @@ export const processGuideAssignment = async (
       tourGroups: groupsWithUpdates
     });
     
-    // Check if this is a UUID tour ID for direct database updates
-    const tourIsUuid = isUuid(tourId);
-    
     // Track if any persistence method succeeded
     let updateSuccess = false;
     
+    // Get the group ID for the direct update
+    const groupId = updatedTourGroups[groupIndex].id;
+    
     // First, directly try to update the specific group in Supabase if it's a UUID tour
-    if (tourIsUuid) {
-      const groupId = updatedTourGroups[groupIndex].id;
-      
-      if (groupId) {
-        const newGroupName = updatedTourGroups[groupIndex].name;
-        updateSuccess = await updateGuideInSupabase(tourId, groupId, actualGuideId, newGroupName);
-      }
+    if (isUuid(tourId) && groupId) {
+      // Use the new direct persistence function
+      updateSuccess = await persistGuideAssignment(
+        tourId, 
+        groupId, 
+        actualGuideId, 
+        groupsWithUpdates[groupIndex].name
+      );
     }
     
     // If direct update failed or it's not a UUID tour, try the updateTourGroups API function
@@ -128,6 +130,11 @@ export const processGuideAssignment = async (
       } else {
         toast.success("Guide removed from group");
       }
+      
+      // Force a refresh after a short delay to ensure data is fresh
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 1000);
     } else {
       toast.error("Could not persist guide assignment");
     }
