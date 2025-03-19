@@ -110,10 +110,10 @@ const TourDetails = () => {
         </div>
         
         {isBelowMinimum && (
-          <Alert variant="warning" className="bg-yellow-100 border-yellow-200">
-            <AlertCircle className="h-4 w-4 text-yellow-800" />
-            <AlertTitle className="text-yellow-800">Below Minimum Participants</AlertTitle>
-            <AlertDescription className="text-yellow-700">
+          <Alert variant="warning">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Below Minimum Participants</AlertTitle>
+            <AlertDescription>
               This tour has fewer than 4 participants. Consider rescheduling or combining with another tour.
             </AlertDescription>
           </Alert>
