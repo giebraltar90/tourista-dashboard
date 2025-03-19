@@ -105,7 +105,7 @@ export const AssignGuideForm = ({
   };
   
   // Filter out any guides with empty ids to avoid the Select.Item error
-  const validGuides = guides.filter(guide => guide.id && guide.id.trim() !== "");
+  const validGuides = guides ? guides.filter(guide => guide && guide.id && guide.id.trim() !== "") : [];
   
   return (
     <Form {...form}>

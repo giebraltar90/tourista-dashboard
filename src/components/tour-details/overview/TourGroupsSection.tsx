@@ -21,7 +21,7 @@ export const TourGroupsSection = ({
   guide3Info 
 }: TourGroupsSectionProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
-  const { guides } = useGuideData() || { guides: [] };
+  const { guides = [] } = useGuideData() || { guides: [] };
   
   // Create guide options for the select dropdown - making sure we handle undefined values
   const getGuideOptions = () => {

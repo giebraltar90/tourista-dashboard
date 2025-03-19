@@ -12,7 +12,7 @@ interface GuideOptionsListProps {
     id: string;
     name: string;
     info?: GuideInfo | null;
-  }>;
+  }> | undefined;
 }
 
 export const getValidGuides = ({ 
@@ -20,7 +20,7 @@ export const getValidGuides = ({
   guide1Info, 
   guide2Info, 
   guide3Info,
-  guides
+  guides = []
 }: GuideOptionsListProps) => {
   const options = [];
   
@@ -50,22 +50,24 @@ export const getValidGuides = ({
   }
   
   // Add other guides from the database
-  guides.forEach(guide => {
-    // Skip if this guide is already in the options by name
-    if (!options.some(g => g.name === guide.name)) {
-      options.push({ 
-        id: guide.id, 
-        name: guide.name, 
-        info: guide.info || guide 
-      });
-    }
-  });
+  if (guides && Array.isArray(guides)) {
+    guides.forEach(guide => {
+      // Skip if this guide is already in the options by name
+      if (!options.some(g => g.name === guide.name)) {
+        options.push({ 
+          id: guide.id, 
+          name: guide.name, 
+          info: guide.info || guide 
+        });
+      }
+    });
+  }
   
   return options.filter(guide => guide.name && guide.id);
 };
 
 // Helper to find guide name from ID
-export const getGuideName = (guideId: string | undefined, tour: TourCardProps, guides: any[]) => {
+export const getGuideName = (guideId: string | undefined, tour: TourCardProps, guides: any[] = []) => {
   if (!guideId) return "Unassigned";
   
   if (isUuid(guideId)) {

@@ -28,7 +28,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
-  const { guides } = useGuideData();
+  const { guides = [] } = useGuideData() || { guides: [] };
 
   const {
     localTourGroups,
