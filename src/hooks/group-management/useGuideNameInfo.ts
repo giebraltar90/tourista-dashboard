@@ -30,20 +30,20 @@ export const useGuideNameInfo = (
     }
     
     // Additional checks for guides that might use full names as IDs
-    if (tour.guide1 && guideId.includes(tour.guide1)) {
+    if (tour.guide1 && (typeof guideId === 'string') && guideId.includes(tour.guide1)) {
       return { name: tour.guide1, info: guide1Info };
     }
     
-    if (tour.guide2 && guideId.includes(tour.guide2)) {
+    if (tour.guide2 && (typeof guideId === 'string') && guideId.includes(tour.guide2)) {
       return { name: tour.guide2, info: guide2Info };
     }
     
-    if (tour.guide3 && guideId.includes(tour.guide3)) {
+    if (tour.guide3 && (typeof guideId === 'string') && guideId.includes(tour.guide3)) {
       return { name: tour.guide3, info: guide3Info };
     }
     
     // If we still couldn't find a match, return the ID as name
-    return { name: guideId, info: null };
+    return { name: typeof guideId === 'string' ? guideId : "Unknown", info: null };
   };
   
   return { getGuideNameAndInfo };

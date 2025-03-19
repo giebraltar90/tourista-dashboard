@@ -76,7 +76,7 @@ export const TourGroupGuide = ({
     }
   };
 
-  // Check if actually assigned
+  // Check if actually assigned and not just "Unassigned" text
   const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
 
   return (
@@ -124,9 +124,11 @@ export const TourGroupGuide = ({
                 <SelectContent>
                   <SelectItem value="_none">None (Unassigned)</SelectItem>
                   {guideOptions.map((guide) => (
-                    <SelectItem key={guide.id} value={guide.id}>
-                      {guide.name}
-                    </SelectItem>
+                    guide.name ? (
+                      <SelectItem key={guide.id} value={guide.id}>
+                        {guide.name}
+                      </SelectItem>
+                    ) : null
                   ))}
                 </SelectContent>
               </Select>

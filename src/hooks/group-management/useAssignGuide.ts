@@ -1,4 +1,3 @@
-
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -103,20 +102,22 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // Force invalidate all tour-related queries to ensure UI updates
-      queryClient.invalidateQueries({ queryKey: ['tours'] });
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      // Aggressive cache invalidation to ensure UI updates
+      queryClient.invalidateQueries();
       
-      // Immediately refetch tour data with fresh data from server
+      // Immediately refetch tour data
       await refetch();
       
-      // Add a small delay before refresh to ensure the UI updates
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tours'] });
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 300);
+      // Update tour data in the queryClient cache directly
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return {
+          ...oldData,
+          tourGroups: updatedTourGroups
+        };
+      });
       
-      // Show toast notification based on the action
+      // Notify about successful assignment
       if (guideName !== "Unassigned") {
         toast.success(`Guide ${guideName} assigned to group successfully`);
       } else {

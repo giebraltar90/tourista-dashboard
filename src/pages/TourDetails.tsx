@@ -31,6 +31,14 @@ const TourDetails = () => {
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
+  // Force data refresh when component mounts
+  useEffect(() => {
+    if (id) {
+      queryClient.invalidateQueries({ queryKey: ['tour', id] });
+      refetch();
+    }
+  }, [id, queryClient, refetch]);
+  
   // Refresh data when tab changes
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -46,15 +54,11 @@ const TourDetails = () => {
   useEffect(() => {
     if (!id) return;
     
-    // Refresh data when component mounts
-    queryClient.invalidateQueries({ queryKey: ['tour', id] });
-    refetch();
-    
     // Set up periodic refreshes
     const intervalId = setInterval(() => {
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
-    }, 10000); // Refresh every 10 seconds
+    }, 5000); // Refresh every 5 seconds
     
     return () => clearInterval(intervalId);
   }, [id, queryClient, refetch]);
@@ -116,8 +120,8 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement tour={tour} />
-              <GroupsManagement tour={tour} />
+              <GroupGuideManagement key={`guide-management-${tour.id}-${JSON.stringify(tour.tourGroups)}`} tour={tour} />
+              <GroupsManagement key={`groups-management-${tour.id}-${JSON.stringify(tour.tourGroups)}`} tour={tour} />
             </div>
           </TabsContent>
           
