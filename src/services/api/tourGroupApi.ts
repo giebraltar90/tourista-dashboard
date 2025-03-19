@@ -15,6 +15,14 @@ const isValidUuid = (str: string | undefined): boolean => {
 };
 
 /**
+ * Check if a guide ID is a special ID (guide1, guide2, guide3)
+ */
+const isSpecialGuideId = (guideId: string | undefined): boolean => {
+  if (!guideId) return false;
+  return guideId === "guide1" || guideId === "guide2" || guideId === "guide3";
+};
+
+/**
  * Update tour groups (e.g., move participants between groups)
  */
 export const updateTourGroups = async (
@@ -35,28 +43,25 @@ export const updateTourGroups = async (
         for (const group of updatedGroups) {
           // Check if the group has an id (existing group) or needs to be created
           if (group.id) {
-            // Convert non-UUID guide IDs to null before saving to the database
-            // This addresses the "invalid input syntax for type uuid" errors
+            // Special handling for guide IDs
+            // "guide1", "guide2", "guide3" are allowed to be stored directly
             let safeGuideId = null;
             
-            // Only use the guideId if it's a valid UUID
-            if (group.guideId && isValidUuid(group.guideId)) {
-              safeGuideId = group.guideId;
-            } else if (group.guideId) {
-              console.log(`Converting non-UUID guide ID to null: ${group.guideId}`);
+            if (group.guideId) {
+              if (isValidUuid(group.guideId) || isSpecialGuideId(group.guideId)) {
+                safeGuideId = group.guideId;
+              } else {
+                console.log(`Converting non-standard guide ID to null: ${group.guideId}`);
+              }
             }
             
             // Update existing group
             const updateData: any = {
               name: group.name,
               size: group.size || 0,
-              child_count: group.childCount || 0
+              child_count: group.childCount || 0,
+              guide_id: safeGuideId
             };
-            
-            // Only add guide_id if it's a valid UUID
-            if (safeGuideId !== undefined) {
-              updateData.guide_id = safeGuideId;
-            }
             
             // Add entryTime if it exists
             if (group.entryTime) {
@@ -76,10 +81,12 @@ export const updateTourGroups = async (
               return false;
             }
           } else {
-            // Handle non-UUID guide IDs for new groups too
+            // Handle special guide IDs for new groups too
             let safeGuideId = null;
-            if (group.guideId && isValidUuid(group.guideId)) {
-              safeGuideId = group.guideId;
+            if (group.guideId) {
+              if (isValidUuid(group.guideId) || isSpecialGuideId(group.guideId)) {
+                safeGuideId = group.guideId;
+              }
             }
             
             // Insert new group if no ID
@@ -90,7 +97,7 @@ export const updateTourGroups = async (
                 name: group.name,
                 size: group.size || 0,
                 entry_time: group.entryTime,
-                guide_id: safeGuideId, // Use null or a valid UUID
+                guide_id: safeGuideId,
                 child_count: group.childCount || 0
               });
               
@@ -129,7 +136,7 @@ export const updateTourGroups = async (
 export const updateGuideInSupabase = async (
   tourId: string,
   groupId: string, 
-  guideId: string | undefined, 
+  guideId: string | undefined | null, 
   newGroupName?: string
 ): Promise<boolean> => {
   if (!tourId || !groupId) {
@@ -138,16 +145,11 @@ export const updateGuideInSupabase = async (
   }
 
   try {
-    // Convert non-UUID guide IDs to null before saving to the database
-    // This addresses the "invalid input syntax for type uuid" errors
-    let safeGuideId = null;
+    // Special handling for guide1, guide2, guide3 IDs which should be preserved
+    const isSpecialId = guideId === "guide1" || guideId === "guide2" || guideId === "guide3";
     
-    // Only use the guideId if it's a valid UUID
-    if (guideId && isValidUuid(guideId)) {
-      safeGuideId = guideId;
-    } else if (guideId) {
-      console.log(`Converting non-UUID guide ID to null: ${guideId}`);
-    }
+    // Only use the guideId if it's a valid UUID or a special guide ID
+    const safeGuideId = guideId && (isValidUuid(guideId) || isSpecialId) ? guideId : null;
     
     console.log(`Updating guide assignment in Supabase for group ${groupId}:`, {
       guide_id: safeGuideId,
@@ -180,6 +182,8 @@ export const updateGuideInSupabase = async (
           await new Promise(resolve => setTimeout(resolve, 500));
           return true;
         }
+        
+        console.error("Guide assignment update error:", error);
         
         if (attempt < maxAttempts) {
           const backoffTime = Math.min(500 * Math.pow(2, attempt), 5000); // Exponential backoff with max 5s

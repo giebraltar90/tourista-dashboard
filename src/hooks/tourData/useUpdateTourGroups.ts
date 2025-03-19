@@ -44,21 +44,18 @@ export const useUpdateTourGroups = (tourId: string) => {
     },
     onSuccess: () => {
       // CRITICAL: Permanently disable query invalidation
-      // This prevents the UI from reverting to previous state
+      // This prevents the UI from reverting to previous state after tab switches
       
       // This silently confirms the update in the background without triggering a refetch
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
-        return oldData; // Keep our optimistic update
+        return oldData; // Keep our optimistic update instead of refetching
       });
       
-      // Cancel any pending queries that might still be in flight
+      // Disable the automatic background refetches that React Query does
+      // This is the key to preventing the UI from refreshing and losing our changes
       queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       queryClient.cancelQueries({ queryKey: ['tours'] });
-      
-      // IMPORTANT: Never refresh the data automatically
-      // Let the user manually refresh when they want fresh data
-      // This prevents any data loss between tab changes
       
       console.log("Successfully updated tour groups - permanently disabled revalidation");
       toast.success("Changes saved successfully");

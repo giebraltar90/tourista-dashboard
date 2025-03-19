@@ -20,23 +20,28 @@ export const persistGuideAssignmentChanges = async (
   let updateSuccess = false;
   
   // NEVER try to save non-UUID guide IDs directly to the database
-  // Instead, save them as null or convert to valid UUIDs
-  let safeGuideId = null;
-  if (actualGuideId && isUuid(actualGuideId)) {
+  // Special handling for guide1, guide2, guide3 IDs which are not UUIDs
+  const isSpecialGuideId = actualGuideId === "guide1" || actualGuideId === "guide2" || actualGuideId === "guide3";
+  
+  // Determine what to save in the database
+  let safeGuideId: string | null = null;
+  if (actualGuideId && (isUuid(actualGuideId) || isSpecialGuideId)) {
     safeGuideId = actualGuideId;
   } else if (actualGuideId) {
-    // Log that we're not using a UUID guide ID in the database
-    console.log(`Non-UUID guide ID will be saved as null: ${actualGuideId}`);
+    console.log(`Non-standard guide ID format: ${actualGuideId}`);
   }
+  
+  console.log(`Persisting guide assignment: ${safeGuideId} for group ${groupId} in tour ${tourId}`);
   
   // First attempt: direct Supabase update with the most reliable method
   if (tourId && groupId) {
     try {
       // Use the improved updateGuideInSupabase method with retry logic
+      // This function specifically handles special guide IDs
       updateSuccess = await updateGuideInSupabase(
         tourId, 
         groupId, 
-        safeGuideId, // Use null or a valid UUID
+        safeGuideId, 
         groupName
       );
       
@@ -57,7 +62,7 @@ export const persistGuideAssignmentChanges = async (
       updateSuccess = await persistGuideAssignment(
         tourId, 
         groupId, 
-        safeGuideId, // Use null or a valid UUID
+        safeGuideId,
         groupName
       );
       
@@ -76,16 +81,17 @@ export const persistGuideAssignmentChanges = async (
   if (!updateSuccess) {
     console.log("Falling back to updateTourGroups API as last resort");
     try {
-      // Prepare tour groups for database update - sanitize guide IDs
+      // Prepare tour groups for database update - preserve special guide IDs
       const sanitizedGroups = updatedGroups.map(group => {
-        if (!group.guideId || isUuid(group.guideId)) {
-          return group; // Keep valid UUIDs or null/undefined
+        // Don't modify the group if it's not the one we're updating
+        if (group.id !== groupId) {
+          return group;
         }
         
-        // For non-UUID guide IDs, create a copy with null guideId
+        // For the group we're updating, set the guide ID correctly
         return {
           ...group,
-          guideId: null
+          guideId: safeGuideId
         };
       });
       
@@ -101,7 +107,6 @@ export const persistGuideAssignmentChanges = async (
 
 /**
  * Updates the UI with optimistic updates and handles success/failure messaging
- * This now completely disables immediate query invalidation which was causing the reversion
  */
 export const handleUIUpdates = async (
   tourId: string,
@@ -119,14 +124,8 @@ export const handleUIUpdates = async (
       toast.success("Guide removed from group");
     }
     
-    // CRITICAL CHANGE: Never invalidate queries immediately, let the optimistic update persist
+    // CRITICAL: Never invalidate queries immediately
     // This solves the problem of guides "changing back" after assignment
-    
-    // Permanently disable automatic query invalidation
-    queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-      if (!oldData) return null;
-      return oldData; // Return the current state, already updated optimistically
-    });
     
     // Cancel any in-flight queries that might overwrite our changes
     queryClient.cancelQueries({ queryKey: ['tour', tourId] });
@@ -139,14 +138,16 @@ export const handleUIUpdates = async (
 };
 
 /**
- * Performs optimistic UI update - completely rewritten to do a proper deep clone 
- * and preserve all properties without risk of reference issues
+ * Performs optimistic UI update with proper deep cloning
  */
 export const performOptimisticUpdate = (
   queryClient: QueryClient,
   tourId: string,
   updatedGroups: any[]
 ): void => {
+  // Do a proper deep clone to avoid reference issues
+  const groupsCopy = JSON.parse(JSON.stringify(updatedGroups));
+  
   queryClient.setQueryData(['tour', tourId], (oldData: any) => {
     if (!oldData) return null;
     
@@ -154,8 +155,7 @@ export const performOptimisticUpdate = (
     const newData = JSON.parse(JSON.stringify(oldData));
     
     // Replace the tour groups with our updated version
-    // This is key - we're completely replacing the groups array, not modifying it
-    newData.tourGroups = JSON.parse(JSON.stringify(updatedGroups));
+    newData.tourGroups = groupsCopy;
     
     return newData;
   });

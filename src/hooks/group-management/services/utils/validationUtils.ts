@@ -2,48 +2,36 @@
 import { toast } from "sonner";
 
 /**
- * Validates input parameters for guide assignment
+ * Validates inputs for guide assignment
  */
 export const validateGuideAssignmentInputs = (
-  tourId: string,
-  groupIndex: number,
-  currentTour: any,
+  tourId: string, 
+  groupIndex: number, 
+  currentTour: any, 
   updatedTourGroups: any[]
-): { 
-  isValid: boolean; 
-  errorMessage?: string;
-  groupId?: string;
-  groupName?: string;
-} => {
-  // Check for tour data
-  if (!currentTour) {
-    const errorMessage = "Tour not found";
-    console.error(errorMessage);
-    toast.error(errorMessage);
-    return { isValid: false, errorMessage };
-  }
-  
-  // Validate tour ID
+) => {
   if (!tourId) {
-    const errorMessage = "Invalid tour ID";
-    console.error(errorMessage);
-    toast.error(errorMessage);
-    return { isValid: false, errorMessage };
+    console.error("Missing tour ID for guide assignment");
+    toast.error("Error: Missing tour information");
+    return { isValid: false };
   }
   
-  // Check if the group exists at the specified index
-  if (!updatedTourGroups[groupIndex]) {
-    const errorMessage = `Group at index ${groupIndex} does not exist`;
-    console.error(errorMessage);
-    toast.error(errorMessage);
-    return { isValid: false, errorMessage };
+  if (groupIndex < 0 || groupIndex >= updatedTourGroups.length) {
+    console.error(`Invalid group index: ${groupIndex}`);
+    toast.error("Error: Invalid group selection");
+    return { isValid: false };
   }
   
-  // Extract group data for convenience
-  const groupId = updatedTourGroups[groupIndex]?.id;
-  const groupName = updatedTourGroups[groupIndex]?.name || `Group ${groupIndex + 1}`;
+  const groupId = updatedTourGroups[groupIndex].id;
+  if (!groupId) {
+    console.error(`Group at index ${groupIndex} has no ID`);
+    toast.error("Error: Group has no identifier");
+    return { isValid: false };
+  }
   
-  return { 
+  const groupName = updatedTourGroups[groupIndex].name || `Group ${groupIndex + 1}`;
+  
+  return {
     isValid: true,
     groupId,
     groupName
