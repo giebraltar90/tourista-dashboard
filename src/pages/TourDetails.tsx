@@ -18,6 +18,7 @@ import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 import { useGuideInfo } from "@/hooks/guides";
 import { useQueryClient } from "@tanstack/react-query";
+import { VentrataParticipant } from "@/types/ventrata";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();

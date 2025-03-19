@@ -1,4 +1,3 @@
-
 import { TourModification } from "@/types/ventrata";
 import { VentrataParticipant, VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 
@@ -13,14 +12,7 @@ export interface TourCardProps {
   guide1: string;
   guide2: string;
   guide3: string;
-  tourGroups: {
-    id?: string;
-    name: string;
-    size: number;
-    entryTime: string;
-    childCount?: number;
-    guideId?: string;
-  }[];
+  tourGroups: VentrataTourGroup[];
   numTickets: number;
   isHighSeason: boolean;
   modifications?: TourModification[];

@@ -11,6 +11,7 @@ import { GroupCapacityAlert } from "./GroupCapacityAlert";
 import { GroupCapacityInfo } from "./GroupCapacityInfo";
 import { GroupActions } from "./components/GroupActions";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
+import { VentrataTourGroup } from "@/types/ventrata";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -24,6 +25,12 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
 
+  // Ensure tourGroups are properly initialized with participants
+  const normalizedTourGroups: VentrataTourGroup[] = tour.tourGroups.map(group => ({
+    ...group,
+    participants: []
+  }));
+
   const {
     localTourGroups,
     selectedParticipant,
@@ -35,7 +42,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     isMovePending
   } = useGroupManagement(tour);
 
-  // Get dialog management
+  // Get dialog management - pass the tour object
   const {
     openAddGroupDialog,
     openDeleteDialog,

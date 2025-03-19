@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Form,
@@ -23,6 +24,7 @@ import { z } from "zod";
 import { useGuideData } from "@/hooks/useGuideData";
 import { useAddGroup } from "@/hooks/group-management";
 import { toast } from "sonner";
+import { VentrataTourGroup } from "@/types/ventrata";
 
 const formSchema = z.object({
   groupName: z.string().min(1, "Group name is required"),
@@ -40,7 +42,10 @@ interface AddGroupFormProps {
 export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { guides } = useGuideData();
-  const { addGroup, isLoading } = useAddGroup(tourId, []);
+  
+  // Get the existing groups to pass to the useAddGroup hook
+  const existingGroups: VentrataTourGroup[] = []; // We'll pass an empty array and let the hook handle it
+  const { addGroup, isLoading } = useAddGroup(tourId, existingGroups);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
