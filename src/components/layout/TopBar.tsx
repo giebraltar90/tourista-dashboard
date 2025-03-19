@@ -14,11 +14,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 interface TopBarProps {
   sidebarCollapsed: boolean;
   onToggleSidebar: () => void;
 }
+
+// Demo notifications data
+const notifications = [
+  { id: 1, title: "New booking", description: "Tour #1234 has a new booking", time: "10 mins ago" },
+  { id: 2, title: "Guide update", description: "Maria Lopez updated her availability", time: "30 mins ago" },
+  { id: 3, title: "Tour cancelled", description: "City tour on May 15 was cancelled", time: "1 hour ago" },
+  { id: 4, title: "System update", description: "New features available", time: "Yesterday" },
+];
 
 export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
   const { guideView, role } = useRole();
@@ -70,13 +80,44 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           "ml-auto flex items-center gap-4 transition-all duration-300",
           sidebarCollapsed ? "pr-4" : ""
         )}>
-          <div className="hidden md:flex items-center gap-1">
-            <Button variant="ghost" size="icon">
-              <Search className="h-5 w-5" />
-            </Button>
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
+          {/* Search Bar */}
+          <div className="hidden md:flex relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              className="pl-8 h-9 w-full bg-muted/50 border-none focus-visible:ring-1"
+            />
+          </div>
+          
+          {/* Notifications */}
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell className="h-5 w-5" />
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center" variant="destructive">
+                    {notifications.length}
+                  </Badge>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {notifications.map(notification => (
+                  <DropdownMenuItem key={notification.id} className="flex flex-col items-start py-2 gap-1">
+                    <div className="flex justify-between w-full">
+                      <span className="font-medium">{notification.title}</span>
+                      <span className="text-xs text-muted-foreground">{notification.time}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{notification.description}</p>
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="text-center justify-center text-primary">
+                  View all notifications
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           
           <RoleSwitcher />
