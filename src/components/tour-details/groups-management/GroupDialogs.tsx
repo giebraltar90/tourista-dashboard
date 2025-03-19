@@ -79,6 +79,9 @@ export const GroupDialogs = ({
       });
     }
     
+    // Log for debugging
+    console.log("Available guides:", guides);
+    
     // Filter out any guides with empty names or IDs
     return guides.filter(guide => guide.name && guide.id && guide.id.trim() !== "");
   };

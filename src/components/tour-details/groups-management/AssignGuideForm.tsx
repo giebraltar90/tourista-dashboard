@@ -71,9 +71,9 @@ export const AssignGuideForm = ({
         currentGuideId
       });
       
+      // Call the assign guide function with the selected guide ID
       await assignGuide(groupIndex, values.guideId);
       
-      // Toast is now in the assignGuide hook
       onSuccess();
     } catch (error) {
       console.error("Error assigning guide:", error);
@@ -89,9 +89,9 @@ export const AssignGuideForm = ({
       
       console.log("Removing guide from group:", { groupIndex });
       
-      await assignGuide(groupIndex, undefined);
+      // Use "_none" as special value to remove the guide
+      await assignGuide(groupIndex, "_none");
       
-      // Toast is in the assignGuide hook now
       onSuccess();
     } catch (error) {
       console.error("Error removing guide:", error);
@@ -122,7 +122,6 @@ export const AssignGuideForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {/* Using a special value like "_none" instead of empty string */}
                   <SelectItem value="_none">None (Unassigned)</SelectItem>
                   {validGuides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
