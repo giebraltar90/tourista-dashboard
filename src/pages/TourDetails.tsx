@@ -27,30 +27,32 @@ const TourDetails = () => {
   const isInitialLoad = useRef(true);
   const lastRefetchTime = useRef(Date.now());
   
-  console.log("TourDetails rendering with ID:", id);
+  // Always ensure id has a value for the query
+  const tourId = id || "";
+  console.log("TourDetails rendering with ID:", tourId);
   
-  const { data: tour, isLoading, error, refetch } = useTourById(id || "");
+  const { data: tour, isLoading, error, refetch } = useTourById(tourId);
   
   console.log("Tour data loaded:", tour);
   
-  // Only attempt to get guide info if tour data has loaded and guide names exist
-  const guide1Info = (tour?.guide1) ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = (tour?.guide2) ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = (tour?.guide3) ? useGuideInfo(tour.guide3) : null;
+  // Ensure that guide info hooks are only called when tour data is available
+  const guide1Info = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
+  const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
   const handleRefetch = useCallback(() => {
-    if (id) {
+    if (tourId) {
       console.log("Manually refreshing tour data");
-      queryClient.invalidateQueries({ queryKey: ['tour', id] });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       refetch();
       lastRefetchTime.current = Date.now();
     }
-  }, [id, queryClient, refetch]);
+  }, [tourId, queryClient, refetch]);
   
   // Initial load effect
   useEffect(() => {
-    if (id && isInitialLoad.current) {
-      console.log("Initial load, invalidating queries for tour:", id);
+    if (tourId && isInitialLoad.current) {
+      console.log("Initial load, invalidating queries for tour:", tourId);
       handleRefetch();
       isInitialLoad.current = false;
     }
@@ -61,7 +63,7 @@ const TourDetails = () => {
         clearInterval(refreshTimer.current);
       }
     };
-  }, [id, handleRefetch]);
+  }, [tourId, handleRefetch]);
   
   const handleTabChange = useCallback((value: string) => {
     setActiveTab(value);
@@ -75,7 +77,7 @@ const TourDetails = () => {
   
   // Set up the periodic refresh timer
   useEffect(() => {
-    if (!id) return;
+    if (!tourId) return;
     
     if (refreshTimer.current) {
       clearInterval(refreshTimer.current);
@@ -94,7 +96,7 @@ const TourDetails = () => {
         clearInterval(refreshTimer.current);
       }
     };
-  }, [id, handleRefetch]);
+  }, [tourId, handleRefetch]);
   
   if (isLoading) {
     return (
@@ -114,22 +116,24 @@ const TourDetails = () => {
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Failed to load tour details (ID: {id}). Please try again.
+            Failed to load tour details (ID: {tourId}). Please try again.
           </AlertDescription>
         </Alert>
       </DashboardLayout>
     );
   }
 
-  // Ensure tourGroups is an array before rendering components that depend on it
-  if (!Array.isArray(tour.tourGroups)) {
-    tour.tourGroups = [];
-  }
+  // Normalize tour data to ensure all properties exist
+  const normalizedTour = {
+    ...tour,
+    tourGroups: Array.isArray(tour.tourGroups) ? tour.tourGroups : [],
+    modifications: Array.isArray(tour.modifications) ? tour.modifications : []
+  };
   
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
-        <TourHeader tour={tour} guide1Info={guide1Info} guide2Info={guide2Info} guide3Info={guide3Info} />
+        <TourHeader tour={normalizedTour} guide1Info={guide1Info} guide2Info={guide2Info} guide3Info={guide3Info} />
         
         <Tabs defaultValue="overview" value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
@@ -141,7 +145,7 @@ const TourDetails = () => {
           
           <TabsContent value="overview" className="space-y-4 mt-6">
             <TourOverview 
-              tour={tour} 
+              tour={normalizedTour} 
               guide1Info={guide1Info} 
               guide2Info={guide2Info}
               guide3Info={guide3Info}
@@ -150,14 +154,14 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement key={`guide-management-${tour.id}`} tour={tour} />
-              <GroupsManagement key={`groups-management-${tour.id}`} tour={tour} />
+              <GroupGuideManagement key={`guide-management-${normalizedTour.id}`} tour={normalizedTour} />
+              <GroupsManagement key={`groups-management-${normalizedTour.id}`} tour={normalizedTour} />
             </div>
           </TabsContent>
           
           <TabsContent value="tickets" className="space-y-4 mt-6">
             <TicketsManagement 
-              tour={tour} 
+              tour={normalizedTour} 
               guide1Info={guide1Info} 
               guide2Info={guide2Info}
               guide3Info={guide3Info}
@@ -165,7 +169,7 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="modifications" className="space-y-4 mt-6">
-            <ModificationsTab key={`modifications-${tour.id}`} tour={tour} />
+            <ModificationsTab key={`modifications-${normalizedTour.id}`} tour={normalizedTour} />
           </TabsContent>
         </Tabs>
       </div>

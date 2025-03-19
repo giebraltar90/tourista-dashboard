@@ -30,19 +30,21 @@ export const TourGroupGuide = ({
   guideInfo, 
   guideOptions 
 }: TourGroupGuideProps) => {
-  const { assignGuide } = useAssignGuide(tour.id);
+  const { assignGuide } = useAssignGuide(tour?.id || "");
   const [isAssigning, setIsAssigning] = useState(false);
-  const [selectedGuide, setSelectedGuide] = useState<string>(group.guideId || "_none");
-  const previousGuideIdRef = useRef<string | undefined>(group.guideId);
+  const [selectedGuide, setSelectedGuide] = useState<string>(group?.guideId || "_none");
+  const previousGuideIdRef = useRef<string | undefined>(group?.guideId);
   
   // Display name should default to "Group X" if not set
-  const displayName = group.name || `Group ${groupIndex + 1}`;
+  const displayName = group?.name || `Group ${groupIndex + 1}`;
   
   // Calculate group size directly from the size property
-  const totalGroupSize = group.size || 0;
+  const totalGroupSize = group?.size || 0;
   
   // Update our local state if the group's guideId changes from an external source
   useEffect(() => {
+    if (!group) return;
+    
     if (group.guideId !== previousGuideIdRef.current) {
       console.log(`Guide ID changed externally for group ${groupIndex}:`, { 
         previous: previousGuideIdRef.current, 
@@ -51,10 +53,10 @@ export const TourGroupGuide = ({
       setSelectedGuide(group.guideId || "_none");
       previousGuideIdRef.current = group.guideId;
     }
-  }, [group.guideId, groupIndex]);
+  }, [group, groupIndex]);
 
   const handleAssignGuide = async (guideId: string) => {
-    if (guideId === selectedGuide) return;
+    if (guideId === selectedGuide || !tour?.id) return;
     
     setIsAssigning(true);
     
@@ -70,15 +72,24 @@ export const TourGroupGuide = ({
     } catch (error) {
       // Revert optimistic update if there was an error
       console.error("Error assigning guide:", error);
-      setSelectedGuide(group.guideId || "_none");
-      previousGuideIdRef.current = group.guideId;
+      setSelectedGuide(group?.guideId || "_none");
+      previousGuideIdRef.current = group?.guideId;
     } finally {
       setIsAssigning(false);
     }
   };
 
-  // Use the local state instead of the potentially outdated group prop
-  const isGuideAssigned = (selectedGuide !== "_none" && selectedGuide !== undefined);
+  // Safely check if guide is assigned based on selectedGuide
+  const isGuideAssigned = selectedGuide !== "_none" && selectedGuide !== undefined;
+
+  // Guard against missing group data
+  if (!group) {
+    return (
+      <div className="p-4 rounded-lg border border-gray-200">
+        <p className="text-muted-foreground">Group data not available</p>
+      </div>
+    );
+  }
 
   return (
     <div className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
@@ -104,7 +115,7 @@ export const TourGroupGuide = ({
           isGuideAssigned={isGuideAssigned}
           isAssigning={isAssigning}
           selectedGuide={selectedGuide}
-          guideOptions={guideOptions}
+          guideOptions={guideOptions || []}
           onAssignGuide={handleAssignGuide}
           displayName={displayName}
         />

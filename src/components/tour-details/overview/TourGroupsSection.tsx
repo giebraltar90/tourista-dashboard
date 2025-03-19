@@ -20,10 +20,24 @@ export const TourGroupsSection = ({
   guide2Info, 
   guide3Info 
 }: TourGroupsSectionProps) => {
-  // Safely access tour and guide info
+  // Safely access tour and guide info with null checks
   const safeGuide1Info = guide1Info || null;
   const safeGuide2Info = guide2Info || null;
   const safeGuide3Info = guide3Info || null;
+  
+  // Make sure we have a valid tour object before proceeding
+  if (!tour) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Tour Groups & Guides</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Tour information not available</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, safeGuide1Info, safeGuide2Info, safeGuide3Info);
   const { guides = [] } = useGuideData() || { guides: [] };
@@ -33,7 +47,7 @@ export const TourGroupsSection = ({
     if (!tour) return [];
     
     const options = [
-      { id: "guide1", name: tour.guide1, info: safeGuide1Info },
+      { id: "guide1", name: tour.guide1 || "", info: safeGuide1Info },
       ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: safeGuide2Info }] : []),
       ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: safeGuide3Info }] : []),
     ];
@@ -52,8 +66,11 @@ export const TourGroupsSection = ({
     return options.filter(guide => guide && guide.name);
   };
 
-  // Guard against tour being undefined or tourGroups not being an array
-  if (!tour || !Array.isArray(tour.tourGroups)) {
+  // Ensure tourGroups is an array
+  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
+  
+  // If no tour groups, display a message
+  if (tourGroups.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -73,17 +90,18 @@ export const TourGroupsSection = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {tour.tourGroups.map((group, index) => {
-            const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId || "");
+          {tourGroups.map((group, index) => {
+            // Safe access to guide name and info with a fallback to empty string
+            const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group?.guideId || "");
             
             return (
               <TourGroupGuide
-                key={`group-${index}-${group.id || index}`}
+                key={`group-${index}-${group?.id || index}`}
                 tour={tour}
                 group={group}
                 groupIndex={index}
-                guideName={guideName}
-                guideInfo={guideInfo}
+                guideName={guideName || ""}
+                guideInfo={guideInfo || null}
                 guideOptions={getGuideOptions()}
               />
             );
