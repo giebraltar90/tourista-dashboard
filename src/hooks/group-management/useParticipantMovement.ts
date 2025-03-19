@@ -149,7 +149,7 @@ export const useParticipantMovement = (
     }
   }, [selectedParticipant, tourGroups, updateParticipantGroup, updateTourGroups]);
 
-  // Function to open the move dialog
+  // Function to open the move dialog (renamed for clarity)
   const handleOpenMoveDialog = useCallback((data: {
     participant: VentrataParticipant;
     fromGroupIndex: number;
@@ -157,7 +157,7 @@ export const useParticipantMovement = (
     setSelectedParticipant(data);
   }, []);
 
-  // Function to close the move dialog
+  // Function to close the move dialog (renamed for clarity)
   const handleCloseMoveDialog = useCallback(() => {
     setSelectedParticipant(null);
   }, []);

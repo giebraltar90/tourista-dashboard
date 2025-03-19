@@ -97,25 +97,59 @@ export const useGroupManagement = (tour: TourCardProps) => {
     }
   }, []);
 
+  // Get participant movement capabilities from the hook
   const {
     selectedParticipant,
-    setSelectedParticipant,
-    handleMoveParticipant: moveParticipant,
-    moveParticipant: moveParticipantLogic,
-    isMovePending
+    isMovePending,
+    handleMoveParticipant: moveParticipantToGroup,
+    handleOpenMoveDialog: setSelectedParticipant,
+    handleCloseMoveDialog: clearSelectedParticipant,
   } = useParticipantMovement(tour.id, localTourGroups);
   
+  // Use the correct moveParticipant function from within useParticipantMovement
   const { 
     handleDragStart,
     handleDragOver,
     handleDrop: dropParticipant,
     isDragPending
-  } = useDragAndDrop(tour.id, moveParticipantLogic);
+  } = useDragAndDrop(tour.id, (fromGroupIndex, toGroupIndex, participant, currentGroups) => {
+    // Create a deep copy to avoid mutation
+    const updatedGroups = JSON.parse(JSON.stringify(currentGroups));
+    
+    if (fromGroupIndex === toGroupIndex) {
+      return null;
+    }
+    
+    // Remove from source
+    if (updatedGroups[fromGroupIndex].participants) {
+      updatedGroups[fromGroupIndex].participants = 
+        updatedGroups[fromGroupIndex].participants.filter((p: any) => p.id !== participant.id);
+      
+      // Update counts
+      updatedGroups[fromGroupIndex].size = Math.max(0, (updatedGroups[fromGroupIndex].size || 0) - (participant.count || 1));
+      updatedGroups[fromGroupIndex].childCount = Math.max(0, (updatedGroups[fromGroupIndex].childCount || 0) - (participant.childCount || 0));
+    }
+    
+    // Add to destination
+    if (!updatedGroups[toGroupIndex].participants) {
+      updatedGroups[toGroupIndex].participants = [];
+    }
+    
+    // Update participant's group_id
+    const updatedParticipant = {...participant, group_id: updatedGroups[toGroupIndex].id};
+    updatedGroups[toGroupIndex].participants.push(updatedParticipant);
+    
+    // Update counts
+    updatedGroups[toGroupIndex].size = (updatedGroups[toGroupIndex].size || 0) + (participant.count || 1);
+    updatedGroups[toGroupIndex].childCount = (updatedGroups[toGroupIndex].childCount || 0) + (participant.childCount || 0);
+    
+    return updatedGroups;
+  });
   
   // Wrapper functions to pass the current state
   const handleMoveParticipant = (toGroupIndex: number) => {
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
-      moveParticipant(toGroupIndex, localTourGroups, setLocalTourGroups);
+      moveParticipantToGroup(toGroupIndex);
     } else {
       console.error("Invalid group index for move operation:", toGroupIndex);
       toast.error("Cannot move participant: Invalid group selection");
