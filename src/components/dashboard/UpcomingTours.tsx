@@ -13,18 +13,28 @@ import {
 import { Search, Filter } from "lucide-react";
 import { useTours } from "@/hooks/useTourData";
 import { UpcomingToursProps } from "./UpcomingTours.d";
+import { useGuideTours } from "@/hooks/useGuideData";
+import { useRole } from "@/contexts/RoleContext";
+import { Link } from "react-router-dom";
 
 export function UpcomingTours({ tours: propTours }: UpcomingToursProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
+  const { guideView } = useRole();
   
-  // Fetch tours from API using our React Query hook only if no tours were provided as props
-  const { data: apiTours, isLoading, error } = useTours({
-    enabled: !propTours
+  // Use guide tours if in guide view, otherwise use all tours
+  const { data: guideTours, isLoading: guideToursLoading, error: guideToursError } = useGuideTours();
+  const { data: apiTours, isLoading: allToursLoading, error: allToursError } = useTours({
+    enabled: !propTours && !guideView
   });
   
+  // Determine which tours to use
+  const useApiTours = guideView ? guideTours : apiTours;
+  const isLoading = guideView ? guideToursLoading : allToursLoading;
+  const error = guideView ? guideToursError : allToursError;
+  
   // Use provided tours from props if available, otherwise use tours from API
-  const tours = propTours || apiTours || [];
+  const tours = propTours || useApiTours || [];
   
   // Filter tours based on search query and location filter
   const filteredTours = tours.filter((tour) => {
@@ -48,7 +58,9 @@ export function UpcomingTours({ tours: propTours }: UpcomingToursProps) {
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <h2 className="text-xl font-semibold">Upcoming Tours</h2>
+        <h2 className="text-xl font-semibold">
+          {guideView ? "My Upcoming Tours" : "Upcoming Tours"}
+        </h2>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:w-64">
@@ -99,7 +111,9 @@ export function UpcomingTours({ tours: propTours }: UpcomingToursProps) {
           </div>
 
           <div className="flex justify-center mt-6">
-            <Button variant="outline">View All Tours</Button>
+            <Link to="/tours">
+              <Button variant="outline">View All Tours</Button>
+            </Link>
           </div>
         </>
       )}

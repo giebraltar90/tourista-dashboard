@@ -13,10 +13,20 @@ import { TourFilters } from "@/components/tours/TourFilters";
 import { CalendarView } from "@/components/tours/CalendarView";
 import { TabbedToursView } from "@/components/tours/TabbedToursView";
 import { TourBusinessRules } from "@/components/tours/TourBusinessRules";
+import { useGuideTours } from "@/hooks/useGuideData";
+import { useRole } from "@/contexts/RoleContext";
 
 const ToursPage = () => {
-  // Fetch tours from API
-  const { data: tours, isLoading, error } = useTours();
+  const { guideView } = useRole();
+  
+  // Use guide tours if in guide view, otherwise use all tours
+  const { data: guideTours, isLoading: guideToursLoading, error: guideToursError } = useGuideTours();
+  const { data: allTours, isLoading: allToursLoading, error: allToursError } = useTours();
+  
+  // Choose which data source to use based on guide view
+  const tours = guideView ? guideTours : allTours;
+  const isLoading = guideView ? guideToursLoading : allToursLoading;
+  const error = guideView ? guideToursError : allToursError;
   
   const {
     date,
@@ -36,7 +46,9 @@ const ToursPage = () => {
         <Card>
           <CardHeader className="pb-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <CardTitle>Tour Overview</CardTitle>
+              <CardTitle>
+                {guideView ? "My Tours" : "Tour Overview"}
+              </CardTitle>
               <TourFilters 
                 timeRange={timeRange}
                 onTimeRangeChange={setTimeRange}
@@ -73,7 +85,7 @@ const ToursPage = () => {
           </CardContent>
         </Card>
         
-        <TourBusinessRules />
+        {!guideView && <TourBusinessRules />}
       </div>
     </DashboardLayout>
   );
