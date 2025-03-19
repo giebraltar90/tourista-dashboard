@@ -5,8 +5,7 @@ import {
   TourInformationCard,
   ParticipantsCard,
   TicketsCard,
-  TourGroupsSection,
-  GuidesAssignedSection
+  TourGroupsSection
 } from "./overview";
 
 interface TourOverviewProps {
@@ -63,14 +62,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}
-      />
-      
-      <GuidesAssignedSection
-        tour={tour}
-        guide1Info={guide1Info}
-        guide2Info={guide2Info}
-        guide3Info={guide3Info}
-        getGuideTypeBadgeColor={getGuideTypeBadgeColor}
       />
     </div>
   );
