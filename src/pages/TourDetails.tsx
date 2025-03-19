@@ -33,10 +33,10 @@ const TourDetails = () => {
   
   console.log("Tour data loaded:", tour);
   
-  // Only attempt to get guide info if tour data has loaded
-  const guide1Info = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
+  // Only attempt to get guide info if tour data has loaded and guide names exist
+  const guide1Info = (tour?.guide1) ? useGuideInfo(tour.guide1) : null;
+  const guide2Info = (tour?.guide2) ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = (tour?.guide3) ? useGuideInfo(tour.guide3) : null;
   
   const handleRefetch = useCallback(() => {
     if (id) {

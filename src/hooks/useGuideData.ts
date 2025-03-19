@@ -43,7 +43,7 @@ export function useGuideData() {
 }
 
 export function useGuideInfo(guideName: string): GuideInfo | null {
-  const { guides } = useGuideData();
+  const { guides = [] } = useGuideData() || { guides: [] };
   
   return useMemo(() => {
     if (!guideName) return null;

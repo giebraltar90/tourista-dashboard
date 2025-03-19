@@ -19,10 +19,10 @@ interface GroupGuideManagementProps {
 }
 
 export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
-  const guide1Info = useGuideInfo(tour.guide1);
+  const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
-  const { guides } = useGuideData();
+  const { guides = [] } = useGuideData() || { guides: [] };
   
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);

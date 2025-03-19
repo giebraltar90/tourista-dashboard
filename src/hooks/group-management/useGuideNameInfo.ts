@@ -13,7 +13,7 @@ export const useGuideNameInfo = (
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null
 ) => {
-  const { guides } = useGuideData();
+  const { guides = [] } = useGuideData() || { guides: [] };
   
   // Helper to get guide name for display
   const getGuideNameAndInfo = (guideId?: string) => {
