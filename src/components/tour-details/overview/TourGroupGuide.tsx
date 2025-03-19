@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
@@ -41,10 +41,15 @@ export const TourGroupGuide = ({
   const { assignGuide } = useAssignGuide(tour.id);
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedGuide, setSelectedGuide] = useState(group.guideId || "_none");
+  const previousGuideIdRef = useRef(group.guideId);
   
-  // Update selected guide when group.guideId changes
+  // Update selected guide when group.guideId changes, but only if it's a meaningful change
   useEffect(() => {
-    setSelectedGuide(group.guideId || "_none");
+    // Prevent flickering by only updating when we have a real change
+    if (group.guideId !== previousGuideIdRef.current) {
+      setSelectedGuide(group.guideId || "_none");
+      previousGuideIdRef.current = group.guideId;
+    }
   }, [group.guideId]);
   
   const getGuideTypeBadgeColor = (guideType?: string) => {
@@ -63,12 +68,22 @@ export const TourGroupGuide = ({
   };
 
   const handleAssignGuide = async (guideId: string) => {
+    if (guideId === selectedGuide) return;
+    
     setIsAssigning(true);
+    
     try {
-      await assignGuide(groupIndex, guideId);
+      // Optimistically update the UI to prevent flickering
       setSelectedGuide(guideId);
+      previousGuideIdRef.current = guideId === "_none" ? undefined : guideId;
+      
+      await assignGuide(groupIndex, guideId);
       toast.success(`Guide assigned to Group ${groupIndex + 1}`);
     } catch (error) {
+      // Revert optimistic update if there was an error
+      setSelectedGuide(group.guideId || "_none");
+      previousGuideIdRef.current = group.guideId;
+      
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide");
     } finally {
@@ -76,8 +91,9 @@ export const TourGroupGuide = ({
     }
   };
 
-  // Check if actually assigned and not just "Unassigned" text
-  const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
+  // Directly use the state for determining if a guide is assigned
+  // rather than relying only on backend data, to prevent flickering
+  const isGuideAssigned = (selectedGuide !== "_none" && selectedGuide !== undefined);
 
   return (
     <div className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
@@ -97,7 +113,7 @@ export const TourGroupGuide = ({
           <p className="text-sm font-medium">
             Guide: {isGuideAssigned ? guideName : "Not assigned"}
           </p>
-          {guideInfo && (
+          {isGuideAssigned && guideInfo && (
             <Badge variant="outline" className={`mt-1 text-xs ${getGuideTypeBadgeColor(guideInfo.guideType)}`}>
               {guideInfo.guideType}
             </Badge>

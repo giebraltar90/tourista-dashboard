@@ -1,3 +1,4 @@
+
 import { useTourById } from "../useTourData";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
@@ -85,6 +86,16 @@ export const useAssignGuide = (tourId: string) => {
         guideId: actualGuideId,
         name: newGroupName
       };
+
+      // IMPORTANT: Update the query cache BEFORE making the API call
+      // This ensures the UI sees the changes immediately
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        return {
+          ...oldData,
+          tourGroups: updatedTourGroups
+        };
+      });
       
       // Call the API to update tour groups
       await updateTourGroups(tourId, updatedTourGroups);
@@ -102,20 +113,14 @@ export const useAssignGuide = (tourId: string) => {
         groupName: updatedTourGroups[groupIndex].name
       });
       
-      // Aggressive cache invalidation to ensure UI updates
-      queryClient.invalidateQueries();
+      // IMPORTANT: Disable automatic refetching for a short period
+      // to prevent overriding our optimistic updates
+      const timeoutMs = 5000; // 5 seconds
       
-      // Immediately refetch tour data
-      await refetch();
-      
-      // Update tour data in the queryClient cache directly
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        return {
-          ...oldData,
-          tourGroups: updatedTourGroups
-        };
-      });
+      setTimeout(() => {
+        // After the timeout, perform a controlled refetch
+        refetch();
+      }, timeoutMs);
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {

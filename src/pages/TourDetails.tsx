@@ -9,7 +9,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTourById } from "@/hooks/useTourData";
 import { TourHeader } from "@/components/tour-details/TourHeader";
 import { TourOverview } from "@/components/tour-details/TourOverview";
@@ -23,6 +23,7 @@ const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
+  const refreshTimer = useRef<NodeJS.Timeout | null>(null);
   
   const { data: tour, isLoading, error, refetch } = useTourById(id || "");
   
@@ -37,6 +38,13 @@ const TourDetails = () => {
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
     }
+    
+    return () => {
+      // Clear the timer when component unmounts
+      if (refreshTimer.current) {
+        clearInterval(refreshTimer.current);
+      }
+    };
   }, [id, queryClient, refetch]);
   
   // Refresh data when tab changes
@@ -50,18 +58,27 @@ const TourDetails = () => {
     }
   };
   
-  // Refresh data periodically
+  // Refresh data periodically, but with a longer interval
   useEffect(() => {
     if (!id) return;
     
-    // Set up periodic refreshes
-    const intervalId = setInterval(() => {
-      queryClient.invalidateQueries({ queryKey: ['tour', id] });
-      refetch();
-    }, 5000); // Refresh every 5 seconds
+    // Clear existing timer if any
+    if (refreshTimer.current) {
+      clearInterval(refreshTimer.current);
+    }
     
-    return () => clearInterval(intervalId);
-  }, [id, queryClient, refetch]);
+    // Set up periodic refreshes with a longer interval to avoid flickering
+    refreshTimer.current = setInterval(() => {
+      // Use a gentle refetch approach that doesn't discard local changes
+      refetch({ stale: false });
+    }, 30000); // Refresh every 30 seconds instead of 5
+    
+    return () => {
+      if (refreshTimer.current) {
+        clearInterval(refreshTimer.current);
+      }
+    };
+  }, [id, refetch]);
   
   if (isLoading) {
     return (
@@ -87,15 +104,6 @@ const TourDetails = () => {
     );
   }
   
-  // Log tour data for debugging
-  console.log("Tour details:", {
-    tour,
-    guide1Info,
-    guide2Info,
-    guide3Info,
-    tourGroups: tour.tourGroups
-  });
-  
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
@@ -120,8 +128,8 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement key={`guide-management-${tour.id}-${JSON.stringify(tour.tourGroups)}`} tour={tour} />
-              <GroupsManagement key={`groups-management-${tour.id}-${JSON.stringify(tour.tourGroups)}`} tour={tour} />
+              <GroupGuideManagement key={`guide-management-${tour.id}`} tour={tour} />
+              <GroupsManagement key={`groups-management-${tour.id}`} tour={tour} />
             </div>
           </TabsContent>
           
