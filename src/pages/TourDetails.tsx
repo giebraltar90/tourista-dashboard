@@ -34,9 +34,12 @@ const TourDetails = () => {
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
+  console.log("TourDetails rendering, tour data:", tour); // Debug log
+  
   // Force data refresh when component mounts, but only once
   useEffect(() => {
     if (id && isInitialLoad.current) {
+      console.log("Initial load, invalidating queries for tour:", id);
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
       isInitialLoad.current = false;
@@ -57,6 +60,7 @@ const TourDetails = () => {
     // Only force refresh if it's been more than 10 seconds since last refresh
     const now = Date.now();
     if (id && (now - lastRefetchTime.current) > 10000) { 
+      console.log("Tab changed, refreshing data after timeout");
       queryClient.invalidateQueries({ queryKey: ['tour', id] });
       refetch();
       lastRefetchTime.current = now;
@@ -77,6 +81,7 @@ const TourDetails = () => {
       // Only refetch if no user interaction in the last minute
       const now = Date.now();
       if ((now - lastRefetchTime.current) > 60000) {
+        console.log("Periodic refresh triggered");
         refetch();
         lastRefetchTime.current = now;
       }
@@ -100,13 +105,14 @@ const TourDetails = () => {
   }
   
   if (error || !tour) {
+    console.error("Error loading tour or tour data is null:", error);
     return (
       <DashboardLayout>
         <Alert variant="destructive" className="mt-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            Failed to load tour details. Please try again.
+            Failed to load tour details (ID: {id}). Please try again.
           </AlertDescription>
         </Alert>
       </DashboardLayout>
@@ -152,7 +158,7 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="modifications" className="space-y-4 mt-6">
-            <ModificationsTab tour={tour} />
+            <ModificationsTab key={`modifications-${tour.id}-${activeTab}`} tour={tour} />
           </TabsContent>
         </Tabs>
       </div>

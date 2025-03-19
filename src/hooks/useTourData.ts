@@ -28,11 +28,19 @@ export const useTours = (options: UseToursOptions = {}) => {
 
 // Hook for fetching a single tour by ID
 export const useTourById = (tourId: string) => {
+  console.log("useTourById called with ID:", tourId);
+  
   return useQuery({
     queryKey: ['tour', tourId],
-    queryFn: () => fetchTourById(tourId),
-    initialData: () => mockTours.find(tour => tour.id === tourId) || null,
+    queryFn: () => {
+      console.log("Fetching tour data for ID:", tourId);
+      // For now, use mock data but in real app would call API
+      const tourData = mockTours.find(tour => tour.id === tourId);
+      console.log("Found tour data:", tourData);
+      return tourData || null;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: !!tourId, // Only run the query if tourId is provided
   });
 };
 

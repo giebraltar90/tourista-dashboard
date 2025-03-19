@@ -64,6 +64,8 @@ export const useAssignGuide = (tourId: string) => {
     try {
       if (!tour) throw new Error("Tour not found");
       
+      console.log("Assigning guide to group:", { groupIndex, guideId, tourId });
+      
       // If guideId is "_none", treat it as undefined to unassign the guide
       const actualGuideId = guideId === "_none" ? undefined : guideId;
       
@@ -86,10 +88,16 @@ export const useAssignGuide = (tourId: string) => {
         name: newGroupName
       };
 
+      console.log("Updated tour groups:", updatedTourGroups);
+      
       // IMPORTANT: Immediately update local cache BEFORE API call
       // This prevents UI flicker during API request
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
+        console.log("Updating query data optimistically:", {
+          ...oldData,
+          tourGroups: updatedTourGroups
+        });
         return {
           ...oldData,
           tourGroups: updatedTourGroups
@@ -111,9 +119,6 @@ export const useAssignGuide = (tourId: string) => {
         guideName,
         groupName: updatedTourGroups[groupIndex].name
       });
-      
-      // Disable automatic refetching to prevent overriding our optimistic updates
-      // We'll let the UI keep our optimistic update in place
       
       // Notify about successful assignment
       if (guideName !== "Unassigned") {

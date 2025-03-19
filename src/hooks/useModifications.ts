@@ -36,6 +36,10 @@ export const useModifications = (tourId: string) => {
       // Add new modification to the list
       const updatedModifications = [newModification, ...existingModifications];
       
+      console.log("Adding modification:", newModification);
+      console.log("Existing modifications:", existingModifications);
+      console.log("Updated modifications:", updatedModifications);
+      
       // Optimistically update the tour in the query cache immediately
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
