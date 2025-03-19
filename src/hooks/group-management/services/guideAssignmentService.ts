@@ -83,22 +83,31 @@ export const persistGuideAssignment = async (
       name: groupName
     });
 
-    const { error } = await supabase
-      .from('tour_groups')
-      .update({
-        guide_id: guideId,
-        name: groupName
-      })
-      .eq('id', groupId)
-      .eq('tour_id', tourId);
+    // CRITICAL FIX: Multiple attempts to ensure the update goes through
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      const { error } = await supabase
+        .from('tour_groups')
+        .update({
+          guide_id: guideId,
+          name: groupName
+        })
+        .eq('id', groupId)
+        .eq('tour_id', tourId);
 
-    if (error) {
-      console.error("Failed to persist guide assignment:", error);
-      return false;
+      if (!error) {
+        console.log(`Successfully persisted guide assignment on attempt ${attempt}`);
+        return true;
+      }
+      
+      if (attempt < 2) {
+        console.warn(`Attempt ${attempt} to persist guide assignment failed, retrying...`, error);
+        await new Promise(resolve => setTimeout(resolve, 500)); // Wait 500ms before retrying
+      } else {
+        console.error("All attempts to persist guide assignment failed:", error);
+      }
     }
-
-    console.log("Successfully persisted guide assignment");
-    return true;
+    
+    return false;
   } catch (error) {
     console.error("Error persisting guide assignment:", error);
     return false;

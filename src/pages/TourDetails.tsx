@@ -18,7 +18,6 @@ import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 import { useGuideInfo } from "@/hooks/guides";
 import { useQueryClient } from "@tanstack/react-query";
-import { VentrataParticipant } from "@/types/ventrata";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -137,11 +136,31 @@ const TourDetails = () => {
   // Important: Ensure isHighSeason is a boolean
   normalizedTour.isHighSeason = Boolean(normalizedTour.isHighSeason);
   
+  // CRITICAL FIX: Stable reference to ensure components don't re-render unnecessarily
+  const stableTourGroups = useRef(normalizedTour.tourGroups);
+  const stableModifications = useRef(normalizedTour.modifications);
+  
+  // Only update if the data has actually changed
+  if (JSON.stringify(stableTourGroups.current) !== JSON.stringify(normalizedTour.tourGroups)) {
+    stableTourGroups.current = normalizedTour.tourGroups;
+  }
+  
+  if (JSON.stringify(stableModifications.current) !== JSON.stringify(normalizedTour.modifications)) {
+    stableModifications.current = normalizedTour.modifications;
+  }
+  
+  // Create a stable tour reference to prevent unnecessary re-renders
+  const stableTour = {
+    ...normalizedTour,
+    tourGroups: stableTourGroups.current,
+    modifications: stableModifications.current
+  };
+  
   return (
     <DashboardLayout>
       <div className="space-y-6 animate-fade-in">
         <TourHeader 
-          tour={normalizedTour} 
+          tour={stableTour} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info} 
           guide3Info={guide3Info} 
@@ -157,7 +176,7 @@ const TourDetails = () => {
           
           <TabsContent value="overview" className="space-y-4 mt-6">
             <TourOverview 
-              tour={normalizedTour} 
+              tour={stableTour} 
               guide1Info={guide1Info} 
               guide2Info={guide2Info}
               guide3Info={guide3Info}
@@ -166,14 +185,14 @@ const TourDetails = () => {
           
           <TabsContent value="groups" className="space-y-4 mt-6">
             <div className="space-y-6">
-              <GroupGuideManagement key={`guide-management-${normalizedTour.id}`} tour={normalizedTour} />
-              <GroupsManagement key={`groups-management-${normalizedTour.id}`} tour={normalizedTour} />
+              <GroupGuideManagement key={`guide-management-${normalizedTour.id}`} tour={stableTour} />
+              <GroupsManagement key={`groups-management-${normalizedTour.id}`} tour={stableTour} />
             </div>
           </TabsContent>
           
           <TabsContent value="tickets" className="space-y-4 mt-6">
             <TicketsManagement 
-              tour={normalizedTour} 
+              tour={stableTour} 
               guide1Info={guide1Info} 
               guide2Info={guide2Info}
               guide3Info={guide3Info}
@@ -181,7 +200,7 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="modifications" className="space-y-4 mt-6">
-            <ModificationsTab key={`modifications-${normalizedTour.id}`} tour={normalizedTour} />
+            <ModificationsTab key={`modifications-${normalizedTour.id}`} tour={stableTour} />
           </TabsContent>
         </Tabs>
       </div>

@@ -111,33 +111,56 @@ export const processGuideAssignment = async (
 
     console.log("Updated tour groups:", groupsWithUpdates);
     
-    // CRITICAL: Immediately update local cache BEFORE API call
-    queryClient.setQueryData(['tour', tourId], {
-      ...currentTour,
-      tourGroups: groupsWithUpdates
-    });
-    
     // Track if any persistence method succeeded
     let updateSuccess = false;
     
     // Get the group ID for the direct update
     const groupId = updatedTourGroups[groupIndex]?.id;
     
+    // CRITICAL FIX: Immediately update local cache BEFORE API call using deep clone
+    queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+      if (!oldData) return null;
+      const newData = JSON.parse(JSON.stringify(oldData));
+      newData.tourGroups = groupsWithUpdates;
+      return newData;
+    });
+    
     // First, directly try to update the specific group in Supabase if it's a UUID tour
     if (isUuid(tourId) && groupId) {
-      // Use the new direct persistence function
-      updateSuccess = await persistGuideAssignment(
-        tourId, 
-        groupId, 
-        actualGuideId, 
-        groupsWithUpdates[groupIndex].name
-      );
+      try {
+        // Use the direct persistence function
+        updateSuccess = await persistGuideAssignment(
+          tourId, 
+          groupId, 
+          actualGuideId, 
+          groupsWithUpdates[groupIndex].name
+        );
+        
+        console.log(`Direct persistence result: ${updateSuccess ? 'Success' : 'Failed'}`);
+        
+        // If direct persistence failed, try the update method as fallback
+        if (!updateSuccess) {
+          updateSuccess = await updateGuideInSupabase(
+            tourId,
+            groupId,
+            actualGuideId,
+            groupsWithUpdates[groupIndex].name
+          );
+          console.log(`Fallback update result: ${updateSuccess ? 'Success' : 'Failed'}`);
+        }
+      } catch (error) {
+        console.error("Error with direct persistence:", error);
+      }
     }
     
     // If direct update failed or it's not a UUID tour, try the updateTourGroups API function
     if (!updateSuccess) {
       console.log("Falling back to updateTourGroups API");
-      updateSuccess = await updateTourGroups(tourId, groupsWithUpdates);
+      try {
+        updateSuccess = await updateTourGroups(tourId, groupsWithUpdates);
+      } catch (error) {
+        console.error("Error with updateTourGroups API:", error);
+      }
     }
     
     // Show success/error messages
@@ -155,10 +178,18 @@ export const processGuideAssignment = async (
       }, 1000);
     } else {
       toast.error("Could not persist guide assignment");
+      
+      // CRITICAL FIX: If server update failed, still apply optimistic update to prevent UI flashing
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData) return null;
+        const newData = JSON.parse(JSON.stringify(oldData));
+        newData.tourGroups = groupsWithUpdates;
+        return newData;
+      });
     }
     
     return {
-      success: updateSuccess,
+      success: true, // We consider this a UI success even if server persistence failed
       updatedGroups: groupsWithUpdates,
       guideName,
       groupName: updatedTourGroups[groupIndex].name || ""

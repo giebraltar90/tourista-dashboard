@@ -110,18 +110,28 @@ export const updateGuideInSupabase = async (
       updateData.name = newGroupName;
     }
     
-    const { error } = await supabase
-      .from('tour_groups')
-      .update(updateData)
-      .eq('id', groupId);
+    // CRITICAL FIX: Multiple attempts to ensure the update goes through
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const { error } = await supabase
+        .from('tour_groups')
+        .update(updateData)
+        .eq('id', groupId)
+        .eq('tour_id', tourId);
+        
+      if (!error) {
+        console.log(`Successfully updated guide assignment in Supabase on attempt ${attempt}`);
+        return true;
+      }
       
-    if (error) {
-      console.error("Supabase direct group update failed:", error);
-      return false;
+      if (attempt < 3) {
+        console.warn(`Attempt ${attempt} failed, retrying...`, error);
+        await new Promise(resolve => setTimeout(resolve, 300)); // Wait 300ms before retrying
+      } else {
+        console.error("All attempts to update guide assignment failed:", error);
+      }
     }
     
-    console.log("Successfully updated guide assignment in Supabase with direct update");
-    return true;
+    return false;
   } catch (error) {
     console.error("Error with direct Supabase update:", error);
     return false;

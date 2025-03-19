@@ -104,6 +104,32 @@ export const useTourById = (tourId: string) => {
               }
             }
             
+            // Get participants for each group
+            const groupIds = tourGroups.map(group => group.id);
+            let participantsMap: {[key: string]: any[]} = {};
+            
+            if (groupIds.length > 0) {
+              try {
+                const { data: participants, error: partError } = await supabase
+                  .from('participants')
+                  .select('*')
+                  .in('group_id', groupIds);
+                  
+                if (!partError && participants) {
+                  // Group participants by group_id
+                  participants.forEach(participant => {
+                    const groupId = participant.group_id;
+                    if (!participantsMap[groupId]) {
+                      participantsMap[groupId] = [];
+                    }
+                    participantsMap[groupId].push(participant);
+                  });
+                }
+              } catch (partFetchError) {
+                console.error("Error fetching participants:", partFetchError);
+              }
+            }
+            
             // Transform to application format with guide names instead of IDs
             const result: TourCardProps = {
               id: tour.id,
@@ -122,7 +148,8 @@ export const useTourById = (tourId: string) => {
                 size: group.size || 0,
                 entryTime: group.entry_time,
                 childCount: group.child_count || 0,
-                guideId: group.guide_id
+                guideId: group.guide_id,
+                participants: participantsMap[group.id] || []
               })),
               numTickets: tour.num_tickets || 0,
               // Critical fix: normalize the boolean value to ensure consistent behavior
@@ -163,14 +190,20 @@ export const useTourById = (tourId: string) => {
           tourData.modifications = [];
         }
         
+        // Ensure each group has a participants array
+        tourData.tourGroups = tourData.tourGroups.map(group => ({
+          ...group,
+          participants: Array.isArray(group.participants) ? group.participants : []
+        }));
+        
         return tourData;
       } catch (error) {
         console.error("Error in useTourById:", error);
         throw error;
       }
     },
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    gcTime: 60 * 60 * 1000,    // 60 minutes cache time
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000,   // 10 minutes cache time
     enabled: !!tourId,         // Only run the query if tourId is provided
   });
 };
