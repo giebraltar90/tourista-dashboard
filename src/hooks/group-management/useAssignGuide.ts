@@ -3,13 +3,62 @@ import { updateTourGroups } from "@/services/ventrataApi";
 import { useGuideData } from "../useGuideData";
 import { toast } from "sonner";
 import { useModifications } from "../useModifications";
+import { useCallback } from "react";
 
+/**
+ * Hook to assign or unassign guides to tour groups
+ */
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
   const { guides } = useGuideData();
   const { addModification } = useModifications(tourId);
   
-  const assignGuide = async (groupIndex: number, guideId?: string) => {
+  /**
+   * Find guide name based on guide ID
+   */
+  const findGuideName = useCallback((guideId?: string) => {
+    if (!guideId || guideId === "_none") return "Unassigned";
+    if (!tour) return "Unknown";
+    
+    // Check primary guides first
+    if (guideId === "guide1") return tour.guide1;
+    if (guideId === "guide2") return tour.guide2 || "Guide 2";
+    if (guideId === "guide3") return tour.guide3 || "Guide 3";
+    
+    // Try to find guide by ID
+    const guide = guides.find(g => g.id === guideId);
+    if (guide) return guide.name;
+    
+    // Check if ID contains guide name (fallback)
+    if (tour.guide1 && guideId.includes(tour.guide1)) return tour.guide1;
+    if (tour.guide2 && guideId.includes(tour.guide2)) return tour.guide2;
+    if (tour.guide3 && guideId.includes(tour.guide3)) return tour.guide3;
+    
+    return guideId;
+  }, [tour, guides]);
+  
+  /**
+   * Generate a group name based on guide assignment
+   */
+  const generateGroupName = useCallback((currentName: string, guideName: string) => {
+    const namePattern = /^.+'s Group$/;
+    
+    // If the group name follows the pattern "X's Group", update it with new guide name
+    // or if it's the first assignment or contains "Group", also update the name
+    if (namePattern.test(currentName) || currentName.includes("Group")) {
+      if (guideName && guideName !== "Unassigned") {
+        return `${guideName}'s Group`;
+      }
+    }
+    
+    // Keep the existing name if we're removing a guide or couldn't find a pattern match
+    return currentName;
+  }, []);
+  
+  /**
+   * Assign a guide to a specific group
+   */
+  const assignGuide = useCallback(async (groupIndex: number, guideId?: string) => {
     try {
       if (!tour) throw new Error("Tour not found");
       
@@ -17,61 +66,23 @@ export const useAssignGuide = (tourId: string) => {
       const actualGuideId = guideId === "_none" ? undefined : guideId;
       
       // Find guide name for the modification description
-      let guideName = "Unassigned";
-      
-      if (actualGuideId) {
-        // Primary guides
-        if (actualGuideId === "guide1") {
-          guideName = tour.guide1;
-        } else if (actualGuideId === "guide2") {
-          guideName = tour.guide2 || "Guide 2";
-        } else if (actualGuideId === "guide3") {
-          guideName = tour.guide3 || "Guide 3";
-        } else {
-          // Try to find guide by ID
-          const guide = guides.find(g => g.id === actualGuideId);
-          if (guide) {
-            guideName = guide.name;
-          } else if (tour.guide1 && actualGuideId.includes(tour.guide1)) {
-            guideName = tour.guide1;
-          } else if (tour.guide2 && actualGuideId.includes(tour.guide2)) {
-            guideName = tour.guide2;
-          } else if (tour.guide3 && actualGuideId.includes(tour.guide3)) {
-            guideName = tour.guide3;
-          }
-        }
-      }
+      const guideName = findGuideName(actualGuideId);
       
       // Create a deep copy of tourGroups to avoid mutation issues
       const updatedTourGroups = JSON.parse(JSON.stringify(tour.tourGroups));
       
-      // Check if we should update the group name based on the guide
+      // Get the current group name
       let groupName = updatedTourGroups[groupIndex].name;
       
-      // If the group name follows the pattern "X's Group", update it with new guide name
-      // or if it's the first assignment, also update the name
-      const namePattern = /^.+'s Group$/;
-      if (namePattern.test(groupName) || groupName.includes("Group") || !updatedTourGroups[groupIndex].guideId) {
-        if (guideName && guideName !== "Unassigned") {
-          groupName = `${guideName}'s Group`;
-        }
-        // Keep the existing name if we're removing a guide or couldn't find a guide name
-      }
+      // Generate a new group name if needed
+      const newGroupName = generateGroupName(groupName, guideName);
       
       // Update the group with new guide ID and possibly new name
       updatedTourGroups[groupIndex] = {
         ...updatedTourGroups[groupIndex],
         guideId: actualGuideId,
-        name: groupName
+        name: newGroupName
       };
-      
-      // Log for debugging
-      console.log("Assigning guide to group:", { 
-        groupIndex, 
-        guideId: actualGuideId, 
-        guideName,
-        updatedGroup: updatedTourGroups[groupIndex]
-      });
       
       // Call the API to update tour groups
       await updateTourGroups(tourId, updatedTourGroups);
@@ -105,7 +116,7 @@ export const useAssignGuide = (tourId: string) => {
       toast.error("Failed to assign guide to group");
       throw error;
     }
-  };
+  }, [tour, tourId, findGuideName, generateGroupName, refetch, addModification]);
   
   return { assignGuide };
 };
