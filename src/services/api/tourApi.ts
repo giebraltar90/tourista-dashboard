@@ -195,6 +195,7 @@ export const updateTourGroups = async (
       try {
         // Update each group individually to handle multiple updates properly
         for (const group of updatedGroups) {
+          // Check if the group has an id (existing group) or needs to be created
           if (group.id) {
             // Update existing group
             const { error } = await supabase

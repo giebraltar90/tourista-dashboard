@@ -50,7 +50,8 @@ export const useUpdateTourCapacity = (tourId: string) => {
       if (!storageSuccess) {
         console.log("Using API fallback for capacity update");
         try {
-          const apiSuccess = await updateTourCapacityApi(tourId, updatedTour);
+          // Fix: Pass the boolean value instead of the whole tour object
+          const apiSuccess = await updateTourCapacityApi(tourId, highSeasonValue);
           if (apiSuccess) {
             storageSuccess = true;
           }

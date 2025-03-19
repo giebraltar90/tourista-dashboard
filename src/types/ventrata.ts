@@ -10,6 +10,7 @@ export interface VentrataParticipant {
 }
 
 export interface VentrataTourGroup {
+  id?: string; // Add optional id property for database persistence
   name: string;
   size: number;
   entryTime: string;

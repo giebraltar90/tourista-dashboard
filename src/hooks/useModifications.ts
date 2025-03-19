@@ -79,14 +79,22 @@ export const useModifications = (tourId: string) => {
           console.error("Failed to store modification in Supabase:", error);
           // Fall back to API call (even for UUID tours)
           console.log("Falling back to API for modifications");
-          await updateTourModification(tourId, updatedModifications);
+          // Fix: Pass an object with description and details instead of an array
+          await updateTourModification(tourId, {
+            description,
+            details
+          });
         } else {
           console.log("Successfully stored modification in Supabase");
         }
       } else {
         // This is a mock ID, use API fallback
         console.log("Using API fallback for modification with mock ID:", tourId);
-        await updateTourModification(tourId, updatedModifications);
+        // Fix: Pass an object with description and details instead of an array
+        await updateTourModification(tourId, {
+          description,
+          details
+        });
       }
       
       toast.success("Modification recorded successfully");
