@@ -45,7 +45,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       title = "Guide Portal";
     }
     
-    document.title = `${title} | Tour Operations`;
+    document.title = `${title} | Boutique Tours`;
   }, [location]);
   
   return (

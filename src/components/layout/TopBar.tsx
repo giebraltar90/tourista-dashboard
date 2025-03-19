@@ -64,11 +64,11 @@ export function TopBar({ sidebarCollapsed, onToggleSidebar }: TopBarProps) {
           <div className="flex items-center gap-2">
             <img 
               src="/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png" 
-              alt="Tourista Logo" 
+              alt="Boutique Tours Logo" 
               className="h-8"
             />
             <div>
-              <h1 className="text-lg font-bold tracking-tight">Tourista</h1>
+              <h1 className="text-lg font-bold tracking-tight">Boutique Tours</h1>
               <p className="text-xs text-muted-foreground leading-none">
                 {guideView ? "Guide Portal" : "Operations Dashboard"}
               </p>
