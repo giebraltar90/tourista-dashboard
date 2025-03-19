@@ -16,7 +16,7 @@ export const useUpdateTourCapacity = (tourId: string) => {
       console.log("New high season value:", updatedTour.isHighSeason);
       
       try {
-        // Determine if this is a demo tour (without a UUID format ID)
+        // Use a more reliable UUID validation pattern
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
         
         if (!isUuid) {
@@ -26,21 +26,29 @@ export const useUpdateTourCapacity = (tourId: string) => {
         
         // Only attempt Supabase update for valid UUIDs
         console.log("Attempting Supabase update for tour:", tourId);
-        const { error } = await supabase
+        
+        // Convert to boolean explicitly to ensure correct type
+        const highSeasonValue = Boolean(updatedTour.isHighSeason);
+        console.log("Sending to Supabase:", { is_high_season: highSeasonValue });
+        
+        const { data, error } = await supabase
           .from('tours')
-          .update({ is_high_season: updatedTour.isHighSeason })
-          .eq('id', tourId);
+          .update({ is_high_season: highSeasonValue })
+          .eq('id', tourId)
+          .select();
           
         if (error) {
-          console.warn("Supabase update failed, falling back to API", error);
+          console.error("Supabase update failed:", error.message);
+          console.warn("Falling back to API");
           // Fall back to API call if Supabase fails
           return await updateTourCapacityApi(tourId, updatedTour);
         }
         
-        console.log("Supabase update successful");
+        console.log("Supabase update successful:", data);
         return true;
       } catch (err) {
-        console.warn("Database error, falling back to API", err);
+        console.error("Database error:", err);
+        console.warn("Falling back to API");
         // Fall back to API call
         return await updateTourCapacityApi(tourId, updatedTour);
       }
@@ -82,9 +90,13 @@ export const useUpdateTourCapacity = (tourId: string) => {
         return updatedData;
       });
       
-      // Only schedule a delayed background refetch of the tours list
+      // Delay invalidation to ensure our direct update takes precedence
       setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tours'] });
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        // After that, refresh the tours list
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tours'] });
+        }, 1000);
       }, 5000);
       
       const isHighSeason = Boolean(variables.isHighSeason);
@@ -107,12 +119,6 @@ export const useUpdateTourCapacity = (tourId: string) => {
       if (context?.previousTour) {
         queryClient.setQueryData(['tour', tourId], context.previousTour);
       }
-    },
-    onSettled: () => {
-      // Only do a background refetch after a longer delay
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 15000); // Much longer delay to prevent UI flicker
     }
   });
   

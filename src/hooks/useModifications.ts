@@ -59,12 +59,16 @@ export const useModifications = (tourId: string) => {
       });
       
       try {
-        // Try to store in Supabase if available - handle the fact that tour_id might not be a UUID
-        if (tourId.startsWith('tour-')) {
+        // Check if this is a UUID format ID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tourId);
+        
+        if (!isUuid) {
           // This is a mock ID, use API fallback
           console.log("Using API fallback for modification with mock ID:", tourId);
           await updateTourModification(tourId, updatedModifications);
         } else {
+          // For real UUID IDs, use Supabase
+          console.log("Storing modification in Supabase for tour:", tourId);
           const { error } = await supabase
             .from('modifications')
             .insert({
@@ -75,13 +79,16 @@ export const useModifications = (tourId: string) => {
             });
           
           if (error) {
-            console.warn("Failed to store modification in database:", error);
+            console.error("Failed to store modification in Supabase:", error);
             // Fall back to API call
+            console.log("Falling back to API for modifications");
             await updateTourModification(tourId, updatedModifications);
+          } else {
+            console.log("Successfully stored modification in Supabase");
           }
         }
       } catch (err) {
-        console.warn("Database error, falling back to API:", err);
+        console.error("Database error, falling back to API:", err);
         // Fall back to API call
         await updateTourModification(tourId, updatedModifications);
       }
@@ -91,7 +98,7 @@ export const useModifications = (tourId: string) => {
       // Force a refetch to ensure we have the latest data, but delay it to avoid flickering
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 500);
+      }, 2000);
       
       return true;
     } catch (error) {
