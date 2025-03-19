@@ -1,11 +1,10 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { useGuideData } from "@/hooks/guides/useGuideData";
 import { TourGroupGuide } from "./TourGroupGuide";
-import { isUuid } from "@/services/api/tour/guideUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;

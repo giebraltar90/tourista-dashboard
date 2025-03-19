@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { IdCard, CalendarIcon, Users } from "lucide-react";
@@ -10,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { TourCardGuideProps } from "./types";
-import { isUuid } from "@/services/api/tour/guideUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 export const TourCardGuide: React.FC<TourCardGuideProps> = ({ 
   guideName, 
@@ -20,7 +19,7 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
   if (!guideName) return null;
   
   // Handle case when guideName is a UUID instead of an actual name
-  const displayName = isUuid(guideName) ? `Guide ${guideName.substring(0, 4)}...` : guideName;
+  const displayName = isValidUuid(guideName) ? `Guide ${guideName.substring(0, 4)}...` : guideName;
 
   return (
     <div className="flex items-center mt-1">

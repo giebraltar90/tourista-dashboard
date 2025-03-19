@@ -50,6 +50,12 @@ export const GuideSelectionPopover = ({
     }
   };
 
+  // Make sure guideOptions is properly filtered to only include valid options
+  const validOptions = guideOptions.filter(guide => guide && guide.id && guide.name).sort((a, b) => {
+    // Sort options by name for better usability
+    return a.name.localeCompare(b.name);
+  });
+
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
@@ -79,7 +85,7 @@ export const GuideSelectionPopover = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_none">None (Unassigned)</SelectItem>
-              {guideOptions.filter(guide => guide && guide.name).map((guide) => (
+              {validOptions.map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
                   {guide.name}
                 </SelectItem>

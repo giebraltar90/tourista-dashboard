@@ -1,7 +1,7 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { supabase } from "@/integrations/supabase/client";
-import { isUuid } from "./helpers";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { TourModification } from "@/types/ventrata";
 
 /**

@@ -12,21 +12,22 @@ export const findGuideName = (
   if (!guideId || guideId === "_none") return "Unassigned";
   if (!tour) return "Unknown";
   
-  // Check primary guides first
-  if (guideId === "guide1") return tour.guide1;
-  if (guideId === "guide2") return tour.guide2 || "Guide 2";
-  if (guideId === "guide3") return tour.guide3 || "Guide 3";
+  // Check primary guides first - these are special cases we handle explicitly
+  if (guideId === "guide1" && tour.guide1) return tour.guide1;
+  if (guideId === "guide2" && tour.guide2) return tour.guide2;
+  if (guideId === "guide3" && tour.guide3) return tour.guide3;
   
   // Try to find guide by ID
   const guide = guides.find(g => g.id === guideId);
-  if (guide) return guide.name;
+  if (guide && guide.name) return guide.name;
   
   // Check if ID contains guide name (fallback)
   if (tour.guide1 && guideId.includes(tour.guide1)) return tour.guide1;
   if (tour.guide2 && guideId.includes(tour.guide2)) return tour.guide2;
   if (tour.guide3 && guideId.includes(tour.guide3)) return tour.guide3;
   
-  return guideId;
+  // As a last resort, just return the ID with a prefix
+  return `Guide (${guideId.substring(0, 6)}...)`;
 };
 
 /**
@@ -49,6 +50,15 @@ export const getGuideNameForAssignment = (
   // For unassignment, use a standard name
   if (!actualGuideId) return "Unassigned";
   
-  // Find the guide name using the utility function
+  // Handle special guide IDs directly
+  if (actualGuideId === "guide1" && currentTour.guide1) {
+    return currentTour.guide1;
+  } else if (actualGuideId === "guide2" && currentTour.guide2) {
+    return currentTour.guide2;
+  } else if (actualGuideId === "guide3" && currentTour.guide3) {
+    return currentTour.guide3;
+  }
+  
+  // Find the guide name using the utility function for other IDs
   return findGuideName(actualGuideId, currentTour, guides);
 };

@@ -1,7 +1,6 @@
 
-import { isUuid } from "@/types/ventrata";
-import { toast } from "sonner";
 import { QueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { GuideInfo } from "@/types/ventrata";
 import { prepareGroupUpdate } from "./guideAssignmentService";
 import { validateGuideAssignmentInputs } from "./utils/validationUtils";
@@ -72,7 +71,16 @@ export const processGuideAssignment = async (
     }
     
     // Find guide name for the modification description
-    const guideName = getGuideNameForAssignment(actualGuideId, currentTour, guides);
+    let guideName = getGuideNameForAssignment(actualGuideId, currentTour, guides);
+    
+    // Special handling for special guide IDs to use actual names
+    if (actualGuideId === "guide1" && currentTour.guide1) {
+      guideName = currentTour.guide1;
+    } else if (actualGuideId === "guide2" && currentTour.guide2) {
+      guideName = currentTour.guide2;
+    } else if (actualGuideId === "guide3" && currentTour.guide3) {
+      guideName = currentTour.guide3;
+    }
     
     // Update the group with new guide ID and possibly new name
     const groupsWithUpdates = prepareGroupUpdate(
