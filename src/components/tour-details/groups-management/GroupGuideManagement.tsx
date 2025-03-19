@@ -10,7 +10,7 @@ import { GroupCapacityAlert } from "./GroupCapacityAlert";
 import { GroupCapacityInfo } from "./GroupCapacityInfo";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useGuideNameInfo } from "@/hooks/group-management";
+import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { useAssignGuide } from "@/hooks/group-management";
 import { useState } from "react";
 import {
@@ -33,7 +33,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
   const { guides } = useGuideData();
   
-  const { getGuideNameAndInfo } = useGuideNameAndInfo(tour, guide1Info, guide2Info, guide3Info);
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
