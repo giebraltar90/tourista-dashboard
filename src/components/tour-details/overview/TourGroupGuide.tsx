@@ -43,6 +43,12 @@ export const TourGroupGuide = ({
   
   // Calculate group size directly from the size property
   const totalGroupSize = group?.size || 0;
+  const childCount = group?.childCount || 0;
+  
+  // Format participant count to show adults + children
+  const formattedParticipantCount = childCount > 0 
+    ? `${totalGroupSize - childCount}+${childCount}` 
+    : totalGroupSize;
   
   // Update our local state if the group's guideId changes from an external source
   useEffect(() => {
@@ -136,7 +142,7 @@ export const TourGroupGuide = ({
       <div className="flex justify-between items-center mb-3">
         <h3 className="font-medium text-base">{displayName}</h3>
         <Badge variant="outline" className="bg-blue-50">
-          {totalGroupSize} {totalGroupSize === 1 ? 'person' : 'people'}
+          {formattedParticipantCount} {totalGroupSize === 1 ? 'person' : 'people'}
         </Badge>
       </div>
       

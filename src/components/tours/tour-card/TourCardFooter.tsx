@@ -19,7 +19,7 @@ export const TourCardFooter: React.FC<TourCardFooterProps> = ({
 }) => {
   // Format the participant count to show adults + children if there are children
   const formattedParticipantCount = childCount > 0 
-    ? `${totalParticipants - childCount} + ${childCount} Participants` 
+    ? `${totalParticipants - childCount}+${childCount} Participants` 
     : `${totalParticipants} Participants`;
 
   return (

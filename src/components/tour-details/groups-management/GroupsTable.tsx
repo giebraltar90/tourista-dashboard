@@ -42,13 +42,19 @@ export const GroupsTable = ({
           // Count total participants (accounting for families/groups)
           const totalParticipants = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
           
+          // Format participant count to show adults + children
+          const childCount = group.childCount || 0;
+          const formattedParticipantCount = childCount > 0 
+            ? `${totalParticipants - childCount}+${childCount}` 
+            : totalParticipants;
+          
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
           return (
             <TableRow key={index}>
               <TableCell className="font-medium">{group.name || `Group ${index + 1}`}</TableCell>
-              <TableCell>{totalParticipants} participants</TableCell>
+              <TableCell>{formattedParticipantCount} participants</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>
                 {isGuideAssigned ? (

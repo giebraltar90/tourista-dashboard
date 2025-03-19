@@ -30,15 +30,22 @@ export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
       DEFAULT_CAPACITY_SETTINGS.exception : 
       DEFAULT_CAPACITY_SETTINGS.standard;
   
+  // Calculate total child count across all groups
+  const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
+  
   return (
     <CardContent className="p-4 pt-2 pb-3">
       <div className="flex flex-wrap gap-y-2">
         <div className="w-full flex flex-col">
-          <TourCardGuide 
-            guideName={guide1} 
-            guideInfo={guide1Info} 
-          />
+          {/* Only display guide1 if it exists */}
+          {guide1 && (
+            <TourCardGuide 
+              guideName={guide1} 
+              guideInfo={guide1Info} 
+            />
+          )}
           
+          {/* Only display guide2 if it exists */}
           {guide2 && (
             <TourCardGuide 
               guideName={guide2} 
@@ -62,12 +69,17 @@ export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
                     <Badge variant="secondary" className="flex items-center">
                       <span className="mr-1">{group.name}</span>
                       <span className="bg-background/80 px-1.5 rounded-sm text-xs">
-                        {group.size}
+                        {group.childCount && group.childCount > 0 ? 
+                          `${group.size - group.childCount}+${group.childCount}` : 
+                          group.size}
                       </span>
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Entry: {group.entryTime}</p>
+                    {group.childCount > 0 && (
+                      <p>{group.childCount} {group.childCount === 1 ? 'child' : 'children'}</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
