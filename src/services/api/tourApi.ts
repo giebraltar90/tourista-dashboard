@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { 
   fetchTourFromSupabase, 
@@ -7,6 +8,7 @@ import {
 } from "./tour";
 import { isUuid } from "./tour/guideUtils";
 import { enrichToursWithGuideNames } from "./tour/guideUtils";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Fetch tours from Ventrata API or Supabase
