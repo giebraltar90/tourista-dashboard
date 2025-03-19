@@ -1,158 +1,28 @@
 
-import { useState } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { PenSquare } from "lucide-react";
-import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/TourCard";
-import { useUpdateTourGroups } from "@/hooks/useTourData";
-import { GroupCard } from "./GroupCard";
-import { toast } from "sonner";
+import { GroupsTable } from "./GroupsTable";
+import { GroupsGrid } from "./GroupsGrid";
+import { useGroupManagement } from "@/hooks/useGroupManagement";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
 }
 
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
-  const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>(
-    JSON.parse(JSON.stringify(tour.tourGroups))
-  );
-  
-  const [selectedParticipant, setSelectedParticipant] = useState<{
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  } | null>(null);
-  
-  const [draggedParticipant, setDraggedParticipant] = useState<{
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  } | null>(null);
-  
-  const updateTourGroupsMutation = useUpdateTourGroups(tour.id);
-  
-  const handleMoveParticipant = (toGroupIndex: number) => {
-    if (!selectedParticipant) return;
-    
-    const { participant, fromGroupIndex } = selectedParticipant;
-    
-    if (fromGroupIndex === toGroupIndex) {
-      toast.error("Participant is already in this group");
-      return;
-    }
-    
-    // Create a deep copy of the local tour groups
-    const updatedTourGroups = JSON.parse(JSON.stringify(localTourGroups));
-    
-    const sourceGroup = updatedTourGroups[fromGroupIndex];
-    if (sourceGroup.participants) {
-      sourceGroup.participants = sourceGroup.participants.filter(
-        (p: VentrataParticipant) => p.id !== participant.id
-      );
-      sourceGroup.size -= participant.count;
-    }
-    
-    const destGroup = updatedTourGroups[toGroupIndex];
-    if (!destGroup.participants) {
-      destGroup.participants = [];
-    }
-    destGroup.participants.push(participant);
-    destGroup.size += participant.count;
-    
-    // Update local state immediately for a responsive UI
-    setLocalTourGroups(updatedTourGroups);
-    
-    // Then attempt to update on the server
-    updateTourGroupsMutation.mutate(updatedTourGroups, {
-      onError: (error) => {
-        // If the API call fails, we don't revert the UI
-        // but we show an error toast
-        console.error("API Error:", error);
-        toast.error("Changes saved locally only. Server update failed.");
-      }
-    });
-    
-    setSelectedParticipant(null);
-  };
-
-  // Drag and drop handlers
-  const handleDragStart = (
-    e: React.DragEvent, 
-    participant: VentrataParticipant, 
-    fromGroupIndex: number
-  ) => {
-    setDraggedParticipant({ participant, fromGroupIndex });
-    e.dataTransfer.setData('application/json', JSON.stringify({ 
-      participant, 
-      fromGroupIndex 
-    }));
-    
-    // Set a ghost image effect for better UX
-    const ghostElement = document.createElement('div');
-    ghostElement.classList.add('bg-background', 'p-2', 'rounded', 'border', 'shadow-md');
-    ghostElement.textContent = participant.name;
-    document.body.appendChild(ghostElement);
-    e.dataTransfer.setDragImage(ghostElement, 0, 0);
-    
-    // Remove the ghost element after a short delay
-    setTimeout(() => {
-      document.body.removeChild(ghostElement);
-    }, 0);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Allow drop
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, toGroupIndex: number) => {
-    e.preventDefault();
-    
-    if (!draggedParticipant) return;
-    
-    const { participant, fromGroupIndex } = draggedParticipant;
-    
-    if (fromGroupIndex === toGroupIndex) {
-      toast.info("Participant is already in this group");
-      return;
-    }
-    
-    // Create a deep copy of the local tour groups
-    const updatedTourGroups = JSON.parse(JSON.stringify(localTourGroups));
-    
-    const sourceGroup = updatedTourGroups[fromGroupIndex];
-    if (sourceGroup.participants) {
-      sourceGroup.participants = sourceGroup.participants.filter(
-        (p: VentrataParticipant) => p.id !== participant.id
-      );
-      sourceGroup.size -= participant.count;
-    }
-    
-    const destGroup = updatedTourGroups[toGroupIndex];
-    if (!destGroup.participants) {
-      destGroup.participants = [];
-    }
-    destGroup.participants.push(participant);
-    destGroup.size += participant.count;
-    
-    // Update local state immediately for a responsive UI
-    setLocalTourGroups(updatedTourGroups);
-    
-    // Then attempt to update on the server
-    updateTourGroupsMutation.mutate(updatedTourGroups, {
-      onError: (error) => {
-        // If the API call fails, we don't revert the UI
-        // but we show an error toast
-        console.error("API Error:", error);
-        toast.error("Changes saved locally only. Server update failed.");
-      }
-    });
-    
-    setDraggedParticipant(null);
-    toast.success(`Moved ${participant.name} to ${destGroup.name}`);
-  };
+  const {
+    localTourGroups,
+    selectedParticipant,
+    handleMoveParticipant,
+    handleDragStart,
+    handleDragOver,
+    handleDrop,
+    setSelectedParticipant,
+    isMovePending
+  } = useGroupManagement(tour);
 
   return (
     <Card>
@@ -162,71 +32,24 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Group Name</TableHead>
-                <TableHead>Size</TableHead>
-                <TableHead>Entry Time</TableHead>
-                <TableHead>Guide</TableHead>
-                <TableHead>Children</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {localTourGroups.map((group, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{group.name}</TableCell>
-                  <TableCell>{group.size}</TableCell>
-                  <TableCell>{group.entryTime}</TableCell>
-                  <TableCell>{index === 0 ? tour.guide1 : tour.guide2 || tour.guide1}</TableCell>
-                  <TableCell>
-                    {group.childCount ? (
-                      <Badge variant="outline" className="bg-blue-100 text-blue-800">
-                        {group.childCount} {group.childCount === 1 ? 'child' : 'children'}
-                      </Badge>
-                    ) : (
-                      <span className="text-muted-foreground">None</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="bg-green-100 text-green-800">
-                      Confirmed
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                    >
-                      View Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <GroupsTable 
+            tourGroups={localTourGroups} 
+            tour={tour} 
+          />
           
           <Separator className="my-4" />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {localTourGroups.map((group, groupIndex) => (
-              <GroupCard
-                key={groupIndex}
-                group={group}
-                groupIndex={groupIndex}
-                tour={tour}
-                onDrop={handleDrop}
-                onDragOver={handleDragOver}
-                onDragStart={handleDragStart}
-                onMoveClick={setSelectedParticipant}
-                selectedParticipant={selectedParticipant}
-                handleMoveParticipant={handleMoveParticipant}
-                isMovePending={updateTourGroupsMutation.isPending}
-              />
-            ))}
-          </div>
+          <GroupsGrid
+            tourGroups={localTourGroups}
+            tour={tour}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            onMoveClick={setSelectedParticipant}
+            selectedParticipant={selectedParticipant}
+            handleMoveParticipant={handleMoveParticipant}
+            isMovePending={isMovePending}
+          />
         </div>
       </CardContent>
       <CardFooter className="flex justify-between border-t p-4">
