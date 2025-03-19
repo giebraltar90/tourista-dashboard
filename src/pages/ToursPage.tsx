@@ -20,37 +20,80 @@ import {
   CalendarRange,
   Calendar as CalendarIcon
 } from "lucide-react";
-import { addDays, isWithinInterval, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { 
+  addDays, 
+  isWithinInterval, 
+  startOfWeek, 
+  endOfWeek, 
+  startOfMonth, 
+  endOfMonth, 
+  isToday, 
+  isTomorrow, 
+  startOfDay, 
+  endOfDay, 
+  addWeeks, 
+  addMonths,
+  isSameDay 
+} from "date-fns";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
+// Define the time range type
+type TimeRangeType = "all" | "today" | "tomorrow" | "this-week" | "next-week" | "this-month" | "next-month";
 
 const ToursPage = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [viewMode, setViewMode] = useState<"all" | "calendar">("all");
-  const [timeRange, setTimeRange] = useState<"all" | "weekly" | "monthly">("all");
+  const [timeRange, setTimeRange] = useState<TimeRangeType>("all");
   
   // Filter tours based on selected date if in calendar view
   let filteredTours = viewMode === "calendar" && date
     ? mockTours.filter(tour => 
-        tour.date.getDate() === date.getDate() &&
-        tour.date.getMonth() === date.getMonth() &&
-        tour.date.getFullYear() === date.getFullYear()
+        isSameDay(tour.date, date)
       )
     : mockTours;
   
-  // Apply weekly or monthly filter if selected
-  if (timeRange === "weekly" && date) {
-    const weekStart = startOfWeek(date);
-    const weekEnd = endOfWeek(date);
+  // Apply time range filters
+  if (timeRange !== "all") {
+    const today = new Date();
     
-    filteredTours = mockTours.filter(tour => 
-      isWithinInterval(tour.date, { start: weekStart, end: weekEnd })
-    );
-  } else if (timeRange === "monthly" && date) {
-    const monthStart = startOfMonth(date);
-    const monthEnd = endOfMonth(date);
-    
-    filteredTours = mockTours.filter(tour => 
-      isWithinInterval(tour.date, { start: monthStart, end: monthEnd })
-    );
+    if (timeRange === "today") {
+      filteredTours = mockTours.filter(tour => isToday(tour.date));
+    } 
+    else if (timeRange === "tomorrow") {
+      filteredTours = mockTours.filter(tour => isTomorrow(tour.date));
+    } 
+    else if (timeRange === "this-week") {
+      const weekStart = startOfWeek(today);
+      const weekEnd = endOfWeek(today);
+      
+      filteredTours = mockTours.filter(tour => 
+        isWithinInterval(tour.date, { start: weekStart, end: weekEnd })
+      );
+    } 
+    else if (timeRange === "next-week") {
+      const nextWeekStart = startOfWeek(addWeeks(today, 1));
+      const nextWeekEnd = endOfWeek(addWeeks(today, 1));
+      
+      filteredTours = mockTours.filter(tour => 
+        isWithinInterval(tour.date, { start: nextWeekStart, end: nextWeekEnd })
+      );
+    } 
+    else if (timeRange === "this-month") {
+      const monthStart = startOfMonth(today);
+      const monthEnd = endOfMonth(today);
+      
+      filteredTours = mockTours.filter(tour => 
+        isWithinInterval(tour.date, { start: monthStart, end: monthEnd })
+      );
+    } 
+    else if (timeRange === "next-month") {
+      const nextMonthStart = startOfMonth(addMonths(today, 1));
+      const nextMonthEnd = endOfMonth(addMonths(today, 1));
+      
+      filteredTours = mockTours.filter(tour => 
+        isWithinInterval(tour.date, { start: nextMonthStart, end: nextMonthEnd })
+      );
+    }
   }
   
   return (
@@ -81,34 +124,38 @@ const ToursPage = () => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <CardTitle>Tour Overview</CardTitle>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-2 mr-4 border rounded-md p-1">
-                  <Button 
-                    variant={timeRange === "all" ? "default" : "ghost"} 
-                    size="sm"
-                    onClick={() => setTimeRange("all")}
-                  >
+                <ToggleGroup type="single" value={timeRange} onValueChange={(value: TimeRangeType) => value && setTimeRange(value)}>
+                  <ToggleGroupItem value="all">
                     <ListFilter className="mr-2 h-4 w-4" />
                     All
-                  </Button>
-                  <Button 
-                    variant={timeRange === "weekly" ? "default" : "ghost"} 
-                    size="sm"
-                    onClick={() => setTimeRange("weekly")}
-                  >
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="today">
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    Weekly
-                  </Button>
-                  <Button 
-                    variant={timeRange === "monthly" ? "default" : "ghost"} 
-                    size="sm"
-                    onClick={() => setTimeRange("monthly")}
-                  >
+                    Today
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="tomorrow">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    Tomorrow
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="this-week">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    This Week
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="next-week">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    Next Week
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="this-month">
                     <CalendarRange className="mr-2 h-4 w-4" />
-                    Monthly
-                  </Button>
-                </div>
+                    This Month
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="next-month">
+                    <CalendarRange className="mr-2 h-4 w-4" />
+                    Next Month
+                  </ToggleGroupItem>
+                </ToggleGroup>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 ml-2 mt-2 sm:mt-0">
                   <Button 
                     variant={viewMode === "all" ? "default" : "outline"} 
                     size="sm"
