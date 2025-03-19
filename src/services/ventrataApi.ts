@@ -82,7 +82,7 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
     
     return {
       id: tour.id,
-      date: new Date(tour.date),
+      date: new Date(tour.date),  // Convert string to Date
       location: tour.location,
       tourName: tour.tourName,
       tourType: tour.tourType,

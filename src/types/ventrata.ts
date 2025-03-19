@@ -19,7 +19,7 @@ export interface VentrataTourGroup {
 
 export interface VentrataTour {
   id: string;
-  date: string; // ISO string
+  date: Date; // Changed from string to Date
   location: string;
   tourName: string;
   tourType: 'food' | 'private' | 'default';

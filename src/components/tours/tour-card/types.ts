@@ -1,10 +1,53 @@
-import { VentrataTour } from "@/types/ventrata";
+
+import { VentrataTour, VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 
 export interface TourCardProps extends VentrataTour {
+  isCondensed?: boolean;
 }
 
 export interface TourCardListProps {
   tours: TourCardProps[];
+}
+
+export interface TourCardHeaderProps {
+  tourName: string;
+  location: string;
+  referenceCode: string;
+  startTime: string;
+  date: Date;
+  isHovered: boolean;
+}
+
+export interface TourCardDetailsProps {
+  guide1: string;
+  guide2?: string;
+  guide1Info?: GuideInfo;
+  guide2Info?: GuideInfo;
+  location: string;
+  tourGroups: VentrataTourGroup[];
+  totalParticipants: number;
+  isHighSeason: boolean;
+}
+
+export interface TourCardFooterProps {
+  id: string;
+  totalParticipants: number;
+  numTickets?: number;
+  isBelowMinimum: boolean;
+  isHighSeason: boolean;
+  isHovered: boolean;
+  childCount?: number;
+}
+
+export interface TourCardGuideProps {
+  guideName: string;
+  guideInfo?: GuideInfo;
+  isSecondary?: boolean;
+}
+
+export interface TourCardCapacityProps {
+  totalParticipants: number;
+  capacity: number;
 }
 
 export interface ParticipantDropZoneProps {
@@ -15,7 +58,7 @@ export interface ParticipantDropZoneProps {
 }
 
 export interface DraggableParticipantProps {
-  participant: import('@/types/ventrata').VentrataParticipant;
+  participant: VentrataParticipant;
   groupIndex: number;
-  onDragStart: (e: React.DragEvent, participant: import('@/types/ventrata').VentrataParticipant, fromGroupIndex: number) => void;
+  onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
 }

@@ -63,7 +63,7 @@ export const useUpdateTourGroups = (tourId: string) => {
 const transformTours = (response: VentrataToursResponse): TourCardProps[] => {
   return response.data.map(tour => ({
     id: tour.id,
-    date: new Date(tour.date),
+    date: new Date(tour.date), // Convert string to Date if coming from API
     location: tour.location,
     tourName: tour.tourName,
     tourType: tour.tourType,
