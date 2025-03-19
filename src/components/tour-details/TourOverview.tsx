@@ -6,7 +6,12 @@ import {
   ParticipantsCard,
   TicketsCard
 } from "./overview";
+import { useState, useEffect } from "react";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
+import { GroupsManagement } from "./groups-management";
+import { Separator } from "@/components/ui/separator";
+import { GuidesAssignedSection } from "./overview/GuidesAssignedSection";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -37,6 +42,22 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   const childTickets = tour.numTickets 
     ? (tour.numTickets - adultTickets) 
     : totalChildCount;
+
+  // Function to determine badge color based on guide type
+  const getGuideTypeBadgeColor = (guideType?: string) => {
+    if (!guideType) return "bg-gray-100 text-gray-800";
+    
+    switch (guideType) {
+      case "GA Ticket":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "GA Free":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "GC":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
   // Log for debugging synchronization issues
   console.log("TourOverview rendering with counts:", {
@@ -73,6 +94,31 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
           totalTickets={tour.numTickets || totalParticipants}
         />
       </div>
+      
+      <Separator className="my-6" />
+      
+      <Tabs defaultValue="guides" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="guides">Guide Assignments</TabsTrigger>
+          <TabsTrigger value="participants">Participant Management</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="guides">
+          <GuidesAssignedSection
+            tour={{...tour, isHighSeason}}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+            getGuideTypeBadgeColor={getGuideTypeBadgeColor}
+          />
+        </TabsContent>
+        
+        <TabsContent value="participants">
+          <GroupsManagement 
+            tour={{...tour, isHighSeason}} 
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
