@@ -43,13 +43,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   } = useGroupManagement(tour);
 
   // Get dialog management - pass the tour object
-  const {
-    openAddGroupDialog,
-    openDeleteDialog,
-    dialogsComponent,
-    isAddGroupOpen,
-    openAssignGuideDialog
-  } = GroupDialogsContainer({
+  const dialogUtils = GroupDialogsContainer({
     tour,
     guide1Info,
     guide2Info,
@@ -57,6 +51,14 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     selectedGroupIndex,
     setSelectedGroupIndex
   });
+
+  const {
+    openAddGroupDialog,
+    openDeleteDialog,
+    openAssignGuideDialog,
+    dialogsComponent,
+    isAddGroupOpen
+  } = dialogUtils;
 
   return (
     <Card>
