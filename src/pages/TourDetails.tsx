@@ -13,8 +13,8 @@ import { useState } from "react";
 import { useTourById, useUpdateTourGroups } from "@/hooks/useTourData";
 import { TourHeader } from "@/components/tour-details/TourHeader";
 import { TourOverview } from "@/components/tour-details/TourOverview";
-import { GroupsManagement } from "@/components/tour-details/groups-management";
-import { TicketsManagement } from "@/components/tour-details/TicketsManagement";
+import { GroupsManagement, GroupGuideManagement } from "@/components/tour-details/groups-management";
+import { TicketsManagement } from "@/components/tour-details/ticket-management";
 import { ModificationsTab } from "@/components/tour-details/ModificationsTab";
 import { useGuideInfo } from "@/hooks/useGuideData";
 
@@ -27,6 +27,7 @@ const TourDetails = () => {
   // Get guide information
   const guide1Info = tour ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
   if (isLoading) {
     return (
@@ -70,7 +71,10 @@ const TourDetails = () => {
           </TabsContent>
           
           <TabsContent value="groups" className="space-y-4 mt-6">
-            <GroupsManagement tour={tour} />
+            <div className="space-y-6">
+              <GroupGuideManagement tour={tour} />
+              <GroupsManagement tour={tour} />
+            </div>
           </TabsContent>
           
           <TabsContent value="tickets" className="space-y-4 mt-6">

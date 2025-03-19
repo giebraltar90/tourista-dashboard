@@ -1,6 +1,6 @@
 
-import { VentrataToursResponse, VentrataBookingsResponse, VentrataTour } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { VentrataToursResponse, VentrataBookingsResponse, VentrataTour, VentrataTourGroup } from "@/types/ventrata";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { mockTours } from "@/data/mockData";
 
 // Ventrata API configuration
@@ -53,8 +53,10 @@ export const fetchTours = async (params?: {
       referenceCode: tour.referenceCode,
       guide1: tour.guide1,
       guide2: tour.guide2,
+      guide3: tour.guide3,
       tourGroups: tour.tourGroups,
-      numTickets: tour.numTickets
+      numTickets: tour.numTickets,
+      isHighSeason: tour.isHighSeason
     }));
   } catch (error) {
     console.error("Error fetching tours from Ventrata:", error);
@@ -90,8 +92,10 @@ export const fetchTourById = async (tourId: string): Promise<TourCardProps | nul
       referenceCode: tour.referenceCode,
       guide1: tour.guide1,
       guide2: tour.guide2,
+      guide3: tour.guide3,
       tourGroups: tour.tourGroups,
-      numTickets: tour.numTickets
+      numTickets: tour.numTickets,
+      isHighSeason: tour.isHighSeason
     };
   } catch (error) {
     console.error(`Error fetching tour ${tourId} from Ventrata:`, error);
@@ -126,7 +130,7 @@ export const fetchBookingsForTour = async (tourId: string): Promise<VentrataBook
  */
 export const updateTourGroups = async (
   tourId: string, 
-  updatedGroups: any
+  updatedGroups: VentrataTourGroup[]
 ): Promise<boolean> => {
   try {
     // For demo purposes, simulate an API call with a success response
@@ -149,6 +153,36 @@ export const updateTourGroups = async (
   } catch (error) {
     console.error(`Error updating tour ${tourId} groups:`, error);
     // Allow the UI to handle the error gracefully
+    throw error;
+  }
+};
+
+/**
+ * Update tour capacity settings (e.g., toggle high season mode)
+ */
+export const updateTourCapacity = async (
+  tourId: string,
+  updatedTour: VentrataTour
+): Promise<boolean> => {
+  try {
+    // For demo purposes, simulate an API call with a success response
+    console.log(`Updating tour capacity for tour ${tourId}`, updatedTour);
+    
+    // Uncomment this when the real API is ready
+    /*
+    const response = await fetch(`${API_BASE_URL}/tours/${tourId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(updatedTour),
+    });
+    
+    return response.ok;
+    */
+    
+    // Mock success response
+    return true;
+  } catch (error) {
+    console.error(`Error updating tour ${tourId} capacity:`, error);
     throw error;
   }
 };

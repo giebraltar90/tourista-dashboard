@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useUpdateTourGroups } from "./useTourData";
 import { toast } from "sonner";
 
@@ -154,3 +154,86 @@ export const useGroupManagement = (tour: TourCardProps) => {
     isMovePending: updateTourGroupsMutation.isPending
   };
 };
+
+// Hook for adding a new group
+export const useAddGroup = (tourId: string) => {
+  const { data: tour, refetch } = useTourById(tourId);
+  
+  const addGroup = async (newGroup: VentrataTourGroup) => {
+    try {
+      if (!tour) throw new Error("Tour not found");
+      
+      const updatedTourGroups = [...tour.tourGroups, newGroup];
+      await updateTourGroups(tourId, updatedTourGroups);
+      
+      // Refetch tour data to update UI
+      await refetch();
+      
+      return true;
+    } catch (error) {
+      console.error("Error adding group:", error);
+      throw error;
+    }
+  };
+  
+  return { addGroup };
+};
+
+// Hook for updating a group
+export const useUpdateGroup = (tourId: string) => {
+  const { data: tour, refetch } = useTourById(tourId);
+  
+  const updateGroup = async (groupIndex: number, updatedGroup: VentrataTourGroup) => {
+    try {
+      if (!tour) throw new Error("Tour not found");
+      
+      const updatedTourGroups = [...tour.tourGroups];
+      updatedTourGroups[groupIndex] = updatedGroup;
+      
+      await updateTourGroups(tourId, updatedTourGroups);
+      
+      // Refetch tour data to update UI
+      await refetch();
+      
+      return true;
+    } catch (error) {
+      console.error("Error updating group:", error);
+      throw error;
+    }
+  };
+  
+  return { updateGroup };
+};
+
+// Hook for assigning a guide to a group
+export const useAssignGuide = (tourId: string) => {
+  const { data: tour, refetch } = useTourById(tourId);
+  
+  const assignGuide = async (groupIndex: number, guideId?: string) => {
+    try {
+      if (!tour) throw new Error("Tour not found");
+      
+      const updatedTourGroups = [...tour.tourGroups];
+      updatedTourGroups[groupIndex] = {
+        ...updatedTourGroups[groupIndex],
+        guideId,
+      };
+      
+      await updateTourGroups(tourId, updatedTourGroups);
+      
+      // Refetch tour data to update UI
+      await refetch();
+      
+      return true;
+    } catch (error) {
+      console.error("Error assigning guide:", error);
+      throw error;
+    }
+  };
+  
+  return { assignGuide };
+};
+
+// Imports needed for the hooks above that are not already imported
+import { useTourById } from "./useTourData";
+import { updateTourGroups } from "@/services/ventrataApi";

@@ -10,37 +10,51 @@ export const guideData: Record<string, GuideInfo> = {
   "Maria Garcia": {
     name: "Maria Garcia",
     birthday: new Date(1995, 6, 15), // July 15, 1995
-    guideType: "GA Free"
+    guideType: "GA Free",
+    id: "guide1"
   },
   "Jean Dupont": {
     name: "Jean Dupont",
     birthday: new Date(1985, 2, 22), // March 22, 1985
-    guideType: "GA Ticket"
+    guideType: "GA Ticket",
+    id: "guide2"
   },
   "Sophie Miller": {
     name: "Sophie Miller",
     birthday: new Date(1990, 9, 5), // October 5, 1990
-    guideType: "GC"
+    guideType: "GC",
+    id: "guide3"
   },
   "Carlos Martinez": {
     name: "Carlos Martinez",
     birthday: new Date(1988, 4, 18), // May 18, 1988
-    guideType: "GA Ticket"
+    guideType: "GA Ticket",
+    id: "guide4"
   },
   "Noema Weber": {
     name: "Noema Weber",
     birthday: new Date(1998, 11, 3), // December 3, 1998
-    guideType: "GA Free"
+    guideType: "GA Free",
+    id: "guide5"
   },
   "Tobias Schmidt": {
     name: "Tobias Schmidt",
     birthday: new Date(1982, 7, 27), // August 27, 1982
-    guideType: "GC"
+    guideType: "GC",
+    id: "guide6"
   }
 };
 
 export function useGuideInfo(guideName: string): GuideInfo | null {
   return guideData[guideName] || null;
+}
+
+export function useGuideData() {
+  const guides = useMemo(() => {
+    return Object.values(guideData);
+  }, []);
+  
+  return { guides };
 }
 
 export function useGuideTours() {
@@ -54,7 +68,7 @@ export function useGuideTours() {
     
     // Filter tours where the guide is either guide1 or guide2
     return allTours.filter(tour => 
-      tour.guide1 === guideName || tour.guide2 === guideName
+      tour.guide1 === guideName || tour.guide2 === guideName || tour.guide3 === guideName
     );
   }, [allTours, guideName]);
   

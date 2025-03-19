@@ -15,6 +15,7 @@ export interface VentrataTourGroup {
   entryTime: string;
   participants?: VentrataParticipant[];
   childCount?: number; // Total children in this group
+  guideId?: string; // Guide ID for this group 
 }
 
 export interface VentrataTour {
@@ -27,8 +28,10 @@ export interface VentrataTour {
   referenceCode: string;
   guide1: string;
   guide2?: string;
+  guide3?: string; // Added third guide for high season
   tourGroups: VentrataTourGroup[];
   numTickets?: number;
+  isHighSeason?: boolean; // Added flag for high season
 }
 
 export interface VentrataBooking {
@@ -68,4 +71,22 @@ export interface GuideInfo {
   name: string;
   birthday: Date;
   guideType: GuideType;
+  id?: string; // Unique ID for the guide
 }
+
+// Tour capacity settings
+export interface TourCapacitySettings {
+  standard: number;
+  exception: number;
+  highSeason: number;
+  standardGroups: number;
+  highSeasonGroups: number;
+}
+
+export const DEFAULT_CAPACITY_SETTINGS: TourCapacitySettings = {
+  standard: 24,
+  exception: 29,
+  highSeason: 36,
+  standardGroups: 2,
+  highSeasonGroups: 3
+};
