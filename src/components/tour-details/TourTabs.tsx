@@ -78,7 +78,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="overview" className="space-y-4 mt-6">
         <TourOverview 
-          tour={getCurrentTourData()} 
+          tour={getCurrentTourData() as TourCardProps} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -87,7 +87,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       
       <TabsContent value="tickets" className="space-y-4 mt-6">
         <TicketsManagement 
-          tour={getCurrentTourData()} 
+          tour={getCurrentTourData() as TourCardProps} 
           guide1Info={guide1Info} 
           guide2Info={guide2Info}
           guide3Info={guide3Info}
@@ -97,7 +97,7 @@ export const TourTabs: React.FC<TourTabsProps> = ({
       <TabsContent value="modifications" className="space-y-4 mt-6">
         <ModificationsTab 
           key={`modifications-${activeTab === "modifications" ? Date.now() : "inactive"}`} 
-          tour={getCurrentTourData()} 
+          tour={getCurrentTourData() as TourCardProps} 
         />
       </TabsContent>
     </Tabs>
