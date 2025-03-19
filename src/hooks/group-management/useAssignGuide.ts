@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { processGuideAssignment } from "./services/guideAssignmentProcessor";
 import { recordGuideAssignmentModification } from "./services/guideAssignmentService";
 import { toast } from "sonner";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 
 /**
  * Hook to assign or unassign guides to tour groups with improved debouncing
@@ -70,7 +71,8 @@ export const useAssignGuide = (tourId: string) => {
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       
       // Next, get the latest data before making changes
-      const latestTour = queryClient.getQueryData(['tour', tourId]) || tour;
+      // Fix for TypeScript error - explicitly cast to the correct type
+      const latestTour = queryClient.getQueryData(['tour', tourId]) as TourCardProps || tour;
       
       // Verify the group still exists in the latest data
       if (!latestTour.tourGroups || groupIndex >= latestTour.tourGroups.length) {
