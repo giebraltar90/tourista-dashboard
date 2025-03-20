@@ -1,5 +1,5 @@
-
 import { GuideInfo } from "@/types/ventrata";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Find guide name based on guide ID
@@ -17,17 +17,27 @@ export const findGuideName = (
   if (guideId === "guide2" && tour.guide2) return tour.guide2;
   if (guideId === "guide3" && tour.guide3) return tour.guide3;
   
-  // Try to find guide by ID
+  // Try to find guide by ID in the guides array
   const guide = guides.find(g => g.id === guideId);
   if (guide && guide.name) return guide.name;
   
-  // Check if ID contains guide name (fallback)
-  if (tour.guide1 && guideId.includes(tour.guide1)) return tour.guide1;
-  if (tour.guide2 && guideId.includes(tour.guide2)) return tour.guide2;
-  if (tour.guide3 && guideId.includes(tour.guide3)) return tour.guide3;
+  // For UUID-format guideIds, try to find a matching guide
+  if (isValidUuid(guideId)) {
+    // Check if this matches one of the primary guides' IDs
+    if (tour.guide1 && tour.guide1 === guideId) return tour.guide1;
+    if (tour.guide2 && tour.guide2 === guideId) return tour.guide2;
+    if (tour.guide3 && tour.guide3 === guideId) return tour.guide3;
+    
+    // Try to find the guide in the guides array
+    const matchingGuide = guides.find(g => g.id === guideId);
+    if (matchingGuide) return matchingGuide.name;
+    
+    // If we can't find a name, show a truncated version of the UUID
+    return `Guide (${guideId.substring(0, 6)}...)`;
+  }
   
-  // As a last resort, just return the ID with a prefix
-  return `Guide (${guideId.substring(0, 6)}...)`;
+  // If we made it here, we don't know this guide
+  return guideId.length > 10 ? `Guide (${guideId.substring(0, 6)}...)` : guideId;
 };
 
 /**

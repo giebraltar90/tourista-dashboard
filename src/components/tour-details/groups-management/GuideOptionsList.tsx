@@ -1,7 +1,7 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { isUuid } from "@/services/api/tour/guideUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 interface GuideOptionsListProps {
   tour: TourCardProps;
@@ -70,15 +70,23 @@ export const getValidGuides = ({
 export const getGuideName = (guideId: string | undefined, tour: TourCardProps, guides: any[] = []) => {
   if (!guideId) return "Unassigned";
   
-  if (isUuid(guideId)) {
+  if (isValidUuid(guideId)) {
     const guideMatch = guides.find(g => g.id === guideId);
     if (guideMatch) return guideMatch.name;
+    
+    // Check if it matches one of the primary guides
+    if (tour.guide1 && tour.guide1 === guideId) return tour.guide1;
+    if (tour.guide2 && tour.guide2 === guideId) return tour.guide2;
+    if (tour.guide3 && tour.guide3 === guideId) return tour.guide3;
+    
+    // If we can't find a name, show a truncated version of the UUID
+    return `Guide (${guideId.substring(0, 6)}...)`;
   }
   
   // Standard guide references
-  if (guideId === "guide1") return tour.guide1;
-  if (guideId === "guide2") return tour.guide2 || "";
-  if (guideId === "guide3") return tour.guide3 || "";
+  if (guideId === "guide1") return tour.guide1 || "Primary Guide";
+  if (guideId === "guide2") return tour.guide2 || "Secondary Guide";
+  if (guideId === "guide3") return tour.guide3 || "Assistant Guide";
   
   return guideId;
 };

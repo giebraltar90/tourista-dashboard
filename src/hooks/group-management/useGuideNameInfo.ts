@@ -2,6 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { useCallback } from "react";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Hook to get guide name and info when only guideId is available
@@ -44,20 +45,29 @@ export const useGuideNameInfo = (
     }
     
     // For UUID guide IDs, we need to check multiple places
-    
-    // First try to match against known guide IDs
-    const matchingGuide = [
-      { id: tour.guide1, name: tour.guide1, info: guide1Info },
-      { id: tour.guide2, name: tour.guide2, info: guide2Info },
-      { id: tour.guide3, name: tour.guide3, info: guide3Info }
-    ].find(g => g.id === guideId);
-    
-    if (matchingGuide) {
-      return { name: matchingGuide.name || "Unassigned", info: matchingGuide.info };
+    if (isValidUuid(guideId)) {
+      // First try to match against known guide IDs
+      if (tour.guide1 && isValidUuid(tour.guide1) && tour.guide1 === guideId) {
+        return { name: tour.guide1, info: guide1Info };
+      }
+      
+      if (tour.guide2 && isValidUuid(tour.guide2) && tour.guide2 === guideId) {
+        return { name: tour.guide2, info: guide2Info };
+      }
+      
+      if (tour.guide3 && isValidUuid(tour.guide3) && tour.guide3 === guideId) {
+        return { name: tour.guide3, info: guide3Info };
+      }
+      
+      // If we made it here, display a shortened UUID
+      return { 
+        name: `Guide (${guideId.substring(0, 6)}...)`, 
+        info: null 
+      };
     }
     
-    // If we made it here, we don't know this guide
-    return { name: `Guide (${guideId.substring(0, 4)}...)`, info: null };
+    // If we made it here, just return the guideId as the name
+    return { name: guideId, info: null };
   }, [tour, guide1Info, guide2Info, guide3Info]);
   
   return { getGuideNameAndInfo };

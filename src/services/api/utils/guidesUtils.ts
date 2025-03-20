@@ -1,51 +1,30 @@
-
 /**
- * Utilities for guide ID validation and processing
+ * Validate if a string is a valid UUID
  */
-
-/**
- * Check if a string is a valid UUID
- */
-export const isValidUuid = (str: string | undefined): boolean => {
-  if (!str) return false;
-  
-  // UUID v4 regex pattern
-  const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidPattern.test(str);
+export const isValidUuid = (id: string | undefined): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };
 
 /**
- * Check if a guide ID is a special ID (guide1, guide2, guide3)
+ * Sanitize guide ID for database storage
+ * - For special IDs like guide1, guide2, guide3, return null (these are handled specially in the UI)
+ * - For valid UUIDs, return as is
+ * - For other values, return null
  */
-export const isSpecialGuideId = (guideId: string | undefined): boolean => {
-  if (!guideId) return false;
-  return guideId === "guide1" || guideId === "guide2" || guideId === "guide3";
-};
-
-/**
- * Sanitizes a guide ID for database storage
- * Returns null for invalid IDs, preserves valid UUIDs, converts special IDs to null
- * 
- * IMPORTANT: Supabase expects UUID format for the guide_id column
- * However, our application uses special IDs like guide1, guide2, guide3 internally
- * This function converts special IDs to null when sent to the database
- * to prevent "invalid input syntax for type uuid" errors
- */
-export const sanitizeGuideId = (guideId: string | undefined | null): string | null => {
-  if (!guideId || guideId === "_none") return null;
+export const sanitizeGuideId = (guideId?: string): string | null => {
+  if (!guideId) return null;
   
-  // If it's a special guide ID, convert to null for database storage
-  // This is essential because the database column requires UUID format
-  if (isSpecialGuideId(guideId)) {
-    console.log(`Converting special guide ID ${guideId} to null for database compatibility`);
+  // Special guide IDs should be stored as null in the database
+  if (["guide1", "guide2", "guide3", "_none"].includes(guideId)) {
     return null;
   }
   
-  // Allow valid UUIDs
+  // Valid UUIDs should be stored as is
   if (isValidUuid(guideId)) {
     return guideId;
   }
   
-  console.log(`Converting non-standard guide ID to null: ${guideId}`);
+  // Other values should be stored as null
   return null;
 };
