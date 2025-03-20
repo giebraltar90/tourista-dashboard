@@ -1,15 +1,9 @@
 
 import { Form } from "@/components/ui/form";
-import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectField } from "./GuideSelectField";
 import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
-
-interface GuideOption {
-  id: string;
-  name: string;
-  info: GuideInfo | null;
-}
+import { GuideOption } from "@/hooks/group-management/types";
 
 interface AssignGuideFormProps {
   tourId: string;

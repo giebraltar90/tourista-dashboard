@@ -1,4 +1,3 @@
-
 import { Form } from "@/components/ui/form";
 import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectField } from "./GuideSelectField";
@@ -6,15 +5,9 @@ import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useState, useEffect } from "react";
-import { toast } from "sonner";
 import { useTourById } from "@/hooks/tourData/useTourById";
 import { useGuideData } from "@/hooks/guides/useGuideData";
-
-interface GuideOption {
-  id: string;
-  name: string;
-  info: GuideInfo | null;
-}
+import { GuideOption } from "@/hooks/group-management/types";
 
 interface AssignGuideFormProps {
   tourId: string;

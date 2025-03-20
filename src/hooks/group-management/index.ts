@@ -8,3 +8,5 @@ export * from './useUpdateGroup';
 export * from './useAssignGuide';
 export * from './useGuideNameInfo';
 export * from './useGuideAssignmentForm';
+export * from './types';
+export * from './utils/guideAssignmentUtils';
