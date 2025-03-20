@@ -1,9 +1,18 @@
+
 /**
  * Validate if a string is a valid UUID
  */
 export const isValidUuid = (id: string | undefined): boolean => {
   if (!id) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+};
+
+/**
+ * Check if a guide ID is one of the special IDs (guide1, guide2, guide3, _none)
+ */
+export const isSpecialGuideId = (guideId?: string): boolean => {
+  if (!guideId) return false;
+  return ["guide1", "guide2", "guide3", "_none"].includes(guideId);
 };
 
 /**
@@ -16,7 +25,7 @@ export const sanitizeGuideId = (guideId?: string): string | null => {
   if (!guideId) return null;
   
   // Special guide IDs should be stored as null in the database
-  if (["guide1", "guide2", "guide3", "_none"].includes(guideId)) {
+  if (isSpecialGuideId(guideId)) {
     return null;
   }
   
