@@ -23,8 +23,16 @@ export const updateGuideInSupabase = async (
     });
     
     // Handle special guide IDs (guide1, guide2, guide3)
-    // Store as null in the database since the guide_id column expects UUID
-    const dbGuideId = guideId && isSpecialGuideId(guideId) ? null : guideId;
+    // For database storage, use them directly
+    let dbGuideId = guideId;
+    
+    // Log the exact type and format of guideId for debugging
+    console.log("Guide ID details:", {
+      value: guideId,
+      type: typeof guideId,
+      isSpecial: guideId ? isSpecialGuideId(guideId) : false,
+      isUuid: guideId ? isValidUuid(guideId) : false
+    });
     
     // Build update object based on what data is provided
     const updateData: any = { guide_id: dbGuideId };
@@ -38,18 +46,19 @@ export const updateGuideInSupabase = async (
     console.log("Sending to database:", updateData);
 
     // Update the guide assignment in the database
-    const { error } = await supabase
+    const { error, data } = await supabase
       .from('tour_groups')
       .update(updateData)
       .eq('id', groupId)
-      .eq('tour_id', tourId);
+      .eq('tour_id', tourId)
+      .select();
       
     if (error) {
       console.error("Error updating guide assignment:", error);
       return false;
     }
     
-    console.log("Successfully updated guide assignment in Supabase");
+    console.log("Successfully updated guide assignment in Supabase. Response:", data);
     // Add a small delay to let database update propagate
     await new Promise(resolve => setTimeout(resolve, 300));
     return true;

@@ -27,7 +27,12 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      console.log("Starting guide assignment:", { groupIndex, guideId, tourId });
+      console.log("Starting guide assignment:", { 
+        groupIndex, 
+        guideId, 
+        tourId, 
+        currentGroups: tour.tourGroups.map(g => ({id: g.id, name: g.name, guideId: g.guideId}))
+      });
       
       // Validate groupIndex is within bounds
       if (groupIndex < 0 || groupIndex >= (tour.tourGroups?.length || 0)) {
@@ -69,6 +74,14 @@ export const useAssignGuide = (tourId: string) => {
         }
       }
       
+      console.log("Before optimistic update:", {
+        targetGroupId: targetGroup.id,
+        targetGroupName: targetGroup.name,
+        currentGuideId: targetGroup.guideId,
+        newGuideId: actualGuideId,
+        guideName
+      });
+      
       // Apply optimistic update to the cache
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
         if (!oldData) return null;
@@ -78,6 +91,11 @@ export const useAssignGuide = (tourId: string) => {
         
         // Update the specific group
         if (newData.tourGroups[groupIndex]) {
+          console.log("Applying optimistic update to cache:", {
+            groupId: newData.tourGroups[groupIndex].id,
+            oldGuideId: newData.tourGroups[groupIndex].guideId,
+            newGuideId: actualGuideId
+          });
           newData.tourGroups[groupIndex].guideId = actualGuideId;
         }
         
@@ -110,6 +128,8 @@ export const useAssignGuide = (tourId: string) => {
         actualGuideId,
         groupName
       );
+      
+      console.log("Database update result:", updateSuccess ? "Success" : "Failed");
       
       if (updateSuccess) {
         // Record the modification

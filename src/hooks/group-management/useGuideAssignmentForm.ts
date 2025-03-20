@@ -41,6 +41,14 @@ export const useGuideAssignmentForm = ({
   // Set the default value to "_none" if no guide is assigned
   const defaultGuideId = currentGuideId || "_none";
   
+  console.log("useGuideAssignmentForm initialized with:", {
+    tourId,
+    groupIndex,
+    guidesCount: guides.length,
+    currentGuideId,
+    defaultGuideId
+  });
+  
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,7 +69,8 @@ export const useGuideAssignmentForm = ({
       console.log("Assigning guide:", { 
         groupIndex, 
         guideId: values.guideId,
-        currentGuideId
+        currentGuideId,
+        selectedGuide: guides.find(g => g.id === values.guideId)?.name
       });
       
       // Call the assign guide function with the selected guide ID

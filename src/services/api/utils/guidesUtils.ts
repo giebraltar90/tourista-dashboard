@@ -17,23 +17,10 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 
 /**
  * Sanitize guide ID for database storage
- * - For special IDs like guide1, guide2, guide3, return null (these are handled specially in the UI)
- * - For valid UUIDs, return as is
- * - For other values, return null
+ * - Return the ID directly, regardless of whether it's a special ID or UUID
+ * - This preserves the original ID format in the database
  */
 export const sanitizeGuideId = (guideId?: string): string | null => {
-  if (!guideId) return null;
-  
-  // Special guide IDs should be stored as null in the database
-  if (isSpecialGuideId(guideId)) {
-    return null;
-  }
-  
-  // Valid UUIDs should be stored as is
-  if (isValidUuid(guideId)) {
-    return guideId;
-  }
-  
-  // Other values should be stored as null
-  return null;
+  if (!guideId || guideId === "_none") return null;
+  return guideId; // Return the ID as is, whether it's a special ID or UUID
 };

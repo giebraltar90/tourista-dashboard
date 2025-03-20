@@ -25,6 +25,20 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
+  console.log("GroupAssignment: Current tour data:", {
+    tourId: tour.id,
+    guide1: tour.guide1,
+    guide2: tour.guide2,
+    guide3: tour.guide3,
+    groupCount: tour.tourGroups.length,
+    groups: tour.tourGroups.map(g => ({ 
+      id: g.id, 
+      name: g.name, 
+      guideId: g.guideId,
+      size: g.size
+    }))
+  });
+  
   const isHighSeason = !!tour.isHighSeason;
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   
@@ -33,6 +47,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
   const handleOpenAssignGuide = (groupIndex: number) => {
+    console.log(`Opening guide assignment dialog for group ${groupIndex}:`, tour.tourGroups[groupIndex]);
     setSelectedGroupIndex(groupIndex);
     setIsAssignGuideOpen(true);
   };
@@ -48,6 +63,8 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       info: guide
     })) : [])
   ].filter(guide => guide.name && guide.id);
+  
+  console.log("Available guides for assignment:", validGuides);
   
   return (
     <Card>
@@ -77,6 +94,13 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {tour.tourGroups.map((group, index) => {
                 const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+                console.log(`Group ${index} guide info:`, { 
+                  groupName: group.name, 
+                  groupId: group.id,
+                  guideId: group.guideId, 
+                  assignedGuideName: guideName,
+                  originalGuideData: group.guideId ? `Found: ${!!tour.tourGroups[index].guideId}` : 'None'
+                });
                 
                 return (
                   <GroupCard
