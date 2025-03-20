@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -68,11 +68,11 @@ export const useAssignGuide = (tourId: string) => {
         } else {
           console.warn(`Could not find guide name for ID: ${actualGuideId} in available guides`);
           // Try harder to find the name
-          if (tour.guide1Id === actualGuideId && tour.guide1) {
+          if (tour.guide1 && guides.find(g => g.name === tour.guide1)?.id === actualGuideId) {
             guideName = tour.guide1;
-          } else if (tour.guide2Id === actualGuideId && tour.guide2) {
+          } else if (tour.guide2 && guides.find(g => g.name === tour.guide2)?.id === actualGuideId) {
             guideName = tour.guide2;
-          } else if (tour.guide3Id === actualGuideId && tour.guide3) {
+          } else if (tour.guide3 && guides.find(g => g.name === tour.guide3)?.id === actualGuideId) {
             guideName = tour.guide3;
           }
         }

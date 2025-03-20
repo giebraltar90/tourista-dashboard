@@ -1,9 +1,10 @@
+
 import { Form } from "@/components/ui/form";
 import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectField } from "./GuideSelectField";
 import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
-import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTourById } from "@/hooks/tourData/useTourById";
@@ -51,36 +52,30 @@ export const AssignGuideForm = ({
         }
       });
     
-    // Then process special guides (guide1, guide2, etc.)
+    // Then process special guides (guide1, guide2, etc.) - try to find their UUIDs
     guides
       .filter(guide => guide && guide.name && !isValidUuid(guide.id))
       .forEach(guide => {
         if (!processedGuideNames.has(guide.name)) {
-          // Try to map the special ID to UUID
-          if (tour) {
-            const enhancedTour = {
-              ...tour,
-              guides: allDatabaseGuides // Add all guides to tour for better mapping
-            };
-            
-            const uuid = mapSpecialGuideIdToUuid(guide.id, enhancedTour);
-            if (uuid) {
-              console.log(`Mapped ${guide.id} (${guide.name}) to UUID: ${uuid}`);
-              // Add the guide with the mapped UUID
-              uniqueGuides.push({
-                ...guide,
-                id: uuid // Replace the special ID with the UUID
-              });
-              processedGuideNames.add(guide.name);
-            } else {
-              // If mapping failed, still include the guide with its original ID
-              uniqueGuides.push(guide);
-              processedGuideNames.add(guide.name);
-            }
+          // For special IDs, try to find the corresponding database guide
+          const databaseGuide = allDatabaseGuides.find(dbGuide => 
+            dbGuide.name === guide.name
+          );
+          
+          if (databaseGuide && isValidUuid(databaseGuide.id)) {
+            // Use the database guide with valid UUID
+            uniqueGuides.push({
+              id: databaseGuide.id,
+              name: databaseGuide.name,
+              info: guide.info || databaseGuide
+            });
+            processedGuideNames.add(guide.name);
+            console.log(`Mapped special guide "${guide.name}" to UUID: ${databaseGuide.id}`);
           } else {
-            // If no tour data, keep the guide as is
+            // If no UUID mapping found, still include the guide with its original ID
             uniqueGuides.push(guide);
             processedGuideNames.add(guide.name);
+            console.log(`Couldn't find UUID for guide "${guide.name}" - keeping original ID: ${guide.id}`);
           }
         }
       });
@@ -93,7 +88,7 @@ export const AssignGuideForm = ({
     });
     
     setProcessedGuides(uniqueGuides);
-  }, [guides, tour, allDatabaseGuides]);
+  }, [guides, allDatabaseGuides]);
   
   // Enhance tour data with guides for better ID mapping
   const enhancedTour = tour ? {

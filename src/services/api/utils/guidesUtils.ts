@@ -26,9 +26,9 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
   console.log("mapSpecialGuideIdToUuid called with:", { 
     guideId, 
     tourInfo: tour ? {
-      guide1Id: tour.guide1Id,
-      guide2Id: tour.guide2Id,
-      guide3Id: tour.guide3Id
+      guide1: tour.guide1,
+      guide2: tour.guide2,
+      guide3: tour.guide3
     } : 'Tour data not available'
   });
   
@@ -40,24 +40,7 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
   // If there's no tour data, just return null for special IDs
   if (!tour) return null;
   
-  // Map special guide IDs to their UUID values
-  if (guideId === "guide1" && tour.guide1Id && isValidUuid(tour.guide1Id)) {
-    console.log(`Mapped guide1 to UUID: ${tour.guide1Id}`);
-    return tour.guide1Id;
-  }
-  
-  if (guideId === "guide2" && tour.guide2Id && isValidUuid(tour.guide2Id)) {
-    console.log(`Mapped guide2 to UUID: ${tour.guide2Id}`);
-    return tour.guide2Id;
-  }
-  
-  if (guideId === "guide3" && tour.guide3Id && isValidUuid(tour.guide3Id)) {
-    console.log(`Mapped guide3 to UUID: ${tour.guide3Id}`);
-    return tour.guide3Id;
-  }
-  
-  // If we couldn't map the ID directly using the tour data, 
-  // try to find the guide in the guides list by name
+  // Try to find the guide in the guides list by name
   if (guideId === "guide1" && tour.guide1 && tour.guides) {
     const guide = tour.guides.find(g => g.name === tour.guide1);
     if (guide && isValidUuid(guide.id)) {
@@ -114,11 +97,6 @@ export const getGuideDisplayName = (guideId: string | undefined, tour: any, guid
   if (guideId === "guide1" && tour?.guide1) return tour.guide1;
   if (guideId === "guide2" && tour?.guide2) return tour.guide2;
   if (guideId === "guide3" && tour?.guide3) return tour.guide3;
-  
-  // If the guide ID matches one of the primary guide IDs directly, use the name
-  if (tour?.guide1Id === guideId && tour?.guide1) return tour.guide1;
-  if (tour?.guide2Id === guideId && tour?.guide2) return tour.guide2;
-  if (tour?.guide3Id === guideId && tour?.guide3) return tour.guide3;
   
   // Add more detailed logging for troubleshooting
   console.log("Could not find guide name for ID:", guideId, "Using fallback formatting");
