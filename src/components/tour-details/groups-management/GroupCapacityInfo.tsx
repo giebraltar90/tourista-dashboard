@@ -38,7 +38,7 @@ export const GroupCapacityInfo = ({
     participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
   })));
   
-  // Detailed calculation loop for reliability - directly count each participant
+  // CRITICAL FIX: Only count from participant arrays, never fallback to size property
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
@@ -74,16 +74,8 @@ export const GroupCapacityInfo = ({
         groupTotal,
         groupChildCount
       });
-    } else if (group.size) {
-      // Only fallback to size properties when absolutely necessary
-      console.log(`ULTRA DEBUG: GroupCapacityInfo no participants for group ${group.name || 'unnamed'}, using size:`, {
-        size: group.size || 0,
-        childCount: group.childCount || 0
-      });
-      
-      calculatedTotalParticipants += group.size || 0;
-      calculatedTotalChildCount += group.childCount || 0;
     }
+    // CRITICAL FIX: Remove fallback to size properties completely
   }
   
   // Use calculated values, fall back to provided values if calculation fails

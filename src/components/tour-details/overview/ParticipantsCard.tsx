@@ -33,7 +33,7 @@ export const ParticipantsCard = ({
     }))
   });
   
-  // CRITICAL FIX: Explicitly log each participant for detailed debugging
+  // FIX: ONLY count from participants array and IGNORE the size property completely
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
@@ -68,16 +68,8 @@ export const ParticipantsCard = ({
         groupTotal,
         groupChildCount
       });
-    } else if (group.size) {
-      // Only fallback to size properties when absolutely necessary
-      console.log(`MEGA DEBUG: ParticipantsCard no participants for group ${group.name || 'unnamed'}, using size:`, {
-        size: group.size,
-        childCount: group.childCount || 0
-      });
-      
-      calculatedTotalParticipants += group.size;
-      calculatedTotalChildCount += group.childCount || 0;
     }
+    // CRITICAL FIX: Remove the fallback to size property completely
   }
   
   // Use calculated values, fall back to provided values if calculation fails

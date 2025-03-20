@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
@@ -147,6 +146,41 @@ export const useGroupManagement = (tour: TourCardProps) => {
     if (tour.id) {
       toast.info("Refreshing participants...");
       loadParticipants(tour.id);
+      
+      // CRITICAL FIX: Force recalculation of all group sizes after refresh
+      setTimeout(() => {
+        setLocalTourGroups(prevGroups => {
+          // Create deep copy to avoid mutation issues
+          const updatedGroups = JSON.parse(JSON.stringify(prevGroups));
+          
+          // Recalculate all group sizes from participants
+          return updatedGroups.map((group: VentrataTourGroup) => {
+            // Create a new object to avoid mutations
+            const updatedGroup = {...group};
+            
+            // Calculate directly from participants array if it exists
+            if (Array.isArray(updatedGroup.participants) && updatedGroup.participants.length > 0) {
+              let totalSize = 0;
+              let totalChildCount = 0;
+              
+              for (const p of updatedGroup.participants) {
+                totalSize += p.count || 1;
+                totalChildCount += p.childCount || 0;
+              }
+              
+              // Set the size and childCount based on calculated values
+              updatedGroup.size = totalSize;
+              updatedGroup.childCount = totalChildCount;
+            } else {
+              // If no participants, size should be 0
+              updatedGroup.size = 0;
+              updatedGroup.childCount = 0;
+            }
+            
+            return updatedGroup;
+          });
+        });
+      }, 500);
     }
   }, [tour.id, loadParticipants]);
 

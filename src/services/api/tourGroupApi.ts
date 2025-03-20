@@ -1,4 +1,3 @@
-
 import { VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid, isSpecialGuideId, mapSpecialGuideIdToUuid } from "./utils/guidesUtils";
@@ -39,11 +38,22 @@ export const updateTourGroups = async (
             // CRITICAL: Extract participants and preserve them
             const participants = Array.isArray(group.participants) ? group.participants : [];
             
-            // Update existing group
+            // CRITICAL FIX: Calculate size and childCount directly from participants
+            let calculatedSize = 0;
+            let calculatedChildCount = 0;
+            
+            if (participants.length > 0) {
+              for (const p of participants) {
+                calculatedSize += p.count || 1;
+                calculatedChildCount += p.childCount || 0;
+              }
+            }
+            
+            // Update existing group with calculated values
             const updateData: any = {
               name: groupName,
-              size: group.size || 0,
-              child_count: group.childCount || 0,
+              size: calculatedSize,
+              child_count: calculatedChildCount,
               guide_id: safeGuideId // Use unsanitized ID for database
             };
             

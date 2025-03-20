@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
@@ -68,9 +67,18 @@ export const useParticipantMovement = (
         updatedGroups[fromGroupIndex].participants = 
           updatedGroups[fromGroupIndex].participants.filter((p: any) => p.id !== participant.id);
           
-        // Update counts for fromGroup
-        updatedGroups[fromGroupIndex].size = Math.max(0, (updatedGroups[fromGroupIndex].size || 0) - participantCount);
-        updatedGroups[fromGroupIndex].childCount = Math.max(0, (updatedGroups[fromGroupIndex].childCount || 0) - childCount);
+        // CRITICAL FIX: Always recalculate the group size and childCount directly from participants
+        let fromGroupTotal = 0;
+        let fromGroupChildCount = 0;
+        
+        for (const p of updatedGroups[fromGroupIndex].participants) {
+          fromGroupTotal += p.count || 1;
+          fromGroupChildCount += p.childCount || 0;
+        }
+        
+        // Always set the size directly from calculated values, never keep old values
+        updatedGroups[fromGroupIndex].size = fromGroupTotal;
+        updatedGroups[fromGroupIndex].childCount = fromGroupChildCount;
       }
       
       // Then add to the destination group
@@ -82,9 +90,18 @@ export const useParticipantMovement = (
       const updatedParticipant = {...participant, group_id: toGroup.id};
       updatedGroups[toGroupIndex].participants.push(updatedParticipant);
       
-      // Update counts for toGroup
-      updatedGroups[toGroupIndex].size = (updatedGroups[toGroupIndex].size || 0) + participantCount;
-      updatedGroups[toGroupIndex].childCount = (updatedGroups[toGroupIndex].childCount || 0) + childCount;
+      // CRITICAL FIX: Always recalculate the target group size and childCount directly from participants
+      let toGroupTotal = 0;
+      let toGroupChildCount = 0;
+      
+      for (const p of updatedGroups[toGroupIndex].participants) {
+        toGroupTotal += p.count || 1;
+        toGroupChildCount += p.childCount || 0;
+      }
+      
+      // Always set the size directly from calculated values
+      updatedGroups[toGroupIndex].size = toGroupTotal;
+      updatedGroups[toGroupIndex].childCount = toGroupChildCount;
       
       // Apply optimistic update to the query cache
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {

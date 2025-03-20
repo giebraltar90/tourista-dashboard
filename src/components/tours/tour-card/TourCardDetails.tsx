@@ -31,6 +31,7 @@ export const TourCardDetails = ({
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
+  // CRITICAL FIX: Only count from participants arrays, never fallback to group.size
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       // Count directly from participants array - one by one
@@ -38,11 +39,8 @@ export const TourCardDetails = ({
         calculatedTotalParticipants += participant.count || 1;
         calculatedTotalChildCount += participant.childCount || 0;
       }
-    } else if (group.size) {
-      // Fallback to group size properties only when necessary
-      calculatedTotalParticipants += group.size;
-      calculatedTotalChildCount += group.childCount || 0;
     }
+    // Completely remove fallback to group.size 
   }
   
   // Use calculated value or fall back to provided value

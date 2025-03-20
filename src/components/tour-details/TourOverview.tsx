@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -60,6 +59,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   let totalParticipants = 0;
   let totalChildCount = 0;
   
+  // CRITICAL FIX: Only count from participants arrays, never use size
   for (const group of tourGroups) {
     console.log(`Group: ${group.name}`);
     if (Array.isArray(group.participants) && group.participants.length > 0) {
@@ -81,11 +81,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       totalParticipants += groupTotal;
       totalChildCount += groupChildCount;
-    } else if (group.size) {
-      console.log(`  Using size property: ${group.size}, childCount: ${group.childCount || 0}`);
-      
-      totalParticipants += group.size;
-      totalChildCount += group.childCount || 0;
     }
   }
   

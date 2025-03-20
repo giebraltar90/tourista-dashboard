@@ -1,4 +1,3 @@
-
 import { useCallback, useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { 
@@ -121,7 +120,34 @@ export const useDragAndDrop = (
       
       // Update state if successful
       if (success && updatedGroups) {
-        setGroups(updatedGroups);
+        // CRITICAL FIX: Ensure all group sizes are recalculated based on participants
+        const recalculatedGroups = updatedGroups.map(group => {
+          // Create a new object to avoid mutations
+          const updatedGroup = {...group};
+          
+          if (Array.isArray(updatedGroup.participants)) {
+            let totalSize = 0;
+            let totalChildCount = 0;
+            
+            for (const p of updatedGroup.participants) {
+              totalSize += p.count || 1;
+              totalChildCount += p.childCount || 0;
+            }
+            
+            // Always set the size and childCount based on calculated values
+            updatedGroup.size = totalSize;
+            updatedGroup.childCount = totalChildCount;
+          } else {
+            // If no participants, size should be 0
+            updatedGroup.size = 0;
+            updatedGroup.childCount = 0;
+          }
+          
+          return updatedGroup;
+        });
+        
+        // Apply the recalculated groups
+        setGroups(recalculatedGroups);
       } else if (!success) {
         // If operation failed but we tried to update UI, revert
         setGroups(currentGroups);

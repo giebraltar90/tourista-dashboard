@@ -1,6 +1,61 @@
 
-import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
+import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+/**
+ * Calculates the total number of participants across all groups
+ */
+export const calculateTotalParticipants = (tourGroups: VentrataTourGroup[]): number => {
+  // CRITICAL FIX: Only count from participants arrays, NEVER use size property
+  let totalParticipants = 0;
+  
+  // First try to count from participants array
+  for (const group of tourGroups) {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      // Count directly from participants array for accurate totals
+      for (const participant of group.participants) {
+        totalParticipants += participant.count || 1;
+      }
+    }
+    // CRITICAL FIX: Completely remove fallback to group.size
+  }
+  
+  console.log("ULTRACHECK PARTICIPANTS: calculateTotalParticipants result:", totalParticipants);
+  return totalParticipants;
+};
+
+/**
+ * Calculates the total number of children across all groups
+ */
+export const calculateTotalChildCount = (tourGroups: VentrataTourGroup[]): number => {
+  // CRITICAL FIX: Only count from participants arrays, NEVER use childCount property
+  let totalChildCount = 0;
+  
+  for (const group of tourGroups) {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      // Count directly from participants array
+      for (const participant of group.participants) {
+        totalChildCount += participant.childCount || 0;
+      }
+    }
+    // CRITICAL FIX: Completely remove fallback to group.childCount
+  }
+  
+  console.log("ULTRACHECK PARTICIPANTS: calculateTotalChildCount result:", totalChildCount);
+  return totalChildCount;
+};
+
+/**
+ * Formats participant count as "adults+children" if there are children
+ */
+export const formatParticipantCount = (totalParticipants: number, childCount: number): string => {
+  if (childCount > 0) {
+    const adultCount = totalParticipants - childCount;
+    return `${adultCount}+${childCount}`;
+  }
+  return `${totalParticipants}`;
+};
 
 /**
  * Updates a participant's group assignment in the database
@@ -10,203 +65,106 @@ export const updateParticipantGroupInDatabase = async (
   newGroupId: string
 ): Promise<boolean> => {
   try {
-    console.log(`Updating participant ${participantId} to group ${newGroupId}`);
+    console.log(`Moving participant ${participantId} to group ${newGroupId}`);
     
+    // First try the participants table
     const { error } = await supabase
       .from('participants')
       .update({ group_id: newGroupId })
       .eq('id', participantId);
       
     if (error) {
-      console.error("Error updating participant group:", error);
+      console.error("Error updating participant's group:", error);
       return false;
     }
     
     return true;
   } catch (error) {
     console.error("Error updating participant group:", error);
+    toast.error("Database error while updating participant group");
     return false;
   }
 };
 
 /**
- * Calculate total participants across all groups
- * This function accurately accounts for participants with count values
+ * Updates the calculated sizes on tour groups based on their participants
  */
-export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
-  if (!Array.isArray(groups) || groups.length === 0) {
-    console.log("calculateTotalParticipants: No groups provided");
-    return 0;
-  }
-  
-  // ULTRA BUGFIX: Count each actual participant for accurate totals with detailed logging
-  let total = 0;
-  
-  console.log("ULTRA DEBUG: calculateTotalParticipants starting with groups:", {
-    groupsCount: groups.length,
-    groupDetails: groups.map(g => ({
-      id: g.id,
-      name: g.name,
-      size: g.size,
-      hasParticipants: Array.isArray(g.participants),
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
-    }))
-  });
-  
-  for (const group of groups) {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      let groupTotal = 0;
-      
-      // Detailed logging of each participant
-      console.log(`ULTRA DEBUG: Group "${group.name}" participant details:`, 
-        group.participants.map(p => ({ 
-          name: p.name, 
-          count: p.count, 
-          childCount: p.childCount 
-        }))
-      );
-      
-      // Count directly from participants array - one by one
-      for (const participant of group.participants) {
-        const count = participant.count || 1;
-        groupTotal += count;
-        
-        console.log(`ULTRA DEBUG: Adding participant "${participant.name}": count=${count}`);
-      }
-      
-      total += groupTotal;
-      
-      console.log(`ULTRA DEBUG: calculateTotalParticipants group "${group.name || 'unnamed'}" final calculation:`, {
-        groupId: group.id,
-        groupName: group.name,
-        groupParticipantCount: group.participants.length,
-        groupTotal
-      });
-    } else if (group.size) {
-      // Only fallback to size properties when absolutely necessary
-      console.log(`ULTRA DEBUG: calculateTotalParticipants no participants for group ${group.name || 'unnamed'}, using size:`, {
-        size: group.size
-      });
-      
-      total += group.size;
-    }
-  }
-  
-  console.log("ULTRA DEBUG: calculateTotalParticipants final total:", total);
-  
-  return total;
-};
-
-/**
- * Calculate total child participants across all groups
- */
-export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number => {
-  if (!Array.isArray(groups) || groups.length === 0) {
-    console.log("calculateTotalChildCount: No groups provided");
-    return 0;
-  }
-  
-  // ULTRA BUGFIX: Count each actual child participant for accurate totals
-  let totalChildren = 0;
-  
-  console.log("ULTRA DEBUG: calculateTotalChildCount starting with groups:", {
-    groupsCount: groups.length,
-    groupDetails: groups.map(g => ({
-      id: g.id,
-      name: g.name,
-      childCount: g.childCount,
-      hasParticipants: Array.isArray(g.participants),
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
-    }))
-  });
-  
-  for (const group of groups) {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      let groupChildCount = 0;
-      
-      // Detailed logging of each participant's child count
-      console.log(`ULTRA DEBUG: Group "${group.name}" child count details:`, 
-        group.participants.map(p => ({ 
-          name: p.name, 
-          childCount: p.childCount || 0
-        }))
-      );
-      
-      // Count directly from participants array - one by one
-      for (const participant of group.participants) {
-        const childCount = participant.childCount || 0;
-        groupChildCount += childCount;
-        
-        console.log(`ULTRA DEBUG: Adding children for "${participant.name}": childCount=${childCount}`);
-      }
-      
-      totalChildren += groupChildCount;
-      
-      console.log(`ULTRA DEBUG: calculateTotalChildCount group "${group.name || 'unnamed'}" final calculation:`, {
-        groupId: group.id,
-        groupName: group.name,
-        groupParticipantCount: group.participants.length,
-        groupChildCount
-      });
-    } else if (group.childCount) {
-      // Only fallback to childCount property when absolutely necessary
-      console.log(`ULTRA DEBUG: calculateTotalChildCount no participants for group ${group.name || 'unnamed'}, using childCount:`, {
-        childCount: group.childCount
-      });
-      
-      totalChildren += group.childCount;
-    }
-  }
-  
-  console.log("ULTRA DEBUG: calculateTotalChildCount final total:", totalChildren);
-  
-  return totalChildren;
-};
-
-/**
- * Get participant and group details by ID
- */
-export const getParticipantById = async (
-  participantId: string
-): Promise<VentrataParticipant | null> => {
+export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
-      .from('participants')
-      .select('*')
-      .eq('id', participantId)
-      .single();
+    // First get all groups for this tour
+    const { data: tourGroups, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id, participants(id, count, child_count)')
+      .eq('tour_id', tourId);
       
-    if (error || !data) {
-      console.error("Error fetching participant:", error);
-      return null;
+    if (groupsError) {
+      console.error("Error fetching tour groups for size sync:", groupsError);
+      return false;
     }
     
-    // Map the database fields to the VentrataParticipant fields
-    return {
-      id: data.id,
-      name: data.name,
-      count: data.count || 1,
-      bookingRef: data.booking_ref,
-      childCount: data.child_count || 0,
-      groupId: data.group_id,
-      // Include snake_case properties for database compatibility
-      booking_ref: data.booking_ref,
-      group_id: data.group_id,
-      child_count: data.child_count
-    };
+    // Update each group's size and child_count based on participants
+    for (const group of tourGroups) {
+      if (!Array.isArray(group.participants)) {
+        continue;
+      }
+      
+      let totalSize = 0;
+      let totalChildCount = 0;
+      
+      // Calculate from participants
+      for (const participant of group.participants) {
+        totalSize += participant.count || 1;
+        totalChildCount += participant.child_count || 0;
+      }
+      
+      // Update the group with calculated values
+      const { error: updateError } = await supabase
+        .from('tour_groups')
+        .update({
+          size: totalSize,
+          child_count: totalChildCount
+        })
+        .eq('id', group.id);
+        
+      if (updateError) {
+        console.error(`Error updating size for group ${group.id}:`, updateError);
+      }
+    }
+    
+    return true;
   } catch (error) {
-    console.error("Error fetching participant:", error);
-    return null;
+    console.error("Error synchronizing tour group sizes:", error);
+    return false;
   }
 };
 
 /**
- * Generate formatted participant count string (e.g. "8+2" for 8 adults and 2 children)
+ * Recalculates all group sizes for consistency
  */
-export const formatParticipantCount = (totalCount: number, childCount: number): string => {
-  if (childCount <= 0) {
-    return `${totalCount}`;
-  }
-  const adultCount = totalCount - childCount;
-  return `${adultCount}+${childCount}`;
+export const recalculateAllTourGroupSizes = (tourGroups: VentrataTourGroup[]): VentrataTourGroup[] => {
+  return tourGroups.map(group => {
+    // Create a copy to avoid mutating the original
+    const updatedGroup = {...group};
+    
+    if (Array.isArray(updatedGroup.participants) && updatedGroup.participants.length > 0) {
+      let calculatedSize = 0;
+      let calculatedChildCount = 0;
+      
+      // Calculate from participants
+      for (const participant of updatedGroup.participants) {
+        calculatedSize += participant.count || 1;
+        calculatedChildCount += participant.childCount || 0;
+      }
+      
+      // Update the size and childCount properties
+      updatedGroup.size = calculatedSize;
+      updatedGroup.childCount = calculatedChildCount;
+    } else {
+      // If no participants, size should be 0
+      updatedGroup.size = 0;
+      updatedGroup.childCount = 0;
+    }
+    
+    return updatedGroup;
+  });
 };

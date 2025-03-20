@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,11 +53,9 @@ export const GroupCard = ({
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Get guide info for this group
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
 
-  // Update localParticipants when group.participants changes
   useEffect(() => {
     console.log(`MEGA DEBUG: GroupCard[${groupIndex}] participants update:`, {
       groupId: group.id,
@@ -84,7 +81,6 @@ export const GroupCard = ({
     }
   }, [group.participants, groupIndex, group.id, group.name]);
 
-  // Handle refresh participants
   const handleRefreshParticipants = () => {
     if (onRefreshParticipants) {
       setIsRefreshing(true);
@@ -97,26 +93,17 @@ export const GroupCard = ({
   let totalParticipants = 0;
   let childCount = 0;
   
-  // Use participants array if available and populated
   if (Array.isArray(localParticipants) && localParticipants.length > 0) {
-    // Count each participant individually
     for (const participant of localParticipants) {
       totalParticipants += participant.count || 1;
       childCount += participant.childCount || 0;
     }
-  } else if (group.size) {
-    // Fall back to group properties when participants array isn't available or empty
-    totalParticipants = group.size || 0;
-    childCount = group.childCount || 0;
   }
   
-  // Calculate adult count
   const adultCount = totalParticipants - childCount;
   
-  // Format participant count using consistent helper function
   const displayParticipants = formatParticipantCount(totalParticipants, childCount);
 
-  // Log accurate counts for debugging
   console.log(`MEGA DEBUG: GroupCard[${groupIndex}] final calculations:`, {
     groupId: group.id,
     groupName: group.name || `Group ${groupIndex + 1}`,

@@ -1,4 +1,3 @@
-
 import { toast } from "sonner";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
@@ -150,12 +149,13 @@ export const persistGuideAssignmentChanges = async (
             calculatedChildCount += participant.childCount || 0;
           }
           
-          // Only update if we have values calculated from participants
-          if (calculatedSize > 0) {
-            sanitizedGroup.size = calculatedSize;
-          }
-          
+          // CRITICAL FIX: Always set size and childCount based on participants count
+          sanitizedGroup.size = calculatedSize;
           sanitizedGroup.childCount = calculatedChildCount;
+        } else {
+          // CRITICAL FIX: If no participants, set size and childCount to 0
+          sanitizedGroup.size = 0;
+          sanitizedGroup.childCount = 0;
         }
         
         console.log(`BUGFIX: Group ${sanitizedGroup.id} after sanitization:`, {
