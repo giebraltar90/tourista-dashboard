@@ -111,6 +111,11 @@ export const useParticipantLoading = () => {
             
             // Update local groups with mock participants
             setLocalTourGroups(prevGroups => {
+              // Save current state for debugging
+              console.log("Current previous groups before mock update:", 
+                prevGroups.map(g => ({id: g.id, participants: g.participants?.length || 0}))
+              );
+            
               const updatedGroups = prevGroups.map((group, idx) => {
                 // Assign participants to groups round-robin
                 const groupParticipants = mockParticipants.filter((_, i) => i % prevGroups.length === idx);
@@ -122,6 +127,10 @@ export const useParticipantLoading = () => {
                   childCount: groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0)
                 };
               });
+              
+              console.log("Updated groups with mock participants:", 
+                updatedGroups.map(g => ({id: g.id, participants: g.participants?.length || 0}))
+              );
               
               return updatedGroups;
             });
@@ -150,7 +159,15 @@ export const useParticipantLoading = () => {
       
       // Update local groups with participants
       setLocalTourGroups(prevGroups => {
-        console.log("Updating localTourGroups with participants, prevGroups:", prevGroups);
+        console.log("Updating localTourGroups with participants, prevGroups:", 
+          prevGroups.map(g => ({
+            id: g.id, 
+            name: g.name,
+            participants: g.participants?.length || 0,
+            size: g.size,
+            childCount: g.childCount
+          }))
+        );
         
         // First, ensure all groups have the same IDs as the ones from the database
         // This is necessary to match participants to groups correctly
@@ -178,6 +195,13 @@ export const useParticipantLoading = () => {
             : [];
             
           console.log(`Group ${matchingDbGroup.id} (${matchingDbGroup.name}) has ${groupParticipants.length} participants:`, groupParticipants);
+          
+          // Calculate accurate size and childCount from participants
+          const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
+          const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
+          
+          // Log calculated values for this group
+          console.log(`Group ${matchingDbGroup.id} calculated size=${size}, childCount=${childCount}`);
             
           return {
             ...group,
@@ -185,12 +209,18 @@ export const useParticipantLoading = () => {
             guideId: matchingDbGroup.guide_id || group.guideId,
             participants: groupParticipants,
             // Update group size and childCount based on participants
-            size: groupParticipants.reduce((total, p) => total + (p.count || 1), 0) || group.size || 0,
-            childCount: groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0) || group.childCount || 0
+            size: size || group.size || 0,
+            childCount: childCount || group.childCount || 0
           };
         });
         
-        console.log("Final updated groups:", updatedGroups);
+        console.log("Final updated groups:", updatedGroups.map(g => ({
+          id: g.id, 
+          name: g.name,
+          participants: g.participants?.length || 0,
+          size: g.size,
+          childCount: g.childCount
+        })));
         
         // Force a refresh of the tour data to reflect these changes
         setTimeout(() => {
@@ -251,11 +281,11 @@ export const createDemoParticipants = (
     return map;
   }, {} as Record<string, any>);
   
-  // Create demo participants
-  const demoParticipants = [
+  // Create demo participants for first group
+  const firstGroupParticipants = [
     {
       id: "demo-1",
-      name: "John Smith",
+      name: "Smith Family",
       count: 2,
       bookingRef: "BK12345",
       childCount: 1,
@@ -263,59 +293,66 @@ export const createDemoParticipants = (
     },
     {
       id: "demo-2",
-      name: "Maria Rodriguez",
-      count: 3,
+      name: "John Davis",
+      count: 1,
       bookingRef: "BK12346",
       childCount: 0,
       group_id: groupIds[0]
     },
     {
       id: "demo-3",
-      name: "Alex Johnson",
-      count: 1,
+      name: "Rodriguez Family",
+      count: 3,
       bookingRef: "BK12347",
-      childCount: 0,
+      childCount: 1,
       group_id: groupIds[0]
     }
   ];
   
-  // If we have a second group, assign some participants there
-  if (groupIds.length > 1) {
-    demoParticipants.push(
-      {
-        id: "demo-4",
-        name: "Emma Wilson",
-        count: 4,
-        bookingRef: "BK12348",
-        childCount: 2,
-        group_id: groupIds[1]
-      },
-      {
-        id: "demo-5",
-        name: "Liam Brown",
-        count: 2,
-        bookingRef: "BK12349",
-        childCount: 0,
-        group_id: groupIds[1]
-      }
-    );
-  }
+  // Create second group participants if we have multiple groups
+  const secondGroupParticipants = groupIds.length > 1 ? [
+    {
+      id: "demo-4",
+      name: "Wilson Family",
+      count: 4,
+      bookingRef: "BK12348",
+      childCount: 2,
+      group_id: groupIds[1]
+    },
+    {
+      id: "demo-5",
+      name: "Lee Brown",
+      count: 2,
+      bookingRef: "BK12349",
+      childCount: 0,
+      group_id: groupIds[1]
+    }
+  ] : [];
   
   // Update groups with demo participants
   setGroups(prevGroups => {
-    const updatedGroups = prevGroups.map(group => {
+    const updatedGroups = prevGroups.map((group, index) => {
       // Find the corresponding group data
       const matchingGroupData = groupsById[group.id];
       
-      const groupParticipants = demoParticipants.filter(p => p.group_id === group.id);
+      // Assign participants based on group index
+      const groupParticipants = index === 0 
+        ? firstGroupParticipants
+        : index === 1 && secondGroupParticipants.length > 0
+          ? secondGroupParticipants
+          : [];
+      
+      // Calculate accurate size and childCount values
+      const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
+      const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
       
       return {
         ...group,
         // CRITICAL: Ensure we preserve guide_id from the database when available
         guideId: matchingGroupData?.guide_id || group.guideId,
         participants: groupParticipants,
-        size: groupParticipants.reduce((total, p) => total + (p.count || 1), 0) || group.size || 0,
-        childCount: groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0) || group.childCount || 0
+        size: size || group.size || 0,
+        childCount: childCount || group.childCount || 0
       };
     });
     

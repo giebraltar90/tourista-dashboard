@@ -71,13 +71,6 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // Double-check that if a UUID is provided, it must be valid
-      if (actualGuideId && !isValidUuid(actualGuideId)) {
-        console.error(`Invalid guide ID format: ${actualGuideId}. Must be a valid UUID.`);
-        toast.error("Cannot assign guide: Invalid guide ID format");
-        return false;
-      }
-      
       // Get the target group
       const targetGroup = tour!.tourGroups![groupIndex];
       const groupId = targetGroup.id;
@@ -106,6 +99,13 @@ export const useAssignGuide = (tourId: string) => {
       
       // Apply optimistic update to UI
       performOptimisticUpdate(queryClient, tourId, updatedGroups);
+      
+      // Log for debugging
+      console.log("Optimistic update with preserved participants:", {
+        groupIndex,
+        existingParticipants,
+        updatedGroupParticipantCount: updatedGroups[groupIndex].participants?.length || 0
+      });
       
       // Save to database
       const updateSuccess = await persistGuideAssignmentChanges(
@@ -136,6 +136,11 @@ export const useAssignGuide = (tourId: string) => {
           guideName,
           participantCount: existingParticipants.length // Include participant count in modification record
         });
+        
+        // Force a refresh to ensure data consistency
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        }, 1000);
         
         return true;
       } else {

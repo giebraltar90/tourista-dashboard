@@ -27,7 +27,7 @@ interface GroupCardProps {
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
   onRefreshParticipants?: () => void;
-  onAssignGuide?: (groupIndex: number) => void; // Added this prop
+  onAssignGuide?: (groupIndex: number) => void;
 }
 
 export const GroupCard = ({
@@ -109,7 +109,7 @@ export const GroupCard = ({
                     : "bg-green-100 text-green-800"
               }`}
             >
-              {localParticipants.length} participants
+              {displayParticipants}
             </Badge>
           </div>
           <div className="flex items-center space-x-1">
@@ -195,7 +195,6 @@ export const GroupCard = ({
                       onDragStart={(e) => onDragStart(e, participant, groupIndex)}
                       onDragEnd={onDragEnd}
                       onMoveClick={() => onMoveClick({ participant, fromGroupIndex: groupIndex })}
-                      /* Remove isSelected and isMoving props that are causing errors */
                       isDragging={
                         selectedParticipant?.participant?.id === participant.id &&
                         selectedParticipant?.fromGroupIndex === groupIndex

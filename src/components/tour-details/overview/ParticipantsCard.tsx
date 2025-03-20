@@ -26,11 +26,14 @@ export const ParticipantsCard = ({
   const totalParticipants = actualTotalParticipants || providedTotalParticipants || 0;
   const totalChildCount = actualTotalChildCount || providedTotalChildCount || 0;
   
+  // Calculate adult count (total minus children)
+  const adultCount = totalParticipants - totalChildCount;
+  
   const totalGroups = tourGroups.length;
   
   // Format participant count to show adults + children if there are children
   const formattedParticipantCount = totalChildCount > 0 
-    ? `${totalParticipants - totalChildCount}+${totalChildCount}` 
+    ? `${adultCount}+${totalChildCount}` 
     : `${totalParticipants}`;
   
   // CRITICAL FIX: Use strict equality to ensure proper boolean handling
@@ -56,6 +59,7 @@ export const ParticipantsCard = ({
   console.log("ParticipantsCard rendering:", { 
     actualTotalParticipants,
     actualTotalChildCount,
+    adultCount,
     providedTotalParticipants,
     providedTotalChildCount,
     isHighSeason, 

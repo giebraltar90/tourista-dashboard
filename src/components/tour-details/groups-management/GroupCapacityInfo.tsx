@@ -2,7 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { CardTitle, CardDescription } from "@/components/ui/card";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
-import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
+import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/group-management/services/participantService";
 
 interface GroupCapacityInfoProps {
   tour: TourCardProps;
@@ -20,9 +20,16 @@ export const GroupCapacityInfo = ({
   
   // Calculate counts directly from tour groups to ensure accuracy
   const actualTotalParticipants = calculateTotalParticipants(tourGroups);
+  const actualTotalChildCount = calculateTotalChildCount(tourGroups);
   
   // Use the most accurate count available
   const displayedParticipants = actualTotalParticipants || providedTotalParticipants || 0;
+  const adultCount = displayedParticipants - actualTotalChildCount;
+  
+  // Format participant count to show adults + children
+  const formattedParticipantCount = actualTotalChildCount > 0 
+    ? `${adultCount}+${actualTotalChildCount}` 
+    : `${displayedParticipants}`;
   
   const capacity = isHighSeason 
     ? DEFAULT_CAPACITY_SETTINGS.highSeason 
@@ -35,6 +42,9 @@ export const GroupCapacityInfo = ({
   // Log for debugging synchronization issues
   console.log("GroupCapacityInfo rendering with counts:", {
     actualTotalParticipants,
+    actualTotalChildCount,
+    adultCount,
+    formattedParticipantCount,
     providedTotalParticipants,
     displayedParticipants,
     groupSizes: tourGroups.map(g => ({
@@ -55,7 +65,7 @@ export const GroupCapacityInfo = ({
           <div>
             <span className="font-medium">Participants</span>
             <div className="text-xl font-bold">
-              {displayedParticipants} / {capacity}
+              {formattedParticipantCount} / {capacity}
             </div>
           </div>
           <div>

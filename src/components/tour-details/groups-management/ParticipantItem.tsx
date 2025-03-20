@@ -1,15 +1,15 @@
 
+import { Button } from "@/components/ui/button";
 import { VentrataParticipant } from "@/types/ventrata";
-import { UserIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { UserRound, ChevronRight, Users } from "lucide-react";
 
 export interface ParticipantItemProps {
   participant: VentrataParticipant;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   onMoveClick: () => void;
+  isDragging?: boolean;
   disabled?: boolean;
-  isDragging?: boolean; // Changed isSelected to isDragging
 }
 
 export const ParticipantItem = ({
@@ -17,50 +17,51 @@ export const ParticipantItem = ({
   onDragStart,
   onDragEnd,
   onMoveClick,
-  disabled = false,
-  isDragging = false // Changed isSelected to isDragging
+  isDragging,
+  disabled
 }: ParticipantItemProps) => {
-  // Format participant name and count
-  const totalCount = (participant.count || 1);
-  const childCount = participant.childCount || 0;
-  const adultCount = totalCount - childCount;
-  
-  // Determine how to display the count
-  const hasChildren = childCount > 0;
-  const countDisplay = hasChildren
-    ? `${adultCount}+${childCount}`
-    : totalCount.toString();
-  
+  // Format participant count to show nicely
+  const formattedCount = participant.childCount 
+    ? `${(participant.count || 1) - (participant.childCount || 0)}+${participant.childCount}`
+    : participant.count || 1;
+
   return (
     <div
-      className={`bg-white border rounded-md p-2 flex items-center justify-between cursor-grab ${
-        isDragging ? "border-primary bg-primary/5" : "border-gray-200"
-      } ${disabled ? "opacity-60 cursor-not-allowed" : ""}`}
-      draggable
+      draggable={!disabled}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
+      className={`rounded-md border ${
+        isDragging ? "bg-muted border-primary" : "bg-card hover:bg-accent/10"
+      } cursor-grab flex items-center justify-between p-2 transition-colors`}
       data-participant-id={participant.id}
     >
-      <div className="flex items-center space-x-2">
-        <UserIcon className="h-4 w-4 text-gray-500" />
-        <span className="text-sm truncate max-w-[150px]">
-          {participant.name || "Unnamed"}
-        </span>
+      <div className="flex items-center space-x-2 flex-1 min-w-0">
+        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+          <UserRound className="h-4 w-4" />
+        </div>
+        <div className="truncate flex-1 min-w-0">
+          <div className="flex items-center">
+            <span className="font-medium truncate">{participant.name}</span>
+            {participant.bookingRef && (
+              <span className="ml-1 text-xs text-muted-foreground">| #{participant.bookingRef}</span>
+            )}
+          </div>
+          <div className="flex items-center text-xs text-muted-foreground">
+            <Users className="h-3 w-3 mr-1" />
+            <span>{formattedCount}</span>
+          </div>
+        </div>
       </div>
-      
-      <div className="flex items-center space-x-1">
-        <Badge variant="outline" className="text-xs">
-          {countDisplay}
-        </Badge>
-        
-        <button
-          className="text-xs text-blue-600 hover:text-blue-800 disabled:text-gray-400"
-          onClick={onMoveClick}
-          disabled={disabled}
-        >
-          Move
-        </button>
-      </div>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-8 w-8"
+        onClick={onMoveClick}
+        disabled={disabled}
+      >
+        <ChevronRight className="h-4 w-4" />
+        <span className="sr-only">Move</span>
+      </Button>
     </div>
   );
 };

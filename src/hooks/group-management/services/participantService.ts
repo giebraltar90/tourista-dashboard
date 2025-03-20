@@ -1,3 +1,4 @@
+
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,10 +31,10 @@ export const updateParticipantGroupInDatabase = async (
 
 /**
  * Calculate total participants across all groups
- * This function now accounts for participants with children
+ * This function accurately accounts for participants with count values
  */
 export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
-  // Calculate total from all groups
+  // Calculate total from all groups by summing participant counts
   const total = groups.reduce((total, group) => {
     // If we have a participants array, use that for the most accurate count
     if (Array.isArray(group.participants) && group.participants.length > 0) {

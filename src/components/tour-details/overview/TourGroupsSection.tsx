@@ -1,11 +1,12 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
+import { Users, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { useGuideData } from "@/hooks/guides/useGuideData";
-import { TourGroupGuide } from "./TourGroupGuide";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
@@ -20,108 +21,20 @@ export const TourGroupsSection = ({
   guide2Info, 
   guide3Info 
 }: TourGroupsSectionProps) => {
-  // Safely access tour and guide info with null checks
-  const safeGuide1Info = guide1Info || null;
-  const safeGuide2Info = guide2Info || null;
-  const safeGuide3Info = guide3Info || null;
+  const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   
-  // Make sure we have a valid tour object before proceeding
-  if (!tour) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Tour Groups & Guides</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">Tour information not available</p>
-        </CardContent>
-      </Card>
-    );
-  }
-  
-  const { getGuideNameAndInfo } = useGuideNameInfo(tour, safeGuide1Info, safeGuide2Info, safeGuide3Info);
-  const { guides = [] } = useGuideData() || { guides: [] };
-  
-  // Create guide options for the select dropdown - making sure we handle undefined values
-  const getGuideOptions = () => {
-    if (!tour) return [];
-    
-    // Start with primary guides
-    const options = [];
-    
-    // Only add guides that exist
-    if (tour.guide1) {
-      options.push({ id: "guide1", name: tour.guide1, info: safeGuide1Info });
-    }
-    
-    if (tour.guide2) {
-      options.push({ id: "guide2", name: tour.guide2, info: safeGuide2Info });
-    }
-    
-    if (tour.guide3) {
-      options.push({ id: "guide3", name: tour.guide3, info: safeGuide3Info });
-    }
-    
-    // Add additional guides from the database that might not be primary guides
-    if (guides && Array.isArray(guides)) {
-      guides.forEach(guide => {
-        if (guide && guide.name) {
-          // Skip if this guide is already in the options (compare by name)
-          if (!options.some(g => g.name === guide.name)) {
-            options.push({ id: guide.id || guide.name, name: guide.name, info: guide });
-          }
-        }
-      });
-    }
-    
-    return options;
-  };
-
-  // Ensure tourGroups is an array, even if it's undefined
+  // Ensure we have tour groups
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
-  // If no tour groups, display a message
-  if (tourGroups.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Tour Groups & Guides</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">No tour groups available</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Sort tour groups by their group number to maintain consistent display order
-  const sortedGroups = [...tourGroups].sort((a, b) => {
-    // Extract group numbers from names
-    const getGroupNumber = (group: any) => {
-      if (group?.name) {
-        const match = group.name.match(/Group (\d+)/);
-        if (match && match[1]) {
-          return parseInt(match[1], 10);
-        }
-      }
-      return 999; // Default high number for groups without proper naming
-    };
-    
-    return getGroupNumber(a) - getGroupNumber(b);
-  });
-
-  // Log guide info for debugging
-  sortedGroups.forEach((group, index) => {
-    const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group?.guideId || "");
-    console.log(`Group ${index} guide info:`, {
-      groupName: group.name,
-      groupId: group.id,
-      guideId: group.guideId,
-      assignedGuideName: guideName,
-      guideInfo: guideInfo ? "Found: true" : "Not found",
-      originalGuideData: guides.find(g => g.id === group.guideId) ? "Found: true" : "Not found"
-    });
-  });
+  const toggleGroupExpanded = (groupId: string) => {
+    setExpandedGroup(expandedGroup === groupId ? null : groupId);
+  };
+  
+  // Format participant count including children if present
+  const formatParticipantCount = (size: number = 0, childCount: number = 0) => {
+    return childCount > 0 ? `${size - childCount}+${childCount}` : size.toString();
+  };
 
   return (
     <Card>
@@ -129,27 +42,50 @@ export const TourGroupsSection = ({
         <CardTitle>Tour Groups & Guides</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {sortedGroups.map((group, index) => {
-            if (!group) return null;
-            
-            // Safe access to guide name and info with a fallback to empty string
-            const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group?.guideId || "");
-            const guideOptions = getGuideOptions();
-            
-            return (
-              <TourGroupGuide
-                key={`group-${index}-${group?.id || index}`}
-                tour={tour}
-                group={group}
-                groupIndex={tourGroups.findIndex(g => g.id === group.id)}
-                guideName={guideName || ""}
-                guideInfo={guideInfo || null}
-                guideOptions={guideOptions}
-              />
-            );
-          })}
-        </div>
+        {tourGroups.length === 0 ? (
+          <div className="text-center p-4 text-muted-foreground">
+            No tour groups available
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {tourGroups.map((group, index) => {
+              const { name: guideName } = getGuideNameAndInfo(group.guideId);
+              const isExpanded = expandedGroup === group.id;
+              
+              // Count total participants in this group
+              const totalParticipants = group.size || 0;
+              const totalChildCount = group.childCount || 0;
+              
+              return (
+                <div 
+                  key={group.id || index}
+                  className="border rounded-lg overflow-hidden"
+                >
+                  <div className="bg-muted/30 p-3 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <h3 className="font-medium">{group.name || `Group ${index + 1}`}</h3>
+                      <Badge 
+                        variant="outline" 
+                        className="ml-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-50"
+                      >
+                        {formatParticipantCount(totalParticipants, totalChildCount)}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center">
+                      <div className="text-sm text-muted-foreground mr-4">
+                        {guideName ? (
+                          <span className="font-medium">{guideName}</span>
+                        ) : (
+                          <span className="italic">No guide assigned</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
