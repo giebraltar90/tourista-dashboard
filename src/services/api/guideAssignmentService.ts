@@ -22,39 +22,32 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // Important: For special IDs (guide1, guide2, guide3), convert to VARCHAR to avoid UUID validation
     // For null/"_none" we want to store null in the database
     let dbGuideId = null;
     
     if (guideId && guideId !== "_none") {
-      // If it's a special ID (guide1, guide2, guide3), store it as is
-      // This is a critical fix because Supabase PostgreSQL will reject non-UUID values
-      // for UUID columns
+      // Store the UUID directly - this should be a valid UUID
+      // We're no longer supporting special IDs like "guide1"
+      if (!isValidUuid(guideId)) {
+        console.error("Invalid UUID format for guide_id:", guideId);
+        return false;
+      }
       dbGuideId = guideId;
     }
     
     // Log the guide ID details for debugging
-    console.log("Guide ID details:", {
+    console.log("Guide ID details for database insert:", {
       value: guideId,
       dbValue: dbGuideId,
       type: typeof dbGuideId,
-      isSpecial: guideId ? isSpecialGuideId(guideId) : false,
       isUuid: dbGuideId ? isValidUuid(dbGuideId) : false
     });
     
     // Build update object based on what data is provided
     const updateData: any = {};
     
-    // Only update guide_id if it's a UUID or NULL (prevents PostgreSQL UUID errors)
-    if (dbGuideId === null || isValidUuid(dbGuideId)) {
-      updateData.guide_id = dbGuideId;
-    } else if (isSpecialGuideId(dbGuideId)) {
-      // For special IDs, use a text column instead
-      // This is a workaround to store special IDs in the database
-      updateData.guide_special_id = dbGuideId;
-      // Set guide_id to NULL to avoid UUID validation errors
-      updateData.guide_id = null;
-    }
+    // Set the guide_id field
+    updateData.guide_id = dbGuideId;
     
     // Only add name to update if it's provided
     if (groupName) {

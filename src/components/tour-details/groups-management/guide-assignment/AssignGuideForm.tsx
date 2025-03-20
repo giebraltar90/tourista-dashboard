@@ -4,6 +4,7 @@ import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectField } from "./GuideSelectField";
 import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 interface GuideOption {
   id: string;
@@ -26,14 +27,21 @@ export const AssignGuideForm = ({
   currentGuideId, 
   onSuccess 
 }: AssignGuideFormProps) => {
-  // Add detailed logging of props
+  // Check and filter guides to ensure only valid UUID guides are available
+  const validGuides = guides.filter(guide => 
+    guide.id === "_none" || isValidUuid(guide.id)
+  );
+
+  // Log validation results
   console.log("AssignGuideForm rendering with props:", {
     tourId,
     groupIndex,
-    guides: guides.map(g => ({ id: g.id, name: g.name })),
+    originalGuidesCount: guides.length,
+    validGuidesCount: validGuides.length,
     currentGuideId,
     hasCurrentGuide: !!currentGuideId,
-    currentGuideType: currentGuideId ? typeof currentGuideId : 'undefined'
+    currentGuideType: currentGuideId ? typeof currentGuideId : 'undefined',
+    invalidGuides: guides.filter(g => g.id !== "_none" && !isValidUuid(g.id)).map(g => ({id: g.id, name: g.name}))
   });
   
   // Use our custom hook to get form logic
@@ -47,7 +55,7 @@ export const AssignGuideForm = ({
   } = useGuideAssignmentForm({
     tourId,
     groupIndex,
-    guides,
+    guides: validGuides, // Only pass valid guides
     currentGuideId,
     onSuccess
   });
@@ -57,7 +65,7 @@ export const AssignGuideForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <GuideSelectField 
           form={form} 
-          guides={guides} 
+          guides={validGuides} // Only use valid guides
           defaultValue={currentGuideId || "_none"} 
         />
         

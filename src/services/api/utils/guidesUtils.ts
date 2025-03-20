@@ -1,4 +1,3 @@
-
 /**
  * Validate if a string is a valid UUID
  */
@@ -9,6 +8,7 @@ export const isValidUuid = (id: string | undefined): boolean => {
 
 /**
  * Check if a guide ID is one of the special IDs (guide1, guide2, guide3, _none)
+ * These are no longer supported in the database but kept for backward compatibility
  */
 export const isSpecialGuideId = (guideId?: string): boolean => {
   if (!guideId) return false;
@@ -16,50 +16,34 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 };
 
 /**
- * Map special guide IDs to their actual values or return UUID as is
+ * Map special guide IDs to their actual UUID values or return UUID as is
  * This function doesn't throw errors, it just returns the input if mapping fails
+ * 
+ * NOTE: This function is kept for backward compatibility but should not be used
+ * for new code. All guide IDs should be proper UUIDs.
  */
 export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any): string | null => {
   if (!guideId || guideId === "_none") return null;
   
-  console.log("Mapping guide ID to UUID:", { 
+  console.log("DEPRECATED - mapSpecialGuideIdToUuid should not be used. All guide IDs should be UUIDs. Received:", { 
     guideId, 
-    tour: tour ? {
-      guide1: tour.guide1,
-      guide2: tour.guide2,
-      guide3: tour.guide3,
-      guide1Id: tour.guide1Id,
-      guide2Id: tour.guide2Id,
-      guide3Id: tour.guide3Id
+    isUuid: isValidUuid(guideId),
+    tourInfo: tour ? {
+      guideIds: [tour.guide1Id, tour.guide2Id, tour.guide3Id].filter(Boolean)
     } : 'Tour data not available'
   });
-  
-  // If there's no tour data, just return the guide ID as is
-  if (!tour) return guideId;
-  
-  // Map special guide IDs to their UUID values from the tour record
-  if (guideId === "guide1" && tour.guide1Id) {
-    console.log(`Mapped guide1 to UUID: ${tour.guide1Id}`);
-    return tour.guide1Id;
-  }
-  
-  if (guideId === "guide2" && tour.guide2Id) {
-    console.log(`Mapped guide2 to UUID: ${tour.guide2Id}`);
-    return tour.guide2Id;
-  }
-  
-  if (guideId === "guide3" && tour.guide3Id) {
-    console.log(`Mapped guide3 to UUID: ${tour.guide3Id}`);
-    return tour.guide3Id;
-  }
   
   // If it's already a UUID, return it directly
   if (isValidUuid(guideId)) {
     return guideId;
   }
   
-  // If we get here, we're dealing with a special ID without mapping
-  // Just return it as is, and let the caller handle it appropriately
+  // If there's no tour data or not a special ID, just return the guide ID as is
+  if (!tour || !isSpecialGuideId(guideId)) return guideId;
+  
+  // This code is deprecated and should not be used for new features
+  // We are only keeping it for backward compatibility
+  console.error("Special guide IDs like 'guide1' are no longer supported. Use UUID values instead.");
   return guideId;
 };
 
@@ -69,16 +53,17 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
 export const getGuideDisplayName = (guideId: string | undefined, tour: any, guides: any[] = []): string => {
   if (!guideId || guideId === "_none") return "Unassigned";
   
-  // Check special IDs first
-  if (guideId === "guide1" && tour?.guide1) return tour.guide1;
-  if (guideId === "guide2" && tour?.guide2) return tour.guide2;
-  if (guideId === "guide3" && tour?.guide3) return tour.guide3;
-  
-  // Then check UUID matches in guides array
+  // Check UUID matches in guides array
   if (isValidUuid(guideId)) {
     const matchingGuide = guides.find(g => g.id === guideId);
     if (matchingGuide?.name) return matchingGuide.name;
   }
+  
+  // Special IDs are deprecated but kept for backward compatibility
+  // This should be removed in a future version
+  if (guideId === "guide1" && tour?.guide1) return tour.guide1;
+  if (guideId === "guide2" && tour?.guide2) return tour.guide2;
+  if (guideId === "guide3" && tour?.guide3) return tour.guide3;
   
   // Fallback for unknown IDs (should rarely happen)
   return guideId.startsWith("guide") ? `Guide ${guideId.slice(5)}` : `Guide (${guideId.substring(0, 6)}...)`;

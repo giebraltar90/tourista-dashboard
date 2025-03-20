@@ -6,6 +6,7 @@ import { z } from "zod";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "./useAssignGuide";
 import { toast } from "sonner";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -46,7 +47,8 @@ export const useGuideAssignmentForm = ({
     groupIndex,
     guidesCount: guides.length,
     currentGuideId,
-    defaultGuideId
+    defaultGuideId,
+    availableGuideIds: guides.map(g => ({id: g.id, name: g.name}))
   });
   
   const form = useForm<FormValues>({
@@ -65,6 +67,14 @@ export const useGuideAssignmentForm = ({
     
     try {
       setIsSubmitting(true);
+      
+      // Validate that if a guide ID is provided, it must be a valid UUID (except for _none)
+      if (values.guideId && values.guideId !== "_none" && !isValidUuid(values.guideId)) {
+        console.error(`Invalid guide ID format selected: ${values.guideId}. Must be a valid UUID.`);
+        toast.error("Cannot assign guide: Invalid guide ID format");
+        setIsSubmitting(false);
+        return;
+      }
       
       console.log("Assigning guide:", { 
         groupIndex, 

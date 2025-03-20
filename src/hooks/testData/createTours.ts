@@ -6,7 +6,7 @@ import { TourType } from "./helpers";
  * Creates test tour data in the database
  */
 export const createTestTours = async (guideMap: Record<string, string>) => {
-  console.log("Creating test tours...");
+  console.log("Creating test tours with proper UUID guide references:", guideMap);
   
   // Generate dates for the tours
   const today = new Date();
@@ -22,7 +22,7 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
   const fourDaysLater = new Date(today);
   fourDaysLater.setDate(today.getDate() + 4);
   
-  // Create tour data
+  // Create tour data - using proper UUID references for guides
   const tours = [
     {
       date: "2023-05-07",
@@ -31,8 +31,8 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "food" as TourType,
       start_time: "08:00",
       reference_code: "313911645",
-      guide1_id: guideMap["Noéma Weber"],
-      guide2_id: guideMap["Jean Dupont"],
+      guide1_id: guideMap["Noéma Weber"],  // This will be a proper UUID
+      guide2_id: guideMap["Jean Dupont"],  // This will be a proper UUID
       num_tickets: 10,
       is_high_season: false
     },
@@ -43,8 +43,8 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "private" as TourType,
       start_time: "09:00",
       reference_code: "313911867",
-      guide1_id: guideMap["Carlos Martinez"],
-      guide2_id: guideMap["Jean Dupont"],
+      guide1_id: guideMap["Carlos Martinez"],  // This will be a proper UUID
+      guide2_id: guideMap["Jean Dupont"],  // This will be a proper UUID
       num_tickets: 4,
       is_high_season: false
     },
@@ -55,8 +55,8 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "food" as TourType,
       start_time: "09:00",
       reference_code: "313911867",
-      guide1_id: guideMap["Sophie Miller"],
-      guide2_id: guideMap["Maria Garcia"],
+      guide1_id: guideMap["Sophie Miller"],  // This will be a proper UUID
+      guide2_id: guideMap["Maria Garcia"],  // This will be a proper UUID
       num_tickets: 9,
       is_high_season: false
     },
@@ -67,8 +67,8 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "private" as TourType,
       start_time: "10:00",
       reference_code: "324598761",
-      guide1_id: guideMap["Sophie Miller"],
-      guide2_id: guideMap["Carlos Martinez"],
+      guide1_id: guideMap["Sophie Miller"],  // This will be a proper UUID
+      guide2_id: guideMap["Carlos Martinez"],  // This will be a proper UUID
       num_tickets: 4,
       is_high_season: false
     },
@@ -79,7 +79,7 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "default" as TourType,
       start_time: "14:00",
       reference_code: "324598799",
-      guide1_id: guideMap["Jean Dupont"],
+      guide1_id: guideMap["Jean Dupont"],  // This will be a proper UUID
       num_tickets: 22,
       is_high_season: false
     },
@@ -90,8 +90,8 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "food" as TourType,
       start_time: "08:00",
       reference_code: "324598820",
-      guide1_id: guideMap["Maria Garcia"],
-      guide2_id: guideMap["Tobias Schmidt"],
+      guide1_id: guideMap["Maria Garcia"],  // This will be a proper UUID
+      guide2_id: guideMap["Tobias Schmidt"],  // This will be a proper UUID
       num_tickets: 24,
       is_high_season: true
     },
@@ -102,8 +102,8 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       tour_type: "default" as TourType,
       start_time: "16:00",
       reference_code: "324598850",
-      guide1_id: guideMap["Maria Garcia"],
-      guide2_id: guideMap["Sophie Miller"],
+      guide1_id: guideMap["Maria Garcia"],  // This will be a proper UUID
+      guide2_id: guideMap["Sophie Miller"],  // This will be a proper UUID
       num_tickets: 3,
       is_high_season: false
     }
@@ -119,6 +119,6 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
     throw tourError;
   }
   
-  console.log("Created test tours:", tourData);
+  console.log("Created test tours with proper UUID references:", tourData);
   return tourData || [];
 };

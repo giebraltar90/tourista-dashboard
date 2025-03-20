@@ -45,6 +45,13 @@ export const useAssignGuide = (tourId: string) => {
       // Special handling for "_none" which means "remove guide"
       const uiGuideId = guideId === "_none" ? undefined : guideId;
       
+      // Validate that if a guide ID is provided, it must be a valid UUID
+      if (uiGuideId && !isValidUuid(uiGuideId)) {
+        console.error(`Invalid guide ID format: ${uiGuideId}. Must be a valid UUID.`);
+        toast.error("Cannot assign guide: Invalid guide ID format");
+        return false;
+      }
+      
       // Cancel any in-flight queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       
@@ -58,23 +65,15 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // Pass the guideId as is - the updateGuideInSupabase function will handle special IDs
+      // Pass the guideId as is - the updateGuideInSupabase function will validate it
       const actualGuideId = uiGuideId;
       
       // Find guide name for display
       let guideName = "Unassigned";
       if (uiGuideId) {
-        if (uiGuideId === "guide1" && latestTour.guide1) {
-          guideName = latestTour.guide1;
-        } else if (uiGuideId === "guide2" && latestTour.guide2) {
-          guideName = latestTour.guide2;
-        } else if (uiGuideId === "guide3" && latestTour.guide3) {
-          guideName = latestTour.guide3;
-        } else {
-          const guide = guides.find(g => g.id === uiGuideId);
-          if (guide) {
-            guideName = guide.name;
-          }
+        const guide = guides.find(g => g.id === uiGuideId);
+        if (guide) {
+          guideName = guide.name;
         }
       }
       
@@ -102,7 +101,6 @@ export const useAssignGuide = (tourId: string) => {
             newGuideId: uiGuideId
           });
           
-          // The front-end will always store the original guide ID (special ID or UUID)
           newData.tourGroups[groupIndex].guideId = uiGuideId;
         }
         

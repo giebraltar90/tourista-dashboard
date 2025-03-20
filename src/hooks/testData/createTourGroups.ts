@@ -8,9 +8,9 @@ export const createTestTourGroups = async (
   tourData: Array<{id: string}>,
   guideMap: Record<string, string>
 ) => {
-  console.log("Creating test tour groups...");
+  console.log("Creating test tour groups with proper UUID guide references...");
   
-  // Create groups for each tour
+  // Create groups for each tour - using proper UUID references for guides
   let allGroups = [];
   
   // Tour 1: Two groups
@@ -21,7 +21,7 @@ export const createTestTourGroups = async (
       size: 6,
       entry_time: "9:10",
       child_count: 2,
-      guide_id: guideMap["Noéma Weber"]
+      guide_id: guideMap["Noéma Weber"]  // This will be a proper UUID
     },
     {
       tour_id: tourData[0].id,
@@ -29,7 +29,7 @@ export const createTestTourGroups = async (
       size: 4,
       entry_time: "9:10",
       child_count: 1,
-      guide_id: guideMap["Jean Dupont"]
+      guide_id: guideMap["Jean Dupont"]  // This will be a proper UUID
     }
   );
   
@@ -41,7 +41,7 @@ export const createTestTourGroups = async (
       size: 4,
       entry_time: "9:10",
       child_count: 0,
-      guide_id: guideMap["Carlos Martinez"]
+      guide_id: guideMap["Carlos Martinez"]  // This will be a proper UUID
     }
   );
   
@@ -53,7 +53,7 @@ export const createTestTourGroups = async (
       size: 9,
       entry_time: "16:00",
       child_count: 0,
-      guide_id: guideMap["Sophie Miller"]
+      guide_id: guideMap["Sophie Miller"]  // This will be a proper UUID
     }
   );
   
@@ -65,7 +65,7 @@ export const createTestTourGroups = async (
       size: 4,
       entry_time: "10:15",
       child_count: 0,
-      guide_id: guideMap["Sophie Miller"]
+      guide_id: guideMap["Sophie Miller"]  // This will be a proper UUID
     }
   );
   
@@ -77,7 +77,7 @@ export const createTestTourGroups = async (
       size: 12,
       entry_time: "14:00",
       child_count: 0,
-      guide_id: guideMap["Jean Dupont"]
+      guide_id: guideMap["Jean Dupont"]  // This will be a proper UUID
     },
     {
       tour_id: tourData[4].id,
@@ -85,6 +85,7 @@ export const createTestTourGroups = async (
       size: 10,
       entry_time: "14:15",
       child_count: 0
+      // No guide assigned
     }
   );
   
@@ -96,7 +97,7 @@ export const createTestTourGroups = async (
       size: 8,
       entry_time: "8:30",
       child_count: 0,
-      guide_id: guideMap["Maria Garcia"]
+      guide_id: guideMap["Maria Garcia"]  // This will be a proper UUID
     },
     {
       tour_id: tourData[5].id,
@@ -104,7 +105,7 @@ export const createTestTourGroups = async (
       size: 8,
       entry_time: "8:45",
       child_count: 0,
-      guide_id: guideMap["Tobias Schmidt"]
+      guide_id: guideMap["Tobias Schmidt"]  // This will be a proper UUID
     },
     {
       tour_id: tourData[5].id,
@@ -112,6 +113,7 @@ export const createTestTourGroups = async (
       size: 8,
       entry_time: "9:00",
       child_count: 0
+      // No guide assigned
     }
   );
   
@@ -123,7 +125,7 @@ export const createTestTourGroups = async (
       size: 3,
       entry_time: "16:15",
       child_count: 0,
-      guide_id: guideMap["Maria Garcia"]
+      guide_id: guideMap["Maria Garcia"]  // This will be a proper UUID
     }
   );
   
@@ -137,6 +139,6 @@ export const createTestTourGroups = async (
     throw groupError;
   }
   
-  console.log("Created test tour groups:", groupData);
+  console.log("Created test tour groups with proper UUID references:", groupData);
   return groupData || [];
 };
