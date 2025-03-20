@@ -81,10 +81,12 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
                 return (
                   <GroupCard
                     key={index}
-                    index={index}
                     group={group}
-                    guideName={guideName}
-                    guideInfo={guideInfo}
+                    groupIndex={index}
+                    tour={tour}
+                    guide1Info={guide1Info}
+                    guide2Info={guide2Info}
+                    guide3Info={guide3Info}
                     onAssignGuide={handleOpenAssignGuide}
                   />
                 );
