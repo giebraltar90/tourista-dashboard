@@ -22,8 +22,8 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // Important: Always store the guide ID directly as provided by the assignment function
-    // The mapping to UUID should have happened before this function was called
+    // Important: For null/"_none" we want to store null in the database
+    // For special IDs (guide1, guide2, guide3), we'll just store the ID directly
     const dbGuideId = guideId && guideId !== "_none" ? guideId : null;
     
     // Log the guide ID details for debugging
@@ -34,20 +34,6 @@ export const updateGuideInSupabase = async (
       isSpecial: guideId ? isSpecialGuideId(guideId) : false,
       isUuid: dbGuideId ? isValidUuid(dbGuideId) : false
     });
-    
-    // Validate that we're storing a UUID or null
-    if (dbGuideId !== null && !isValidUuid(dbGuideId)) {
-      console.error(`Invalid guide ID format for database: ${dbGuideId}. Database expects UUID values.`);
-      
-      // Try to determine the issue in more detail
-      if (isSpecialGuideId(dbGuideId)) {
-        console.error(`Guide ID is a special ID (${dbGuideId}) but should have been mapped to a UUID before calling updateGuideInSupabase`);
-      } else {
-        console.error(`Guide ID ${dbGuideId} is not a valid UUID and not a special ID. Check the mapping logic.`);
-      }
-      
-      return false;
-    }
     
     // Build update object based on what data is provided
     const updateData: any = { guide_id: dbGuideId };

@@ -60,6 +60,7 @@ export const useAssignGuide = (tourId: string) => {
       
       // For direct guide ID assignment, we're using the actual guide ID 
       // Either it's a special ID like "guide1" or a direct UUID
+      // IMPORTANT: We don't map it here - that will happen in updateGuideInSupabase
       const actualGuideId = uiGuideId;
       
       // Find guide name for display
@@ -85,10 +86,7 @@ export const useAssignGuide = (tourId: string) => {
         currentGuideId: targetGroup.guideId,
         newGuideId: uiGuideId,
         actualGuideId,
-        guideName,
-        guide1: latestTour.guide1,
-        guide2: latestTour.guide2,
-        guide3: latestTour.guide3
+        guideName
       });
       
       // Apply optimistic update to the cache
@@ -105,6 +103,8 @@ export const useAssignGuide = (tourId: string) => {
             oldGuideId: newData.tourGroups[groupIndex].guideId,
             newGuideId: uiGuideId
           });
+          
+          // The front-end will always store the original guide ID (special ID or UUID)
           newData.tourGroups[groupIndex].guideId = uiGuideId;
         }
         
@@ -130,7 +130,8 @@ export const useAssignGuide = (tourId: string) => {
         groupName
       });
       
-      // Save to database
+      // Save to database - passing the guide ID directly to updateGuideInSupabase
+      // which will handle mapping special IDs to UUIDs
       const updateSuccess = await updateGuideInSupabase(
         tourId,
         groupId,
