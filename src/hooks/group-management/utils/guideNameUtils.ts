@@ -13,36 +13,48 @@ export const findGuideName = (
   if (!guideId || guideId === "_none") return "Unassigned";
   if (!tour) return "Unknown";
   
-  // Check primary guides first
-  if (guideId === "guide1") return tour.guide1 || "Guide 1";
-  if (guideId === "guide2") return tour.guide2 || "Guide 2";
-  if (guideId === "guide3") return tour.guide3 || "Guide 3";
+  // Check primary guides first - these are special cases we handle explicitly
+  if (guideId === "guide1" && tour.guide1) return tour.guide1;
+  if (guideId === "guide2" && tour.guide2) return tour.guide2;
+  if (guideId === "guide3" && tour.guide3) return tour.guide3;
   
-  // Try to find guide by ID
+  // Try to find guide by ID in the guides array
   const guide = guides.find(g => g.id === guideId);
-  if (guide) return guide.name;
+  if (guide && guide.name) return guide.name;
   
-  // Check if ID contains guide name (fallback)
-  if (tour.guide1 && guideId.includes(tour.guide1)) return tour.guide1;
-  if (tour.guide2 && guideId.includes(tour.guide2)) return tour.guide2;
-  if (tour.guide3 && guideId.includes(tour.guide3)) return tour.guide3;
-  
-  // For UUID IDs, show a shortened version
+  // For UUID-format guideIds, try to find a matching guide
   if (isValidUuid(guideId)) {
-    return `Guide ${guideId.substring(0, 8)}...`;
+    // Check if this matches one of the primary guides' IDs
+    if (tour.guide1Id === guideId) return tour.guide1 || "Guide 1";
+    if (tour.guide2Id === guideId) return tour.guide2 || "Guide 2";
+    if (tour.guide3Id === guideId) return tour.guide3 || "Guide 3";
+    
+    // Try to find the guide in the guides array
+    const matchingGuide = guides.find(g => g.id === guideId);
+    if (matchingGuide) return matchingGuide.name;
+    
+    // If we can't find a name, show a truncated version of the UUID
+    return `Guide (${guideId.substring(0, 6)}...)`;
   }
   
-  return guideId;
+  // If we made it here, we don't know this guide
+  return guideId.length > 10 ? `Guide (${guideId.substring(0, 6)}...)` : guideId;
 };
 
 /**
- * Generate a group name based on guide assignment and group index
- * Ensures each group gets a unique sequential number (Group 1, Group 2, etc.)
- * This preserves the original group index in the name
+ * Generate a group name based on group index
+ * Maintains consistent group numbering regardless of rendering order
  */
 export const generateGroupName = (existingGroups: any[], groupIndex: number): string => {
-  // Use the group's index position to generate a name (adding 1 for human-readable numbering)
-  // This ensures that even if groups are reordered, they retain their original "Group X" name
+  // Extract the original group number if it exists in the name
+  if (existingGroups[groupIndex]?.name) {
+    const match = existingGroups[groupIndex].name.match(/Group (\d+)/);
+    if (match && match[1]) {
+      return `Group ${match[1]}`;
+    }
+  }
+  
+  // Use the index if no existing name pattern found (adding 1 for human-readable numbering)
   return `Group ${groupIndex + 1}`;
 };
 
@@ -55,8 +67,17 @@ export const getGuideNameForAssignment = (
   guides: any[]
 ): string => {
   // For unassignment, use a standard name
-  if (!actualGuideId) return "Unassigned";
+  if (!actualGuideId || actualGuideId === "_none") return "Unassigned";
   
-  // Find the guide name using the utility function
+  // Handle special guide IDs directly
+  if (actualGuideId === "guide1" && currentTour.guide1) {
+    return currentTour.guide1;
+  } else if (actualGuideId === "guide2" && currentTour.guide2) {
+    return currentTour.guide2;
+  } else if (actualGuideId === "guide3" && currentTour.guide3) {
+    return currentTour.guide3;
+  }
+  
+  // Find the guide name using the utility function for other IDs
   return findGuideName(actualGuideId, currentTour, guides);
 };

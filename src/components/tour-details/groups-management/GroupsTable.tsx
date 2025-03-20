@@ -4,6 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
+import { useGuideData } from "@/hooks/guides";
+import { findGuideName } from "@/hooks/group-management/utils/guideNameUtils";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -21,6 +23,7 @@ export const GroupsTable = ({
   guide3Info
 }: GroupsTableProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info || null, guide2Info || null, guide3Info || null);
+  const { guides = [] } = useGuideData() || { guides: [] };
   
   return (
     <Table>
@@ -52,7 +55,6 @@ export const GroupsTable = ({
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
           // Extract the original group number from the name or use the index as fallback
-          // This maintains consistent group naming regardless of rendering order
           let groupNumber = index + 1;
           if (group.name) {
             const match = group.name.match(/Group (\d+)/);
@@ -66,7 +68,7 @@ export const GroupsTable = ({
           return (
             <TableRow key={group.id || index}>
               <TableCell className="font-medium">
-                {groupDisplayName}{isGuideAssigned ? ` (${guideName})` : ''}
+                {groupDisplayName}
               </TableCell>
               <TableCell>{formattedParticipantCount} participants</TableCell>
               <TableCell>{group.entryTime}</TableCell>

@@ -1,9 +1,10 @@
+
 import { Badge } from "@/components/ui/badge";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Users, UserCheck, UserX } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -62,8 +63,8 @@ export const TourGroupGuide = ({
     setIsSelecting(false);
     
     try {
-      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex}`);
-      const success = await assignGuide(groupIndex, guideId);
+      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex} (display number ${groupDisplayNumber})`);
+      const success = await assignGuide(groupIndex, guideId, `Group ${groupDisplayNumber}`);
       
       if (!success) {
         toast.error("Failed to assign guide");
@@ -102,6 +103,11 @@ export const TourGroupGuide = ({
               <span>{guideName}</span>
             ) : (
               <span className="text-amber-600">Unassigned</span>
+            )}
+            {guideInfo?.guideType && (
+              <Badge variant="outline" className="ml-2 text-xs bg-blue-100 text-blue-800">
+                {guideInfo.guideType}
+              </Badge>
             )}
           </div>
         </div>

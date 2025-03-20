@@ -25,10 +25,15 @@ export const updateGuideInSupabase = async (
     // Build update object based on what data is provided
     const updateData: any = {};
     
-    // Only add guide_id to update if it's a valid UUID or null
-    if (guideId === null) {
+    // Only add guide_id to update if it's valid
+    if (guideId === null || guideId === "_none") {
+      // Set to null to unassign
       updateData.guide_id = null;
+    } else if (guideId === "guide1" || guideId === "guide2" || guideId === "guide3") {
+      // These are special identifiers, they get stored as-is
+      updateData.guide_id = guideId;
     } else if (isValidUuid(guideId)) {
+      // Only add valid UUIDs
       updateData.guide_id = guideId;
     } else {
       console.error("Invalid UUID format for guide_id:", guideId);

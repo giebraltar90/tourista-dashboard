@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
@@ -93,6 +94,22 @@ export const TourGroupsSection = ({
     );
   }
 
+  // Sort tour groups by their group number to maintain consistent display order
+  const sortedGroups = [...tourGroups].sort((a, b) => {
+    // Extract group numbers from names
+    const getGroupNumber = (group: any) => {
+      if (group?.name) {
+        const match = group.name.match(/Group (\d+)/);
+        if (match && match[1]) {
+          return parseInt(match[1], 10);
+        }
+      }
+      return 999; // Default high number for groups without proper naming
+    };
+    
+    return getGroupNumber(a) - getGroupNumber(b);
+  });
+
   return (
     <Card>
       <CardHeader>
@@ -100,7 +117,7 @@ export const TourGroupsSection = ({
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {tourGroups.map((group, index) => {
+          {sortedGroups.map((group, index) => {
             if (!group) return null;
             
             // Safe access to guide name and info with a fallback to empty string
@@ -112,7 +129,7 @@ export const TourGroupsSection = ({
                 key={`group-${index}-${group?.id || index}`}
                 tour={tour}
                 group={group}
-                groupIndex={index}
+                groupIndex={tourGroups.findIndex(g => g.id === group.id)}
                 guideName={guideName || ""}
                 guideInfo={guideInfo || null}
                 guideOptions={guideOptions}

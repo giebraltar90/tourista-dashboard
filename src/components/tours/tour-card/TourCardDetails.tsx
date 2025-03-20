@@ -62,28 +62,55 @@ export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
         
         <div className="w-full mt-1">
           <div className="flex items-center gap-1.5">
-            {tourGroups.map((group, index) => (
-              <TooltipProvider key={index}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Badge variant="secondary" className="flex items-center">
-                      <span className="mr-1">Group {index + 1}</span>
-                      <span className="bg-background/80 px-1.5 rounded-sm text-xs">
-                        {group.childCount && group.childCount > 0 ? 
-                          `${group.size - group.childCount}+${group.childCount}` : 
-                          group.size}
-                      </span>
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Entry: {group.entryTime}</p>
-                    {group.childCount > 0 && (
-                      <p>{group.childCount} {group.childCount === 1 ? 'child' : 'children'}</p>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
+            {tourGroups.sort((a, b) => {
+              // Extract group numbers to maintain consistent ordering
+              const getGroupNum = (group: any) => {
+                if (group?.name) {
+                  const match = group.name.match(/Group (\d+)/);
+                  if (match && match[1]) {
+                    return parseInt(match[1], 10);
+                  }
+                }
+                return 999; // Default for groups without proper naming
+              };
+              
+              return getGroupNum(a) - getGroupNum(b);
+            }).map((group, index) => {
+              // Extract the group number from the name for display
+              let groupNumber = index + 1;
+              if (group.name) {
+                const match = group.name.match(/Group (\d+)/);
+                if (match && match[1]) {
+                  groupNumber = parseInt(match[1], 10);
+                }
+              }
+              
+              return (
+                <TooltipProvider key={index}>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge variant="secondary" className="flex items-center">
+                        <span className="mr-1">Group {groupNumber}</span>
+                        <span className="bg-background/80 px-1.5 rounded-sm text-xs">
+                          {group.childCount && group.childCount > 0 ? 
+                            `${group.size - group.childCount}+${group.childCount}` : 
+                            group.size}
+                        </span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Entry: {group.entryTime}</p>
+                      {group.childCount > 0 && (
+                        <p>{group.childCount} {group.childCount === 1 ? 'child' : 'children'}</p>
+                      )}
+                      {group.guideId && (
+                        <p>Guide assigned</p>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              );
+            })}
           </div>
         </div>
       </div>
