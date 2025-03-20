@@ -3,7 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 export type GuideType = "GA Free" | "GA Ticket" | "GC";
-export type TourType = "default" | "food" | "private" | "custom";
+export type TourType = "default" | "food" | "private"; // Removed "custom" to match database enum
+export type ModificationStatus = "pending" | "complete"; // Added missing type
 
 /**
  * Creates a map of guide names to their IDs

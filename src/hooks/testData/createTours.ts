@@ -28,11 +28,11 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: "2023-05-07",
       location: "Versailles",
       tour_name: "Food & Palace Bike Tour",
-      tour_type: "food" as TourType,
+      tour_type: "food" as "food" | "private" | "default", // Explicitly cast to allowed types
       start_time: "08:00",
       reference_code: "313911645",
-      guide1_id: guideMap["Noéma Weber"],  // This will be a proper UUID
-      guide2_id: guideMap["Jean Dupont"],  // This will be a proper UUID
+      guide1_id: guideMap["Noéma Weber"],
+      guide2_id: guideMap["Jean Dupont"],
       num_tickets: 10,
       is_high_season: false
     },
@@ -40,11 +40,11 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: "2023-05-07",
       location: "Versailles",
       tour_name: "Private Versailles Tour",
-      tour_type: "private" as TourType,
+      tour_type: "private" as "food" | "private" | "default",
       start_time: "09:00",
       reference_code: "313911867",
-      guide1_id: guideMap["Carlos Martinez"],  // This will be a proper UUID
-      guide2_id: guideMap["Jean Dupont"],  // This will be a proper UUID
+      guide1_id: guideMap["Carlos Martinez"],
+      guide2_id: guideMap["Jean Dupont"],
       num_tickets: 4,
       is_high_season: false
     },
@@ -52,11 +52,11 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: "2023-05-07",
       location: "Versailles",
       tour_name: "Food & Palace Bike Tour",
-      tour_type: "food" as TourType,
+      tour_type: "food" as "food" | "private" | "default",
       start_time: "09:00",
       reference_code: "313911867",
-      guide1_id: guideMap["Sophie Miller"],  // This will be a proper UUID
-      guide2_id: guideMap["Maria Garcia"],  // This will be a proper UUID
+      guide1_id: guideMap["Sophie Miller"],
+      guide2_id: guideMap["Maria Garcia"],
       num_tickets: 9,
       is_high_season: false
     },
@@ -64,11 +64,11 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: tomorrow.toISOString().split('T')[0],
       location: "Louvre Museum",
       tour_name: "Private Louvre Tour",
-      tour_type: "private" as TourType,
+      tour_type: "private" as "food" | "private" | "default",
       start_time: "10:00",
       reference_code: "324598761",
-      guide1_id: guideMap["Sophie Miller"],  // This will be a proper UUID
-      guide2_id: guideMap["Carlos Martinez"],  // This will be a proper UUID
+      guide1_id: guideMap["Sophie Miller"],
+      guide2_id: guideMap["Carlos Martinez"],
       num_tickets: 4,
       is_high_season: false
     },
@@ -76,10 +76,10 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: dayAfterTomorrow.toISOString().split('T')[0],
       location: "Montmartre",
       tour_name: "Montmartre Walking Tour",
-      tour_type: "default" as TourType,
+      tour_type: "default" as "food" | "private" | "default",
       start_time: "14:00",
       reference_code: "324598799",
-      guide1_id: guideMap["Jean Dupont"],  // This will be a proper UUID
+      guide1_id: guideMap["Jean Dupont"],
       num_tickets: 22,
       is_high_season: false
     },
@@ -87,11 +87,11 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: threeDaysLater.toISOString().split('T')[0],
       location: "Versailles",
       tour_name: "Food & Palace Bike Tour",
-      tour_type: "food" as TourType,
+      tour_type: "food" as "food" | "private" | "default",
       start_time: "08:00",
       reference_code: "324598820",
-      guide1_id: guideMap["Maria Garcia"],  // This will be a proper UUID
-      guide2_id: guideMap["Tobias Schmidt"],  // This will be a proper UUID
+      guide1_id: guideMap["Maria Garcia"],
+      guide2_id: guideMap["Tobias Schmidt"],
       num_tickets: 24,
       is_high_season: true
     },
@@ -99,11 +99,11 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       date: fourDaysLater.toISOString().split('T')[0],
       location: "Eiffel Tower",
       tour_name: "Eiffel Tower & Seine River Cruise",
-      tour_type: "default" as TourType,
+      tour_type: "default" as "food" | "private" | "default",
       start_time: "16:00",
       reference_code: "324598850",
-      guide1_id: guideMap["Maria Garcia"],  // This will be a proper UUID
-      guide2_id: guideMap["Sophie Miller"],  // This will be a proper UUID
+      guide1_id: guideMap["Maria Garcia"],
+      guide2_id: guideMap["Sophie Miller"],
       num_tickets: 3,
       is_high_season: false
     }
