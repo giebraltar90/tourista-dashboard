@@ -24,11 +24,38 @@ export const ParticipantDropZone = ({
   isMoveTarget,
   isMovePending
 }: ParticipantDropZoneProps) => {
+  const [isDragOver, setIsDragOver] = React.useState(false);
+  
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+    if (onDragOver) {
+      onDragOver(e);
+    }
+  };
+  
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+  
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (onDrop) {
+      console.log("Handling drop in ParticipantDropZone, groupIndex:", groupIndex);
+      onDrop(e, groupIndex);
+    }
+  };
+
   return (
     <div 
-      onDrop={(e) => onDrop?.(e, groupIndex)} 
-      onDragOver={onDragOver}
-      className={`h-full relative ${isMoveTarget ? 'border-2 border-dashed border-primary/60 rounded-md' : ''}`}
+      onDrop={handleDrop} 
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDragExit={handleDragLeave}
+      className={`h-full relative rounded-md transition-all duration-200 ${
+        isDragOver ? 'bg-primary/10 border-2 border-dashed border-primary' : ''
+      } ${isMoveTarget ? 'border-2 border-dashed border-primary/60 rounded-md' : ''}`}
     >
       {children}
       

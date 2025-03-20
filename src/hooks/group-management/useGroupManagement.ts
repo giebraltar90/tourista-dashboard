@@ -170,8 +170,8 @@ export const useGroupManagement = (tour: TourCardProps) => {
                   id: p.id,
                   name: p.name,
                   count: p.count || 1,
-                  bookingRef: p.booking_ref, // Fixed: Use p.booking_ref instead of p.bookingRef
-                  childCount: p.child_count || 0, // Fixed: Use p.child_count instead of p.childCount
+                  bookingRef: p.booking_ref, // Use snake_case property names from database
+                  childCount: p.child_count || 0, // Use snake_case property names from database
                   group_id: p.group_id // Keep the group_id for reference
                 }))
             : [];

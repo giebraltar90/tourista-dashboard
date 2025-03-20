@@ -17,15 +17,22 @@ export const ParticipantItem = ({
   onDragStart,
   onMoveClick
 }: ParticipantItemProps) => {
+  const handleDragStart = (e: React.DragEvent) => {
+    if (onDragStart) {
+      console.log("Handle drag start for participant:", participant.name);
+      onDragStart(e, participant, groupIndex);
+    }
+  };
+
   return (
     <div 
       className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-muted transition-colors"
       draggable={!!onDragStart}
-      onDragStart={(e) => onDragStart?.(e, participant, groupIndex)}
+      onDragStart={handleDragStart}
     >
       <div className="flex items-center space-x-2">
         <div className="flex items-center">
-          <GripVertical className="h-4 w-4 text-muted-foreground mr-2" />
+          <GripVertical className="h-4 w-4 text-muted-foreground mr-2 cursor-grab" />
           <UserCheck className="h-4 w-4 text-muted-foreground" />
         </div>
         <div>
