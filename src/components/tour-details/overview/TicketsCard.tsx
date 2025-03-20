@@ -8,10 +8,20 @@ interface TicketsCardProps {
 }
 
 export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: TicketsCardProps) => {
-  console.log("COUNTING: TicketsCard received values:", {
-    adultTickets,
-    childTickets,
-    totalTickets
+  // Extra validation to ensure counts are non-negative numbers
+  const validAdultTickets = Math.max(0, adultTickets || 0);
+  const validChildTickets = Math.max(0, childTickets || 0);
+  const validTotalTickets = Math.max(0, totalTickets || 0);
+  
+  // Double-check that our total matches the sum of adult + child tickets
+  const calculatedTotal = validAdultTickets + validChildTickets;
+  const displayTotal = calculatedTotal === validTotalTickets ? validTotalTickets : calculatedTotal;
+  
+  console.log("COUNTING: TicketsCard final values:", {
+    originalValues: { adultTickets, childTickets, totalTickets },
+    validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
+    calculatedTotal,
+    displayTotal
   });
 
   return (
@@ -23,16 +33,16 @@ export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: Ticket
         <div className="grid gap-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Adult (18+):</span>
-            <span className="font-medium">{adultTickets} tickets</span>
+            <span className="font-medium">{validAdultTickets} tickets</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Child (Under 18):</span>
-            <span className="font-medium">{childTickets} tickets</span>
+            <span className="font-medium">{validChildTickets} tickets</span>
           </div>
           <div className="flex justify-between">
             <span className="text-muted-foreground">Total:</span>
             <span className="font-medium">
-              {totalTickets} tickets
+              {displayTotal} tickets
             </span>
           </div>
         </div>

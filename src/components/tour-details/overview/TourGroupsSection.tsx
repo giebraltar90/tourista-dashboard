@@ -32,17 +32,32 @@ export const TourGroupsSection = ({
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
   };
   
-  console.log("COUNTING: TourGroupsSection rendering groups:", tourGroups.map(g => ({
-    name: g.name,
-    size: g.size,
-    childCount: g.childCount,
-    participantCount: Array.isArray(g.participants) 
-      ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
-      : 'N/A',
-    childrenInParticipants: Array.isArray(g.participants) 
-      ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
-      : 'N/A',
-  })));
+  // Log all group data for debugging
+  const groupDetailsForLogging = tourGroups.map(g => {
+    // Calculate participant counts directly from participants array
+    const participantCount = Array.isArray(g.participants) && g.participants.length > 0
+      ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0)
+      : g.size || 0;
+      
+    const childCount = Array.isArray(g.participants) && g.participants.length > 0
+      ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
+      : g.childCount || 0;
+      
+    return {
+      name: g.name,
+      size: g.size,
+      childCount: g.childCount,
+      calculatedParticipantCount: participantCount,
+      calculatedChildCount: childCount,
+      displayParticipants: formatParticipantCount(participantCount, childCount),
+      participantsArray: Array.isArray(g.participants) ? g.participants.length : 'N/A',
+      participantDetails: Array.isArray(g.participants) 
+        ? g.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
+        : 'N/A'
+    };
+  });
+  
+  console.log("COUNTING: TourGroupsSection detailed group analysis:", groupDetailsForLogging);
 
   return (
     <Card>
@@ -72,10 +87,14 @@ export const TourGroupsSection = ({
               // Format with consistent function
               const displayParticipants = formatParticipantCount(participantCount, childCount);
               
-              console.log(`COUNTING: Group ${group.name || index} in TourGroupsSection:`, {
+              console.log(`COUNTING: Group ${group.name || index} in TourGroupsSection calculation:`, {
                 participantCount,
                 childCount,
-                displayParticipants
+                adultCount: participantCount - childCount,
+                displayParticipants,
+                participantDetails: Array.isArray(group.participants) 
+                  ? group.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
+                  : 'N/A'
               });
               
               return (

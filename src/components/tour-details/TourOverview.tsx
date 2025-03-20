@@ -33,15 +33,30 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // Ensure tourGroups exists to prevent errors
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
-  // CRITICAL FIX: Recalculate all counts from the source of truth (participants arrays)
-  // to ensure consistency across the entire UI
-  const totalParticipants = calculateTotalParticipants(tourGroups);
-  const totalChildCount = calculateTotalChildCount(tourGroups);
+  // CRITICAL FIX: Only calculate from participants array data to ensure consistency
+  let totalParticipants = 0;
+  let totalChildCount = 0;
+  
+  // Loop through each group and calculate from the participants array
+  for (const group of tourGroups) {
+    if (Array.isArray(group.participants)) {
+      // Sum the count values for participants in this group
+      const groupParticipants = group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+      const groupChildCount = group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+      
+      totalParticipants += groupParticipants;
+      totalChildCount += groupChildCount;
+    } else {
+      // Fallback to group size/childCount if participants array isn't available
+      totalParticipants += group.size || 0;
+      totalChildCount += group.childCount || 0;
+    }
+  }
   
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('COUNTING: TourOverview calculation results:', {
+  console.log('COUNTING: TourOverview direct calculation results:', {
     totalParticipants,
     totalChildCount, 
     adultCount: totalParticipants - totalChildCount,

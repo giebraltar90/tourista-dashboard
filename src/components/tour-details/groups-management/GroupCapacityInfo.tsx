@@ -2,7 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { CardTitle, CardDescription } from "@/components/ui/card";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
-import { calculateTotalParticipants, calculateTotalChildCount, formatParticipantCount } from "@/hooks/group-management/services/participantService";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface GroupCapacityInfoProps {
   tour: TourCardProps;
@@ -18,9 +18,23 @@ export const GroupCapacityInfo = ({
   // Ensure tour.tourGroups exists
   const tourGroups = tour.tourGroups || [];
   
-  // CRITICAL FIX: Always prioritize calculation from participants arrays for consistency
-  const calculatedTotalParticipants = calculateTotalParticipants(tourGroups);
-  const calculatedTotalChildCount = calculateTotalChildCount(tourGroups);
+  // CRITICAL FIX: Calculate directly from the participants arrays of each group
+  let calculatedTotalParticipants = 0;
+  let calculatedTotalChildCount = 0;
+  
+  // Detailed calculation loop for reliability
+  for (const group of tourGroups) {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      for (const participant of group.participants) {
+        calculatedTotalParticipants += participant.count || 1;
+        calculatedTotalChildCount += participant.childCount || 0;
+      }
+    } else {
+      // Fallback to group properties when participants array isn't available
+      calculatedTotalParticipants += group.size || 0;
+      calculatedTotalChildCount += group.childCount || 0;
+    }
+  }
   
   // Use calculated values, fall back to provided values if calculation fails
   const displayedParticipants = calculatedTotalParticipants || providedTotalParticipants || 0;
@@ -38,8 +52,8 @@ export const GroupCapacityInfo = ({
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
-  // Log for debugging synchronization issues
-  console.log("COUNTING: GroupCapacityInfo calculations:", {
+  // Enhanced detailed logging for debugging
+  console.log("COUNTING: GroupCapacityInfo direct calculation results:", {
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     providedTotalParticipants,
@@ -51,16 +65,20 @@ export const GroupCapacityInfo = ({
     capacity,
     requiredGroups,
     tourGroupsCount: tourGroups.length,
-    groupSizes: tourGroups.map(g => ({
+    groupDetails: tourGroups.map(g => ({
       name: g.name, 
       size: g.size, 
       childCount: g.childCount,
-      participantsCount: Array.isArray(g.participants) 
+      directParticipantCount: Array.isArray(g.participants) 
         ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
-        : 'N/A',
-      childrenInParticipants: Array.isArray(g.participants) 
+        : 'No participants array',
+      directChildCount: Array.isArray(g.participants) 
         ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
-        : 'N/A'
+        : 'No participants array',
+      participantsCount: Array.isArray(g.participants) ? g.participants.length : 'N/A',
+      participantDetails: Array.isArray(g.participants) 
+        ? g.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
+        : 'No participant details available'
     }))
   });
   
