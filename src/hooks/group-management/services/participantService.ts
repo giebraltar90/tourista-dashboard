@@ -62,7 +62,12 @@ export const getParticipantById = async (
       count: data.count || 1,
       bookingRef: data.booking_ref,
       childCount: data.child_count || 0,
-      group_id: data.group_id
+      // Using the correct property name that matches the VentrataParticipant interface
+      // The type expects groupId (camelCase) but we're getting group_id (snake_case) from the database
+      groupId: data.group_id,
+      // Include snake_case properties for database compatibility
+      booking_ref: data.booking_ref,
+      child_count: data.child_count
     };
   } catch (error) {
     console.error("Error fetching participant:", error);

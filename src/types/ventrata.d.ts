@@ -7,8 +7,9 @@ export interface VentrataParticipant {
   count: number;
   bookingRef: string;
   childCount: number;
-  group_id?: string;
+  groupId?: string;
   // The following properties are for database compatibility
+  group_id?: string;
   booking_ref?: string;
   child_count?: number;
 }
