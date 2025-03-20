@@ -1,3 +1,4 @@
+
 import { GuideInfo } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
@@ -21,16 +22,18 @@ export const findGuideName = (
   const guide = guides.find(g => g.id === guideId);
   if (guide && guide.name) return guide.name;
   
-  // For UUID-format guideIds, try to find a matching guide
+  // For UUID-format guideIds, check if it matches one of the primary guides' IDs
   if (isValidUuid(guideId)) {
-    // Check if this matches one of the primary guides' IDs
-    if (tour.guide1 && tour.guide1 === guideId) return tour.guide1;
-    if (tour.guide2 && tour.guide2 === guideId) return tour.guide2;
-    if (tour.guide3 && tour.guide3 === guideId) return tour.guide3;
+    if (tour.guide1 && isValidUuid(tour.guide1) && tour.guide1 === guideId) return tour.guide1;
+    if (tour.guide2 && isValidUuid(tour.guide2) && tour.guide2 === guideId) return tour.guide2;
+    if (tour.guide3 && isValidUuid(tour.guide3) && tour.guide3 === guideId) return tour.guide3;
     
-    // Try to find the guide in the guides array
+    // Try to find the guide by ID in the guides array again
     const matchingGuide = guides.find(g => g.id === guideId);
     if (matchingGuide) return matchingGuide.name;
+    
+    // Log to debug when a guide ID cannot be resolved
+    console.log(`Could not find guide name for UUID: ${guideId}`);
     
     // If we can't find a name, show a truncated version of the UUID
     return `Guide (${guideId.substring(0, 6)}...)`;
@@ -58,7 +61,7 @@ export const getGuideNameForAssignment = (
   guides: any[]
 ): string => {
   // For unassignment, use a standard name
-  if (!actualGuideId) return "Unassigned";
+  if (!actualGuideId || actualGuideId === "_none") return "Unassigned";
   
   // Handle special guide IDs directly
   if (actualGuideId === "guide1" && currentTour.guide1) {

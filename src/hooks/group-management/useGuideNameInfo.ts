@@ -74,7 +74,29 @@ export const useGuideNameInfo = (
         };
       }
       
-      // If not found in guides, return a formatted UUID
+      // If not found in guides but matches one of the primary guide IDs
+      if (tour.guide1 && tour.guide1 === guideId) {
+        return {
+          name: tour.guide1,
+          info: guide1Info
+        };
+      }
+      
+      if (tour.guide2 && tour.guide2 === guideId) {
+        return {
+          name: tour.guide2,
+          info: guide2Info
+        };
+      }
+      
+      if (tour.guide3 && tour.guide3 === guideId) {
+        return {
+          name: tour.guide3,
+          info: guide3Info
+        };
+      }
+      
+      // If not found anywhere, return a formatted UUID
       return {
         name: `Guide (${guideId.substring(0, 6)}...)`,
         info: null

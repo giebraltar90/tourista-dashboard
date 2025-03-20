@@ -4,7 +4,8 @@ import { GuideInfo } from "@/types/ventrata";
 import { 
   TourInformationCard,
   ParticipantsCard,
-  TicketsCard
+  TicketsCard,
+  TourGroupsSection
 } from "./overview";
 import { useState, useEffect } from "react";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
@@ -102,6 +103,15 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
           totalTickets={tour.numTickets || totalParticipants}
         />
       </div>
+      
+      <Separator className="my-6" />
+      
+      <TourGroupsSection
+        tour={tour}
+        guide1Info={guide1Info}
+        guide2Info={guide2Info}
+        guide3Info={guide3Info}
+      />
       
       <Separator className="my-6" />
       

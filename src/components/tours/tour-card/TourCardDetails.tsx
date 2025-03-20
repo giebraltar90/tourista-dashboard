@@ -1,124 +1,96 @@
 
-import React from "react";
-import { CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { MapPin } from "lucide-react";
-import { TourCardGuide } from "./TourCardGuide";
-import { TourCardCapacity } from "./TourCardCapacity";
-import { TourCardDetailsProps } from "./types";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
+import { TourCardProps } from "./types";
+import { GuideInfo } from "@/types/ventrata";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { findGuideName } from "@/hooks/group-management/services/utils/guideNameUtils";
 
-export const TourCardDetails: React.FC<TourCardDetailsProps> = ({
-  guide1,
-  guide2,
-  guide1Info,
-  guide2Info,
-  location,
+interface TourCardDetailsProps {
+  guide1: string;
+  guide2: string;
+  guide1Info?: GuideInfo;
+  guide2Info?: GuideInfo;
+  location: string;
+  tourGroups: TourCardProps['tourGroups'];
+  totalParticipants: number;
+  isHighSeason: boolean;
+}
+
+export const TourCardDetails = ({ 
+  guide1, 
+  guide2, 
+  guide1Info, 
+  guide2Info, 
+  location, 
   tourGroups,
   totalParticipants,
   isHighSeason
-}) => {
-  const capacity = isHighSeason ? 
-    DEFAULT_CAPACITY_SETTINGS.highSeason : 
-    totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard ? 
-      DEFAULT_CAPACITY_SETTINGS.exception : 
-      DEFAULT_CAPACITY_SETTINGS.standard;
+}: TourCardDetailsProps) => {
+  // Use the actual assigned guides from tour groups instead of primary guides
+  const getAssignedGuides = () => {
+    const assignedGuideIds = tourGroups
+      .filter(group => group.guideId)
+      .map(group => group.guideId);
+      
+    // Remove duplicates
+    const uniqueGuideIds = [...new Set(assignedGuideIds)];
+    
+    // Map guide IDs to guide names or IDs
+    return uniqueGuideIds.map(guideId => {
+      if (guideId === "guide1") return guide1;
+      if (guideId === "guide2") return guide2;
+      
+      // For UUIDs or other guide IDs, just show a shortened version or placeholder
+      if (isValidUuid(guideId)) {
+        return `Guide (${guideId.substring(0, 6)}...)`;
+      }
+      
+      return guideId || "Unassigned";
+    });
+  };
   
-  // Calculate total child count across all groups
+  // Get the actual guides assigned to the groups
+  const assignedGuides = getAssignedGuides();
+  
+  // No need for these lines since we're getting the actual assigned guides
+  // const formattedGuide1 = guide1 || "No Guide";
+  // const formattedGuide2 = guide2 ? ` / ${guide2}` : "";
+  
+  // Format participant count to show adults + children
   const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
+  const formattedParticipantCount = totalChildCount > 0 
+    ? `${totalParticipants - totalChildCount}+${totalChildCount}` 
+    : totalParticipants;
+  
+  // Get the actual capacity based on the high season flag
+  const capacity = isHighSeason ? 36 : 24;
   
   return (
-    <CardContent className="p-4 pt-2 pb-3">
-      <div className="flex flex-wrap gap-y-2">
-        <div className="w-full flex flex-col">
-          {/* Only display guide1 if it exists */}
-          {guide1 && (
-            <TourCardGuide 
-              guideName={guide1} 
-              guideInfo={guide1Info} 
-            />
-          )}
-          
-          {/* Only display guide2 if it exists */}
-          {guide2 && (
-            <TourCardGuide 
-              guideName={guide2} 
-              guideInfo={guide2Info} 
-              isSecondary
-            />
-          )}
+    <div className="px-4 py-3 border-t border-gray-100 bg-white">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
+        <div className="flex items-center space-x-1 text-sm">
+          <span className="text-muted-foreground">Location:</span>
+          <span className="font-medium">{location}</span>
         </div>
         
-        <div className="w-1/2 flex items-center">
-          <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-          <span className="text-sm">{location}</span>
+        <div className="flex items-center space-x-1 text-sm">
+          <span className="text-muted-foreground">Groups:</span>
+          <span className="font-medium">{tourGroups.length}</span>
         </div>
         
-        <div className="w-full mt-1">
-          <div className="flex items-center gap-1.5">
-            {tourGroups.sort((a, b) => {
-              // Extract group numbers to maintain consistent ordering
-              const getGroupNum = (group: any) => {
-                if (group?.name) {
-                  const match = group.name.match(/Group (\d+)/);
-                  if (match && match[1]) {
-                    return parseInt(match[1], 10);
-                  }
-                }
-                return 999; // Default for groups without proper naming
-              };
-              
-              return getGroupNum(a) - getGroupNum(b);
-            }).map((group, index) => {
-              // Extract the group number from the name for display
-              let groupNumber = index + 1;
-              if (group.name) {
-                const match = group.name.match(/Group (\d+)/);
-                if (match && match[1]) {
-                  groupNumber = parseInt(match[1], 10);
-                }
-              }
-              
-              return (
-                <TooltipProvider key={index}>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Badge variant="secondary" className="flex items-center">
-                        <span className="mr-1">Group {groupNumber}</span>
-                        <span className="bg-background/80 px-1.5 rounded-sm text-xs">
-                          {group.childCount && group.childCount > 0 ? 
-                            `${group.size - group.childCount}+${group.childCount}` : 
-                            group.size}
-                        </span>
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Entry: {group.entryTime}</p>
-                      {group.childCount > 0 && (
-                        <p>{group.childCount} {group.childCount === 1 ? 'child' : 'children'}</p>
-                      )}
-                      {group.guideId && (
-                        <p>Guide assigned</p>
-                      )}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              );
-            })}
-          </div>
+        <div className="flex items-center space-x-1 text-sm">
+          <span className="text-muted-foreground">Guides:</span>
+          <span className="font-medium">
+            {assignedGuides.length > 0 
+              ? assignedGuides.join(" / ")
+              : "No guides assigned"}
+          </span>
+        </div>
+        
+        <div className="flex items-center space-x-1 text-sm">
+          <span className="text-muted-foreground">Participants:</span>
+          <span className="font-medium">{formattedParticipantCount}</span>
         </div>
       </div>
-      
-      <TourCardCapacity 
-        totalParticipants={totalParticipants} 
-        capacity={capacity} 
-      />
-    </CardContent>
+    </div>
   );
 };

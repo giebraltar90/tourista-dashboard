@@ -110,6 +110,19 @@ export const TourGroupsSection = ({
     return getGroupNumber(a) - getGroupNumber(b);
   });
 
+  // Log guide info for debugging
+  sortedGroups.forEach((group, index) => {
+    const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group?.guideId || "");
+    console.log(`Group ${index} guide info:`, {
+      groupName: group.name,
+      groupId: group.id,
+      guideId: group.guideId,
+      assignedGuideName: guideName,
+      guideInfo: guideInfo ? "Found: true" : "Not found",
+      originalGuideData: guides.find(g => g.id === group.guideId) ? "Found: true" : "Not found"
+    });
+  });
+
   return (
     <Card>
       <CardHeader>
