@@ -10,3 +10,4 @@ export * from './useGuideNameInfo';
 export * from './useGuideAssignmentForm';
 export * from './types';
 export * from './utils/guideAssignmentUtils';
+export * from './services/guideAssignmentService';

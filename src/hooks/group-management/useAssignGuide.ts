@@ -6,7 +6,15 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import {
+  validateGuideAssignment,
+  findGuideName,
+  generateGroupNameWithGuide,
+  applyOptimisticUpdate,
+  createModificationDescription,
+  refreshCacheAfterAssignment
+} from "./services/guideAssignmentService";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -22,22 +30,18 @@ export const useAssignGuide = (tourId: string) => {
    */
   const assignGuide = useCallback(async (groupIndex: number, guideId?: string | null) => {
     try {
-      if (!tour) {
-        console.error("Cannot assign guide: Tour data not available");
-        return false;
-      }
-      
       console.log("Starting guide assignment:", { 
         groupIndex, 
         guideId, 
         tourId, 
-        currentGroups: tour.tourGroups?.map(g => ({id: g.id, name: g.name, guideId: g.guideId})) || []
+        currentGroups: tour?.tourGroups?.map(g => ({id: g.id, name: g.name, guideId: g.guideId})) || []
       });
       
-      // Validate groupIndex is within bounds
-      if (groupIndex < 0 || groupIndex >= (tour.tourGroups?.length || 0)) {
-        console.error(`Invalid group index: ${groupIndex}. Available groups: ${tour.tourGroups?.length}`);
-        toast.error("Cannot assign guide: Invalid group");
+      // Validate parameters
+      const validationResult = validateGuideAssignment(tour, groupIndex, guideId);
+      if (!validationResult.valid) {
+        console.error(validationResult.errorMessage);
+        toast.error(validationResult.errorMessage || "Cannot assign guide");
         return false;
       }
       
@@ -52,46 +56,17 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Get the target group
-      const targetGroup = tour.tourGroups?.[groupIndex];
-      if (!targetGroup) {
-        toast.error("Group not found");
-        return false;
-      }
-      
-      // Find guide name for display
-      let guideName = "Unassigned";
-      if (actualGuideId) {
-        const guide = guides.find(g => g.id === actualGuideId);
-        if (guide) {
-          guideName = guide.name;
-          console.log(`Found guide name: ${guideName} for ID: ${actualGuideId}`);
-        } else {
-          console.warn(`Could not find guide name for ID: ${actualGuideId} in available guides`);
-          // Try harder to find the name
-          if (tour.guide1 && guides.find(g => g.name === tour.guide1)?.id === actualGuideId) {
-            guideName = tour.guide1;
-          } else if (tour.guide2 && guides.find(g => g.name === tour.guide2)?.id === actualGuideId) {
-            guideName = tour.guide2;
-          } else if (tour.guide3 && guides.find(g => g.name === tour.guide3)?.id === actualGuideId) {
-            guideName = tour.guide3;
-          }
-        }
-      }
-      
-      // Get the group ID
+      const targetGroup = tour!.tourGroups![groupIndex];
       const groupId = targetGroup.id;
-      if (!groupId) {
-        toast.error("Cannot assign guide: Group ID is missing");
-        return false;
-      }
       
       // Get group number for name generation
       const groupNumber = groupIndex + 1;
       
+      // Find guide name for display
+      const guideName = findGuideName(actualGuideId, guides, tour);
+      
       // Generate a new group name with the guide name
-      const groupName = actualGuideId 
-        ? `Group ${groupNumber} (${guideName})` 
-        : `Group ${groupNumber}`;
+      const groupName = generateGroupNameWithGuide(groupNumber, guideName);
       
       console.log("Calling updateGuideInSupabase with:", {
         tourId,
@@ -113,32 +88,21 @@ export const useAssignGuide = (tourId: string) => {
       
       if (updateSuccess) {
         // Apply optimistic update to the UI
-        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-          if (!oldData) return null;
-          
-          // Create a deep copy to avoid reference issues
-          const newData = JSON.parse(JSON.stringify(oldData));
-          
-          // Update the specific group
-          if (newData.tourGroups && newData.tourGroups[groupIndex]) {
-            newData.tourGroups[groupIndex].guideId = actualGuideId;
-            newData.tourGroups[groupIndex].name = groupName;
-            
-            // Also update guideName if present
-            if (actualGuideId) {
-              newData.tourGroups[groupIndex].guideName = guideName;
-            } else {
-              newData.tourGroups[groupIndex].guideName = undefined;
-            }
-          }
-          
-          return newData;
-        });
+        applyOptimisticUpdate(
+          queryClient,
+          tourId,
+          groupIndex,
+          actualGuideId,
+          groupName,
+          guideName
+        );
         
         // Record the modification
-        const modificationDescription = actualGuideId 
-          ? `Assigned guide ${guideName} to Group ${groupNumber}` 
-          : `Removed guide from Group ${groupNumber}`;
+        const modificationDescription = createModificationDescription(
+          actualGuideId,
+          guideName,
+          groupNumber
+        );
           
         await addModification(modificationDescription, {
           groupIndex,
@@ -147,13 +111,10 @@ export const useAssignGuide = (tourId: string) => {
           guideName
         });
         
-        // Force a refetch after a delay to ensure server data is synced
-        setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-          queryClient.invalidateQueries({ queryKey: ['tours'] });
-          refetch();
-        }, 800);
+        // Refresh data to ensure sync with server
+        refreshCacheAfterAssignment(queryClient, tourId, refetch);
         
+        // Show success message
         toast.success(actualGuideId 
           ? `Guide ${guideName} assigned to Group ${groupNumber}` 
           : `Guide removed from Group ${groupNumber}`

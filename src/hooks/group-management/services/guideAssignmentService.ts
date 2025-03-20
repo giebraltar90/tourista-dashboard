@@ -150,3 +150,161 @@ export const persistGuideAssignment = async (
 
   return success;
 };
+
+/**
+ * Validates that a guide assignment operation can proceed
+ */
+export const validateGuideAssignment = (
+  tour: any,
+  groupIndex: number,
+  guideId?: string | null
+): { valid: boolean; errorMessage?: string } => {
+  if (!tour) {
+    return {
+      valid: false,
+      errorMessage: "Cannot assign guide: Tour data not available"
+    };
+  }
+  
+  // Validate groupIndex is within bounds
+  if (groupIndex < 0 || groupIndex >= (tour.tourGroups?.length || 0)) {
+    return {
+      valid: false,
+      errorMessage: `Invalid group index: ${groupIndex}. Available groups: ${tour.tourGroups?.length}`
+    };
+  }
+  
+  // Get the target group
+  const targetGroup = tour.tourGroups?.[groupIndex];
+  if (!targetGroup) {
+    return {
+      valid: false,
+      errorMessage: "Group not found"
+    };
+  }
+  
+  // Get the group ID
+  const groupId = targetGroup.id;
+  if (!groupId) {
+    return {
+      valid: false,
+      errorMessage: "Cannot assign guide: Group ID is missing"
+    };
+  }
+  
+  return { valid: true };
+};
+
+/**
+ * Find guide name from ID using multiple lookup strategies
+ */
+export const findGuideName = (
+  guideId: string | null | undefined,
+  guides: any[],
+  tour: any
+): string => {
+  // Default name if no guide is assigned
+  if (!guideId) {
+    return "Unassigned";
+  }
+  
+  // Try to find guide name in the guides array first
+  const guide = guides.find(g => g.id === guideId);
+  if (guide) {
+    return guide.name;
+  }
+  
+  // Fallback to looking in tour properties
+  if (tour) {
+    if (guideId === "guide1" && tour.guide1) return tour.guide1;
+    if (guideId === "guide2" && tour.guide2) return tour.guide2;
+    if (guideId === "guide3" && tour.guide3) return tour.guide3;
+    
+    // Try harder to find the name
+    if (tour.guide1 && guides.find(g => g.name === tour.guide1)?.id === guideId) {
+      return tour.guide1;
+    } else if (tour.guide2 && guides.find(g => g.name === tour.guide2)?.id === guideId) {
+      return tour.guide2;
+    } else if (tour.guide3 && guides.find(g => g.name === tour.guide3)?.id === guideId) {
+      return tour.guide3;
+    }
+  }
+  
+  // Last resort fallback
+  return guideId.startsWith("guide") ? `Guide ${guideId.slice(5)}` : guideId.substring(0, 8);
+};
+
+/**
+ * Generate a new group name that includes the guide if assigned
+ */
+export const generateGroupNameWithGuide = (
+  groupNumber: number,
+  guideName: string | null | undefined
+): string => {
+  return guideName && guideName !== "Unassigned"
+    ? `Group ${groupNumber} (${guideName})`
+    : `Group ${groupNumber}`;
+};
+
+/**
+ * Apply optimistic update to the UI for guide assignment
+ */
+export const applyOptimisticUpdate = (
+  queryClient: any,
+  tourId: string,
+  groupIndex: number,
+  actualGuideId: string | null,
+  groupName: string,
+  guideName: string
+): void => {
+  queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+    if (!oldData) return null;
+    
+    // Create a deep copy to avoid reference issues
+    const newData = JSON.parse(JSON.stringify(oldData));
+    
+    // Update the specific group
+    if (newData.tourGroups && newData.tourGroups[groupIndex]) {
+      newData.tourGroups[groupIndex].guideId = actualGuideId;
+      newData.tourGroups[groupIndex].name = groupName;
+      
+      // Also update guideName if present
+      if (actualGuideId) {
+        newData.tourGroups[groupIndex].guideName = guideName;
+      } else {
+        newData.tourGroups[groupIndex].guideName = undefined;
+      }
+    }
+    
+    return newData;
+  });
+};
+
+/**
+ * Create a human-readable description for the guide assignment operation
+ */
+export const createModificationDescription = (
+  actualGuideId: string | null | undefined,
+  guideName: string,
+  groupNumber: number
+): string => {
+  return actualGuideId
+    ? `Assigned guide ${guideName} to Group ${groupNumber}`
+    : `Removed guide from Group ${groupNumber}`;
+};
+
+/**
+ * Handle post-assignment cache invalidation and refetching
+ */
+export const refreshCacheAfterAssignment = (
+  queryClient: any,
+  tourId: string,
+  refetch: () => Promise<any>
+): void => {
+  // Force a refetch after a delay to ensure server data is synced
+  setTimeout(() => {
+    queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+    queryClient.invalidateQueries({ queryKey: ['tours'] });
+    refetch();
+  }, 800);
+};
