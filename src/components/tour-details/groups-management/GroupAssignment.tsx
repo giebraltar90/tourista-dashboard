@@ -10,7 +10,6 @@ import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useGroupManagement } from "@/hooks/group-management";
 import { MoveParticipantSheet } from "./MoveParticipantSheet";
 import { toast } from "sonner";
-import { fetchParticipantsForTour } from "@/services/api/tourApi";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 
@@ -39,6 +38,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     handleMoveParticipant,
     handleDragStart,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
     setSelectedParticipant,
     isMovePending,
@@ -155,11 +155,14 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
                     onAssignGuide={handleOpenAssignGuide}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
                     onDragStart={handleDragStart}
+                    onDragEnd={() => {}} // Empty function to satisfy prop
                     onMoveClick={setSelectedParticipant}
                     selectedParticipant={selectedParticipant}
                     handleMoveParticipant={handleMoveParticipant}
                     isMovePending={isMovePending}
+                    onRefreshParticipants={handleRefreshParticipants}
                   />
                 );
               })}

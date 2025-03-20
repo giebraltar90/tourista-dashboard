@@ -18,7 +18,7 @@ interface GroupCardProps {
   guide2Info: GuideInfo | null;
   guide3Info: GuideInfo | null;
   onDragOver: (e: React.DragEvent) => void;
-  onDragLeave: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, groupIndex: number) => void;
   onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
   onDragEnd: () => void;
@@ -27,6 +27,7 @@ interface GroupCardProps {
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
   onRefreshParticipants?: () => void;
+  onAssignGuide?: (groupIndex: number) => void; // Added this prop
 }
 
 export const GroupCard = ({
@@ -45,7 +46,8 @@ export const GroupCard = ({
   selectedParticipant,
   handleMoveParticipant,
   isMovePending,
-  onRefreshParticipants
+  onRefreshParticipants,
+  onAssignGuide
 }: GroupCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
@@ -165,13 +167,23 @@ export const GroupCard = ({
                 <UserPlus className="mr-1 h-4 w-4" /> 
                 Participants ({localParticipants.length})
               </h4>
+              
+              {onAssignGuide && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onAssignGuide(groupIndex)}
+                >
+                  Assign Guide
+                </Button>
+              )}
             </div>
             
             <div
               className="min-h-[100px] rounded-md"
               data-drop-target="true"
               onDragOver={(e) => onDragOver(e)}
-              onDragLeave={(e) => onDragLeave(e)}
+              onDragLeave={(e) => onDragLeave && onDragLeave(e)}
               onDrop={(e) => onDrop(e, groupIndex)}
             >
               {Array.isArray(localParticipants) && localParticipants.length > 0 ? (
@@ -183,16 +195,21 @@ export const GroupCard = ({
                       onDragStart={(e) => onDragStart(e, participant, groupIndex)}
                       onDragEnd={onDragEnd}
                       onMoveClick={() => onMoveClick({ participant, fromGroupIndex: groupIndex })}
-                      isSelected={
+                      /* Remove isSelected and isMoving props that are causing errors */
+                      isDragging={
                         selectedParticipant?.participant?.id === participant.id &&
                         selectedParticipant?.fromGroupIndex === groupIndex
                       }
-                      isMoving={isMovePending}
+                      disabled={isMovePending}
                     />
                   ))}
                 </div>
               ) : (
-                <ParticipantDropZone />
+                <ParticipantDropZone groupIndex={groupIndex}>
+                  <p className="text-center text-muted-foreground text-sm py-4">
+                    Drop participants here
+                  </p>
+                </ParticipantDropZone>
               )}
             </div>
             

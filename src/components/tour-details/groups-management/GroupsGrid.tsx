@@ -4,7 +4,6 @@ import { GroupCard } from "./GroupCard";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
-import { MoveParticipantDialog } from "./components/MoveParticipantDialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,6 @@ export const GroupsGrid = ({
   isMovePending,
   onRefreshParticipants
 }: GroupsGridProps) => {
-  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [noParticipantsWarning, setNoParticipantsWarning] = useState(false);
   
   // Check if any groups have no participants
@@ -109,19 +107,6 @@ export const GroupsGrid = ({
           );
         })}
       </div>
-      
-      <MoveParticipantDialog
-        isOpen={isMoveDialogOpen}
-        onOpenChange={setIsMoveDialogOpen}
-        participantName={selectedParticipant?.participant?.name || ""}
-        fromGroupName={selectedParticipant 
-          ? tourGroups[selectedParticipant.fromGroupIndex]?.name || `Group ${selectedParticipant.fromGroupIndex + 1}`
-          : ""
-        }
-        tourGroups={tourGroups}
-        onMoveToGroup={handleMoveParticipant}
-        isLoading={isMovePending}
-      />
     </div>
   );
 };

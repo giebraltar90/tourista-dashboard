@@ -6,7 +6,6 @@ import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
 import { useGuideInfo } from "@/hooks/guides";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
@@ -100,7 +99,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={refreshParticipants}
+          onClick={() => refreshParticipants()} // Wrap in arrow function to fix type error
           disabled={isMovePending}
           className="flex items-center"
         >
@@ -125,7 +124,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
-            onRefreshParticipants={refreshParticipants}
+            onRefreshParticipants={() => refreshParticipants()} // Wrap in arrow function
           />
         </div>
       </CardContent>

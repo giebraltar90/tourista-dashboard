@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
-import { persistGuideAssignment } from "../guideAssignmentService";
 
 /**
  * Attempts to persist guide assignment changes through multiple strategies
@@ -57,24 +56,32 @@ export const persistGuideAssignmentChanges = async (
     console.error("Error with direct Supabase update:", error);
   }
   
-  // Second attempt: try the persistGuideAssignment method
+  // Second attempt: try direct Supabase update without using a helper function
   if (!updateSuccess) {
     try {
-      updateSuccess = await persistGuideAssignment(
-        tourId, 
-        groupId, 
-        actualGuideId, 
-        groupName
-      );
+      // Import and use supabase client directly for this attempt
+      const { supabase } = await import("@/integrations/supabase/client");
       
-      console.log(`Direct persistence result: ${updateSuccess ? 'Success' : 'Failed'}`);
+      console.log(`Trying direct database update for group ${groupId}`);
       
-      // If the persistGuideAssignment succeeded, we're done
-      if (updateSuccess) {
+      const { error } = await supabase
+        .from('tour_groups')
+        .update({
+          guide_id: actualGuideId,
+          name: groupName
+        })
+        .eq('id', groupId)
+        .eq('tour_id', tourId);
+        
+      if (!error) {
+        console.log("Successfully updated guide assignment with direct query");
+        updateSuccess = true;
         return true;
+      } else {
+        console.error("Error updating via direct query:", error);
       }
     } catch (error) {
-      console.error("Error with persistGuideAssignment:", error);
+      console.error("Error with direct database update:", error);
     }
   }
   
@@ -82,15 +89,7 @@ export const persistGuideAssignmentChanges = async (
   if (!updateSuccess) {
     console.log("Falling back to updateTourGroups API as last resort");
     try {
-      // Find the index of the group we're updating
-      const targetGroupIndex = updatedGroups.findIndex(g => g.id === groupId);
-      
-      if (targetGroupIndex === -1) {
-        console.error(`Could not find group ${groupId} in updatedGroups array`);
-        return false;
-      }
-      
-      // Prepare tour groups for database update - PRESERVE PARTICIPANTS
+      // Prepare tour groups for database update
       const sanitizedGroups = updatedGroups.map(group => {
         // Create a deep copy to avoid mutating the original
         const sanitizedGroup = {...group};
