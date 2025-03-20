@@ -175,13 +175,6 @@ export const GroupCard = ({
         </div>
         
         <div className="mt-2 flex items-center justify-between">
-          <div className="flex items-center">
-            <Users className="h-4 w-4 text-muted-foreground mr-1" />
-            <span className="text-sm text-muted-foreground">
-              {displayParticipants}
-            </span>
-          </div>
-          
           <div className="text-sm text-muted-foreground flex items-center">
             Guide: {guideName ? (
               <span className="ml-1 font-medium">{guideName}</span>
