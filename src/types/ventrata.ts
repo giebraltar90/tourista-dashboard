@@ -15,13 +15,14 @@ export interface VentrataParticipant {
 }
 
 export interface VentrataTourGroup {
-  id?: string; // Add optional id property for database persistence
+  id: string; // Changed to required to match ventrata.d.ts
   name: string;
   size: number;
   entryTime: string;
   participants?: VentrataParticipant[];
   childCount?: number; // Total children in this group
   guideId?: string; // Guide ID for this group
+  guideName?: string; // Added to match ventrata.d.ts
   // For database compatibility
   child_count?: number;
   entry_time?: string;

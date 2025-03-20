@@ -1,5 +1,4 @@
-
-import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata.d";
+import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
