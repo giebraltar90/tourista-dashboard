@@ -43,7 +43,7 @@ export const useAssignGuide = (tourId: string) => {
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       
       // Get the latest data before making changes
-      const latestTour = queryClient.getQueryData(['tour', tourId]) as TourCardProps || tour;
+      const latestTour = queryClient.getQueryData(['tour', tourId]) as TourCardProps | undefined || tour;
       
       // Get the target group
       const targetGroup = latestTour.tourGroups[groupIndex];
@@ -91,11 +91,17 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
+      // Generate a new group name
+      const groupName = actualGuideId 
+        ? `Group ${groupIndex + 1} (${guideName})` 
+        : `Group ${groupIndex + 1}`;
+      
       // Save to database
       const updateSuccess = await updateGuideInSupabase(
         tourId,
         groupId,
-        actualGuideId
+        actualGuideId,
+        groupName
       );
       
       if (updateSuccess) {

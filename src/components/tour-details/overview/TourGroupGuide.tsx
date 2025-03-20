@@ -35,9 +35,6 @@ export const TourGroupGuide = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
   
-  // Display standardized group name
-  const displayName = `Group ${groupIndex + 1}`;
-  
   // Calculate group size directly from the size property
   const totalGroupSize = group?.size || 0;
   const childCount = group?.childCount || 0;
@@ -72,7 +69,7 @@ export const TourGroupGuide = ({
   return (
     <div className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
       <div className="flex justify-between items-center mb-3">
-        <h3 className="font-medium text-base">{displayName}</h3>
+        <h3 className="font-medium text-base">Group {groupIndex + 1}</h3>
         <Badge variant="outline" className="bg-blue-50">
           {formattedParticipantCount} {totalGroupSize === 1 ? 'person' : 'people'}
         </Badge>

@@ -52,7 +52,7 @@ export const GuideAssignmentDisplay = ({
     : (guideId === "guide2" ? "Secondary Guide" : "Assistant Guide");
 
   // Determine the assigned group display text
-  const groupDisplayText = `Group ${groupIndex !== -1 ? groupIndex + 1 : (isPrimary ? 1 : (guideId === "guide2" ? 2 : 3))}`;
+  const groupDisplayText = groupIndex !== -1 ? `Group ${groupIndex + 1}` : "Not assigned to a group";
 
   const handleGuideChange = async (newGuideId: string) => {
     setIsLoading(true);
@@ -75,10 +75,9 @@ export const GuideAssignmentDisplay = ({
         <div className="flex justify-between items-start">
           <div>
             <div className="text-sm font-medium text-muted-foreground mb-1">
-              {groupDisplayText}: {guideName || "Unassigned"}
+              {displayRole}
             </div>
             <h3 className="font-medium">{guideName || "Unassigned"}</h3>
-            <p className="text-sm text-muted-foreground">{displayRole}</p>
           </div>
           
           {isChanging ? (
@@ -124,7 +123,7 @@ export const GuideAssignmentDisplay = ({
           <div className="mt-2 space-y-1.5">
             <div className="flex items-center text-sm">
               <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-              <span>{guideInfo.birthday ? format(guideInfo.birthday, 'MMMM d, yyyy') : 'Unknown'}</span>
+              <span>{guideInfo.birthday ? format(new Date(guideInfo.birthday), 'MMMM d, yyyy') : 'Unknown'}</span>
             </div>
             <Badge variant="outline" className={getGuideTypeBadgeColor(guideInfo.guideType)}>
               <IdCard className="h-3.5 w-3.5 mr-1.5" />

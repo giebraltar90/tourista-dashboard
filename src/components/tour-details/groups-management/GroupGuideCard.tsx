@@ -22,15 +22,12 @@ export const GroupGuideCard = ({
   const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
   
   // Calculate the correct participant count
-  const totalParticipants = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
-  
-  // Create a display text that includes both group number and guide name
-  const groupDisplayText = `Group ${index + 1}${guideName ? `: ${guideName}` : ''}`;
+  const totalParticipants = group.size || 0;
   
   return (
     <div key={index} className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
       <div className="flex justify-between items-center mb-2">
-        <h4 className="font-medium">{groupDisplayText}</h4>
+        <h4 className="font-medium">Group {index + 1}</h4>
         <Badge variant="outline" className="bg-blue-50">
           {totalParticipants} participants
         </Badge>
