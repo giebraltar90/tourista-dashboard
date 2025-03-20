@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { Badge } from "@/components/ui/badge";
-import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/group-management/services/participantService";
+import { calculateTotalParticipants, calculateTotalChildCount, formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface ParticipantsCardProps {
   tourGroups: VentrataTourGroup[];
@@ -18,24 +18,13 @@ export const ParticipantsCard = ({
   totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
-  // CRITICAL FIX: Always calculate from actual participants array first for accuracy
-  const actualTotalParticipants = tourGroups.reduce((total, group) => {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
-    }
-    return total + (group.size || 0);
-  }, 0);
-  
-  const actualTotalChildCount = tourGroups.reduce((total, group) => {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      return total + group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
-    }
-    return total + (group.childCount || 0);
-  }, 0);
+  // CRITICAL FIX: Always prioritize calculation from participants arrays for consistency
+  const calculatedTotalParticipants = calculateTotalParticipants(tourGroups);
+  const calculatedTotalChildCount = calculateTotalChildCount(tourGroups);
   
   // Use calculated values, fall back to provided values if calculation fails
-  const totalParticipants = actualTotalParticipants || providedTotalParticipants || 0;
-  const totalChildCount = actualTotalChildCount || providedTotalChildCount || 0;
+  const totalParticipants = calculatedTotalParticipants || providedTotalParticipants || 0;
+  const totalChildCount = calculatedTotalChildCount || providedTotalChildCount || 0;
   
   // Calculate adult count (total minus children)
   const adultCount = totalParticipants - totalChildCount;
@@ -43,9 +32,7 @@ export const ParticipantsCard = ({
   const totalGroups = tourGroups.length;
   
   // Format participant count to show adults + children if there are children
-  const formattedParticipantCount = totalChildCount > 0 
-    ? `${adultCount}+${totalChildCount}` 
-    : `${totalParticipants}`;
+  const formattedParticipantCount = formatParticipantCount(totalParticipants, totalChildCount);
   
   // CRITICAL FIX: Use strict equality to ensure proper boolean handling
   const capacity = isHighSeason === true
@@ -67,11 +54,19 @@ export const ParticipantsCard = ({
   };
   
   // Debug log for troubleshooting
-  console.log("ParticipantsCard with fixed counting:", { 
-    actualTotalParticipants,
-    actualTotalChildCount,
+  console.log("COUNTING: ParticipantsCard calculations:", { 
+    calculatedTotalParticipants,
+    calculatedTotalChildCount,
+    providedTotalParticipants,
+    providedTotalChildCount,
+    finalTotalParticipants: totalParticipants,
+    finalTotalChildCount: totalChildCount,
     adultCount,
     formattedParticipantCount,
+    isHighSeason,
+    capacity,
+    requiredGroups,
+    tourGroupsCount: tourGroups.length,
     tourGroups: tourGroups.map(g => ({
       name: g.name, 
       size: g.size, 

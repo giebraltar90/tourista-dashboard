@@ -9,6 +9,7 @@ import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { ParticipantItem } from "./ParticipantItem";
 import { ParticipantDropZone } from "./ParticipantDropZone";
 import { useState, useEffect } from "react";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -59,7 +60,7 @@ export const GroupCard = ({
 
   // Update localParticipants when group.participants changes
   useEffect(() => {
-    console.log(`GroupCard[${groupIndex}] participants from props:`, group.participants);
+    console.log(`COUNTING: GroupCard[${groupIndex}] participants update:`, group.participants);
     if (Array.isArray(group.participants)) {
       setLocalParticipants(group.participants);
     } else {
@@ -76,8 +77,8 @@ export const GroupCard = ({
     }
   };
 
-  // CRITICAL FIX: Calculate accurate counts directly from participants array when available
-  const totalParticipantCount = Array.isArray(localParticipants) && localParticipants.length > 0
+  // CRITICAL FIX: Calculate accurate counts from participants array when available
+  const totalParticipants = Array.isArray(localParticipants) && localParticipants.length > 0
     ? localParticipants.reduce((sum, p) => sum + (p.count || 1), 0)
     : group.size || 0;
     
@@ -86,20 +87,26 @@ export const GroupCard = ({
     : group.childCount || 0;
   
   // Calculate adult count
-  const adultCount = totalParticipantCount - childCount;
+  const adultCount = totalParticipants - childCount;
   
-  // Format participant count to show adults + children if there are children
-  const displayParticipants = childCount > 0 
-    ? `${adultCount}+${childCount}` 
-    : totalParticipantCount.toString();
+  // Format participant count using consistent helper function
+  const displayParticipants = formatParticipantCount(totalParticipants, childCount);
 
-  // Log accurate counts
-  console.log(`GroupCard[${groupIndex}] accurate counts:`, {
-    totalParticipantCount,
+  // Log accurate counts for debugging
+  console.log(`COUNTING: GroupCard[${groupIndex}] calculations:`, {
+    groupName: group.name || `Group ${groupIndex + 1}`,
+    totalParticipants,
     childCount,
     adultCount,
     displayParticipants,
-    participantsArray: Array.isArray(localParticipants) ? localParticipants.length : 'N/A'
+    participantsArray: Array.isArray(localParticipants) ? localParticipants.length : 'N/A',
+    participantsDetails: Array.isArray(localParticipants) 
+      ? localParticipants.map(p => ({
+          name: p.name,
+          count: p.count || 1,
+          childCount: p.childCount || 0
+        })) 
+      : 'N/A'
   });
 
   return (
@@ -111,9 +118,9 @@ export const GroupCard = ({
             <Badge 
               variant="outline" 
               className={`text-xs ${
-                totalParticipantCount >= 15 
+                totalParticipants >= 15 
                   ? "bg-red-100 text-red-800" 
-                  : totalParticipantCount >= 10 
+                  : totalParticipants >= 10 
                     ? "bg-amber-100 text-amber-800" 
                     : "bg-green-100 text-green-800"
               }`}

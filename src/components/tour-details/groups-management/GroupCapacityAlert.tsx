@@ -3,7 +3,7 @@ import { AlertTriangle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
-import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
+import { calculateTotalParticipants, formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface GroupCapacityAlertProps {
   tourGroups: VentrataTourGroup[];
@@ -18,7 +18,21 @@ export const GroupCapacityAlert = ({ tourGroups, isHighSeason }: GroupCapacityAl
   const totalParticipants = calculateTotalParticipants(tourGroups);
   
   // Log calculated participants for debugging
-  console.log("GroupCapacityAlert: calculated participants:", totalParticipants, "from groups:", tourGroups);
+  console.log("COUNTING: GroupCapacityAlert calculations:", {
+    totalParticipants, 
+    isHighSeason,
+    tourGroups: tourGroups.map(g => ({
+      name: g.name,
+      size: g.size,
+      childCount: g.childCount,
+      participantCount: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
+        : 'N/A',
+      childrenInParticipants: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
+        : 'N/A',
+    }))
+  });
   
   const standardCapacity = DEFAULT_CAPACITY_SETTINGS.standard;
   const highSeasonCapacity = DEFAULT_CAPACITY_SETTINGS.highSeason;

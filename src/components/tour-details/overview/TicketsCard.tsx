@@ -8,6 +8,12 @@ interface TicketsCardProps {
 }
 
 export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: TicketsCardProps) => {
+  console.log("COUNTING: TicketsCard received values:", {
+    adultTickets,
+    childTickets,
+    totalTickets
+  });
+
   return (
     <Card>
       <CardHeader className="pb-2">

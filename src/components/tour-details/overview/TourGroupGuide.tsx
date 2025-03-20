@@ -6,6 +6,7 @@ import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
 import { AssignGuideButton } from "./AssignGuideButton";
 import { User, Users } from "lucide-react";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
@@ -26,27 +27,34 @@ export const TourGroupGuide = ({
 }: TourGroupGuideProps) => {
   const { assignGuide } = useAssignGuide(tour.id);
   
-  // Calculate participant count directly from participants array if available
-  const adultCount = Array.isArray(group.participants) && group.participants.length > 0
-    ? group.participants.reduce((sum, p) => sum + (p.count || 1) - (p.childCount || 0), 0)
-    : group.size - (group.childCount || 0);
+  // CRITICAL FIX: Calculate participant count directly from participants array if available
+  const participantCount = Array.isArray(group.participants) && group.participants.length > 0
+    ? group.participants.reduce((sum, p) => sum + (p.count || 1), 0)
+    : group.size || 0;
     
-  // Calculate child count from participants array if available  
+  // CRITICAL FIX: Calculate child count from participants array if available  
   const childCount = Array.isArray(group.participants) && group.participants.length > 0
     ? group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
     : group.childCount || 0;
   
-  // Format participant count to show adults + children if there are children
-  const displayParticipants = childCount > 0 
-    ? `${adultCount}+${childCount}` 
-    : (adultCount + childCount).toString();
+  // Calculate adult count (total minus children)
+  const adultCount = participantCount - childCount;
   
-  console.log(`TourGroupGuide for ${group.name} with accurate counts:`, {
-    adultCount,
+  // Format participant count to show adults + children if there are children
+  const displayParticipants = formatParticipantCount(participantCount, childCount);
+  
+  console.log(`COUNTING: TourGroupGuide for ${group.name} calculations:`, {
+    participantCount,
     childCount,
+    adultCount,
     displayParticipants,
     hasParticipantsArray: Array.isArray(group.participants),
-    participantsLength: Array.isArray(group.participants) ? group.participants.length : 'N/A'
+    participantsLength: Array.isArray(group.participants) ? group.participants.length : 'N/A',
+    participantsDetails: Array.isArray(group.participants) ? group.participants.map(p => ({
+      name: p.name,
+      count: p.count || 1,
+      childCount: p.childCount || 0
+    })) : 'N/A'
   });
   
   return (

@@ -41,17 +41,25 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('TourOverview fixed counting: totalParticipants =', totalParticipants, 
-    'totalChildCount =', totalChildCount, 
-    'groups =', tourGroups.map(g => ({
+  console.log('COUNTING: TourOverview calculation results:', {
+    totalParticipants,
+    totalChildCount, 
+    adultCount: totalParticipants - totalChildCount,
+    tourId: tour.id,
+    isHighSeason,
+    groupsCount: tourGroups.length,
+    groups: tourGroups.map(g => ({
       name: g.name,
       size: g.size,
       childCount: g.childCount,
       participantsCount: Array.isArray(g.participants) 
         ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
+        : 'N/A',
+      childrenInParticipants: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
         : 'N/A'
     }))
-  );
+  });
   
   // Calculate tickets based on actual participant counts
   const adultTickets = totalParticipants - totalChildCount;
