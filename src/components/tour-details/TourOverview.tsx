@@ -33,42 +33,62 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // Ensure tourGroups exists to prevent errors
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
-  // ENHANCED DEBUG: Log the raw tour data
-  console.log("ENHANCED DEBUG: TourOverview raw tour data:", {
+  // MEGA DEBUG: Log the raw tour data in full detail
+  console.log("MEGA DEBUG: TourOverview raw tour data:", {
     tourId: tour.id,
     isHighSeason: tour.isHighSeason,
-    rawTourGroups: tourGroups,
-    groupsCount: tourGroups.length
+    tourGroupsCount: tourGroups.length,
+    rawTourGroups: tourGroups.map(g => ({
+      id: g.id,
+      name: g.name,
+      size: g.size,
+      childCount: g.childCount,
+      guideId: g.guideId,
+      hasParticipants: Array.isArray(g.participants),
+      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0,
+      participants: Array.isArray(g.participants) ? g.participants.map(p => ({
+        id: p.id,
+        name: p.name,
+        count: p.count || 1,
+        childCount: p.childCount || 0
+      })) : []
+    }))
   });
   
-  // CRITICAL BUGFIX: Directly count participants from the group participants array
+  // MEGA BUGFIX: Directly count participants from the group participants array with detailed logging
   let totalParticipants = 0;
   let totalChildCount = 0;
   
   // BUGFIX: Loop through participants and count correctly
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
+      let groupTotal = 0;
+      let groupChildCount = 0;
+      
       // Count directly from participants array
       for (const participant of group.participants) {
-        totalParticipants += participant.count || 1;
-        totalChildCount += participant.childCount || 0;
+        groupTotal += participant.count || 1;
+        groupChildCount += participant.childCount || 0;
       }
       
-      console.log(`BUGFIX: Group ${group.name} participants calculation:`, {
+      totalParticipants += groupTotal;
+      totalChildCount += groupChildCount;
+      
+      console.log(`MEGA DEBUG: TourOverview group "${group.name || 'unnamed'}" detailed calculation:`, {
         groupId: group.id,
         groupName: group.name,
-        directTotal: group.participants.reduce((sum, p) => sum + (p.count || 1), 0),
-        directChildCount: group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0),
-        participantsCount: group.participants.length,
-        participantDetails: group.participants.map(p => ({ 
-          name: p.name, 
-          count: p.count || 1, 
-          childCount: p.childCount || 0 
+        groupParticipantCount: group.participants.length,
+        groupTotal,
+        groupChildCount,
+        participants: group.participants.map(p => ({
+          name: p.name,
+          count: p.count || 1,
+          childCount: p.childCount || 0
         }))
       });
     } else if (group.size) {
       // Fallback to group size/childCount if no participants array is available
-      console.log(`BUGFIX: No participants for group ${group.name}, using size properties:`, {
+      console.log(`MEGA DEBUG: TourOverview no participants for group ${group.name || 'unnamed'}, using size properties:`, {
         groupId: group.id,
         groupName: group.name,
         size: group.size || 0,
@@ -84,11 +104,12 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('BUGFIX: TourOverview final calculations:', {
+  console.log('MEGA DEBUG: TourOverview final calculations:', {
     totalParticipants,
     totalChildCount, 
     adultCount: totalParticipants - totalChildCount,
-    isHighSeason
+    isHighSeason,
+    tourGroups: tourGroups.length
   });
   
   // Calculate tickets based on actual participant counts
@@ -131,7 +152,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       <Separator className="my-6" />
       
-      {/* Integrated Group Assignment with participant functionality */}
+      {/* Integrated Group Assignment with correct participant data */}
       <GroupAssignment
         tour={{...tour, isHighSeason}}
       />

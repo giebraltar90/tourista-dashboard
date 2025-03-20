@@ -60,13 +60,20 @@ export const GroupCard = ({
 
   // Update localParticipants when group.participants changes
   useEffect(() => {
-    console.log(`BUGFIX: GroupCard[${groupIndex}] participants update:`, {
+    console.log(`MEGA DEBUG: GroupCard[${groupIndex}] participants update:`, {
+      groupId: group.id,
+      groupName: group.name,
       hasParticipantsArray: Array.isArray(group.participants),
       participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
       groupSize: group.size,
       groupChildCount: group.childCount,
       participantsDetails: Array.isArray(group.participants) 
-        ? group.participants.map(p => ({name: p.name, count: p.count, childCount: p.childCount})) 
+        ? group.participants.map(p => ({
+            id: p.id,
+            name: p.name, 
+            count: p.count || 1, 
+            childCount: p.childCount || 0
+          })) 
         : []
     });
     
@@ -75,7 +82,7 @@ export const GroupCard = ({
     } else {
       setLocalParticipants([]);
     }
-  }, [group.participants, groupIndex]);
+  }, [group.participants, groupIndex, group.id, group.name]);
 
   // Handle refresh participants
   const handleRefreshParticipants = () => {
@@ -86,13 +93,13 @@ export const GroupCard = ({
     }
   };
 
-  // BUGFIX: Calculate accurate counts by directly counting participants
+  // MEGA BUGFIX: Calculate accurate counts by directly counting participants
   let totalParticipants = 0;
   let childCount = 0;
   
   // Use participants array if available and populated
   if (Array.isArray(localParticipants) && localParticipants.length > 0) {
-    // Count each participant directly
+    // Count each participant individually
     for (const participant of localParticipants) {
       totalParticipants += participant.count || 1;
       childCount += participant.childCount || 0;
@@ -110,14 +117,16 @@ export const GroupCard = ({
   const displayParticipants = formatParticipantCount(totalParticipants, childCount);
 
   // Log accurate counts for debugging
-  console.log(`BUGFIX: GroupCard[${groupIndex}] calculations:`, {
+  console.log(`MEGA DEBUG: GroupCard[${groupIndex}] final calculations:`, {
+    groupId: group.id,
     groupName: group.name || `Group ${groupIndex + 1}`,
     totalParticipants,
     childCount,
     adultCount,
     displayParticipants,
     hasParticipantsArray: Array.isArray(localParticipants),
-    participantsLength: Array.isArray(localParticipants) ? localParticipants.length : 'N/A'
+    participantsLength: Array.isArray(localParticipants) ? localParticipants.length : 'N/A',
+    guideName
   });
 
   return (

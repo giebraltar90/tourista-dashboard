@@ -18,27 +18,46 @@ export const GroupCapacityInfo = ({
   // Ensure tour.tourGroups exists
   const tourGroups = tour.tourGroups || [];
   
-  // BUGFIX: Calculate directly from the participants arrays of each group
+  // MEGA BUGFIX: Calculate directly from the participants arrays of each group with detailed logging
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
+  
+  console.log("MEGA DEBUG: GroupCapacityInfo calculating with tour groups:", {
+    groupsCount: tourGroups.length,
+    isHighSeason,
+    tourId: tour.id
+  });
   
   // Detailed calculation loop for reliability - directly count each participant
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
+      let groupTotal = 0;
+      let groupChildCount = 0;
+      
       // Count directly from participants array
       for (const participant of group.participants) {
-        calculatedTotalParticipants += participant.count || 1;
-        calculatedTotalChildCount += participant.childCount || 0;
+        groupTotal += participant.count || 1;
+        groupChildCount += participant.childCount || 0;
       }
       
-      console.log(`BUGFIX: GroupCapacityInfo group ${group.name} calculated from participants:`, {
-        directTotal: group.participants.reduce((sum, p) => sum + (p.count || 1), 0),
-        directChildCount: group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0),
-        participantsCount: group.participants.length
+      calculatedTotalParticipants += groupTotal;
+      calculatedTotalChildCount += groupChildCount;
+      
+      console.log(`MEGA DEBUG: GroupCapacityInfo group "${group.name || 'unnamed'}" detailed calculation:`, {
+        groupId: group.id,
+        groupName: group.name,
+        groupParticipantCount: group.participants.length,
+        groupTotal,
+        groupChildCount,
+        participants: group.participants.map(p => ({
+          name: p.name, 
+          count: p.count || 1, 
+          childCount: p.childCount || 0
+        }))
       });
     } else if (group.size) {
       // Only fallback to size properties when absolutely necessary
-      console.log(`BUGFIX: GroupCapacityInfo no participants for group ${group.name}, using size:`, {
+      console.log(`MEGA DEBUG: GroupCapacityInfo no participants for group ${group.name || 'unnamed'}, using size:`, {
         size: group.size || 0,
         childCount: group.childCount || 0
       });
@@ -65,7 +84,7 @@ export const GroupCapacityInfo = ({
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
   // Enhanced detailed logging for debugging
-  console.log("BUGFIX: GroupCapacityInfo final calculations:", {
+  console.log("MEGA DEBUG: GroupCapacityInfo final calculations:", {
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     providedTotalParticipants,
