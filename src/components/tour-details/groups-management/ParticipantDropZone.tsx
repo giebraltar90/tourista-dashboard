@@ -31,7 +31,7 @@ export const ParticipantDropZone = ({
 }: ParticipantDropZoneProps) => {
   const {
     isDragOver,
-    handleDragEnter,
+    handleDragEnter: handleLocalDragEnter,
     handleDragOver: handleLocalDragOver,
     handleDragLeave: handleLocalDragLeave,
     handleDrop: handleLocalDrop
@@ -51,8 +51,8 @@ export const ParticipantDropZone = ({
     }
   };
   
-  const handleDragEnter = (e: React.DragEvent) => {
-    handleDragEnter(e);
+  const handleDragEnterEvent = (e: React.DragEvent) => {
+    handleLocalDragEnter(e);
     if (onDragEnter) {
       onDragEnter(e);
     }
@@ -71,7 +71,7 @@ export const ParticipantDropZone = ({
       onDrop={handleDrop} 
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      onDragEnter={handleDragEnter}
+      onDragEnter={handleDragEnterEvent}
       className={`h-full relative rounded-md transition-all duration-200 ${
         isDragOver ? 'bg-primary/20 border-2 border-dashed border-primary ring-2 ring-primary/10 ring-offset-1' : ''
       } ${isMoveTarget ? 'border-2 border-dashed border-primary/60 rounded-md bg-primary/5' : ''}`}

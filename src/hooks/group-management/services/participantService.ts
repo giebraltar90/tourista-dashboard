@@ -56,17 +56,18 @@ export const getParticipantById = async (
       return null;
     }
     
+    // Map the database fields to the VentrataParticipant fields
+    // using both camelCase and snake_case for compatibility
     return {
       id: data.id,
       name: data.name,
       count: data.count || 1,
       bookingRef: data.booking_ref,
       childCount: data.child_count || 0,
-      // Using the correct property name that matches the VentrataParticipant interface
-      // The type expects groupId (camelCase) but we're getting group_id (snake_case) from the database
-      groupId: data.group_id,
+      groupId: data.group_id, // Store in camelCase as per the interface
       // Include snake_case properties for database compatibility
       booking_ref: data.booking_ref,
+      group_id: data.group_id,
       child_count: data.child_count
     };
   } catch (error) {
