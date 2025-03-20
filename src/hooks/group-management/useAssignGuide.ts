@@ -1,11 +1,10 @@
 
 import { useTourById } from "../tourData/useTourById";
-import { useGuideData } from "../useGuideData";
+import { useGuideData } from "../guides/useGuideData";
 import { useModifications } from "../useModifications";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { TourCardProps } from "@/components/tours/tour-card/types";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
@@ -65,6 +64,9 @@ export const useAssignGuide = (tourId: string) => {
         const guide = guides.find(g => g.id === actualGuideId);
         if (guide) {
           guideName = guide.name;
+          console.log(`Found guide name: ${guideName} for ID: ${actualGuideId}`);
+        } else {
+          console.warn(`Could not find guide name for ID: ${actualGuideId} in available guides`);
         }
       }
       
@@ -84,6 +86,7 @@ export const useAssignGuide = (tourId: string) => {
         tourId,
         groupId,
         actualGuideId,
+        guideName,
         groupName
       });
       

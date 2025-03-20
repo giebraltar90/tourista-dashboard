@@ -54,14 +54,24 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
 export const getGuideDisplayName = (guideId: string | undefined, tour: any, guides: any[] = []): string => {
   if (!guideId || guideId === "_none") return "Unassigned";
   
-  // Check UUID matches in guides array
+  // Log complete debug information
+  console.log("getGuideDisplayName called with:", {
+    guideId,
+    isUuid: isValidUuid(guideId),
+    tourHasGuides: tour?.guide1 || tour?.guide2 || tour?.guide3 ? "Yes" : "No",
+    availableGuides: guides.map(g => ({ id: g.id, name: g.name }))
+  });
+  
+  // Check UUID matches in guides array - this is the most reliable method
   if (isValidUuid(guideId)) {
     const matchingGuide = guides.find(g => g.id === guideId);
-    if (matchingGuide?.name) return matchingGuide.name;
+    if (matchingGuide?.name) {
+      console.log(`Found matching guide by UUID: ${matchingGuide.name}`);
+      return matchingGuide.name;
+    }
   }
   
   // Special IDs are deprecated but kept for backward compatibility
-  // This should be removed in a future version
   if (guideId === "guide1" && tour?.guide1) return tour.guide1;
   if (guideId === "guide2" && tour?.guide2) return tour.guide2;
   if (guideId === "guide3" && tour?.guide3) return tour.guide3;
@@ -70,6 +80,9 @@ export const getGuideDisplayName = (guideId: string | undefined, tour: any, guid
   if (tour?.guide1Id === guideId && tour?.guide1) return tour.guide1;
   if (tour?.guide2Id === guideId && tour?.guide2) return tour.guide2;
   if (tour?.guide3Id === guideId && tour?.guide3) return tour.guide3;
+  
+  // Add more detailed logging for troubleshooting
+  console.log("Could not find guide name for ID:", guideId, "Using fallback formatting");
   
   // Fallback for unknown IDs (should rarely happen)
   return guideId.startsWith("guide") ? `Guide ${guideId.slice(5)}` : `Guide (${guideId.substring(0, 6)}...)`;
