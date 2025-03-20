@@ -64,7 +64,8 @@ export const TourGroupGuide = ({
     
     try {
       console.log(`Assigning guide with ID ${guideId} to group ${groupIndex} (display number ${groupDisplayNumber})`);
-      const success = await assignGuide(groupIndex, guideId, `Group ${groupDisplayNumber}`);
+      // Fix: Pass only the two required arguments to assignGuide
+      const success = await assignGuide(groupIndex, guideId);
       
       if (!success) {
         toast.error("Failed to assign guide");
