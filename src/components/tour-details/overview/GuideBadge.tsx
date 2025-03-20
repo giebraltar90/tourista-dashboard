@@ -3,12 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { GuideInfo } from "@/types/ventrata";
 
 interface GuideBadgeProps {
-  guideInfo: GuideInfo | null;
   guideName: string;
+  guideInfo: GuideInfo | null;
   isAssigned: boolean;
 }
 
-export const GuideBadge = ({ guideInfo, guideName, isAssigned }: GuideBadgeProps) => {
+export const GuideBadge = ({ guideName, guideInfo, isAssigned }: GuideBadgeProps) => {
   if (!isAssigned) return <span>Not assigned</span>;
   
   const getGuideTypeBadgeColor = (guideType?: string) => {
@@ -29,10 +29,10 @@ export const GuideBadge = ({ guideInfo, guideName, isAssigned }: GuideBadgeProps
   return (
     <>
       <span className="text-sm font-medium">
-        Guide: {guideName}
+        {guideName}
       </span>
       {isAssigned && guideInfo && (
-        <Badge variant="outline" className={`mt-1 text-xs ${getGuideTypeBadgeColor(guideInfo.guideType)}`}>
+        <Badge variant="outline" className={`ml-2 text-xs ${getGuideTypeBadgeColor(guideInfo.guideType)}`}>
           {guideInfo.guideType}
         </Badge>
       )}

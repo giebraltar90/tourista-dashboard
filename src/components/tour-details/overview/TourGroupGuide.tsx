@@ -2,7 +2,7 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideBadge } from "./GuideBadge";
-import { useAssignGuideToGroup } from "@/hooks/guides/useAssignGuideToGroup";
+import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
 import { AssignGuideButton } from "./AssignGuideButton";
 import { User, Users } from "lucide-react";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
@@ -25,7 +25,7 @@ export const TourGroupGuide = ({
   guideInfo, 
   guideOptions 
 }: TourGroupGuideProps) => {
-  const { isAssigning, assignGuideToGroup } = useAssignGuideToGroup(tour.id);
+  const { assignGuide } = useAssignGuide(tour.id);
   
   // Calculate participant count directly from participants array if available
   const participantCount = Array.isArray(group.participants) && group.participants.length > 0
@@ -50,6 +50,11 @@ export const TourGroupGuide = ({
     participantsLength: Array.isArray(group.participants) ? group.participants.length : 'N/A'
   });
   
+  // Create a handler for assigning guides
+  const handleAssignGuide = async (guideId: string) => {
+    return await assignGuide(groupIndex, guideId);
+  };
+  
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -70,17 +75,23 @@ export const TourGroupGuide = ({
             <span className="text-sm font-medium">Guide:</span>
             {guideName ? (
               <div className="flex-1">
-                <GuideBadge name={guideName} guideInfo={guideInfo} />
+                <GuideBadge 
+                  guideName={guideName} 
+                  guideInfo={guideInfo} 
+                  isAssigned={!!guideName} 
+                />
               </div>
             ) : (
               <span className="text-sm text-muted-foreground">No guide assigned</span>
             )}
           </div>
           <AssignGuideButton 
-            group={group}
-            guideOptions={guideOptions}
-            isLoading={isAssigning}
-            onAssign={(guideId) => assignGuideToGroup(group.id, guideId)}
+            tourId={tour.id}
+            guideId={group.guideId || ""}
+            guideName={guideName}
+            groupIndex={groupIndex}
+            guides={guideOptions}
+            displayName={group.name || `Group ${groupIndex + 1}`}
           />
         </div>
       </CardContent>

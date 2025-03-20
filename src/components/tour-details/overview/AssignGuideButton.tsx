@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from "react";
-import { useAssignGuide } from "@/hooks/group-management";
+import { Button } from "@/components/ui/button";
+import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
+import { useState } from "react";
 import { GuideSelectionPopover } from "./GuideSelectionPopover";
-import { useQueryClient } from "@tanstack/react-query";
-import { AssignGuideProvider } from "./assign-guide/AssignGuideProvider";
 
 interface AssignGuideButtonProps {
   tourId: string;
@@ -13,43 +12,45 @@ interface AssignGuideButtonProps {
   guides: Array<{
     id: string;
     name: string;
-    info: any;
+    info?: any;
   }>;
   displayName: string;
 }
 
-export const AssignGuideButton = (props: AssignGuideButtonProps) => {
-  return (
-    <AssignGuideProvider {...props}>
-      <GuideSelectionButton />
-    </AssignGuideProvider>
-  );
-};
-
-// This component handles the UI rendering logic
-function GuideSelectionButton() {
-  const {
-    isGuideAssigned,
-    isAssigning,
-    localGuideId,
-    handleAssignGuide,
-    guides,
-    displayName
-  } = useAssignGuideContext();
+export const AssignGuideButton = ({ 
+  tourId, 
+  guideId, 
+  guideName,
+  groupIndex, 
+  guides,
+  displayName
+}: AssignGuideButtonProps) => {
+  const { assignGuide } = useAssignGuide(tourId);
+  const [isAssigning, setIsAssigning] = useState(false);
+  
+  const handleAssignGuide = async (selectedGuideId: string) => {
+    try {
+      setIsAssigning(true);
+      await assignGuide(groupIndex, selectedGuideId);
+      return true;
+    } catch (error) {
+      console.error("Error assigning guide:", error);
+      return false;
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+  
+  const isGuideAssigned = !!guideId && guideId !== "_none";
   
   return (
     <GuideSelectionPopover
       isGuideAssigned={isGuideAssigned}
       isAssigning={isAssigning}
-      selectedGuide={localGuideId || "_none"}
+      selectedGuide={guideId || "_none"}
       guideOptions={guides}
       onAssignGuide={handleAssignGuide}
       displayName={displayName}
     />
   );
-}
-
-// Consuming component that uses the context
-export function useAssignGuideContext() {
-  return AssignGuideProvider.useContext();
-}
+};
