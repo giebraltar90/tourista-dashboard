@@ -34,7 +34,7 @@ export const updateParticipantGroupInDatabase = async (
  * This function accurately accounts for participants with count values
  */
 export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
-  // Calculate total from all groups by summing participant counts
+  // CRITICAL FIX: Calculate total from participants arrays when available, fall back to size property
   const total = groups.reduce((total, group) => {
     // If we have a participants array, use that for the most accurate count
     if (Array.isArray(group.participants) && group.participants.length > 0) {
@@ -44,7 +44,17 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
     return total + (group.size || 0);
   }, 0);
   
-  console.log("Calculated total participants:", total, "from groups:", groups);
+  console.log("Calculated total participants with fixed counting:", total, "from groups:", 
+    groups.map(g => ({
+      name: g.name,
+      size: g.size,
+      participantsArray: Array.isArray(g.participants) ? g.participants.length : 'N/A',
+      participantsCount: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
+        : 'N/A'
+    }))
+  );
+  
   return total;
 };
 
@@ -52,7 +62,8 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
  * Calculate total child participants across all groups
  */
 export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number => {
-  return groups.reduce((total, group) => {
+  // CRITICAL FIX: Calculate from participants arrays when available, fall back to childCount property
+  const totalChildren = groups.reduce((total, group) => {
     // If we have a participants array, use that for the most accurate count
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       return total + group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
@@ -60,6 +71,10 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
     // Otherwise fall back to the group childCount property
     return total + (group.childCount || 0);
   }, 0);
+  
+  console.log("Calculated total child count with fixed counting:", totalChildren);
+  
+  return totalChildren;
 };
 
 /**

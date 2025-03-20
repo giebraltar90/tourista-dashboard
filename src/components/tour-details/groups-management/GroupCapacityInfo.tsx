@@ -2,7 +2,6 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { CardTitle, CardDescription } from "@/components/ui/card";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
-import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/group-management/services/participantService";
 
 interface GroupCapacityInfoProps {
   tour: TourCardProps;
@@ -15,12 +14,23 @@ export const GroupCapacityInfo = ({
   isHighSeason, 
   totalParticipants: providedTotalParticipants 
 }: GroupCapacityInfoProps) => {
-  // Ensure tour.tourGroups exists and recalculate totals from the source of truth
+  // Ensure tour.tourGroups exists
   const tourGroups = tour.tourGroups || [];
   
-  // Calculate counts directly from tour groups to ensure accuracy
-  const actualTotalParticipants = calculateTotalParticipants(tourGroups);
-  const actualTotalChildCount = calculateTotalChildCount(tourGroups);
+  // CRITICAL FIX: Calculate totals directly from participants arrays when available
+  const actualTotalParticipants = tourGroups.reduce((total, group) => {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+    }
+    return total + (group.size || 0);
+  }, 0);
+  
+  const actualTotalChildCount = tourGroups.reduce((total, group) => {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return total + group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+    }
+    return total + (group.childCount || 0);
+  }, 0);
   
   // Use the most accurate count available
   const displayedParticipants = actualTotalParticipants || providedTotalParticipants || 0;
@@ -40,7 +50,7 @@ export const GroupCapacityInfo = ({
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
   // Log for debugging synchronization issues
-  console.log("GroupCapacityInfo rendering with counts:", {
+  console.log("GroupCapacityInfo with fixed counting:", {
     actualTotalParticipants,
     actualTotalChildCount,
     adultCount,
@@ -53,6 +63,9 @@ export const GroupCapacityInfo = ({
       childCount: g.childCount,
       participantsCount: Array.isArray(g.participants) 
         ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
+        : 'N/A',
+      childrenInParticipants: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
         : 'N/A'
     }))
   });

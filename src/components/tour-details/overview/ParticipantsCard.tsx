@@ -18,9 +18,20 @@ export const ParticipantsCard = ({
   totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
-  // Always recalculate from source of truth (tourGroups) for consistency
-  const actualTotalParticipants = calculateTotalParticipants(tourGroups);
-  const actualTotalChildCount = calculateTotalChildCount(tourGroups);
+  // CRITICAL FIX: Always calculate from actual participants array first for accuracy
+  const actualTotalParticipants = tourGroups.reduce((total, group) => {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+    }
+    return total + (group.size || 0);
+  }, 0);
+  
+  const actualTotalChildCount = tourGroups.reduce((total, group) => {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return total + group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+    }
+    return total + (group.childCount || 0);
+  }, 0);
   
   // Use calculated values, fall back to provided values if calculation fails
   const totalParticipants = actualTotalParticipants || providedTotalParticipants || 0;
@@ -56,21 +67,21 @@ export const ParticipantsCard = ({
   };
   
   // Debug log for troubleshooting
-  console.log("ParticipantsCard rendering:", { 
+  console.log("ParticipantsCard with fixed counting:", { 
     actualTotalParticipants,
     actualTotalChildCount,
     adultCount,
-    providedTotalParticipants,
-    providedTotalChildCount,
-    isHighSeason, 
     formattedParticipantCount,
-    capacity, 
-    requiredGroups,
-    mode: getModeText(),
     tourGroups: tourGroups.map(g => ({
       name: g.name, 
       size: g.size, 
-      participants: g.participants ? g.participants.length : 'N/A'
+      childCount: g.childCount,
+      participantCount: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
+        : 'N/A',
+      childrenInParticipants: Array.isArray(g.participants) 
+        ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
+        : 'N/A',
     }))
   });
   

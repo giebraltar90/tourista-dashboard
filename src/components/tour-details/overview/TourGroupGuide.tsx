@@ -6,7 +6,6 @@ import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
 import { AssignGuideButton } from "./AssignGuideButton";
 import { User, Users } from "lucide-react";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
-import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
@@ -28,9 +27,9 @@ export const TourGroupGuide = ({
   const { assignGuide } = useAssignGuide(tour.id);
   
   // Calculate participant count directly from participants array if available
-  const participantCount = Array.isArray(group.participants) && group.participants.length > 0
-    ? calculateTotalParticipants([group])
-    : group.size || 0;
+  const adultCount = Array.isArray(group.participants) && group.participants.length > 0
+    ? group.participants.reduce((sum, p) => sum + (p.count || 1) - (p.childCount || 0), 0)
+    : group.size - (group.childCount || 0);
     
   // Calculate child count from participants array if available  
   const childCount = Array.isArray(group.participants) && group.participants.length > 0
@@ -39,11 +38,11 @@ export const TourGroupGuide = ({
   
   // Format participant count to show adults + children if there are children
   const displayParticipants = childCount > 0 
-    ? `${participantCount - childCount}+${childCount}` 
-    : participantCount.toString();
+    ? `${adultCount}+${childCount}` 
+    : (adultCount + childCount).toString();
   
-  console.log(`TourGroupGuide for ${group.name}:`, {
-    participantCount,
+  console.log(`TourGroupGuide for ${group.name} with accurate counts:`, {
+    adultCount,
     childCount,
     displayParticipants,
     hasParticipantsArray: Array.isArray(group.participants),

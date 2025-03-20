@@ -21,7 +21,7 @@ interface GroupCardProps {
   onDragLeave?: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, groupIndex: number) => void;
   onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
-  onDragEnd: () => void;
+  onDragEnd: (e?: React.DragEvent) => void;
   onMoveClick: (data: { participant: VentrataParticipant; fromGroupIndex: number }) => void;
   selectedParticipant: { participant: VentrataParticipant; fromGroupIndex: number } | null;
   handleMoveParticipant: (toGroupIndex: number) => void;
@@ -67,9 +67,6 @@ export const GroupCard = ({
     }
   }, [group.participants, groupIndex]);
 
-  // Log rendering for debugging
-  console.log(`GroupCard[${groupIndex}] rendering with group:`, group);
-
   // Handle refresh participants
   const handleRefreshParticipants = () => {
     if (onRefreshParticipants) {
@@ -79,7 +76,7 @@ export const GroupCard = ({
     }
   };
 
-  // Calculate total participant count and child count
+  // CRITICAL FIX: Calculate accurate counts directly from participants array when available
   const totalParticipantCount = Array.isArray(localParticipants) && localParticipants.length > 0
     ? localParticipants.reduce((sum, p) => sum + (p.count || 1), 0)
     : group.size || 0;
@@ -88,10 +85,22 @@ export const GroupCard = ({
     ? localParticipants.reduce((sum, p) => sum + (p.childCount || 0), 0)
     : group.childCount || 0;
   
+  // Calculate adult count
+  const adultCount = totalParticipantCount - childCount;
+  
   // Format participant count to show adults + children if there are children
   const displayParticipants = childCount > 0 
-    ? `${totalParticipantCount - childCount}+${childCount}` 
+    ? `${adultCount}+${childCount}` 
     : totalParticipantCount.toString();
+
+  // Log accurate counts
+  console.log(`GroupCard[${groupIndex}] accurate counts:`, {
+    totalParticipantCount,
+    childCount,
+    adultCount,
+    displayParticipants,
+    participantsArray: Array.isArray(localParticipants) ? localParticipants.length : 'N/A'
+  });
 
   return (
     <Card className="relative overflow-hidden">
