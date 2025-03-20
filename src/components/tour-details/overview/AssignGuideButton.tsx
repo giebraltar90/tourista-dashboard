@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
 import { useState } from "react";
 import { GuideSelectionPopover } from "./GuideSelectionPopover";
+import { GuideOption } from "@/hooks/group-management/types";
 
 interface AssignGuideButtonProps {
   tourId: string;
@@ -32,10 +33,10 @@ export const AssignGuideButton = ({
     try {
       setIsAssigning(true);
       await assignGuide(groupIndex, selectedGuideId);
-      return true;
+      return;
     } catch (error) {
       console.error("Error assigning guide:", error);
-      return false;
+      return;
     } finally {
       setIsAssigning(false);
     }
@@ -43,12 +44,19 @@ export const AssignGuideButton = ({
   
   const isGuideAssigned = !!guideId && guideId !== "_none";
   
+  // Convert guides to match GuideOption type by ensuring info is always present
+  const typeSafeGuides: GuideOption[] = guides.map(guide => ({
+    id: guide.id,
+    name: guide.name,
+    info: guide.info || null // Convert undefined to null to satisfy the required property
+  }));
+  
   return (
     <GuideSelectionPopover
       isGuideAssigned={isGuideAssigned}
       isAssigning={isAssigning}
       selectedGuide={guideId || "_none"}
-      guideOptions={guides}
+      guideOptions={typeSafeGuides}
       onAssignGuide={handleAssignGuide}
       displayName={displayName}
     />

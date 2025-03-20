@@ -9,12 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-
-interface GuideOption {
-  id: string;
-  name: string;
-  info: any | null;
-}
+import { GuideOption } from "@/hooks/group-management/types";
 
 interface GuideSelectionPopoverProps {
   isGuideAssigned: boolean;
