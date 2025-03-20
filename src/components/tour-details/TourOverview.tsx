@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -8,8 +9,8 @@ import {
 import { useState, useEffect } from "react";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 import { GroupsManagement } from "./groups-management";
+import { GroupAssignment } from "./groups-management/GroupAssignment";
 import { Separator } from "@/components/ui/separator";
-import { GuidesAssignedSection } from "./overview/GuidesAssignedSection";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface TourOverviewProps {
@@ -96,19 +97,15 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       <Separator className="my-6" />
       
-      <Tabs defaultValue="guides" className="w-full">
+      <Tabs defaultValue="groups" className="w-full">
         <TabsList className="mb-4">
-          <TabsTrigger value="guides">Guide Assignments</TabsTrigger>
+          <TabsTrigger value="groups">Group Assignment</TabsTrigger>
           <TabsTrigger value="participants">Participant Management</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="guides">
-          <GuidesAssignedSection
+        <TabsContent value="groups">
+          <GroupAssignment
             tour={{...tour, isHighSeason}}
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            guide3Info={guide3Info}
-            getGuideTypeBadgeColor={getGuideTypeBadgeColor}
           />
         </TabsContent>
         

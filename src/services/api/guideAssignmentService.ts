@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { isValidUuid, isSpecialGuideId } from "./utils/guidesUtils";
 
 /**
  * Updates a guide's assignment to a group in Supabase directly
@@ -23,7 +24,7 @@ export const updateGuideInSupabase = async (
     
     // Handle special guide IDs (guide1, guide2, guide3)
     // Store as null in the database since the guide_id column expects UUID
-    const dbGuideId = guideId && ["guide1", "guide2", "guide3"].includes(guideId) ? null : guideId;
+    const dbGuideId = guideId && isSpecialGuideId(guideId) ? null : guideId;
     
     // Build update object based on what data is provided
     const updateData: any = { guide_id: dbGuideId };
@@ -36,7 +37,7 @@ export const updateGuideInSupabase = async (
     // Log the actual data being sent to the database
     console.log("Sending to database:", updateData);
 
-    // Simple direct update with a single attempt
+    // Update the guide assignment in the database
     const { error } = await supabase
       .from('tour_groups')
       .update(updateData)

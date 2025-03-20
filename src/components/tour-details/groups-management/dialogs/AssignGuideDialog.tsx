@@ -1,6 +1,6 @@
 
 import { DialogRoot } from "./DialogsRoot";
-import { AssignGuideForm } from "../guide-assignment";
+import { AssignGuideForm } from "../group-assignment";
 
 interface AssignGuideDialogProps {
   tourId: string;
@@ -23,7 +23,7 @@ export const AssignGuideDialog = ({
     <DialogRoot
       isOpen={isOpen}
       onOpenChange={onOpenChange}
-      title="Assign Guide"
+      title="Assign Guide to Group"
       description="Choose a guide to assign to this group."
     >
       <AssignGuideForm 
