@@ -50,8 +50,15 @@ export const GroupCard = ({
   
   const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
   
-  // Get participants for this group
+  // Get participants for this group - ensure it's always an array
   const participants = Array.isArray(group.participants) ? group.participants : [];
+  
+  // Debug participants data
+  console.log(`Group ${groupIndex} participants:`, participants);
+
+  // For move operations
+  const isDropTarget = selectedParticipant !== null;
+  const isMoveTarget = selectedParticipant !== null && selectedParticipant.fromGroupIndex !== groupIndex;
 
   return (
     <Card className={`${isGuideAssigned ? 'border-green-200 bg-green-50/50' : 'border-gray-200'}`}>
@@ -121,16 +128,16 @@ export const GroupCard = ({
               groupIndex={groupIndex}
               onDrop={onDrop}
               onDragOver={onDragOver}
-              isDropTarget={selectedParticipant !== null}
+              isDropTarget={isDropTarget}
               onMoveHere={handleMoveParticipant}
-              isMoveTarget={selectedParticipant !== null && selectedParticipant.fromGroupIndex !== groupIndex}
+              isMoveTarget={isMoveTarget}
               isMovePending={isMovePending}
             >
               <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
-                {participants.length > 0 ? (
+                {participants && participants.length > 0 ? (
                   participants.map((participant) => (
                     <ParticipantItem
-                      key={participant.id}
+                      key={participant.id || `participant-${Math.random()}`}
                       participant={participant}
                       groupIndex={groupIndex}
                       onDragStart={onDragStart}

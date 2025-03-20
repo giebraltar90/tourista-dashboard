@@ -9,12 +9,16 @@ import { AssignGuideDialog } from "./dialogs/AssignGuideDialog";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useGroupManagement } from "@/hooks/group-management";
 import { MoveParticipantSheet } from "./MoveParticipantSheet";
+import { toast } from "sonner";
+import { fetchParticipantsForTour } from "@/services/api/tourApi";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
 }
 
 export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
+  console.log("GroupAssignment rendering with tour:", tour);
+  
   const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
@@ -38,24 +42,57 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     loadParticipants
   } = useGroupManagement(tour);
   
-  // Load participants when component mounts
+  // Manually load participants when component mounts
   useEffect(() => {
     if (tour.id) {
+      console.log("Loading participants for tour:", tour.id);
       loadParticipants(tour.id);
+      
+      // As a fallback, directly fetch participants
+      const fetchAndPopulate = async () => {
+        try {
+          console.log("Directly fetching participants for tour:", tour.id);
+          const participants = await fetchParticipantsForTour(tour.id);
+          console.log("Fetched participants:", participants);
+          
+          if (participants && participants.length > 0) {
+            toast.success(`Found ${participants.length} participants`);
+          }
+        } catch (error) {
+          console.error("Error fetching participants:", error);
+        }
+      };
+      
+      // Try this after a short delay
+      setTimeout(fetchAndPopulate, 1000);
     }
   }, [tour.id, loadParticipants]);
   
   // Use a stable reference for the groups to prevent reordering during renders
   const stableTourGroups = useMemo(() => {
-    if (!tour.tourGroups) return [];
+    console.log("Creating stable tour groups from:", localTourGroups);
+    
+    if (!localTourGroups || localTourGroups.length === 0) {
+      console.log("Using tour.tourGroups as fallback");
+      if (!tour.tourGroups) return [];
+      
+      // Create a copy of the groups with their original indices preserved
+      return tour.tourGroups.map((group, index) => ({
+        ...group,
+        originalIndex: index,
+        displayName: group.name || `Group ${index + 1}`
+      }));
+    }
     
     // Create a copy of the groups with their original indices preserved
-    return tour.tourGroups.map((group, index) => ({
+    return localTourGroups.map((group, index) => ({
       ...group,
       originalIndex: index,
       displayName: group.name || `Group ${index + 1}`
     }));
-  }, [tour.tourGroups]);
+  }, [localTourGroups, tour.tourGroups]);
+  
+  console.log("Stable tour groups:", stableTourGroups);
   
   // Process guides once when component loads or dependencies change
   useEffect(() => {
@@ -89,8 +126,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
             <h3 className="text-sm font-medium">Current Group Assignments</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stableTourGroups.map((group) => {
-                const index = group.originalIndex;
-                const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+                const index = group.originalIndex !== undefined ? group.originalIndex : 0;
                 
                 return (
                   <GroupCard
@@ -124,11 +160,11 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
           tourId={tour.id}
           groupIndex={selectedGroupIndex}
           guides={availableGuides}
-          currentGuideId={tour.tourGroups[selectedGroupIndex]?.guideId}
+          currentGuideId={tour.tourGroups && tour.tourGroups[selectedGroupIndex]?.guideId}
         />
       )}
 
-      {/* Add the move participant dialog */}
+      {/* Move participant dialog */}
       {selectedParticipant && (
         <MoveParticipantSheet
           selectedParticipant={selectedParticipant}

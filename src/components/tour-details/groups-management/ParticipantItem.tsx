@@ -1,37 +1,28 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, MoveHorizontal, Users, GripVertical } from "lucide-react";
-import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/tour-card/types";
-import { MoveParticipantSheet } from "./MoveParticipantSheet";
+import { UserCheck, MoveHorizontal, GripVertical } from "lucide-react";
+import { VentrataParticipant } from "@/types/ventrata";
 
 interface ParticipantItemProps {
   participant: VentrataParticipant;
-  group: VentrataTourGroup;
   groupIndex: number;
-  tour: TourCardProps;
-  onMoveClick: () => void;
-  selectedParticipant: {
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  } | null;
-  handleMoveParticipant: (toGroupIndex: number) => void;
-  isPending: boolean;
+  onDragStart?: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
+  onMoveClick?: (data: { participant: VentrataParticipant, fromGroupIndex: number }) => void;
 }
 
 export const ParticipantItem = ({ 
   participant, 
-  group, 
   groupIndex, 
-  tour, 
-  onMoveClick,
-  selectedParticipant,
-  handleMoveParticipant,
-  isPending
+  onDragStart,
+  onMoveClick
 }: ParticipantItemProps) => {
   return (
-    <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-muted transition-colors">
+    <div 
+      className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 border border-transparent hover:border-muted transition-colors"
+      draggable={!!onDragStart}
+      onDragStart={(e) => onDragStart?.(e, participant, groupIndex)}
+    >
       <div className="flex items-center space-x-2">
         <div className="flex items-center">
           <GripVertical className="h-4 w-4 text-muted-foreground mr-2" />
@@ -47,20 +38,19 @@ export const ParticipantItem = ({
             ) : null}
           </div>
           <div className="text-sm text-muted-foreground">
-            {participant.count} {participant.count === 1 ? 'participant' : 'participants'} • Booking #{participant.bookingRef}
+            {participant.count || 1} {(participant.count || 1) === 1 ? 'participant' : 'participants'} • Booking #{participant.bookingRef}
           </div>
         </div>
       </div>
       
-      <MoveParticipantSheet
-        participant={participant}
-        group={group}
-        groupIndex={groupIndex}
-        tour={tour}
-        onMoveClick={onMoveClick}
-        handleMoveParticipant={handleMoveParticipant}
-        isPending={isPending}
-      />
+      <Button 
+        variant="ghost" 
+        size="sm"
+        onClick={() => onMoveClick?.({ participant, fromGroupIndex: groupIndex })}
+      >
+        <MoveHorizontal className="h-4 w-4 mr-2" />
+        Move
+      </Button>
     </div>
   );
 };

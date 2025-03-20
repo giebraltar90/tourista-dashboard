@@ -4,56 +4,50 @@ import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetT
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MoveHorizontal, Users, ArrowLeftRight } from "lucide-react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useState } from "react";
 
 interface MoveParticipantSheetProps {
-  participant: VentrataParticipant;
-  group: VentrataTourGroup;
-  groupIndex: number;
-  tour: TourCardProps;
-  onMoveClick: () => void;
-  handleMoveParticipant: (toGroupIndex: number) => void;
-  isPending: boolean;
+  selectedParticipant: {
+    participant: VentrataParticipant;
+    fromGroupIndex: number;
+  } | null;
+  tourGroups: VentrataTourGroup[];
+  onClose: () => void;
+  onMove: (toGroupIndex: number) => void;
+  isMovePending: boolean;
 }
 
 export const MoveParticipantSheet = ({
-  participant,
-  group,
-  groupIndex,
-  tour,
-  onMoveClick,
-  handleMoveParticipant,
-  isPending
+  selectedParticipant,
+  tourGroups,
+  onClose,
+  onMove,
+  isMovePending
 }: MoveParticipantSheetProps) => {
   // State to track selected target group
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   
-  // Verify tour groups exist before rendering
-  if (!tour.tourGroups || tour.tourGroups.length === 0) {
+  // If no participant is selected, don't render the sheet
+  if (!selectedParticipant) {
     return null;
   }
+  
+  const { participant, fromGroupIndex } = selectedParticipant;
+  
+  // Get source group name
+  const sourceGroup = tourGroups[fromGroupIndex];
+  const sourceGroupName = sourceGroup?.name || `Group ${fromGroupIndex + 1}`;
 
   // Handle move confirmation
   const confirmMove = () => {
     if (selectedGroup !== null) {
       const targetGroupIndex = parseInt(selectedGroup);
-      handleMoveParticipant(targetGroupIndex);
+      onMove(targetGroupIndex);
     }
   };
 
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={onMoveClick}
-        >
-          <MoveHorizontal className="h-4 w-4 mr-2" />
-          Move
-        </Button>
-      </SheetTrigger>
+    <Sheet open={true} onOpenChange={() => onClose()}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Move Participant</SheetTitle>
@@ -66,7 +60,7 @@ export const MoveParticipantSheet = ({
             <div className="bg-muted/30 p-4 rounded-md">
               <div className="font-medium">{participant.name}</div>
               <div className="text-sm text-muted-foreground">
-                Currently in: {group.name || `Group ${groupIndex + 1}`}
+                Currently in: {sourceGroupName}
               </div>
               <div className="text-sm text-muted-foreground">
                 Booking Reference: {participant.bookingRef}
@@ -88,14 +82,14 @@ export const MoveParticipantSheet = ({
               </label>
               <Select 
                 onValueChange={(value) => setSelectedGroup(value)}
-                disabled={isPending}
+                disabled={isMovePending}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a group" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tour.tourGroups.map((g, i) => (
-                    i !== groupIndex && (
+                  {tourGroups.map((g, i) => (
+                    i !== fromGroupIndex && (
                       <SelectItem key={i} value={i.toString()}>
                         {g.name || `Group ${i + 1}`} ({g.size || 0} {g.size === 1 ? 'person' : 'people'})
                       </SelectItem>
@@ -109,10 +103,10 @@ export const MoveParticipantSheet = ({
         <SheetFooter>
           <Button 
             type="submit" 
-            disabled={isPending || selectedGroup === null}
+            disabled={isMovePending || selectedGroup === null}
             onClick={confirmMove}
           >
-            {isPending ? (
+            {isMovePending ? (
               <>
                 <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-opacity-20 border-t-white rounded-full"></div>
                 Moving...
