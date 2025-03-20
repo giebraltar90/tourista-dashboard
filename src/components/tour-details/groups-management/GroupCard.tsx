@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
@@ -173,38 +173,11 @@ export const GroupCard = ({
             </Button>
           </div>
         </div>
-        
-        <div className="mt-2 flex items-center justify-between">
-          <div className="text-sm text-muted-foreground flex items-center">
-            Guide: {guideName ? (
-              <span className="ml-1 font-medium">{guideName}</span>
-            ) : (
-              <span className="ml-1 italic">None</span>
-            )}
-          </div>
-        </div>
       </CardHeader>
       
       {isExpanded && (
         <CardContent className="pb-3 pt-0">
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h4 className="text-sm font-medium flex items-center">
-                <UserPlus className="mr-1 h-4 w-4" /> 
-                Participants ({localParticipants.length})
-              </h4>
-              
-              {onAssignGuide && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onAssignGuide(groupIndex)}
-                >
-                  Assign Guide
-                </Button>
-              )}
-            </div>
-            
             <div
               className="min-h-[100px] rounded-md"
               data-drop-target="true"
@@ -254,6 +227,19 @@ export const GroupCard = ({
                   ) : (
                     <>Move to this group</>
                   )}
+                </Button>
+              </div>
+            )}
+            
+            {onAssignGuide && (
+              <div className="mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => onAssignGuide(groupIndex)}
+                >
+                  {guideName ? `Change Guide (${guideName})` : "Assign Guide"}
                 </Button>
               </div>
             )}

@@ -75,28 +75,6 @@ export const TourGroupsSection = ({
               const { name: guideName } = getGuideNameAndInfo(group.guideId);
               const isExpanded = expandedGroup === group.id;
               
-              // CRITICAL FIX: Calculate count from participants array when available
-              const participantCount = Array.isArray(group.participants) && group.participants.length > 0
-                ? group.participants.reduce((sum, p) => sum + (p.count || 1), 0)
-                : group.size || 0;
-                
-              const childCount = Array.isArray(group.participants) && group.participants.length > 0
-                ? group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
-                : group.childCount || 0;
-              
-              // Format with consistent function
-              const displayParticipants = formatParticipantCount(participantCount, childCount);
-              
-              console.log(`COUNTING: Group ${group.name || index} in TourGroupsSection calculation:`, {
-                participantCount,
-                childCount,
-                adultCount: participantCount - childCount,
-                displayParticipants,
-                participantDetails: Array.isArray(group.participants) 
-                  ? group.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
-                  : 'N/A'
-              });
-              
               return (
                 <div 
                   key={group.id || index}
@@ -105,12 +83,6 @@ export const TourGroupsSection = ({
                   <div className="bg-muted/30 p-3 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <h3 className="font-medium">{group.name || `Group ${index + 1}`}</h3>
-                      <Badge 
-                        variant="outline" 
-                        className="ml-2 text-xs bg-blue-50 text-blue-700 hover:bg-blue-50"
-                      >
-                        {displayParticipants}
-                      </Badge>
                     </div>
                     <div className="flex items-center">
                       <div className="text-sm text-muted-foreground mr-4">
