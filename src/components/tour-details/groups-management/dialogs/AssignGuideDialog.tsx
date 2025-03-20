@@ -2,6 +2,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
 import { GuideInfo } from "@/types/ventrata";
+import { toast } from "sonner";
 
 interface AssignGuideDialogProps {
   isOpen: boolean;
@@ -28,10 +29,12 @@ export const AssignGuideDialog = ({
     tourId,
     groupIndex,
     guidesCount: guides.length,
-    currentGuideId
+    currentGuideId,
+    guides: guides.map(g => ({ id: g.id, name: g.name }))
   });
 
   const handleSuccess = () => {
+    toast.success("Guide assignment updated successfully");
     onOpenChange(false);
   };
 

@@ -6,6 +6,7 @@ import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 
 interface GuideOption {
   id: string;
@@ -50,11 +51,12 @@ export const AssignGuideForm = ({
     console.log("AssignGuideForm processed guides:", {
       originalCount: guides.length,
       processedCount: uniqueGuides.length,
-      currentGuideId
+      currentGuideId,
+      processedGuides: uniqueGuides.map(g => ({ id: g.id, name: g.name }))
     });
     
     setProcessedGuides(uniqueGuides);
-  }, [guides, currentGuideId]);
+  }, [guides]);
   
   // Use our custom hook to get form logic
   const {

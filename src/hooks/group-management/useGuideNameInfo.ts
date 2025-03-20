@@ -1,11 +1,15 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
-import { useCallback } from "react";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
+interface GuideNameAndInfo {
+  name: string;
+  info: GuideInfo | null;
+}
+
 /**
- * Hook to get guide name and info when only guideId is available
+ * Hook for getting guide name and info from guide ID
  */
 export const useGuideNameInfo = (
   tour: TourCardProps,
@@ -13,62 +17,85 @@ export const useGuideNameInfo = (
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null
 ) => {
-  /**
-   * Get guide name and info from guideId
-   */
-  const getGuideNameAndInfo = useCallback((guideId?: string) => {
-    // If no guideId, return "Unassigned"
+  const getGuideNameAndInfo = (guideId?: string): GuideNameAndInfo => {
+    // Handle undefined/empty case
     if (!guideId) {
-      return { name: "Unassigned", info: null };
-    }
-    
-    // Handle special guide IDs
-    if (guideId === "guide1") {
-      return { 
-        name: tour.guide1 || "Unassigned", 
-        info: guide1Info 
+      return {
+        name: "Unassigned",
+        info: null
       };
     }
     
-    if (guideId === "guide2") {
-      return { 
-        name: tour.guide2 || "Unassigned", 
-        info: guide2Info 
+    console.log("Resolving name for guideId:", guideId);
+    
+    // Look for primary guides first
+    // Check guide1
+    if (guideId === "guide1" || guideId === tour.guide1 || (tour.guide1 && guideId === tour.guide1_id)) {
+      return {
+        name: tour.guide1 || "Guide 1",
+        info: guide1Info
       };
     }
     
-    if (guideId === "guide3") {
-      return { 
-        name: tour.guide3 || "Unassigned", 
-        info: guide3Info 
+    // Check guide2
+    if (guideId === "guide2" || guideId === tour.guide2 || (tour.guide2 && guideId === tour.guide2_id)) {
+      return {
+        name: tour.guide2 || "Guide 2",
+        info: guide2Info
       };
     }
     
-    // For UUID guide IDs, we need to check multiple places
+    // Check guide3
+    if (guideId === "guide3" || guideId === tour.guide3 || (tour.guide3 && guideId === tour.guide3_id)) {
+      return {
+        name: tour.guide3 || "Guide 3",
+        info: guide3Info
+      };
+    }
+    
+    // Special case for "_none" value (used to remove a guide)
+    if (guideId === "_none") {
+      return {
+        name: "Unassigned",
+        info: null
+      };
+    }
+    
+    // For UUID guides, try to find them in the tour groups
     if (isValidUuid(guideId)) {
-      // First try to match against known guide IDs
-      if (tour.guide1 && isValidUuid(tour.guide1) && tour.guide1 === guideId) {
-        return { name: tour.guide1, info: guide1Info };
+      // Search in tour groups for a match
+      const matchingGroup = tour.tourGroups?.find(group => group.guideId === guideId);
+      if (matchingGroup) {
+        // Extract the guide name from the group name if possible
+        const nameParts = matchingGroup.name.match(/\((.*?)\)/);
+        if (nameParts && nameParts[1]) {
+          return {
+            name: nameParts[1],
+            info: null
+          };
+        }
       }
       
-      if (tour.guide2 && isValidUuid(tour.guide2) && tour.guide2 === guideId) {
-        return { name: tour.guide2, info: guide2Info };
-      }
-      
-      if (tour.guide3 && isValidUuid(tour.guide3) && tour.guide3 === guideId) {
-        return { name: tour.guide3, info: guide3Info };
-      }
-      
-      // If we made it here, display a shortened UUID
-      return { 
-        name: `Guide (${guideId.substring(0, 6)}...)`, 
-        info: null 
+      // If all primary guides are checked but UUID still not found, check if it matches any primary guide ID
+      if (tour.guide1_id === guideId) return { name: tour.guide1 || "Unknown Guide", info: guide1Info };
+      if (tour.guide2_id === guideId) return { name: tour.guide2 || "Unknown Guide", info: guide2Info };
+      if (tour.guide3_id === guideId) return { name: tour.guide3 || "Unknown Guide", info: guide3Info };
+    }
+    
+    // If we still haven't found a match, just use the ID as a fallback
+    if (isValidUuid(guideId)) {
+      return {
+        name: `Guide (${guideId.substring(0, 6)}...)`,
+        info: null
       };
     }
     
-    // If we made it here, just return the guideId as the name
-    return { name: guideId, info: null };
-  }, [tour, guide1Info, guide2Info, guide3Info]);
+    // If all else fails, use the ID itself
+    return {
+      name: guideId,
+      info: null
+    };
+  };
   
   return { getGuideNameAndInfo };
 };
