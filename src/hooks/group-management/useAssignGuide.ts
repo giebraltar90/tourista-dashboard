@@ -100,16 +100,15 @@ export const useAssignGuide = (tourId: string) => {
       
       if (updateSuccess) {
         // Record the modification
-        await addModification({
-          description: actualGuideId 
-            ? `Assigned guide ${guideName} to Group ${groupIndex + 1}` 
-            : `Removed guide from Group ${groupIndex + 1}`,
-          details: {
-            groupIndex,
-            groupId,
-            guideId: actualGuideId,
-            guideName
-          }
+        const modificationDescription = actualGuideId 
+          ? `Assigned guide ${guideName} to Group ${groupIndex + 1}` 
+          : `Removed guide from Group ${groupIndex + 1}`;
+          
+        await addModification(modificationDescription, {
+          groupIndex,
+          groupId,
+          guideId: actualGuideId,
+          guideName
         });
         
         // Force a refetch after a delay to ensure server data is synced

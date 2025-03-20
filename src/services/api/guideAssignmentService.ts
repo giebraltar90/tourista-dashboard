@@ -7,7 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 export const updateGuideInSupabase = async (
   tourId: string,
   groupId: string, 
-  guideId: string | undefined | null
+  guideId: string | undefined | null,
+  groupName?: string // Make groupName optional
 ): Promise<boolean> => {
   if (!tourId || !groupId) {
     console.error("Missing required parameters for updateGuideInSupabase");
@@ -16,18 +17,25 @@ export const updateGuideInSupabase = async (
 
   try {
     console.log(`Updating guide assignment in Supabase for tour ${tourId}, group ${groupId}:`, {
-      guideId
+      guideId,
+      groupName
     });
     
     // Multiple attempts with exponential backoff
     const maxAttempts = 3;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
+        // Build update object based on what data is provided
+        const updateData: any = { guide_id: guideId };
+        
+        // Only add name to update if it's provided
+        if (groupName) {
+          updateData.name = groupName;
+        }
+
         const { error } = await supabase
           .from('tour_groups')
-          .update({
-            guide_id: guideId
-          })
+          .update(updateData)
           .eq('id', groupId)
           .eq('tour_id', tourId);
           

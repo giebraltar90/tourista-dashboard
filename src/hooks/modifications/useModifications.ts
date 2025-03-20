@@ -16,13 +16,30 @@ export const useModifications = (tourId: string) => {
   const [isAddingModification, setIsAddingModification] = useState(false);
   const queryClient = useQueryClient();
   
-  const addModification = useCallback(async (description: string, details?: Record<string, any> | Json) => {
+  const addModification = useCallback(async (modification: {
+    description: string;
+    details?: Record<string, any> | Json;
+  } | string, details?: Record<string, any> | Json) => {
     try {
       if (!tour) {
         throw new Error("Tour not found");
       }
       
       setIsAddingModification(true);
+      
+      // Handle both function signatures for backward compatibility
+      let description: string;
+      let modificationDetails: Record<string, any> | Json | undefined;
+      
+      if (typeof modification === 'string') {
+        // Old signature: addModification(description, details)
+        description = modification;
+        modificationDetails = details;
+      } else {
+        // New signature: addModification({ description, details })
+        description = modification.description;
+        modificationDetails = modification.details;
+      }
       
       // Create the new modification
       const newModification: TourModification = {
@@ -31,7 +48,7 @@ export const useModifications = (tourId: string) => {
         user: "Current User", // In a real app, get this from auth
         description,
         status: "complete",
-        details // This can be either Record<string, any> or Json
+        details: modificationDetails // This can be either Record<string, any> or Json
       };
       
       // Get existing modifications or initialize empty array
@@ -52,7 +69,7 @@ export const useModifications = (tourId: string) => {
       // Store the modification using the API
       await updateTourModification(tourId, {
         description,
-        details
+        details: modificationDetails
       });
       
       toast.success("Modification recorded successfully");
