@@ -5,6 +5,7 @@ import { updateTourGroups } from "@/services/api/tourApi";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { useModifications } from "@/hooks/useModifications";
+import { v4 as uuidv4 } from "uuid";
 
 export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] = []) => {
   const [isLoading, setIsLoading] = useState(false);
@@ -80,7 +81,9 @@ export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] 
   const addGroup = async (data: { name?: string; entryTime?: string; guideId?: string }) => {
     const name = generateGroupName();
     
+    // Create a new group with a generated UUID for the id
     const newGroup: VentrataTourGroup = {
+      id: uuidv4(), // Generate a UUID for the new group
       name: name,
       entryTime: data.entryTime || determineDefaultEntryTime(),
       size: 0, // No participants initially
