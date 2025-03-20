@@ -1,46 +1,34 @@
 
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { toast } from "sonner";
 
 /**
- * Validates that a guide assignment operation can proceed
+ * Validates guide assignment parameters
  */
-export const validateGuideAssignment = (
-  tour: any,
-  groupIndex: number,
-  guideId?: string | null
-): { valid: boolean; errorMessage?: string } => {
-  if (!tour) {
+export const validateGuideAssignment = (tour: any, groupIndex: number, guideId?: string | null) => {
+  // Handle missing tour data
+  if (!tour || !tour.tourGroups) {
     return {
       valid: false,
-      errorMessage: "Cannot assign guide: Tour data not available"
+      errorMessage: "Tour data is missing or incomplete"
     };
   }
   
-  // Validate groupIndex is within bounds
-  if (groupIndex < 0 || groupIndex >= (tour.tourGroups?.length || 0)) {
+  // Validate group index
+  if (groupIndex < 0 || groupIndex >= tour.tourGroups.length) {
     return {
       valid: false,
-      errorMessage: `Invalid group index: ${groupIndex}. Available groups: ${tour.tourGroups?.length}`
+      errorMessage: `Invalid group index: ${groupIndex}`
     };
   }
   
-  // Get the target group
-  const targetGroup = tour.tourGroups?.[groupIndex];
-  if (!targetGroup) {
-    return {
-      valid: false,
-      errorMessage: "Group not found"
-    };
-  }
-  
-  // Get the group ID
-  const groupId = targetGroup.id;
-  if (!groupId) {
-    return {
-      valid: false,
-      errorMessage: "Cannot assign guide: Group ID is missing"
-    };
-  }
-  
+  // If validation passes
   return { valid: true };
+};
+
+/**
+ * Validates that a UUID is properly formatted
+ */
+export const validateUuid = (id: string | undefined): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };

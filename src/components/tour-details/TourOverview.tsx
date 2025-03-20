@@ -9,10 +9,8 @@ import {
 } from "./overview";
 import { useState, useEffect } from "react";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
-import { GroupsManagement } from "./groups-management";
 import { GroupAssignment } from "./groups-management/GroupAssignment";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQueryClient } from "@tanstack/react-query";
 
 interface TourOverviewProps {
@@ -24,14 +22,13 @@ interface TourOverviewProps {
 
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("groups");
   
-  // Force a data refresh when tab changes to ensure UI is consistent
+  // Force a data refresh to ensure UI is consistent
   useEffect(() => {
     if (tour && tour.id) {
       queryClient.invalidateQueries({ queryKey: ['tour', tour.id] });
     }
-  }, [activeTab, tour?.id, queryClient]);
+  }, [tour?.id, queryClient]);
   
   // Ensure tourGroups exists to prevent errors
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
@@ -54,33 +51,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   const childTickets = tour.numTickets 
     ? (tour.numTickets - adultTickets) 
     : totalChildCount;
-
-  // Function to determine badge color based on guide type
-  const getGuideTypeBadgeColor = (guideType?: string) => {
-    if (!guideType) return "bg-gray-100 text-gray-800";
-    
-    switch (guideType) {
-      case "GA Ticket":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "GA Free":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "GC":
-        return "bg-purple-100 text-purple-800 border-purple-300";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Log for debugging synchronization issues
-  console.log("TourOverview rendering with tour groups:", {
-    groupsCount: tourGroups.length,
-    groupDetails: tourGroups.map(g => ({
-      id: g.id, 
-      name: g.name, 
-      guideId: g.guideId,
-      size: g.size
-    }))
-  });
 
   return (
     <div className="space-y-6">
@@ -115,24 +85,10 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       <Separator className="my-6" />
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="groups">Group Assignment</TabsTrigger>
-          <TabsTrigger value="participants">Participant Management</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="groups">
-          <GroupAssignment
-            tour={{...tour, isHighSeason}}
-          />
-        </TabsContent>
-        
-        <TabsContent value="participants">
-          <GroupsManagement 
-            tour={{...tour, isHighSeason}} 
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Integrated Group Assignment with participant functionality */}
+      <GroupAssignment
+        tour={{...tour, isHighSeason}}
+      />
     </div>
   );
 };

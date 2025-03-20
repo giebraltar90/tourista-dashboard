@@ -1,11 +1,14 @@
 
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Users, UserPlus } from "lucide-react";
+import { Users, UserPlus, ChevronDown, ChevronUp } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
+import { ParticipantItem } from "./ParticipantItem";
+import { ParticipantDropZone } from "./ParticipantDropZone";
+import { useState } from "react";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -15,7 +18,7 @@ interface GroupCardProps {
   guide2Info: GuideInfo | null;
   guide3Info: GuideInfo | null;
   onAssignGuide?: (index: number) => void;
-  // Adding missing props that are passed from GroupsGrid
+  // Adding props for participant management
   onDrop?: (e: React.DragEvent, toGroupIndex: number) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDragStart?: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
@@ -43,23 +46,17 @@ export const GroupCard = ({
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+  const [showParticipants, setShowParticipants] = useState(true);
   
   const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
   
-  // Log detailed guide info for debugging
-  console.log(`Group ${groupIndex} guide info:`, { 
-    groupName: group.name, 
-    groupId: group.id,
-    guideId: group.guideId, 
-    assignedGuideName: guideName,
-    guideInfo: guideInfo ? `Found: ${!!guideInfo}` : 'None',
-    originalGuideData: group.guideId ? `Found: ${!!tour.tourGroups[groupIndex].guideId}` : 'None'
-  });
+  // Get participants for this group
+  const participants = Array.isArray(group.participants) ? group.participants : [];
 
   return (
-    <Card className={`${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
-      <CardContent className="p-4">
-        <div className="flex justify-between items-center mb-2">
+    <Card className={`${isGuideAssigned ? 'border-green-200 bg-green-50/50' : 'border-gray-200'}`}>
+      <CardHeader className="p-4 pb-2">
+        <div className="flex justify-between items-center">
           <h3 className="text-md font-medium">{group.name}</h3>
           <Badge variant="outline" className="bg-blue-50">
             {group.size} participants
@@ -98,6 +95,55 @@ export const GroupCard = ({
             >
               {isGuideAssigned ? "Change Guide" : "Assign Guide"}
             </Button>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent className="p-4 pt-0">
+        {/* Participant list section */}
+        <div className="mt-4">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="text-sm font-medium flex items-center">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="p-0 h-6 mr-1" 
+                onClick={() => setShowParticipants(!showParticipants)}
+              >
+                {showParticipants ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </Button>
+              Participants
+            </h4>
+          </div>
+          
+          {showParticipants && (
+            <ParticipantDropZone
+              groupIndex={groupIndex}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              isDropTarget={selectedParticipant !== null}
+              onMoveHere={handleMoveParticipant}
+              isMoveTarget={selectedParticipant !== null && selectedParticipant.fromGroupIndex !== groupIndex}
+              isMovePending={isMovePending}
+            >
+              <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
+                {participants.length > 0 ? (
+                  participants.map((participant) => (
+                    <ParticipantItem
+                      key={participant.id}
+                      participant={participant}
+                      groupIndex={groupIndex}
+                      onDragStart={onDragStart}
+                      onMoveClick={onMoveClick}
+                    />
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500 py-2 text-center italic">
+                    No participants in this group
+                  </div>
+                )}
+              </div>
+            </ParticipantDropZone>
           )}
         </div>
       </CardContent>
