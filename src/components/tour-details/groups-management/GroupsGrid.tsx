@@ -41,6 +41,9 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
           group={group}
           groupIndex={index}
           tour={tour}
+          guide1Info={guide1Info}
+          guide2Info={guide2Info}
+          guide3Info={guide3Info}
           onDrop={onDrop}
           onDragOver={onDragOver}
           onDragStart={onDragStart}
@@ -48,9 +51,6 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
           selectedParticipant={selectedParticipant}
           handleMoveParticipant={handleMoveParticipant}
           isMovePending={isMovePending}
-          guide1Info={guide1Info}
-          guide2Info={guide2Info}
-          guide3Info={guide3Info}
         />
       ))}
     </div>
