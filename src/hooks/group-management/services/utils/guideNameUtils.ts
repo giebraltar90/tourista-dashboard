@@ -22,20 +22,32 @@ export const findGuideName = (
   const guide = guides.find(g => g.id === guideId);
   if (guide && guide.name) return guide.name;
   
-  // For UUID-format guideIds, check if it matches one of the primary guides' IDs
+  // For UUID-format guideIds, try to find a matching guide
   if (isValidUuid(guideId)) {
-    if (tour.guide1 && isValidUuid(tour.guide1) && tour.guide1 === guideId) return tour.guide1;
-    if (tour.guide2 && isValidUuid(tour.guide2) && tour.guide2 === guideId) return tour.guide2;
-    if (tour.guide3 && isValidUuid(tour.guide3) && tour.guide3 === guideId) return tour.guide3;
+    // First check if this UUID directly matches one of the primary guides
+    // This is for when guide1/guide2/guide3 are actually UUIDs instead of names
+    if (tour.guide1 === guideId && guides.length > 0) {
+      const foundGuide = guides.find(g => g.id === guideId);
+      if (foundGuide) return foundGuide.name;
+    }
     
-    // Try to find the guide by ID in the guides array again
+    if (tour.guide2 === guideId && guides.length > 0) {
+      const foundGuide = guides.find(g => g.id === guideId);
+      if (foundGuide) return foundGuide.name;
+    }
+    
+    if (tour.guide3 === guideId && guides.length > 0) {
+      const foundGuide = guides.find(g => g.id === guideId);
+      if (foundGuide) return foundGuide.name;
+    }
+    
+    // Try to find the guide in the guides array
     const matchingGuide = guides.find(g => g.id === guideId);
     if (matchingGuide) return matchingGuide.name;
     
-    // Log to debug when a guide ID cannot be resolved
+    // If we can't find a name, show a truncated version of the UUID
     console.log(`Could not find guide name for UUID: ${guideId}`);
     
-    // If we can't find a name, show a truncated version of the UUID
     return `Guide (${guideId.substring(0, 6)}...)`;
   }
   

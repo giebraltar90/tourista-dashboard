@@ -1,3 +1,4 @@
+
 /**
  * Validate if a string is a valid UUID
  */
@@ -64,6 +65,11 @@ export const getGuideDisplayName = (guideId: string | undefined, tour: any, guid
   if (guideId === "guide1" && tour?.guide1) return tour.guide1;
   if (guideId === "guide2" && tour?.guide2) return tour.guide2;
   if (guideId === "guide3" && tour?.guide3) return tour.guide3;
+  
+  // If the guide ID matches one of the primary guide IDs directly, use the name
+  if (tour?.guide1Id === guideId && tour?.guide1) return tour.guide1;
+  if (tour?.guide2Id === guideId && tour?.guide2) return tour.guide2;
+  if (tour?.guide3Id === guideId && tour?.guide3) return tour.guide3;
   
   // Fallback for unknown IDs (should rarely happen)
   return guideId.startsWith("guide") ? `Guide ${guideId.slice(5)}` : `Guide (${guideId.substring(0, 6)}...)`;

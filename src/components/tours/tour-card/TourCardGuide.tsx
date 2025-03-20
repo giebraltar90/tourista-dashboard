@@ -11,16 +11,29 @@ import {
 } from "@/components/ui/tooltip";
 import { TourCardGuideProps } from "./types";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 
 export const TourCardGuide: React.FC<TourCardGuideProps> = ({ 
   guideName, 
   guideInfo, 
   isSecondary = false 
 }) => {
+  const { guides = [] } = useGuideData() || { guides: [] };
+  
   if (!guideName) return null;
   
   // Handle case when guideName is a UUID instead of an actual name
-  const displayName = isValidUuid(guideName) ? `Guide ${guideName.substring(0, 4)}...` : guideName;
+  let displayName = guideName;
+  
+  if (isValidUuid(guideName)) {
+    // Try to find the actual guide name from our guides list
+    const matchingGuide = guides.find(g => g.id === guideName);
+    if (matchingGuide) {
+      displayName = matchingGuide.name;
+    } else {
+      displayName = `Guide ${guideName.substring(0, 4)}...`;
+    }
+  }
 
   return (
     <div className="flex items-center mt-1">

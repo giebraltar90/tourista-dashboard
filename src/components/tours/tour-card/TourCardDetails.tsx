@@ -1,8 +1,8 @@
 
 import { TourCardProps } from "./types";
 import { GuideInfo } from "@/types/ventrata";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { findGuideName } from "@/hooks/group-management/services/utils/guideNameUtils";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 
 interface TourCardDetailsProps {
   guide1: string;
@@ -25,8 +25,10 @@ export const TourCardDetails = ({
   totalParticipants,
   isHighSeason
 }: TourCardDetailsProps) => {
-  // Use the actual assigned guides from tour groups instead of primary guides
-  const getAssignedGuides = () => {
+  const { guides = [] } = useGuideData() || { guides: [] };
+  
+  // Get the actual guides assigned to the groups
+  const getAssignedGuideNames = () => {
     const assignedGuideIds = tourGroups
       .filter(group => group.guideId)
       .map(group => group.guideId);
@@ -34,26 +36,21 @@ export const TourCardDetails = ({
     // Remove duplicates
     const uniqueGuideIds = [...new Set(assignedGuideIds)];
     
-    // Map guide IDs to guide names or IDs
+    // Map guide IDs to guide names using findGuideName
     return uniqueGuideIds.map(guideId => {
-      if (guideId === "guide1") return guide1;
-      if (guideId === "guide2") return guide2;
+      // Create a simplified tour object with just the guides we need
+      const tourObj = {
+        guide1,
+        guide2,
+      };
       
-      // For UUIDs or other guide IDs, just show a shortened version or placeholder
-      if (isValidUuid(guideId)) {
-        return `Guide (${guideId.substring(0, 6)}...)`;
-      }
-      
-      return guideId || "Unassigned";
+      // Use the utility function to find the proper name
+      return findGuideName(guideId, tourObj, guides);
     });
   };
   
-  // Get the actual guides assigned to the groups
-  const assignedGuides = getAssignedGuides();
-  
-  // No need for these lines since we're getting the actual assigned guides
-  // const formattedGuide1 = guide1 || "No Guide";
-  // const formattedGuide2 = guide2 ? ` / ${guide2}` : "";
+  // Get the actual guide names assigned to the groups
+  const assignedGuideNames = getAssignedGuideNames();
   
   // Format participant count to show adults + children
   const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
@@ -80,8 +77,8 @@ export const TourCardDetails = ({
         <div className="flex items-center space-x-1 text-sm">
           <span className="text-muted-foreground">Guides:</span>
           <span className="font-medium">
-            {assignedGuides.length > 0 
-              ? assignedGuides.join(" / ")
+            {assignedGuideNames.length > 0 
+              ? assignedGuideNames.join(" / ")
               : "No guides assigned"}
           </span>
         </div>
