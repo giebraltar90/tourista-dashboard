@@ -27,21 +27,29 @@ export const AssignGuideForm = ({
   currentGuideId, 
   onSuccess 
 }: AssignGuideFormProps) => {
-  // Check and filter guides to ensure only valid UUID guides are available
-  const validGuides = guides.filter(guide => 
-    guide.id === "_none" || isValidUuid(guide.id)
-  );
-
-  // Log validation results
-  console.log("AssignGuideForm rendering with props:", {
+  // Filter out duplicate guides by name, prioritizing valid UUID guides
+  const uniqueGuides: GuideOption[] = [];
+  const processedGuideNames = new Set<string>();
+  
+  // First process guides with valid UUIDs
+  guides
+    .filter(guide => isValidUuid(guide.id))
+    .forEach(guide => {
+      if (!processedGuideNames.has(guide.name)) {
+        uniqueGuides.push(guide);
+        processedGuideNames.add(guide.name);
+      }
+    });
+  
+  // Log unique guides count
+  console.log("AssignGuideForm rendering with filtered guides:", {
     tourId,
     groupIndex,
     originalGuidesCount: guides.length,
-    validGuidesCount: validGuides.length,
+    uniqueGuidesCount: uniqueGuides.length,
     currentGuideId,
     hasCurrentGuide: !!currentGuideId,
-    currentGuideType: currentGuideId ? typeof currentGuideId : 'undefined',
-    invalidGuides: guides.filter(g => g.id !== "_none" && !isValidUuid(g.id)).map(g => ({id: g.id, name: g.name}))
+    currentGuideType: currentGuideId ? typeof currentGuideId : 'undefined'
   });
   
   // Use our custom hook to get form logic
@@ -55,7 +63,7 @@ export const AssignGuideForm = ({
   } = useGuideAssignmentForm({
     tourId,
     groupIndex,
-    guides: validGuides, // Only pass valid guides
+    guides: uniqueGuides, // Only pass unique guides with valid UUIDs
     currentGuideId,
     onSuccess
   });
@@ -65,7 +73,7 @@ export const AssignGuideForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <GuideSelectField 
           form={form} 
-          guides={validGuides} // Only use valid guides
+          guides={uniqueGuides} // Only use unique guides
           defaultValue={currentGuideId || "_none"} 
         />
         

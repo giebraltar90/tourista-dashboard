@@ -1,15 +1,15 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { isValidUuid, isSpecialGuideId } from "./utils/guidesUtils";
+import { isValidUuid } from "./utils/guidesUtils";
 
 /**
  * Updates a guide's assignment to a group in Supabase directly
  */
 export const updateGuideInSupabase = async (
-  tourId: string,
+  tourId: string, 
   groupId: string, 
-  guideId: string | undefined | null,
-  groupName?: string // Keep groupName optional
+  guideId: string | null,
+  groupName?: string
 ): Promise<boolean> => {
   if (!tourId || !groupId) {
     console.error("Missing required parameters for updateGuideInSupabase:", { tourId, groupId });
@@ -22,32 +22,16 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // For null/"_none" we want to store null in the database
-    let dbGuideId = null;
-    
-    if (guideId && guideId !== "_none") {
-      // Store the UUID directly - this should be a valid UUID
-      // We're no longer supporting special IDs like "guide1"
-      if (!isValidUuid(guideId)) {
-        console.error("Invalid UUID format for guide_id:", guideId);
-        return false;
-      }
-      dbGuideId = guideId;
+    // Validate the guideId is a valid UUID or null
+    if (guideId !== null && !isValidUuid(guideId)) {
+      console.error("Invalid UUID format for guide_id:", guideId);
+      return false;
     }
     
-    // Log the guide ID details for debugging
-    console.log("Guide ID details for database insert:", {
-      value: guideId,
-      dbValue: dbGuideId,
-      type: typeof dbGuideId,
-      isUuid: dbGuideId ? isValidUuid(dbGuideId) : false
-    });
-    
     // Build update object based on what data is provided
-    const updateData: any = {};
-    
-    // Set the guide_id field
-    updateData.guide_id = dbGuideId;
+    const updateData: any = {
+      guide_id: guideId // Always set guide_id (null or valid UUID)
+    };
     
     // Only add name to update if it's provided
     if (groupName) {

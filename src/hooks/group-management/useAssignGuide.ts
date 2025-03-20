@@ -43,11 +43,11 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Special handling for "_none" which means "remove guide"
-      const uiGuideId = guideId === "_none" ? undefined : guideId;
+      const actualGuideId = guideId === "_none" ? null : guideId;
       
       // Validate that if a guide ID is provided, it must be a valid UUID
-      if (uiGuideId && !isValidUuid(uiGuideId)) {
-        console.error(`Invalid guide ID format: ${uiGuideId}. Must be a valid UUID.`);
+      if (actualGuideId && !isValidUuid(actualGuideId)) {
+        console.error(`Invalid guide ID format: ${actualGuideId}. Must be a valid UUID.`);
         toast.error("Cannot assign guide: Invalid guide ID format");
         return false;
       }
@@ -65,13 +65,10 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // Pass the guideId as is - the updateGuideInSupabase function will validate it
-      const actualGuideId = uiGuideId;
-      
       // Find guide name for display
       let guideName = "Unassigned";
-      if (uiGuideId) {
-        const guide = guides.find(g => g.id === uiGuideId);
+      if (actualGuideId) {
+        const guide = guides.find(g => g.id === actualGuideId);
         if (guide) {
           guideName = guide.name;
         }
@@ -81,8 +78,7 @@ export const useAssignGuide = (tourId: string) => {
         targetGroupId: targetGroup.id,
         targetGroupName: targetGroup.name,
         currentGuideId: targetGroup.guideId,
-        newGuideId: uiGuideId,
-        actualGuideId,
+        newGuideId: actualGuideId,
         guideName
       });
       
@@ -98,10 +94,10 @@ export const useAssignGuide = (tourId: string) => {
           console.log("Applying optimistic update to cache:", {
             groupId: newData.tourGroups[groupIndex].id,
             oldGuideId: newData.tourGroups[groupIndex].guideId,
-            newGuideId: uiGuideId
+            newGuideId: actualGuideId
           });
           
-          newData.tourGroups[groupIndex].guideId = uiGuideId;
+          newData.tourGroups[groupIndex].guideId = actualGuideId;
         }
         
         return newData;
@@ -115,7 +111,7 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Generate a new group name
-      const groupName = uiGuideId 
+      const groupName = actualGuideId 
         ? `Group ${groupIndex + 1} (${guideName})` 
         : `Group ${groupIndex + 1}`;
       
@@ -138,14 +134,14 @@ export const useAssignGuide = (tourId: string) => {
       
       if (updateSuccess) {
         // Record the modification
-        const modificationDescription = uiGuideId 
+        const modificationDescription = actualGuideId 
           ? `Assigned guide ${guideName} to Group ${groupIndex + 1}` 
           : `Removed guide from Group ${groupIndex + 1}`;
           
         await addModification(modificationDescription, {
           groupIndex,
           groupId,
-          guideId: uiGuideId,
+          guideId: actualGuideId,
           guideName
         });
         
@@ -156,7 +152,7 @@ export const useAssignGuide = (tourId: string) => {
           refetch();
         }, 500);
         
-        toast.success(uiGuideId 
+        toast.success(actualGuideId 
           ? `Guide ${guideName} assigned to Group ${groupIndex + 1}` 
           : `Guide removed from Group ${groupIndex + 1}`
         );

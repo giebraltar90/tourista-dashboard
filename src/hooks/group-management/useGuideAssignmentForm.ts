@@ -42,6 +42,7 @@ export const useGuideAssignmentForm = ({
   // Set the default value to "_none" if no guide is assigned
   const defaultGuideId = currentGuideId || "_none";
   
+  // Debug log for troubleshooting
   console.log("useGuideAssignmentForm initialized with:", {
     tourId,
     groupIndex,
@@ -68,7 +69,7 @@ export const useGuideAssignmentForm = ({
     try {
       setIsSubmitting(true);
       
-      // Validate that if a guide ID is provided, it must be a valid UUID (except for _none)
+      // Validate guide ID if it's not "_none" - must be a valid UUID
       if (values.guideId && values.guideId !== "_none" && !isValidUuid(values.guideId)) {
         console.error(`Invalid guide ID format selected: ${values.guideId}. Must be a valid UUID.`);
         toast.error("Cannot assign guide: Invalid guide ID format");

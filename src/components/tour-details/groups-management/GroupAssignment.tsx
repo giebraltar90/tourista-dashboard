@@ -10,6 +10,7 @@ import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { useState } from "react";
 import { GroupCard } from "./GroupCard";
 import { AssignGuideDialog } from "./dialogs/AssignGuideDialog";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
@@ -52,18 +53,16 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     setIsAssignGuideOpen(true);
   };
 
-  // Get valid guides for guide selection
-  const validGuides = [
-    ...(tour.guide1 ? [{ id: "guide1", name: tour.guide1, info: guide1Info }] : []),
-    ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: guide2Info }] : []),
-    ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: guide3Info }] : []),
-    ...(guides ? guides.map(guide => ({
-      id: guide.id || "",
-      name: guide.name || "",
+  // Get valid guides for guide selection - ONLY use guides from the database (with valid UUIDs)
+  const validGuides = guides
+    .filter(guide => guide.id && isValidUuid(guide.id) && guide.name)
+    .map(guide => ({
+      id: guide.id,
+      name: guide.name,
       info: guide
-    })) : [])
-  ].filter(guide => guide.name && guide.id);
+    }));
   
+  // Log the filtered guides
   console.log("Available guides for assignment:", validGuides);
   
   return (
