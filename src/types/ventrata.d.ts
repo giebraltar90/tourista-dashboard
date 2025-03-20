@@ -7,11 +7,11 @@ export interface VentrataParticipant {
   count: number;
   bookingRef: string;
   childCount: number;
-  groupId?: string; // Added groupId property
+  groupId?: string; // CamelCase version
   // The following properties are for database compatibility
-  group_id?: string;
-  booking_ref?: string;
-  child_count?: number;
+  group_id?: string; // Snake_case version
+  booking_ref?: string; // Snake_case version
+  child_count?: number; // Snake_case version
 }
 
 export interface VentrataTourGroup {
@@ -23,6 +23,10 @@ export interface VentrataTourGroup {
   guideId?: string;
   guideName?: string;
   participants: VentrataParticipant[];
+  // The following properties are for database compatibility
+  child_count?: number; // Snake_case version
+  entry_time?: string; // Snake_case version
+  guide_id?: string; // Snake_case version
 }
 
 export type GuideType = "GA Ticket" | "GA Free" | "GC";
