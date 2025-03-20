@@ -1,7 +1,7 @@
 
 import { VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidUuid, sanitizeGuideId } from "./utils/guidesUtils";
+import { isValidUuid, sanitizeGuideId, isSpecialGuideId } from "./utils/guidesUtils";
 
 /**
  * Update tour groups (e.g., move participants between groups)
