@@ -12,7 +12,7 @@ export const updateGuideInSupabase = async (
   groupName?: string // Keep groupName optional
 ): Promise<boolean> => {
   if (!tourId || !groupId) {
-    console.error("Missing required parameters for updateGuideInSupabase");
+    console.error("Missing required parameters for updateGuideInSupabase:", { tourId, groupId });
     return false;
   }
 
@@ -34,6 +34,20 @@ export const updateGuideInSupabase = async (
       isSpecial: guideId ? isSpecialGuideId(guideId) : false,
       isUuid: dbGuideId ? isValidUuid(dbGuideId) : false
     });
+    
+    // Validate that we're storing a UUID or null
+    if (dbGuideId !== null && !isValidUuid(dbGuideId)) {
+      console.error(`Invalid guide ID format for database: ${dbGuideId}. Database expects UUID values.`);
+      
+      // Try to determine the issue in more detail
+      if (isSpecialGuideId(dbGuideId)) {
+        console.error(`Guide ID is a special ID (${dbGuideId}) but should have been mapped to a UUID before calling updateGuideInSupabase`);
+      } else {
+        console.error(`Guide ID ${dbGuideId} is not a valid UUID and not a special ID. Check the mapping logic.`);
+      }
+      
+      return false;
+    }
     
     // Build update object based on what data is provided
     const updateData: any = { guide_id: dbGuideId };

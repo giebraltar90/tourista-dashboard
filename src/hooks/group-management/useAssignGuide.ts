@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -84,7 +85,10 @@ export const useAssignGuide = (tourId: string) => {
         currentGuideId: targetGroup.guideId,
         newGuideId: uiGuideId,
         actualGuideId,
-        guideName
+        guideName,
+        guide1: latestTour.guide1,
+        guide2: latestTour.guide2,
+        guide3: latestTour.guide3
       });
       
       // Apply optimistic update to the cache
