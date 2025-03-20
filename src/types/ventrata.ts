@@ -7,6 +7,11 @@ export interface VentrataParticipant {
   count: number;
   bookingRef: string;
   childCount?: number; // Number of children in this participant group
+  groupId?: string; // Added to align with ventrata.d.ts
+  // For database compatibility
+  booking_ref?: string;
+  group_id?: string;
+  child_count?: number;
 }
 
 export interface VentrataTourGroup {
@@ -16,7 +21,11 @@ export interface VentrataTourGroup {
   entryTime: string;
   participants?: VentrataParticipant[];
   childCount?: number; // Total children in this group
-  guideId?: string; // Guide ID for this group 
+  guideId?: string; // Guide ID for this group
+  // For database compatibility
+  child_count?: number;
+  entry_time?: string;
+  guide_id?: string;
 }
 
 export interface VentrataTour {
