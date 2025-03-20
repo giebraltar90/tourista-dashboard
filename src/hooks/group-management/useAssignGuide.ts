@@ -13,7 +13,8 @@ import {
   generateGroupNameWithGuide,
   applyOptimisticUpdate,
   createModificationDescription,
-  refreshCacheAfterAssignment
+  refreshCacheAfterAssignment,
+  mapGuideIdToUuid
 } from "./services/guideAssignmentService";
 
 /**
@@ -46,9 +47,22 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Special handling for "_none" which means "remove guide"
-      const actualGuideId = guideId === "_none" ? null : guideId;
+      const actualGuideId = guideId === "_none" ? null : 
+                           (guideId ? mapGuideIdToUuid(guideId, tour, guides) : null);
       
-      // Validate that if a guide ID is provided, it must be a valid UUID
+      console.log("Guide ID mapping result:", {
+        originalId: guideId,
+        mappedId: actualGuideId
+      });
+      
+      // Validate that if a guide ID is provided, it should be mapped to a valid UUID
+      if (guideId && guideId !== "_none" && !actualGuideId) {
+        console.error(`Failed to map guide ID "${guideId}" to a valid UUID`);
+        toast.error("Cannot assign guide: Invalid guide ID format or mapping failed");
+        return false;
+      }
+      
+      // Double-check that if a UUID is provided, it must be valid
       if (actualGuideId && !isValidUuid(actualGuideId)) {
         console.error(`Invalid guide ID format: ${actualGuideId}. Must be a valid UUID.`);
         toast.error("Cannot assign guide: Invalid guide ID format");

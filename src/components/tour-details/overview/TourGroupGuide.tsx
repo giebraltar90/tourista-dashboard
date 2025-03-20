@@ -1,4 +1,3 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
@@ -9,7 +8,9 @@ import { Users, UserCheck, UserX } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { mapSpecialGuideIdToUuid, isValidUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { useGuideData } from "@/hooks/guides/useGuideData";
+import { mapGuideIdToUuid } from "@/hooks/group-management/services/guideAssignmentService";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
@@ -35,6 +36,7 @@ export const TourGroupGuide = ({
   const { assignGuide } = useAssignGuide(tour?.id || "");
   const [isAssigning, setIsAssigning] = useState(false);
   const [isSelecting, setIsSelecting] = useState(false);
+  const { guides = [] } = useGuideData() || { guides: [] };
   
   // Calculate group size directly from the size property
   const totalGroupSize = group?.size || 0;
@@ -64,24 +66,12 @@ export const TourGroupGuide = ({
     setIsSelecting(false);
     
     try {
-      // Map special guide IDs (like guide1) to actual UUIDs
-      const actualGuideId = guideId === "_none" ? null : mapSpecialGuideIdToUuid(guideId, tour);
+      // No need to map here, we'll pass the ID directly to assignGuide
+      // which now handles the mapping internally
+      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex} (display number ${groupDisplayNumber})`);
       
-      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex} (display number ${groupDisplayNumber})`, {
-        originalId: guideId,
-        mappedId: actualGuideId,
-        isValidUuid: actualGuideId ? isValidUuid(actualGuideId) : false
-      });
-      
-      // Check if we have a valid UUID or null (for unassign)
-      if (guideId !== "_none" && actualGuideId === null) {
-        toast.error(`Cannot assign guide: Could not map "${guideId}" to a valid UUID`);
-        setIsAssigning(false);
-        return;
-      }
-      
-      // Now pass the mapped UUID to assignGuide
-      const success = await assignGuide(groupIndex, actualGuideId);
+      // Pass the ID directly, mapping happens in assignGuide
+      const success = await assignGuide(groupIndex, guideId);
       
       if (!success) {
         toast.error("Failed to assign guide");
