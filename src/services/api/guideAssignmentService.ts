@@ -22,9 +22,9 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // Store guideId directly in the database, preserving special IDs like "guide1"
-    // This is the critical fix - we're not modifying the guideId value anymore
-    let dbGuideId = guideId;
+    // Store the guide ID as-is without modification - critical fix
+    // The database column needs to accept both UUIDs and special IDs like 'guide1'
+    const dbGuideId = guideId;
     
     // Log the exact type and format of guideId for debugging
     console.log("Guide ID details:", {

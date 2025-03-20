@@ -31,15 +31,15 @@ export const updateTourGroups = async (
               sanitized: sanitizeGuideId(group.guideId)
             });
             
-            // Sanitize guide ID for database storage - now preserves "guide1", etc.
-            const safeGuideId = sanitizeGuideId(group.guideId);
+            // Store guide ID directly without sanitization - this is the key fix
+            const safeGuideId = group.guideId;
             
             // Update existing group
             const updateData: any = {
               name: group.name,
               size: group.size || 0,
               child_count: group.childCount || 0,
-              guide_id: safeGuideId // Use sanitized ID for database
+              guide_id: safeGuideId // Use unsanitized ID for database
             };
             
             // Add entryTime if it exists
@@ -60,8 +60,8 @@ export const updateTourGroups = async (
               return false;
             }
           } else {
-            // Sanitize guide ID for new groups too
-            const safeGuideId = sanitizeGuideId(group.guideId);
+            // Store guide ID directly for new groups too
+            const safeGuideId = group.guideId;
             
             // Insert new group if no ID
             const { error } = await supabase
@@ -71,7 +71,7 @@ export const updateTourGroups = async (
                 name: group.name,
                 size: group.size || 0,
                 entry_time: group.entryTime,
-                guide_id: safeGuideId, // Use sanitized ID for database
+                guide_id: safeGuideId, // Use unsanitized ID for database
                 child_count: group.childCount || 0
               });
               

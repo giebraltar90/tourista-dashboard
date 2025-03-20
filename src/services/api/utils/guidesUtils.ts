@@ -17,7 +17,7 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 
 /**
  * Sanitize guide ID for database storage
- * - For special IDs (guide1, guide2, guide3), preserve the original format
+ * - For special IDs (guide1, guide2, guide3), the database expects a string value
  * - For _none, return null
  * - For UUIDs and other formats, return as is
  */

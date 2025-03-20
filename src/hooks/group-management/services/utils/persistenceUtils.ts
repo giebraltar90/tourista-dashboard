@@ -1,3 +1,4 @@
+
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
@@ -64,14 +65,13 @@ export const persistGuideAssignmentChanges = async (
     return false;
   }
   
-  // IMPORTANT: Special guide IDs (guide1, guide2, guide3) are now preserved as-is
-  // This is a critical fix to ensure database consistency
+  // IMPORTANT: Pass the guide ID directly without sanitization
+  // This is critical to ensure database consistency
   console.log(`Persisting guide assignment: ${actualGuideId} for group ${groupId} in tour ${tourId}`);
   
   // First attempt: direct Supabase update with the most reliable method
   try {
-    // Use the improved updateGuideInSupabase method with retry logic
-    // Pass the guide ID directly without sanitization - sanitization happens in the function
+    // Pass the guide ID directly without modification
     updateSuccess = await updateGuideInSupabase(
       tourId, 
       groupId, 
