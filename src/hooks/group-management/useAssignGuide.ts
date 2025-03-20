@@ -5,17 +5,26 @@ import { useModifications } from "../useModifications";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { 
+  validateGuideAssignment 
+} from "./services/utils/validationService";
 import {
-  validateGuideAssignment,
   findGuideName,
   generateGroupNameWithGuide,
-  applyOptimisticUpdate,
-  createModificationDescription,
-  refreshCacheAfterAssignment,
-  mapGuideIdToUuid
-} from "./services/guideAssignmentService";
+  createModificationDescription
+} from "./services/utils/namingService";
+import {
+  performOptimisticUpdate
+} from "./services/utils/optimisticUpdateService";
+import { 
+  persistGuideAssignmentChanges 
+} from "./services/utils/persistenceService";
+import { 
+  handleUIUpdates 
+} from "./services/utils/notificationService";
+import { 
+  mapGuideIdToUuid 
+} from "./services/utils/guideMappingService";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -82,35 +91,32 @@ export const useAssignGuide = (tourId: string) => {
       // Generate a new group name with the guide name
       const groupName = generateGroupNameWithGuide(groupNumber, guideName);
       
-      console.log("Calling updateGuideInSupabase with:", {
-        tourId,
-        groupId,
-        actualGuideId,
-        guideName,
-        groupName
-      });
+      // Prepare for optimistic UI update
+      const updatedGroups = [...tour!.tourGroups!];
+      updatedGroups[groupIndex] = {
+        ...updatedGroups[groupIndex],
+        guideId: actualGuideId,
+        name: groupName
+      };
       
-      // Save to database - directly passing the guide ID without mapping
-      const updateSuccess = await updateGuideInSupabase(
+      // Apply optimistic update to UI
+      performOptimisticUpdate(queryClient, tourId, updatedGroups);
+      
+      // Save to database
+      const updateSuccess = await persistGuideAssignmentChanges(
         tourId,
         groupId,
         actualGuideId,
-        groupName
+        groupName,
+        updatedGroups
       );
       
       console.log("Database update result:", updateSuccess ? "Success" : "Failed");
       
+      // Update UI based on result
+      await handleUIUpdates(tourId, queryClient, actualGuideId, guideName, updateSuccess);
+      
       if (updateSuccess) {
-        // Apply optimistic update to the UI
-        applyOptimisticUpdate(
-          queryClient,
-          tourId,
-          groupIndex,
-          actualGuideId,
-          groupName,
-          guideName
-        );
-        
         // Record the modification
         const modificationDescription = createModificationDescription(
           actualGuideId,
@@ -125,18 +131,8 @@ export const useAssignGuide = (tourId: string) => {
           guideName
         });
         
-        // Refresh data to ensure sync with server
-        refreshCacheAfterAssignment(queryClient, tourId, refetch);
-        
-        // Show success message
-        toast.success(actualGuideId 
-          ? `Guide ${guideName} assigned to Group ${groupNumber}` 
-          : `Guide removed from Group ${groupNumber}`
-        );
-        
         return true;
       } else {
-        toast.error("Failed to assign guide");
         // Revert optimistic update
         await refetch();
         return false;
@@ -151,4 +147,10 @@ export const useAssignGuide = (tourId: string) => {
   }, [tour, tourId, guides, addModification, queryClient, refetch]);
   
   return { assignGuide };
+};
+
+// Helper function to validate UUID format
+const isValidUuid = (id: string | undefined): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };

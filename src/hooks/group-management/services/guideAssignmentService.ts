@@ -1,10 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+
+// Import from the newly refactored utility files
 import { validateGuideAssignment } from "./utils/validationService";
 import { findGuideName, generateGroupNameWithGuide, createModificationDescription } from "./utils/namingService";
-import { applyOptimisticUpdate, refreshCacheAfterAssignment } from "./utils/uiUpdateService";
+import { performOptimisticUpdate } from "./utils/optimisticUpdateService";
+import { persistGuideAssignmentChanges } from "./utils/persistenceService";
+import { handleUIUpdates } from "./utils/notificationService";
 import { mapGuideIdToUuid } from "./utils/guideMappingService";
 
 /**
@@ -157,8 +160,9 @@ export {
   validateGuideAssignment,
   findGuideName,
   generateGroupNameWithGuide,
-  applyOptimisticUpdate,
+  performOptimisticUpdate,
   createModificationDescription,
-  refreshCacheAfterAssignment,
+  persistGuideAssignmentChanges,
+  handleUIUpdates,
   mapGuideIdToUuid
 };
