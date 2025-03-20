@@ -99,7 +99,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => refreshParticipants()} // Wrap in arrow function to fix type error
+          onClick={() => refreshParticipants()} 
           disabled={isMovePending}
           className="flex items-center"
         >
@@ -119,12 +119,12 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
+            onDragEnd={() => handleDragEnd()} // Wrap handleDragEnd in a function that takes no arguments
             onMoveClick={setSelectedParticipant}
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
-            onRefreshParticipants={() => refreshParticipants()} // Wrap in arrow function
+            onRefreshParticipants={() => refreshParticipants()} 
           />
         </div>
       </CardContent>
