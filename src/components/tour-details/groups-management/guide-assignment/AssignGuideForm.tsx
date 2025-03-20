@@ -1,7 +1,8 @@
 
 import { Form } from "@/components/ui/form";
 import { GuideInfo } from "@/types/ventrata";
-import { GuideSelectField, FormActions } from "./form-components";
+import { GuideSelectField } from "./GuideSelectField";
+import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
 
 interface GuideOption {

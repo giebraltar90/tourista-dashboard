@@ -1,6 +1,5 @@
-
 import { DialogRoot } from "./DialogsRoot";
-import { AssignGuideForm } from "../AssignGuideForm";
+import { AssignGuideForm } from "../guide-assignment";
 
 interface AssignGuideDialogProps {
   tourId: string;

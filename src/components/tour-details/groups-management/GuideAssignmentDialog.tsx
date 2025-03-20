@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -6,7 +5,7 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { AssignGuideForm } from "./AssignGuideForm";
+import { AssignGuideForm } from "./guide-assignment";
 import { useGuideData } from "@/hooks/useGuideData";
 
 interface GuideAssignmentDialogProps {
