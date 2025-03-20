@@ -18,12 +18,20 @@ export const persistGuideAssignmentChanges = async (
   let updateSuccess = false;
   
   // Log all parameters for debugging
-  console.log("persistGuideAssignmentChanges called with:", { 
+  console.log("PARTICIPANTS PRESERVATION: persistGuideAssignmentChanges called with:", { 
     tourId, 
     groupId, 
     actualGuideId, 
     groupName,
-    groupsCount: updatedGroups?.length || 0
+    groupsCount: updatedGroups?.length || 0,
+    updatedGroupDetails: updatedGroups.map(g => ({
+      id: g.id,
+      name: g.name,
+      hasParticipantsArray: Array.isArray(g.participants),
+      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0,
+      size: g.size,
+      childCount: g.childCount
+    }))
   });
   
   // Validate inputs
@@ -31,6 +39,24 @@ export const persistGuideAssignmentChanges = async (
     console.error("Cannot persist guide assignment: Missing tour or group ID");
     return false;
   }
+  
+  // Find the target group in the updated groups
+  const targetGroup = updatedGroups.find(group => group.id === groupId);
+  if (!targetGroup) {
+    console.error(`Cannot find target group with ID ${groupId} in updatedGroups`);
+    return false;
+  }
+  
+  // Extract participants from the target group for preservation
+  const participantsToPreserve = Array.isArray(targetGroup.participants) 
+    ? targetGroup.participants 
+    : [];
+    
+  console.log("PARTICIPANTS PRESERVATION: Participants to preserve:", {
+    groupId,
+    count: participantsToPreserve.length,
+    details: participantsToPreserve
+  });
   
   // IMPORTANT: Pass the guide ID directly without sanitization
   // This is critical to ensure database consistency
@@ -98,15 +124,44 @@ export const persistGuideAssignmentChanges = async (
         if (sanitizedGroup.id === groupId) {
           sanitizedGroup.guideId = actualGuideId;
           sanitizedGroup.name = groupName;
+          
+          // CRITICAL: Ensure the group maintains its original participants
+          if (!Array.isArray(sanitizedGroup.participants) || sanitizedGroup.participants.length === 0) {
+            sanitizedGroup.participants = participantsToPreserve;
+          }
         }
         
         // Before sending to database, set guide_id field for database column
         sanitizedGroup.guide_id = sanitizedGroup.guideId;
         
-        // CRITICAL: Make sure participants array is preserved
-        if (!sanitizedGroup.participants) {
+        // CRITICAL: Make sure participants array is preserved for all groups
+        if (!Array.isArray(sanitizedGroup.participants)) {
           sanitizedGroup.participants = [];
         }
+        
+        // Ensure size and childCount are consistent with participants array
+        if (Array.isArray(sanitizedGroup.participants) && sanitizedGroup.participants.length > 0) {
+          const calculatedSize = sanitizedGroup.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+          const calculatedChildCount = sanitizedGroup.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+          
+          // Only update if we have values calculated from participants
+          if (calculatedSize > 0) {
+            sanitizedGroup.size = calculatedSize;
+          }
+          
+          sanitizedGroup.childCount = calculatedChildCount;
+        }
+        
+        console.log(`PARTICIPANTS PRESERVATION: Group ${sanitizedGroup.id} after sanitization:`, {
+          name: sanitizedGroup.name,
+          participantsCount: Array.isArray(sanitizedGroup.participants) 
+            ? sanitizedGroup.participants.length 
+            : 0,
+          size: sanitizedGroup.size,
+          childCount: sanitizedGroup.childCount,
+          guideId: sanitizedGroup.guideId,
+          guide_id: sanitizedGroup.guide_id
+        });
         
         return sanitizedGroup;
       });

@@ -44,7 +44,16 @@ export const useAssignGuide = (tourId: string) => {
         groupIndex, 
         guideId, 
         tourId, 
-        currentGroups: tour?.tourGroups?.map(g => ({id: g.id, name: g.name, guideId: g.guideId})) || []
+        currentGroups: tour?.tourGroups?.map(g => ({
+          id: g.id, 
+          name: g.name, 
+          guideId: g.guideId,
+          participants: Array.isArray(g.participants) 
+            ? g.participants.length 
+            : 'No participants array',
+          size: g.size,
+          childCount: g.childCount
+        })) || []
       });
       
       // Validate parameters
@@ -75,8 +84,21 @@ export const useAssignGuide = (tourId: string) => {
       const targetGroup = tour!.tourGroups![groupIndex];
       const groupId = targetGroup.id;
       
-      // CRITICAL: Preserve participants when updating the group
-      const existingParticipants = targetGroup.participants || [];
+      // CRITICAL FIX: Preserve participants when updating the group
+      // Make a deep copy to avoid reference issues
+      const existingParticipants = targetGroup.participants 
+        ? JSON.parse(JSON.stringify(targetGroup.participants)) 
+        : [];
+      
+      // Log existing participants for debugging
+      console.log("PARTICIPANTS PRESERVATION: Existing participants before guide change:", {
+        groupId,
+        groupIndex,
+        participantsCount: existingParticipants.length,
+        participants: existingParticipants,
+        groupSize: targetGroup.size,
+        groupChildCount: targetGroup.childCount
+      });
       
       // Get group number for name generation
       const groupNumber = groupIndex + 1;
@@ -94,17 +116,22 @@ export const useAssignGuide = (tourId: string) => {
         guideId: actualGuideId,
         name: groupName,
         // CRITICAL: Preserve the existing participants
-        participants: existingParticipants
+        participants: existingParticipants,
+        // CRITICAL: Maintain the original size and childCount
+        size: targetGroup.size,
+        childCount: targetGroup.childCount
       };
       
       // Apply optimistic update to UI
       performOptimisticUpdate(queryClient, tourId, updatedGroups);
       
       // Log for debugging
-      console.log("Optimistic update with preserved participants:", {
+      console.log("PARTICIPANTS PRESERVATION: Optimistic update with preserved participants:", {
         groupIndex,
-        existingParticipants,
-        updatedGroupParticipantCount: updatedGroups[groupIndex].participants?.length || 0
+        existingParticipantsCount: existingParticipants.length,
+        updatedGroupParticipantCount: updatedGroups[groupIndex].participants?.length || 0,
+        updatedGroupSize: updatedGroups[groupIndex].size,
+        updatedGroupChildCount: updatedGroups[groupIndex].childCount
       });
       
       // Save to database
@@ -116,7 +143,9 @@ export const useAssignGuide = (tourId: string) => {
         updatedGroups
       );
       
-      console.log("Database update result:", updateSuccess ? "Success" : "Failed");
+      console.log("PARTICIPANTS PRESERVATION: Database update result:", 
+        updateSuccess ? "Success" : "Failed"
+      );
       
       // Update UI based on result
       await handleUIUpdates(tourId, queryClient, actualGuideId, guideName, updateSuccess);
@@ -137,9 +166,29 @@ export const useAssignGuide = (tourId: string) => {
           participantCount: existingParticipants.length // Include participant count in modification record
         });
         
-        // Force a refresh to ensure data consistency
+        // Force a refresh to ensure data consistency, but don't lose participants
         setTimeout(() => {
-          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+          // Use a custom invalidation that preserves participants
+          queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+            if (!oldData) return null;
+            
+            // Deep clone the data to avoid reference issues
+            const newData = JSON.parse(JSON.stringify(oldData));
+            
+            // Update the specific group data while preserving participants
+            if (newData.tourGroups && newData.tourGroups[groupIndex]) {
+              newData.tourGroups[groupIndex].guideId = actualGuideId;
+              newData.tourGroups[groupIndex].name = groupName;
+              
+              // CRITICAL FIX: Preserve participants if they exist
+              if (!Array.isArray(newData.tourGroups[groupIndex].participants) || 
+                  newData.tourGroups[groupIndex].participants.length === 0) {
+                newData.tourGroups[groupIndex].participants = existingParticipants;
+              }
+            }
+            
+            return newData;
+          });
         }, 1000);
         
         return true;

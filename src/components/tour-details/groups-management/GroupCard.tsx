@@ -60,7 +60,16 @@ export const GroupCard = ({
 
   // Update localParticipants when group.participants changes
   useEffect(() => {
-    console.log(`COUNTING: GroupCard[${groupIndex}] participants update:`, group.participants);
+    console.log(`PARTICIPANTS PRESERVATION: GroupCard[${groupIndex}] participants update:`, {
+      hasParticipantsArray: Array.isArray(group.participants),
+      participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
+      groupSize: group.size,
+      groupChildCount: group.childCount,
+      participantsDetails: Array.isArray(group.participants) 
+        ? group.participants.map(p => ({name: p.name, count: p.count, childCount: p.childCount})) 
+        : []
+    });
+    
     if (Array.isArray(group.participants)) {
       setLocalParticipants(group.participants);
     } else {
@@ -77,14 +86,20 @@ export const GroupCard = ({
     }
   };
 
-  // CRITICAL FIX: Calculate accurate counts from participants array when available
-  const totalParticipants = Array.isArray(localParticipants) && localParticipants.length > 0
-    ? localParticipants.reduce((sum, p) => sum + (p.count || 1), 0)
-    : group.size || 0;
-    
-  const childCount = Array.isArray(localParticipants) && localParticipants.length > 0
-    ? localParticipants.reduce((sum, p) => sum + (p.childCount || 0), 0)
-    : group.childCount || 0;
+  // CRITICAL FIX: Calculate accurate counts with fallbacks to ensure consistency
+  // Priority: 1. participants array data, 2. group size/childCount properties
+  let totalParticipants = 0;
+  let childCount = 0;
+  
+  // Use participants array if available and populated
+  if (Array.isArray(localParticipants) && localParticipants.length > 0) {
+    totalParticipants = localParticipants.reduce((sum, p) => sum + (p.count || 1), 0);
+    childCount = localParticipants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+  } else {
+    // Fall back to group properties when participants array isn't available or empty
+    totalParticipants = group.size || 0;
+    childCount = group.childCount || 0;
+  }
   
   // Calculate adult count
   const adultCount = totalParticipants - childCount;
@@ -93,20 +108,22 @@ export const GroupCard = ({
   const displayParticipants = formatParticipantCount(totalParticipants, childCount);
 
   // Log accurate counts for debugging
-  console.log(`COUNTING: GroupCard[${groupIndex}] calculations:`, {
+  console.log(`PARTICIPANTS PRESERVATION: GroupCard[${groupIndex}] calculations:`, {
     groupName: group.name || `Group ${groupIndex + 1}`,
     totalParticipants,
     childCount,
     adultCount,
     displayParticipants,
-    participantsArray: Array.isArray(localParticipants) ? localParticipants.length : 'N/A',
+    hasParticipantsArray: Array.isArray(localParticipants),
+    participantsLength: Array.isArray(localParticipants) ? localParticipants.length : 'N/A',
+    participantsDisplay: `(${Array.isArray(localParticipants) ? localParticipants.length : 0})`,
     participantsDetails: Array.isArray(localParticipants) 
       ? localParticipants.map(p => ({
           name: p.name,
           count: p.count || 1,
           childCount: p.childCount || 0
         })) 
-      : 'N/A'
+      : []
   });
 
   return (
