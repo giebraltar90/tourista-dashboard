@@ -19,18 +19,16 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 /**
  * Map special guide IDs to their actual UUID values or return UUID as is
  * This function doesn't throw errors, it just returns the input if mapping fails
- * 
- * NOTE: This function is kept for backward compatibility but should not be used
- * for new code. All guide IDs should be proper UUIDs.
  */
 export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any): string | null => {
   if (!guideId || guideId === "_none") return null;
   
-  console.log("DEPRECATED - mapSpecialGuideIdToUuid should not be used. All guide IDs should be UUIDs. Received:", { 
+  console.log("mapSpecialGuideIdToUuid called with:", { 
     guideId, 
-    isUuid: isValidUuid(guideId),
     tourInfo: tour ? {
-      guideIds: [tour.guide1Id, tour.guide2Id, tour.guide3Id].filter(Boolean)
+      guide1Id: tour.guide1Id,
+      guide2Id: tour.guide2Id,
+      guide3Id: tour.guide3Id
     } : 'Tour data not available'
   });
   
@@ -39,13 +37,28 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
     return guideId;
   }
   
-  // If there's no tour data or not a special ID, just return the guide ID as is
-  if (!tour || !isSpecialGuideId(guideId)) return guideId;
+  // If there's no tour data, just return null for special IDs
+  if (!tour) return null;
   
-  // This code is deprecated and should not be used for new features
-  // We are only keeping it for backward compatibility
-  console.error("Special guide IDs like 'guide1' are no longer supported. Use UUID values instead.");
-  return guideId;
+  // Map special guide IDs to their UUID values
+  if (guideId === "guide1" && tour.guide1Id && isValidUuid(tour.guide1Id)) {
+    console.log(`Mapped guide1 to UUID: ${tour.guide1Id}`);
+    return tour.guide1Id;
+  }
+  
+  if (guideId === "guide2" && tour.guide2Id && isValidUuid(tour.guide2Id)) {
+    console.log(`Mapped guide2 to UUID: ${tour.guide2Id}`);
+    return tour.guide2Id;
+  }
+  
+  if (guideId === "guide3" && tour.guide3Id && isValidUuid(tour.guide3Id)) {
+    console.log(`Mapped guide3 to UUID: ${tour.guide3Id}`);
+    return tour.guide3Id;
+  }
+  
+  // If we couldn't map the ID, return null
+  console.error(`Could not map special guide ID "${guideId}" to UUID - no matching ID found in tour data`);
+  return null;
 };
 
 /**

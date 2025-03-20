@@ -9,6 +9,7 @@ import { Users, UserCheck, UserX } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { mapSpecialGuideIdToUuid, isValidUuid } from "@/services/api/utils/guidesUtils";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
@@ -63,9 +64,24 @@ export const TourGroupGuide = ({
     setIsSelecting(false);
     
     try {
-      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex} (display number ${groupDisplayNumber})`);
-      // Fix: Pass only the two required arguments to assignGuide
-      const success = await assignGuide(groupIndex, guideId);
+      // Map special guide IDs (like guide1) to actual UUIDs
+      const actualGuideId = guideId === "_none" ? null : mapSpecialGuideIdToUuid(guideId, tour);
+      
+      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex} (display number ${groupDisplayNumber})`, {
+        originalId: guideId,
+        mappedId: actualGuideId,
+        isValidUuid: actualGuideId ? isValidUuid(actualGuideId) : false
+      });
+      
+      // Check if we have a valid UUID or null (for unassign)
+      if (guideId !== "_none" && actualGuideId === null) {
+        toast.error(`Cannot assign guide: Could not map "${guideId}" to a valid UUID`);
+        setIsAssigning(false);
+        return;
+      }
+      
+      // Now pass the mapped UUID to assignGuide
+      const success = await assignGuide(groupIndex, actualGuideId);
       
       if (!success) {
         toast.error("Failed to assign guide");

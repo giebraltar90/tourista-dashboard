@@ -20,7 +20,7 @@ export const useAssignGuide = (tourId: string) => {
   /**
    * Assign a guide to a specific group
    */
-  const assignGuide = useCallback(async (groupIndex: number, guideId?: string) => {
+  const assignGuide = useCallback(async (groupIndex: number, guideId?: string | null) => {
     try {
       if (!tour) {
         console.error("Cannot assign guide: Tour data not available");

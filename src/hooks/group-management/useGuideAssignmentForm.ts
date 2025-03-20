@@ -6,7 +6,7 @@ import { z } from "zod";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "./useAssignGuide";
 import { toast } from "sonner";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -27,6 +27,7 @@ interface UseGuideAssignmentFormProps {
   guides: GuideOption[];
   currentGuideId?: string;
   onSuccess: () => void;
+  tour?: any; // Pass tour data for mapping guide IDs
 }
 
 export const useGuideAssignmentForm = ({
@@ -34,7 +35,8 @@ export const useGuideAssignmentForm = ({
   groupIndex,
   guides,
   currentGuideId,
-  onSuccess
+  onSuccess,
+  tour
 }: UseGuideAssignmentFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
@@ -75,23 +77,38 @@ export const useGuideAssignmentForm = ({
     try {
       setIsSubmitting(true);
       
-      // Validate guide ID if it's not "_none" - must be a valid UUID
-      if (values.guideId && values.guideId !== "_none" && !isValidUuid(values.guideId)) {
-        console.error(`Invalid guide ID format selected: ${values.guideId}. Must be a valid UUID.`);
-        toast.error("Cannot assign guide: Invalid guide ID format");
-        setIsSubmitting(false);
-        return;
+      // Map special guide IDs (like guide1) to actual UUIDs if we have tour data
+      let guideIdToAssign: string | null = values.guideId as string;
+      
+      if (guideIdToAssign !== "_none") {
+        // If it's not a UUID, try to map it to one using the tour data
+        if (!isValidUuid(guideIdToAssign)) {
+          guideIdToAssign = mapSpecialGuideIdToUuid(guideIdToAssign, tour);
+          console.log("Mapped special guide ID to UUID:", { 
+            original: values.guideId, 
+            mapped: guideIdToAssign 
+          });
+          
+          // If mapping failed, show an error
+          if (guideIdToAssign === null) {
+            console.error(`Failed to map special guide ID "${values.guideId}" to a valid UUID`);
+            toast.error("Cannot assign guide: Could not map to a valid guide ID");
+            setIsSubmitting(false);
+            return;
+          }
+        }
       }
       
       console.log("Assigning guide:", { 
         groupIndex, 
-        guideId: values.guideId,
+        guideId: guideIdToAssign,
+        originalGuideId: values.guideId,
         currentGuideId,
         selectedGuide: guides.find(g => g.id === values.guideId)?.name
       });
       
       // Call the assign guide function with the selected guide ID
-      const success = await assignGuide(groupIndex, values.guideId);
+      const success = await assignGuide(groupIndex, guideIdToAssign);
       
       if (success) {
         // Update the current value to match the form

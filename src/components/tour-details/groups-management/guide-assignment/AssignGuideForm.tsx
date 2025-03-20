@@ -4,9 +4,10 @@ import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectField } from "./GuideSelectField";
 import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useTourById } from "@/hooks/tourData/useTourById";
 
 interface GuideOption {
   id: string;
@@ -31,6 +32,7 @@ export const AssignGuideForm = ({
 }: AssignGuideFormProps) => {
   // Store processed guides in state to prevent re-processing on every render
   const [processedGuides, setProcessedGuides] = useState<GuideOption[]>([]);
+  const { data: tour } = useTourById(tourId);
   
   // Process guides only once when the component mounts or guides change
   useEffect(() => {
@@ -71,7 +73,8 @@ export const AssignGuideForm = ({
     groupIndex,
     guides: processedGuides, // Use processed guides for form handling
     currentGuideId,
-    onSuccess
+    onSuccess,
+    tour // Pass tour data for mapping guide IDs
   });
   
   return (
