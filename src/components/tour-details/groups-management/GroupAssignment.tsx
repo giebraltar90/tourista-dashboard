@@ -7,7 +7,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideInfo, useGuideData } from "@/hooks/guides";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { GroupCard } from "./GroupCard";
 import { AssignGuideDialog } from "./dialogs/AssignGuideDialog";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
@@ -26,6 +26,18 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [availableGuides, setAvailableGuides] = useState<any[]>([]);
+  
+  // Use a stable reference for the groups to prevent reordering during renders
+  const stableTourGroups = useMemo(() => {
+    if (!tour.tourGroups) return [];
+    
+    // Create a copy of the groups with their original indices preserved
+    return tour.tourGroups.map((group, index) => ({
+      ...group,
+      originalIndex: index,
+      displayName: group.name || `Group ${index + 1}`
+    }));
+  }, [tour.tourGroups]);
   
   // Process guides once when component loads or dependencies change
   useEffect(() => {
@@ -85,19 +97,13 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
           <div className="space-y-4 pt-2">
             <h3 className="text-sm font-medium">Current Group Assignments</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tour.tourGroups.map((group, index) => {
+              {stableTourGroups.map((group) => {
+                const index = group.originalIndex;
                 const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
-                console.log(`Group ${index} guide info:`, { 
-                  groupName: group.name, 
-                  groupId: group.id,
-                  guideId: group.guideId, 
-                  assignedGuideName: guideName,
-                  originalGuideData: group.guideId ? `Found: ${!!tour.tourGroups[index].guideId}` : 'None'
-                });
                 
                 return (
                   <GroupCard
-                    key={index}
+                    key={group.id || index}
                     group={group}
                     groupIndex={index}
                     tour={tour}

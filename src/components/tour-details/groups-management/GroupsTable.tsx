@@ -51,11 +51,20 @@ export const GroupsTable = ({
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
-          // Use the actual group name or a sequential fallback
-          const groupDisplayName = group.name || `Group ${index + 1}`;
+          // Extract the original group number from the name or use the index as fallback
+          // This maintains consistent group naming regardless of rendering order
+          let groupNumber = index + 1;
+          if (group.name) {
+            const match = group.name.match(/Group (\d+)/);
+            if (match && match[1]) {
+              groupNumber = parseInt(match[1], 10);
+            }
+          }
+          
+          const groupDisplayName = `Group ${groupNumber}`;
           
           return (
-            <TableRow key={index}>
+            <TableRow key={group.id || index}>
               <TableCell className="font-medium">
                 {groupDisplayName}{isGuideAssigned ? ` (${guideName})` : ''}
               </TableCell>

@@ -38,10 +38,12 @@ export const findGuideName = (
 /**
  * Generate a group name based on guide assignment and group index
  * Ensures each group gets a unique sequential number (Group 1, Group 2, etc.)
+ * This preserves the original group index in the name
  */
-export const generateGroupName = (existingGroups: any[], newGroupIndex: number): string => {
-  // Always use sequential numbering starting from 1
-  return `Group ${newGroupIndex + 1}`;
+export const generateGroupName = (existingGroups: any[], groupIndex: number): string => {
+  // Use the group's index position to generate a name (adding 1 for human-readable numbering)
+  // This ensures that even if groups are reordered, they retain their original "Group X" name
+  return `Group ${groupIndex + 1}`;
 };
 
 /**

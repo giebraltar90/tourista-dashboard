@@ -1,10 +1,9 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, UserCheck, UserX } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -44,6 +43,15 @@ export const TourGroupGuide = ({
     ? `${totalGroupSize - childCount}+${childCount}` 
     : totalGroupSize;
 
+  // Extract group number from the name to keep consistent numbering
+  let groupDisplayNumber = groupIndex + 1;
+  if (group?.name) {
+    const match = group.name.match(/Group (\d+)/);
+    if (match && match[1]) {
+      groupDisplayNumber = parseInt(match[1], 10);
+    }
+  }
+  
   const handleAssignGuide = async (guideId: string) => {
     if (!tour?.id) {
       toast.error("Cannot assign guide: Missing tour ID");
@@ -74,7 +82,7 @@ export const TourGroupGuide = ({
   return (
     <div className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
       <div className="flex justify-between items-center mb-3">
-        <h3 className="font-medium text-base">Group {groupIndex + 1}</h3>
+        <h3 className="font-medium text-base">Group {groupDisplayNumber}</h3>
         <Badge variant="outline" className="bg-blue-50">
           {formattedParticipantCount} {totalGroupSize === 1 ? 'person' : 'people'}
         </Badge>
