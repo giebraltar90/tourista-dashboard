@@ -60,7 +60,7 @@ export const GroupCard = ({
 
   // Update localParticipants when group.participants changes
   useEffect(() => {
-    console.log(`PARTICIPANTS PRESERVATION: GroupCard[${groupIndex}] participants update:`, {
+    console.log(`BUGFIX: GroupCard[${groupIndex}] participants update:`, {
       hasParticipantsArray: Array.isArray(group.participants),
       participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
       groupSize: group.size,
@@ -86,16 +86,18 @@ export const GroupCard = ({
     }
   };
 
-  // CRITICAL FIX: Calculate accurate counts with fallbacks to ensure consistency
-  // Priority: 1. participants array data, 2. group size/childCount properties
+  // BUGFIX: Calculate accurate counts by directly counting participants
   let totalParticipants = 0;
   let childCount = 0;
   
   // Use participants array if available and populated
   if (Array.isArray(localParticipants) && localParticipants.length > 0) {
-    totalParticipants = localParticipants.reduce((sum, p) => sum + (p.count || 1), 0);
-    childCount = localParticipants.reduce((sum, p) => sum + (p.childCount || 0), 0);
-  } else {
+    // Count each participant directly
+    for (const participant of localParticipants) {
+      totalParticipants += participant.count || 1;
+      childCount += participant.childCount || 0;
+    }
+  } else if (group.size) {
     // Fall back to group properties when participants array isn't available or empty
     totalParticipants = group.size || 0;
     childCount = group.childCount || 0;
@@ -108,22 +110,14 @@ export const GroupCard = ({
   const displayParticipants = formatParticipantCount(totalParticipants, childCount);
 
   // Log accurate counts for debugging
-  console.log(`PARTICIPANTS PRESERVATION: GroupCard[${groupIndex}] calculations:`, {
+  console.log(`BUGFIX: GroupCard[${groupIndex}] calculations:`, {
     groupName: group.name || `Group ${groupIndex + 1}`,
     totalParticipants,
     childCount,
     adultCount,
     displayParticipants,
     hasParticipantsArray: Array.isArray(localParticipants),
-    participantsLength: Array.isArray(localParticipants) ? localParticipants.length : 'N/A',
-    participantsDisplay: `(${Array.isArray(localParticipants) ? localParticipants.length : 0})`,
-    participantsDetails: Array.isArray(localParticipants) 
-      ? localParticipants.map(p => ({
-          name: p.name,
-          count: p.count || 1,
-          childCount: p.childCount || 0
-        })) 
-      : []
+    participantsLength: Array.isArray(localParticipants) ? localParticipants.length : 'N/A'
   });
 
   return (

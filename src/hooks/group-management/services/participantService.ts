@@ -1,3 +1,4 @@
+
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -38,31 +39,31 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
     return 0;
   }
   
-  console.log("ENHANCED DEBUG: calculateTotalParticipants input:", {
-    groupsCount: groups.length,
-    groupDetails: groups.map(g => ({
-      id: g.id,
-      name: g.name,
-      size: g.size,
-      hasParticipants: Array.isArray(g.participants),
-      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0
-    }))
-  });
+  // BUGFIX: Count each actual participant for accurate totals
+  let total = 0;
   
-  // CRITICAL FIX: Calculate total from participants arrays when available, fall back to size property
-  const total = groups.reduce((total, group) => {
-    // If we have a participants array, use that for the most accurate count
+  for (const group of groups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
-      const participantsCount = group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
-      console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${participantsCount} participants from array`);
-      return total + participantsCount;
+      // Count directly from participants array
+      for (const participant of group.participants) {
+        total += participant.count || 1;
+      }
+      
+      console.log(`BUGFIX: calculateTotalParticipants group ${group.name || 'unnamed'} direct calculation:`, {
+        directTotal: group.participants.reduce((sum, p) => sum + (p.count || 1), 0),
+        participantCount: group.participants.length
+      });
+    } else if (group.size) {
+      // Only fallback to size properties when absolutely necessary
+      console.log(`BUGFIX: calculateTotalParticipants no participants for group ${group.name || 'unnamed'}, using size:`, {
+        size: group.size
+      });
+      
+      total += group.size;
     }
-    // Otherwise fall back to the group size property
-    console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${group.size || 0} participants from size property`);
-    return total + (group.size || 0);
-  }, 0);
+  }
   
-  console.log("ENHANCED DEBUG: Total participants calculation result:", total);
+  console.log("BUGFIX: calculateTotalParticipants final total:", total);
   
   return total;
 };
@@ -76,24 +77,31 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
     return 0;
   }
   
-  console.log("ENHANCED DEBUG: calculateTotalChildCount input:", {
-    groupsCount: groups.length
-  });
+  // BUGFIX: Count each actual child participant for accurate totals
+  let totalChildren = 0;
   
-  // CRITICAL FIX: Calculate from participants arrays when available, fall back to childCount property
-  const totalChildren = groups.reduce((total, group) => {
-    // If we have a participants array, use that for the most accurate count
+  for (const group of groups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
-      const childCount = group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
-      console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${childCount} children from array`);
-      return total + childCount;
+      // Count directly from participants array
+      for (const participant of group.participants) {
+        totalChildren += participant.childCount || 0;
+      }
+      
+      console.log(`BUGFIX: calculateTotalChildCount group ${group.name || 'unnamed'} direct calculation:`, {
+        directChildren: group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0),
+        participantCount: group.participants.length
+      });
+    } else if (group.childCount) {
+      // Only fallback to childCount property when absolutely necessary
+      console.log(`BUGFIX: calculateTotalChildCount no participants for group ${group.name || 'unnamed'}, using childCount:`, {
+        childCount: group.childCount
+      });
+      
+      totalChildren += group.childCount;
     }
-    // Otherwise fall back to the group childCount property
-    console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${group.childCount || 0} children from childCount property`);
-    return total + (group.childCount || 0);
-  }, 0);
+  }
   
-  console.log("ENHANCED DEBUG: Total child count calculation result:", totalChildren);
+  console.log("BUGFIX: calculateTotalChildCount final total:", totalChildren);
   
   return totalChildren;
 };

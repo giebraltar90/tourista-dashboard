@@ -2,8 +2,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
-import { ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { useState } from "react";
 
@@ -29,19 +27,6 @@ export const TourGroupsSection = ({
   const toggleGroupExpanded = (groupId: string) => {
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
   };
-  
-  // ENHANCED DEBUG: Log all tour groups
-  console.log("ENHANCED DEBUG: TourGroupsSection tour groups:", {
-    groupsCount: tourGroups.length,
-    groups: tourGroups.map(g => ({
-      id: g.id,
-      name: g.name,
-      guideId: g.guideId,
-      size: g.size,
-      hasParticipants: Array.isArray(g.participants),
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
-    }))
-  });
 
   return (
     <Card>
@@ -69,7 +54,7 @@ export const TourGroupsSection = ({
                       <h3 className="font-medium">{group.name || `Group ${index + 1}`}</h3>
                     </div>
                     <div className="flex items-center">
-                      <div className="text-sm text-muted-foreground mr-4">
+                      <div className="text-sm text-muted-foreground">
                         {guideName ? (
                           <span className="font-medium">{guideName}</span>
                         ) : (

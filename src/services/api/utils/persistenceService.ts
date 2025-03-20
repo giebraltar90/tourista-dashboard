@@ -18,7 +18,7 @@ export const persistGuideAssignmentChanges = async (
   let updateSuccess = false;
   
   // Log all parameters for debugging
-  console.log("PARTICIPANTS PRESERVATION: persistGuideAssignmentChanges called with:", { 
+  console.log("BUGFIX: persistGuideAssignmentChanges called with:", { 
     tourId, 
     groupId, 
     actualGuideId, 
@@ -47,12 +47,12 @@ export const persistGuideAssignmentChanges = async (
     return false;
   }
   
-  // Extract participants from the target group for preservation
+  // BUGFIX: Extract participants from the target group for preservation
   const participantsToPreserve = Array.isArray(targetGroup.participants) 
     ? targetGroup.participants 
     : [];
     
-  console.log("PARTICIPANTS PRESERVATION: Participants to preserve:", {
+  console.log("BUGFIX: Participants to preserve:", {
     groupId,
     count: participantsToPreserve.length,
     details: participantsToPreserve
@@ -125,7 +125,7 @@ export const persistGuideAssignmentChanges = async (
           sanitizedGroup.guideId = actualGuideId;
           sanitizedGroup.name = groupName;
           
-          // CRITICAL: Ensure the group maintains its original participants
+          // BUGFIX: Ensure the group maintains its original participants
           if (!Array.isArray(sanitizedGroup.participants) || sanitizedGroup.participants.length === 0) {
             sanitizedGroup.participants = participantsToPreserve;
           }
@@ -134,15 +134,21 @@ export const persistGuideAssignmentChanges = async (
         // Before sending to database, set guide_id field for database column
         sanitizedGroup.guide_id = sanitizedGroup.guideId;
         
-        // CRITICAL: Make sure participants array is preserved for all groups
+        // BUGFIX: Make sure participants array is preserved for all groups
         if (!Array.isArray(sanitizedGroup.participants)) {
           sanitizedGroup.participants = [];
         }
         
-        // Ensure size and childCount are consistent with participants array
+        // BUGFIX: Ensure size and childCount are consistent with participants array
         if (Array.isArray(sanitizedGroup.participants) && sanitizedGroup.participants.length > 0) {
-          const calculatedSize = sanitizedGroup.participants.reduce((sum, p) => sum + (p.count || 1), 0);
-          const calculatedChildCount = sanitizedGroup.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+          // Count each participant directly for accurate totals
+          let calculatedSize = 0;
+          let calculatedChildCount = 0;
+          
+          for (const participant of sanitizedGroup.participants) {
+            calculatedSize += participant.count || 1;
+            calculatedChildCount += participant.childCount || 0;
+          }
           
           // Only update if we have values calculated from participants
           if (calculatedSize > 0) {
@@ -152,7 +158,7 @@ export const persistGuideAssignmentChanges = async (
           sanitizedGroup.childCount = calculatedChildCount;
         }
         
-        console.log(`PARTICIPANTS PRESERVATION: Group ${sanitizedGroup.id} after sanitization:`, {
+        console.log(`BUGFIX: Group ${sanitizedGroup.id} after sanitization:`, {
           name: sanitizedGroup.name,
           participantsCount: Array.isArray(sanitizedGroup.participants) 
             ? sanitizedGroup.participants.length 

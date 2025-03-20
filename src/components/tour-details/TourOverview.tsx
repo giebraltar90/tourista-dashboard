@@ -41,22 +41,24 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     groupsCount: tourGroups.length
   });
   
-  // CRITICAL FIX: Only calculate from participants array data to ensure consistency
+  // CRITICAL BUGFIX: Directly count participants from the group participants array
   let totalParticipants = 0;
   let totalChildCount = 0;
   
-  // Loop through each group and calculate from the participants array
+  // BUGFIX: Loop through participants and count correctly
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
-      // Sum the count values for participants in this group
-      const groupParticipants = group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
-      const groupChildCount = group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+      // Count directly from participants array
+      for (const participant of group.participants) {
+        totalParticipants += participant.count || 1;
+        totalChildCount += participant.childCount || 0;
+      }
       
-      console.log(`ENHANCED DEBUG: Group ${group.name} participants calculation:`, {
-        id: group.id,
-        name: group.name,
-        groupParticipants,
-        groupChildCount,
+      console.log(`BUGFIX: Group ${group.name} participants calculation:`, {
+        groupId: group.id,
+        groupName: group.name,
+        directTotal: group.participants.reduce((sum, p) => sum + (p.count || 1), 0),
+        directChildCount: group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0),
         participantsCount: group.participants.length,
         participantDetails: group.participants.map(p => ({ 
           name: p.name, 
@@ -64,18 +66,16 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
           childCount: p.childCount || 0 
         }))
       });
-      
-      totalParticipants += groupParticipants;
-      totalChildCount += groupChildCount;
-    } else {
-      // Fallback to group size/childCount if participants array isn't available
-      console.log(`ENHANCED DEBUG: Group ${group.name} size properties:`, {
-        id: group.id,
-        name: group.name,
+    } else if (group.size) {
+      // Fallback to group size/childCount if no participants array is available
+      console.log(`BUGFIX: No participants for group ${group.name}, using size properties:`, {
+        groupId: group.id,
+        groupName: group.name,
         size: group.size || 0,
         childCount: group.childCount || 0
       });
       
+      // Only use size properties when absolutely necessary (no participants array)
       totalParticipants += group.size || 0;
       totalChildCount += group.childCount || 0;
     }
@@ -84,7 +84,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('ENHANCED DEBUG: TourOverview final calculations:', {
+  console.log('BUGFIX: TourOverview final calculations:', {
     totalParticipants,
     totalChildCount, 
     adultCount: totalParticipants - totalChildCount,
