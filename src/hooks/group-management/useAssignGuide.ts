@@ -84,7 +84,7 @@ export const useAssignGuide = (tourId: string) => {
         return newData;
       });
       
-      // Persist the change to the database
+      // Get the group ID
       const groupId = targetGroup.id;
       if (!groupId) {
         toast.error("Cannot assign guide: Group ID is missing");
@@ -95,6 +95,13 @@ export const useAssignGuide = (tourId: string) => {
       const groupName = actualGuideId 
         ? `Group ${groupIndex + 1} (${guideName})` 
         : `Group ${groupIndex + 1}`;
+      
+      console.log("Calling updateGuideInSupabase with:", {
+        tourId,
+        groupId,
+        actualGuideId,
+        groupName
+      });
       
       // Save to database
       const updateSuccess = await updateGuideInSupabase(

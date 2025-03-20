@@ -21,13 +21,20 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
+    // Handle special guide IDs (guide1, guide2, guide3)
+    // Store as null in the database since the guide_id column expects UUID
+    const dbGuideId = guideId && ["guide1", "guide2", "guide3"].includes(guideId) ? null : guideId;
+    
     // Build update object based on what data is provided
-    const updateData: any = { guide_id: guideId };
+    const updateData: any = { guide_id: dbGuideId };
     
     // Only add name to update if it's provided
     if (groupName) {
       updateData.name = groupName;
     }
+
+    // Log the actual data being sent to the database
+    console.log("Sending to database:", updateData);
 
     // Simple direct update with a single attempt
     const { error } = await supabase

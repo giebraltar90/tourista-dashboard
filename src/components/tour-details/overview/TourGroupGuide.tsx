@@ -54,7 +54,12 @@ export const TourGroupGuide = ({
     setIsSelecting(false);
     
     try {
-      await assignGuide(groupIndex, guideId);
+      console.log(`Assigning guide with ID ${guideId} to group ${groupIndex}`);
+      const success = await assignGuide(groupIndex, guideId);
+      
+      if (!success) {
+        toast.error("Failed to assign guide");
+      }
     } catch (error) {
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide: " + (error instanceof Error ? error.message : "Unknown error"));
