@@ -1,18 +1,13 @@
 
 import { GuideOption } from "../types";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { findGuideUuidByName as findGuideUuidByNameFromMapping } from "../services/utils/guideMappingService";
 
 /**
  * Find guide UUID by name in a list of guides
+ * @deprecated Use findGuideUuidByName from guideMappingService instead
  */
-export const findGuideUuidByName = (guideName: string, allGuides: any[]): string | null => {
-  const guide = allGuides.find(g => g.name === guideName);
-  if (guide && isValidUuid(guide.id)) {
-    console.log(`Found guide UUID ${guide.id} for name: ${guideName}`);
-    return guide.id;
-  }
-  return null;
-};
+export const findGuideUuidByName = findGuideUuidByNameFromMapping;
 
 /**
  * Process guide ID for assignment, handling special IDs and mapping to UUIDs
@@ -38,7 +33,7 @@ export const processGuideIdForAssignment = (
   
   if (selectedGuide && selectedGuide.name) {
     // Try to find the UUID by name first
-    const uuidByName = findGuideUuidByName(selectedGuide.name, allGuides);
+    const uuidByName = findGuideUuidByNameFromMapping(selectedGuide.name, allGuides);
     if (uuidByName) {
       console.log(`Mapped guide name ${selectedGuide.name} to UUID: ${uuidByName}`);
       return uuidByName;

@@ -9,7 +9,11 @@ export * from './useAssignGuide';
 export * from './useGuideNameInfo';
 export * from './useGuideAssignmentForm';
 export * from './types';
-export * from './utils/guideAssignmentUtils';
+
+// Explicitly re-export from utils to avoid ambiguity with similarly named functions
+export { processGuideIdForAssignment } from './utils/guideAssignmentUtils';
+
+// Re-export services
 export * from './services/guideAssignmentService';
 export * from './services/utils/validationService';
 export * from './services/utils/namingService';
