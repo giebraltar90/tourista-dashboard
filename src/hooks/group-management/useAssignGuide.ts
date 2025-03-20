@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
+import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -42,7 +43,7 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Special handling for "_none" which means "remove guide"
-      const actualGuideId = guideId === "_none" ? undefined : guideId;
+      const uiGuideId = guideId === "_none" ? undefined : guideId;
       
       // Cancel any in-flight queries to prevent race conditions
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
@@ -57,17 +58,25 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
+      // Map the guide ID from UI format (could be "guide1", etc.) to database format (UUID)
+      // This is a critical fix for database compatibility
+      const actualGuideId = uiGuideId ? mapSpecialGuideIdToUuid(uiGuideId, {
+        guide1Id: latestTour.guide1, 
+        guide2Id: latestTour.guide2, 
+        guide3Id: latestTour.guide3
+      }) : null;
+      
       // Find guide name for display
       let guideName = "Unassigned";
-      if (actualGuideId) {
-        if (actualGuideId === "guide1" && latestTour.guide1) {
+      if (uiGuideId) {
+        if (uiGuideId === "guide1" && latestTour.guide1) {
           guideName = latestTour.guide1;
-        } else if (actualGuideId === "guide2" && latestTour.guide2) {
+        } else if (uiGuideId === "guide2" && latestTour.guide2) {
           guideName = latestTour.guide2;
-        } else if (actualGuideId === "guide3" && latestTour.guide3) {
+        } else if (uiGuideId === "guide3" && latestTour.guide3) {
           guideName = latestTour.guide3;
         } else {
-          const guide = guides.find(g => g.id === actualGuideId);
+          const guide = guides.find(g => g.id === uiGuideId);
           if (guide) {
             guideName = guide.name;
           }
@@ -78,7 +87,8 @@ export const useAssignGuide = (tourId: string) => {
         targetGroupId: targetGroup.id,
         targetGroupName: targetGroup.name,
         currentGuideId: targetGroup.guideId,
-        newGuideId: actualGuideId,
+        newGuideId: uiGuideId,
+        databaseGuideId: actualGuideId,
         guideName
       });
       
@@ -94,9 +104,9 @@ export const useAssignGuide = (tourId: string) => {
           console.log("Applying optimistic update to cache:", {
             groupId: newData.tourGroups[groupIndex].id,
             oldGuideId: newData.tourGroups[groupIndex].guideId,
-            newGuideId: actualGuideId
+            newGuideId: uiGuideId
           });
-          newData.tourGroups[groupIndex].guideId = actualGuideId;
+          newData.tourGroups[groupIndex].guideId = uiGuideId;
         }
         
         return newData;
@@ -110,7 +120,7 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Generate a new group name
-      const groupName = actualGuideId 
+      const groupName = uiGuideId 
         ? `Group ${groupIndex + 1} (${guideName})` 
         : `Group ${groupIndex + 1}`;
       
@@ -133,14 +143,14 @@ export const useAssignGuide = (tourId: string) => {
       
       if (updateSuccess) {
         // Record the modification
-        const modificationDescription = actualGuideId 
+        const modificationDescription = uiGuideId 
           ? `Assigned guide ${guideName} to Group ${groupIndex + 1}` 
           : `Removed guide from Group ${groupIndex + 1}`;
           
         await addModification(modificationDescription, {
           groupIndex,
           groupId,
-          guideId: actualGuideId,
+          guideId: uiGuideId,
           guideName
         });
         
@@ -151,7 +161,7 @@ export const useAssignGuide = (tourId: string) => {
           refetch();
         }, 500);
         
-        toast.success(actualGuideId 
+        toast.success(uiGuideId 
           ? `Guide ${guideName} assigned to Group ${groupIndex + 1}` 
           : `Guide removed from Group ${groupIndex + 1}`
         );

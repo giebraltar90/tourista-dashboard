@@ -16,15 +16,33 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 };
 
 /**
- * Sanitize guide ID for database storage
- * - For special IDs (guide1, guide2, guide3), the database expects a string value
- * - For _none, return null
- * - For UUIDs and other formats, return as is
+ * Map special guide IDs to their actual UUID values from the tour record
+ * This is the key fix: we translate special IDs to real UUIDs before database storage
+ * 
+ * @param guideId The special guide ID (guide1, guide2, guide3) or UUID
+ * @param tour Tour data containing the actual guide UUID values
+ * @returns A valid UUID for database storage or null
  */
-export const sanitizeGuideId = (guideId?: string): string | null => {
+export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any): string | null => {
   if (!guideId || guideId === "_none") return null;
   
-  // Important: Return special guide IDs directly without modification
-  // This ensures "guide1", "guide2", "guide3" are stored as-is in the database
-  return guideId;
+  // Map special guide IDs to their UUID values from the tour record
+  if (guideId === "guide1" && tour?.guide1Id) {
+    return tour.guide1Id;
+  }
+  if (guideId === "guide2" && tour?.guide2Id) {
+    return tour.guide2Id;
+  }
+  if (guideId === "guide3" && tour?.guide3Id) {
+    return tour.guide3Id;
+  }
+  
+  // If it's already a UUID, return it directly
+  if (isValidUuid(guideId)) {
+    return guideId;
+  }
+  
+  // If we get here, we don't have a valid UUID to store
+  console.error("Cannot map guide ID to UUID:", guideId);
+  return null;
 };

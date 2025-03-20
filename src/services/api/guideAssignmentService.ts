@@ -22,16 +22,23 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // Store the guide ID as-is without modification - critical fix
-    // The database column needs to accept both UUIDs and special IDs like 'guide1'
-    const dbGuideId = guideId;
+    // Important: Only store valid UUIDs in the database
+    // "_none" or undefined becomes null, special IDs should have been mapped to UUIDs before this point
+    const dbGuideId = guideId && guideId !== "_none" ? guideId : null;
     
-    // Log the exact type and format of guideId for debugging
+    // Validate that we're storing a UUID or null
+    if (dbGuideId !== null && !isValidUuid(dbGuideId)) {
+      console.error(`Invalid guide ID format for database: ${dbGuideId}. Database expects UUID values.`);
+      return false;
+    }
+    
+    // Log the guide ID details for debugging
     console.log("Guide ID details:", {
       value: guideId,
-      type: typeof guideId,
+      dbValue: dbGuideId,
+      type: typeof dbGuideId,
       isSpecial: guideId ? isSpecialGuideId(guideId) : false,
-      isUuid: guideId ? isValidUuid(guideId) : false
+      isUuid: dbGuideId ? isValidUuid(dbGuideId) : false
     });
     
     // Build update object based on what data is provided
