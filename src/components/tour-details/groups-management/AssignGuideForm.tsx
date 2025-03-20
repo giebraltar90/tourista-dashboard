@@ -1,28 +1,13 @@
 
 import { useState } from "react";
-import { 
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from "@/components/ui/select";
+import { Form } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "@/hooks/group-management";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
+import { GuideSelectField, FormActions } from "./form-components";
 
 interface GuideOption {
   id: string;
@@ -129,73 +114,25 @@ export const AssignGuideForm = ({
     }
   };
   
-  // Filter out any guides with empty ids to avoid the Select.Item error
-  const validGuides = guides ? guides.filter(guide => guide && guide.id && guide.id.trim() !== "") : [];
+  const hasChanges = form.getValues().guideId !== defaultGuideId;
+  const hasCurrentGuide = currentGuideId && currentGuideId !== "_none";
   
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="guideId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Select Guide</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || "_none"}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a guide" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="_none">None (Unassigned)</SelectItem>
-                  {validGuides.map((guide) => (
-                    <SelectItem key={guide.id} value={guide.id}>
-                      <div className="flex items-center">
-                        <span>{guide.name}</span>
-                        {guide.info && guide.info.guideType && (
-                          <Badge variant="outline" className="ml-2 text-xs">
-                            {guide.info.guideType}
-                          </Badge>
-                        )}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
+        <GuideSelectField 
+          form={form} 
+          guides={guides} 
+          defaultValue={defaultGuideId} 
         />
         
-        <div className="flex justify-between pt-2">
-          {currentGuideId && currentGuideId !== "_none" && (
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleRemoveGuide}
-              disabled={isSubmitting}
-            >
-              Remove Guide
-            </Button>
-          )}
-          <div className="flex space-x-2 ml-auto">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={onSuccess}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || form.getValues().guideId === defaultGuideId}
-            >
-              {isSubmitting ? "Saving..." : "Assign Guide"}
-            </Button>
-          </div>
-        </div>
+        <FormActions 
+          isSubmitting={isSubmitting}
+          onCancel={onSuccess}
+          onRemove={handleRemoveGuide}
+          hasCurrentGuide={hasCurrentGuide}
+          hasChanges={hasChanges}
+        />
       </form>
     </Form>
   );

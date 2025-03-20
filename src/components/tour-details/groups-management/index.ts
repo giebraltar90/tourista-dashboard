@@ -19,3 +19,4 @@ export * from './GroupCapacityInfo';
 export * from './DeleteGroupDialog';
 export * from './GroupDialogs';
 export * from './AddGroupButton';
+export * from './form-components';
