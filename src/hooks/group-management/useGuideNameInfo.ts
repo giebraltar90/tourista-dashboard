@@ -30,7 +30,7 @@ export const useGuideNameInfo = (
     
     // Look for primary guides first
     // Check guide1
-    if (guideId === "guide1" || guideId === tour.guide1 || (tour.guide1 && guideId === tour.guide1_id)) {
+    if (guideId === "guide1" || guideId === tour.guide1) {
       return {
         name: tour.guide1 || "Guide 1",
         info: guide1Info
@@ -38,7 +38,7 @@ export const useGuideNameInfo = (
     }
     
     // Check guide2
-    if (guideId === "guide2" || guideId === tour.guide2 || (tour.guide2 && guideId === tour.guide2_id)) {
+    if (guideId === "guide2" || guideId === tour.guide2) {
       return {
         name: tour.guide2 || "Guide 2",
         info: guide2Info
@@ -46,7 +46,7 @@ export const useGuideNameInfo = (
     }
     
     // Check guide3
-    if (guideId === "guide3" || guideId === tour.guide3 || (tour.guide3 && guideId === tour.guide3_id)) {
+    if (guideId === "guide3" || guideId === tour.guide3) {
       return {
         name: tour.guide3 || "Guide 3",
         info: guide3Info
@@ -75,11 +75,6 @@ export const useGuideNameInfo = (
           };
         }
       }
-      
-      // If all primary guides are checked but UUID still not found, check if it matches any primary guide ID
-      if (tour.guide1_id === guideId) return { name: tour.guide1 || "Unknown Guide", info: guide1Info };
-      if (tour.guide2_id === guideId) return { name: tour.guide2 || "Unknown Guide", info: guide2Info };
-      if (tour.guide3_id === guideId) return { name: tour.guide3 || "Unknown Guide", info: guide3Info };
     }
     
     // If we still haven't found a match, just use the ID as a fallback

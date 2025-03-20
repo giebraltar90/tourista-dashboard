@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus } from "lucide-react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
+import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 
 interface GroupCardProps {
@@ -14,7 +14,15 @@ interface GroupCardProps {
   guide1Info: GuideInfo | null;
   guide2Info: GuideInfo | null;
   guide3Info: GuideInfo | null;
-  onAssignGuide: (index: number) => void;
+  onAssignGuide?: (index: number) => void;
+  // Adding missing props that are passed from GroupsGrid
+  onDrop?: (e: React.DragEvent, toGroupIndex: number) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDragStart?: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
+  onMoveClick?: (data: { participant: VentrataParticipant, fromGroupIndex: number }) => void;
+  selectedParticipant?: { participant: VentrataParticipant, fromGroupIndex: number } | null;
+  handleMoveParticipant?: (toGroupIndex: number) => void;
+  isMovePending?: boolean;
 }
 
 export const GroupCard = ({
@@ -24,7 +32,14 @@ export const GroupCard = ({
   guide1Info,
   guide2Info,
   guide3Info,
-  onAssignGuide
+  onAssignGuide,
+  onDrop,
+  onDragOver,
+  onDragStart,
+  onMoveClick,
+  selectedParticipant,
+  handleMoveParticipant,
+  isMovePending
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
@@ -75,13 +90,15 @@ export const GroupCard = ({
               )}
             </p>
           </div>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => onAssignGuide(groupIndex)}
-          >
-            {isGuideAssigned ? "Change Guide" : "Assign Guide"}
-          </Button>
+          {onAssignGuide && (
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => onAssignGuide(groupIndex)}
+            >
+              {isGuideAssigned ? "Change Guide" : "Assign Guide"}
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
