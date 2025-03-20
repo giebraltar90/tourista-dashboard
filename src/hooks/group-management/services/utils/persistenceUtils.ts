@@ -1,4 +1,3 @@
-
 import { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
@@ -65,20 +64,18 @@ export const persistGuideAssignmentChanges = async (
     return false;
   }
   
-  // Determine what to save in the database
-  // CRITICAL: Use sanitizeGuideId to ensure proper database storage
-  // This handles special IDs like guide1, guide2, guide3 properly
-  const safeGuideId = sanitizeGuideId(actualGuideId);
-  
-  console.log(`Persisting guide assignment: ${actualGuideId} (sanitized: ${safeGuideId}) for group ${groupId} in tour ${tourId}`);
+  // IMPORTANT: Special guide IDs (guide1, guide2, guide3) are now preserved as-is
+  // This is a critical fix to ensure database consistency
+  console.log(`Persisting guide assignment: ${actualGuideId} for group ${groupId} in tour ${tourId}`);
   
   // First attempt: direct Supabase update with the most reliable method
   try {
     // Use the improved updateGuideInSupabase method with retry logic
+    // Pass the guide ID directly without sanitization - sanitization happens in the function
     updateSuccess = await updateGuideInSupabase(
       tourId, 
       groupId, 
-      actualGuideId, // Pass the actual ID - sanitization happens in the function
+      actualGuideId, 
       groupName
     );
     
@@ -98,7 +95,7 @@ export const persistGuideAssignmentChanges = async (
       updateSuccess = await persistGuideAssignment(
         tourId, 
         groupId, 
-        actualGuideId, // Pass the actual ID - sanitization happens in the function
+        actualGuideId, 
         groupName
       );
       
@@ -117,7 +114,7 @@ export const persistGuideAssignmentChanges = async (
   if (!updateSuccess) {
     console.log("Falling back to updateTourGroups API as last resort");
     try {
-      // Prepare tour groups for database update - sanitize all guide IDs
+      // Prepare tour groups for database update
       const sanitizedGroups = updatedGroups.map(group => {
         // Create a deep copy to avoid mutating the original
         const sanitizedGroup = {...group};
@@ -127,8 +124,8 @@ export const persistGuideAssignmentChanges = async (
           sanitizedGroup.guideId = actualGuideId;
         }
         
-        // Before sending to database, sanitize the guide ID
-        sanitizedGroup.guide_id = sanitizeGuideId(sanitizedGroup.guideId);
+        // Before sending to database, set guide_id field for database column
+        sanitizedGroup.guide_id = sanitizedGroup.guideId;
         
         return sanitizedGroup;
       });

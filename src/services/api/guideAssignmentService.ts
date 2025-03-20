@@ -22,8 +22,8 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // Handle special guide IDs (guide1, guide2, guide3)
-    // For database storage, use them directly
+    // Store guideId directly in the database, preserving special IDs like "guide1"
+    // This is the critical fix - we're not modifying the guideId value anymore
     let dbGuideId = guideId;
     
     // Log the exact type and format of guideId for debugging

@@ -24,7 +24,14 @@ export const updateTourGroups = async (
         for (const group of updatedGroups) {
           // Check if the group has an id (existing group) or needs to be created
           if (group.id) {
-            // Sanitize guide ID for database storage
+            // Debug log to identify guide ID issues
+            console.log(`Processing group ${group.id} with guideId:`, {
+              rawGuideId: group.guideId,
+              isSpecial: isSpecialGuideId(group.guideId),
+              sanitized: sanitizeGuideId(group.guideId)
+            });
+            
+            // Sanitize guide ID for database storage - now preserves "guide1", etc.
             const safeGuideId = sanitizeGuideId(group.guideId);
             
             // Update existing group
