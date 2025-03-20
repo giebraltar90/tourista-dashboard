@@ -8,7 +8,7 @@ import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventr
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { ParticipantItem } from "./ParticipantItem";
 import { ParticipantDropZone } from "./ParticipantDropZone";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -50,11 +50,23 @@ export const GroupCard = ({
   
   const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
   
-  // Get participants for this group - ensure it's always an array
-  const participants = Array.isArray(group.participants) ? group.participants : [];
+  // Ensure participants is always an array
+  const [participants, setParticipants] = useState<VentrataParticipant[]>([]);
   
-  // Debug participants data
-  console.log(`Group ${groupIndex} participants:`, participants);
+  // Debug: Log what's received for this group
+  console.log(`GroupCard[${groupIndex}] rendering with group:`, group);
+  console.log(`GroupCard[${groupIndex}] participants from props:`, group.participants);
+  
+  // Update participants when group changes
+  useEffect(() => {
+    // Normalize participants to always be an array
+    const normalizedParticipants = Array.isArray(group.participants) ? group.participants : [];
+    
+    // Log what we're setting
+    console.log(`GroupCard[${groupIndex}] setting normalized participants:`, normalizedParticipants);
+    
+    setParticipants(normalizedParticipants);
+  }, [group, groupIndex, group.participants]);
 
   // For move operations
   const isDropTarget = selectedParticipant !== null;
@@ -119,7 +131,7 @@ export const GroupCard = ({
               >
                 {showParticipants ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </Button>
-              Participants
+              Participants ({participants.length})
             </h4>
           </div>
           
@@ -135,9 +147,9 @@ export const GroupCard = ({
             >
               <div className="space-y-2 max-h-[300px] overflow-y-auto p-1">
                 {participants && participants.length > 0 ? (
-                  participants.map((participant) => (
+                  participants.map((participant, idx) => (
                     <ParticipantItem
-                      key={participant.id || `participant-${Math.random()}`}
+                      key={participant.id || `participant-${groupIndex}-${idx}`}
                       participant={participant}
                       groupIndex={groupIndex}
                       onDragStart={onDragStart}

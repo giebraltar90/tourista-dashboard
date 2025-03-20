@@ -11,6 +11,8 @@ import { useGroupManagement } from "@/hooks/group-management";
 import { MoveParticipantSheet } from "./MoveParticipantSheet";
 import { toast } from "sonner";
 import { fetchParticipantsForTour } from "@/services/api/tourApi";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
@@ -28,6 +30,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [availableGuides, setAvailableGuides] = useState<any[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Get participant management capabilities
   const {
@@ -47,24 +50,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     if (tour.id) {
       console.log("Loading participants for tour:", tour.id);
       loadParticipants(tour.id);
-      
-      // As a fallback, directly fetch participants
-      const fetchAndPopulate = async () => {
-        try {
-          console.log("Directly fetching participants for tour:", tour.id);
-          const participants = await fetchParticipantsForTour(tour.id);
-          console.log("Fetched participants:", participants);
-          
-          if (participants && participants.length > 0) {
-            toast.success(`Found ${participants.length} participants`);
-          }
-        } catch (error) {
-          console.error("Error fetching participants:", error);
-        }
-      };
-      
-      // Try this after a short delay
-      setTimeout(fetchAndPopulate, 1000);
     }
   }, [tour.id, loadParticipants]);
   
@@ -94,6 +79,23 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   
   console.log("Stable tour groups:", stableTourGroups);
   
+  // Handle manual refresh of participant data
+  const handleRefreshParticipants = async () => {
+    if (!tour.id) return;
+    
+    setIsRefreshing(true);
+    try {
+      console.log("Manually refreshing participants for tour:", tour.id);
+      await loadParticipants(tour.id);
+      toast.success("Participant data refreshed");
+    } catch (error) {
+      console.error("Error refreshing participants:", error);
+      toast.error("Failed to refresh participants");
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+  
   // Process guides once when component loads or dependencies change
   useEffect(() => {
     // Get valid guides for guide selection - ONLY use guides from the database (with valid UUIDs)
@@ -116,17 +118,30 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Group Assignment</CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle>Group & Participant Management</CardTitle>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={handleRefreshParticipants}
+            disabled={isRefreshing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh Participants'}
+          </Button>
+        </div>
       </CardHeader>
       
       <CardContent>
         <div className="space-y-6">
           {/* Display tour groups with their assigned guides and participants */}
           <div className="space-y-4 pt-2">
-            <h3 className="text-sm font-medium">Current Group Assignments</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stableTourGroups.map((group) => {
                 const index = group.originalIndex !== undefined ? group.originalIndex : 0;
+                
+                console.log(`Rendering group ${index}:`, group);
+                console.log(`Group ${index} participants:`, group.participants);
                 
                 return (
                   <GroupCard

@@ -1,124 +1,102 @@
 
+import React from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetClose } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MoveHorizontal, Users, ArrowLeftRight } from "lucide-react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
 
 interface MoveParticipantSheetProps {
   selectedParticipant: {
     participant: VentrataParticipant;
     fromGroupIndex: number;
-  } | null;
+  };
   tourGroups: VentrataTourGroup[];
   onClose: () => void;
   onMove: (toGroupIndex: number) => void;
   isMovePending: boolean;
 }
 
-export const MoveParticipantSheet = ({
+export const MoveParticipantSheet: React.FC<MoveParticipantSheetProps> = ({
   selectedParticipant,
   tourGroups,
   onClose,
   onMove,
   isMovePending
-}: MoveParticipantSheetProps) => {
-  // State to track selected target group
-  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+}) => {
+  // Log what we're working with
+  console.log("MoveParticipantSheet received:", { 
+    selectedParticipant, 
+    tourGroups,
+    isMovePending 
+  });
   
-  // If no participant is selected, don't render the sheet
-  if (!selectedParticipant) {
+  if (!selectedParticipant || !selectedParticipant.participant) {
+    console.error("MoveParticipantSheet missing participant data");
     return null;
   }
   
+  // Get the participant and source group index
   const { participant, fromGroupIndex } = selectedParticipant;
   
-  // Get source group name
-  const sourceGroup = tourGroups[fromGroupIndex];
-  const sourceGroupName = sourceGroup?.name || `Group ${fromGroupIndex + 1}`;
-
-  // Handle move confirmation
-  const confirmMove = () => {
-    if (selectedGroup !== null) {
-      const targetGroupIndex = parseInt(selectedGroup);
-      onMove(targetGroupIndex);
-    }
+  // Get the source group name for display
+  const sourceGroupName = tourGroups[fromGroupIndex]?.name || `Group ${fromGroupIndex + 1}`;
+  
+  const handleMoveToGroup = (toGroupIndex: number) => {
+    console.log(`Moving participant ${participant.id} from group ${fromGroupIndex} to group ${toGroupIndex}`);
+    onMove(toGroupIndex);
   };
-
+  
   return (
-    <Sheet open={true} onOpenChange={() => onClose()}>
+    <Sheet open={!!selectedParticipant} onOpenChange={open => !open && onClose()}>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Move Participant</SheetTitle>
           <SheetDescription>
-            Move {participant.name} ({participant.count} {participant.count === 1 ? 'person' : 'people'}) to another group
+            Select a group to move <strong>{participant.name}</strong> to
           </SheetDescription>
         </SheetHeader>
-        <div className="py-6">
-          <div className="space-y-4">
-            <div className="bg-muted/30 p-4 rounded-md">
-              <div className="font-medium">{participant.name}</div>
-              <div className="text-sm text-muted-foreground">
-                Currently in: {sourceGroupName}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Booking Reference: {participant.bookingRef}
-              </div>
-              <div className="flex items-center mt-2">
-                <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                <span>{participant.count} {participant.count === 1 ? 'person' : 'people'}</span>
-                {participant.childCount ? (
-                  <span className="ml-2 text-blue-600 text-sm">
-                    (incl. {participant.childCount} {participant.childCount === 1 ? 'child' : 'children'})
-                  </span>
-                ) : null}
-              </div>
-            </div>
+        
+        <div className="py-4">
+          <p className="text-sm text-muted-foreground mb-2">
+            Currently in: <span className="font-medium">{sourceGroupName}</span>
+          </p>
+          
+          <div className="mt-4 space-y-2">
+            <h4 className="text-sm font-medium mb-2">Move to:</h4>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Select Destination Group
-              </label>
-              <Select 
-                onValueChange={(value) => setSelectedGroup(value)}
-                disabled={isMovePending}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a group" />
-                </SelectTrigger>
-                <SelectContent>
-                  {tourGroups.map((g, i) => (
-                    i !== fromGroupIndex && (
-                      <SelectItem key={i} value={i.toString()}>
-                        {g.name || `Group ${i + 1}`} ({g.size || 0} {g.size === 1 ? 'person' : 'people'})
-                      </SelectItem>
-                    )
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {tourGroups.map((group, index) => {
+              // Don't show the current group
+              if (index === fromGroupIndex) return null;
+              
+              return (
+                <Button
+                  key={group.id || index}
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => handleMoveToGroup(index)}
+                  disabled={isMovePending}
+                >
+                  {group.name || `Group ${index + 1}`}
+                </Button>
+              );
+            })}
           </div>
         </div>
-        <SheetFooter>
-          <Button 
-            type="submit" 
-            disabled={isMovePending || selectedGroup === null}
-            onClick={confirmMove}
-          >
-            {isMovePending ? (
-              <>
-                <div className="animate-spin mr-2 h-4 w-4 border-2 border-white border-opacity-20 border-t-white rounded-full"></div>
-                Moving...
-              </>
-            ) : (
-              <>
-                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                Move Participant
-              </>
-            )}
-          </Button>
-        </SheetFooter>
+        
+        {isMovePending && (
+          <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+            <div className="flex flex-col items-center space-y-2">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm font-medium">Moving participant...</p>
+            </div>
+          </div>
+        )}
+        
+        <div className="mt-auto pt-6 flex justify-end">
+          <SheetClose asChild>
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          </SheetClose>
+        </div>
       </SheetContent>
     </Sheet>
   );

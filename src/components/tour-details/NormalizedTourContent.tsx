@@ -1,9 +1,12 @@
 
-import React from "react";
-import { TourCardProps } from "@/components/tours/tour-card/types";
-import { GuideInfo } from "@/types/ventrata";
 import { TourHeader } from "./TourHeader";
 import { TourTabs } from "./TourTabs";
+import { TourOverview } from "./TourOverview";
+import { ModificationsTab } from "./ModificationsTab";
+import { TicketsManagement } from "./ticket-management";
+import { useState, useEffect } from "react";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { GuideInfo } from "@/types/ventrata";
 
 interface NormalizedTourContentProps {
   tour: TourCardProps;
@@ -15,59 +18,59 @@ interface NormalizedTourContentProps {
   onTabChange: (value: string) => void;
 }
 
-export const NormalizedTourContent: React.FC<NormalizedTourContentProps> = ({ 
+export const NormalizedTourContent = ({ 
   tour, 
   tourId,
-  guide1Info, 
-  guide2Info, 
+  guide1Info,
+  guide2Info,
   guide3Info,
   activeTab,
   onTabChange
-}) => {
-  // Normalize tour data to ensure all properties exist with proper defaults
-  const normalizedTour = {
-    ...tour,
-    id: tour.id || tourId,
-    date: tour.date instanceof Date ? tour.date : new Date(),
-    location: tour.location || "",
-    tourName: tour.tourName || "",
-    tourType: tour.tourType || "default",
-    startTime: tour.startTime || "",
-    referenceCode: tour.referenceCode || "",
-    guide1: tour.guide1 || "",
-    guide2: tour.guide2 || "",
-    guide3: tour.guide3 || "",
-    tourGroups: Array.isArray(tour.tourGroups) ? tour.tourGroups.map(group => ({
-      id: group.id || "",
-      name: group.name || "",
-      size: group.size || 0,
-      entryTime: group.entryTime || "",
-      guideId: group.guideId,
-      childCount: group.childCount || 0,
-      participants: Array.isArray(group.participants) ? group.participants : []
-    })) : [],
-    numTickets: tour.numTickets || 0,
-    isHighSeason: Boolean(tour.isHighSeason),
-    modifications: Array.isArray(tour.modifications) ? tour.modifications : []
-  };
-
+}: NormalizedTourContentProps) => {
+  console.log("NormalizedTourContent rendering with tour:", tour);
+  
+  // Pass tourGroups to TourTabs to show guide assignments
+  const groupGuides = tour.tourGroups ? tour.tourGroups.map(group => ({
+    name: group.name || "",
+    guideId: group.guideId
+  })) : [];
+  
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-10 py-6 space-y-6">
       <TourHeader 
-        tour={normalizedTour} 
-        guide1Info={guide1Info} 
-        guide2Info={guide2Info} 
-        guide3Info={guide3Info} 
+        tour={tour}
+        tourId={tourId}
       />
       
-      <TourTabs
-        tour={normalizedTour}
-        guide1Info={guide1Info}
-        guide2Info={guide2Info}
-        guide3Info={guide3Info}
-        activeTab={activeTab}
-        onTabChange={onTabChange}
+      <TourTabs 
+        activeValue={activeTab} 
+        onValueChange={onTabChange}
+        tourId={tourId}
+        guide1={tour.guide1 || ""}
+        guide2={tour.guide2 || ""}
+        guide3={tour.guide3 || ""}
+        groupCount={tour.tourGroups?.length || 0}
+        groupGuides={groupGuides}
       />
+      
+      <div className="transition-all duration-200">
+        {activeTab === "overview" && (
+          <TourOverview 
+            tour={tour}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+          />
+        )}
+        
+        {activeTab === "tickets" && (
+          <TicketsManagement tour={tour} />
+        )}
+        
+        {activeTab === "modifications" && (
+          <ModificationsTab tour={tour} />
+        )}
+      </div>
     </div>
   );
 };

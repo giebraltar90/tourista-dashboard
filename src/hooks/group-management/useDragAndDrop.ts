@@ -1,163 +1,157 @@
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { useUpdateTourGroups } from "../tourData/useUpdateTourGroups";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { useQueryClient } from "@tanstack/react-query";
+import { updateParticipant } from "@/services/api/tourApi";
+
+type UpdaterFunction = (
+  fromGroupIndex: number,
+  toGroupIndex: number,
+  participant: VentrataParticipant,
+  currentGroups: VentrataTourGroup[]
+) => VentrataTourGroup[] | null;
 
 export const useDragAndDrop = (
   tourId: string,
-  moveParticipant: (
-    fromGroupIndex: number,
-    toGroupIndex: number,
-    participant: VentrataParticipant,
-    currentGroups: VentrataTourGroup[]
-  ) => VentrataTourGroup[] | null
+  updaterFn: UpdaterFunction
 ) => {
-  const [draggedParticipant, setDraggedParticipant] = useState<{
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  } | null>(null);
+  const [isDragPending, setIsDragPending] = useState(false);
+  const [draggedParticipant, setDraggedParticipant] = useState<VentrataParticipant | null>(null);
+  const [fromGroupIndex, setFromGroupIndex] = useState<number | null>(null);
   
-  const updateTourGroupsMutation = useUpdateTourGroups(tourId);
-  const queryClient = useQueryClient(); // Get queryClient directly
-  
-  const handleDragStart = (
+  // Handler for drag start
+  const handleDragStart = useCallback((
     e: React.DragEvent, 
-    participant: VentrataParticipant, 
-    fromGroupIndex: number
+    participant: VentrataParticipant,
+    fromGroup: number
   ) => {
-    setDraggedParticipant({ participant, fromGroupIndex });
-    e.dataTransfer.setData('application/json', JSON.stringify({ 
-      participant, 
-      fromGroupIndex 
+    console.log("Drag started:", { participant, fromGroup });
+    e.dataTransfer.setData("application/json", JSON.stringify({
+      participant,
+      fromGroupIndex: fromGroup
     }));
     
-    // Set a ghost image effect for better UX
-    const ghostElement = document.createElement('div');
-    ghostElement.classList.add('bg-background', 'p-2', 'rounded', 'border', 'shadow-md');
-    ghostElement.textContent = participant.name;
-    document.body.appendChild(ghostElement);
-    e.dataTransfer.setDragImage(ghostElement, 0, 0);
-    
-    // Remove the ghost element after a short delay
-    setTimeout(() => {
-      document.body.removeChild(ghostElement);
-    }, 0);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // Allow drop
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = async (
+    // Also store in state for safety (in case dataTransfer fails)
+    setDraggedParticipant(participant);
+    setFromGroupIndex(fromGroup);
+  }, []);
+  
+  // Handler for drag over
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    // Necessary to make the element a drop target
+    e.preventDefault();
+  }, []);
+  
+  // Handler for drop
+  const handleDrop = useCallback(async (
     e: React.DragEvent, 
     toGroupIndex: number,
     currentGroups: VentrataTourGroup[],
-    setLocalTourGroups: (groups: VentrataTourGroup[]) => void
+    setGroups: React.Dispatch<React.SetStateAction<VentrataTourGroup[]>>
   ) => {
     e.preventDefault();
+    console.log("Drop detected on group index:", toGroupIndex);
     
-    if (!draggedParticipant) return;
-    
-    const { participant, fromGroupIndex } = draggedParticipant;
-    
-    if (fromGroupIndex === toGroupIndex) {
-      toast.info("Participant is already in this group");
+    // Block during pending operations
+    if (isDragPending) {
+      console.log("Drop ignored - operation already pending");
       return;
     }
     
-    // Make a deep copy of current groups
-    const groupsCopy = JSON.parse(JSON.stringify(currentGroups));
+    let dropData;
     
-    const updatedGroups = moveParticipant(
-      fromGroupIndex,
-      toGroupIndex,
-      participant,
-      groupsCopy
-    );
+    try {
+      // Get data from dataTransfer
+      const jsonData = e.dataTransfer.getData("application/json");
+      if (jsonData) {
+        dropData = JSON.parse(jsonData);
+      }
+    } catch (error) {
+      console.error("Error parsing drag data:", error);
+    }
     
-    if (!updatedGroups) return;
+    // Fallback to state if dataTransfer failed
+    if (!dropData && draggedParticipant && fromGroupIndex !== null) {
+      dropData = {
+        participant: draggedParticipant,
+        fromGroupIndex
+      };
+    }
     
-    // Update local state immediately for a responsive UI
-    setLocalTourGroups(updatedGroups);
-    
-    // Get destination group ID for database update
-    const destGroupId = currentGroups[toGroupIndex].id;
-    
-    if (!destGroupId) {
-      console.error("Missing destination group ID for database update");
-      toast.error("Cannot update database: Missing group information");
+    if (!dropData) {
+      console.error("No drag data available");
       return;
     }
     
-    // Immediately attempt to update the participant in Supabase
-    const { error } = await supabase
-      .from('participants')
-      .update({ group_id: destGroupId })
-      .eq('id', participant.id);
-      
-    if (error) {
-      console.error("Error updating participant in database:", error);
-      toast.error("Failed to update participant's group in database");
-      
-      // Try again with a retry mechanism
-      retryParticipantUpdate(participant.id, destGroupId, 3);
-    } else {
-      console.log(`Successfully updated participant ${participant.id} to group ${destGroupId}`);
-      toast.success(`Moved ${participant.name} to ${updatedGroups[toGroupIndex].name || `Group ${toGroupIndex + 1}`}`);
-      
-      // After a delay, also update the tour groups with our changes
-      setTimeout(() => {
-        // Cancel any in-flight queries before sending our update
-        // Access queryClient directly instead of through mutation context
-        queryClient.cancelQueries({ queryKey: ['tour', tourId] });
-        queryClient.cancelQueries({ queryKey: ['tours'] });
-        
-        // Update tour groups
-        updateTourGroupsMutation.mutate(updatedGroups);
-      }, 500);
+    const { participant, fromGroupIndex: sourceGroupIndex } = dropData;
+    
+    console.log("Drop data:", { participant, sourceGroupIndex, toGroupIndex });
+    
+    // If same group, do nothing
+    if (sourceGroupIndex === toGroupIndex) {
+      console.log("Dropped in same group, ignoring");
+      return;
     }
     
-    setDraggedParticipant(null);
-  };
-  
-  // Retry function for participant updates
-  const retryParticipantUpdate = async (participantId: string, destGroupId: string, retriesLeft: number) => {
-    if (retriesLeft <= 0) {
-      toast.error("Failed to update participant after multiple attempts");
+    // Block invalid operations
+    if (!participant || sourceGroupIndex === undefined || toGroupIndex === undefined) {
+      console.error("Invalid drop operation - missing required data", { participant, sourceGroupIndex, toGroupIndex });
       return;
     }
     
     try {
-      // Wait a bit before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsDragPending(true);
       
-      // Try update again
-      const { error } = await supabase
-        .from('participants')
-        .update({ group_id: destGroupId })
-        .eq('id', participantId);
-        
-      if (error) {
-        console.error(`Retry update failed (${retriesLeft} left):`, error);
-        retryParticipantUpdate(participantId, destGroupId, retriesLeft - 1);
-      } else {
-        console.log(`Participant update succeeded on retry`);
+      console.log("Updating groups via updaterFn");
+      // Apply the update function to get new groups state
+      const updatedGroups = updaterFn(sourceGroupIndex, toGroupIndex, participant, currentGroups);
+      
+      if (!updatedGroups) {
+        console.log("Update function returned null, aborting");
+        return;
+      }
+      
+      // Update UI immediately (optimistic update)
+      setGroups(updatedGroups);
+      
+      // Get the destination group ID
+      const destinationGroupId = currentGroups[toGroupIndex]?.id;
+      
+      if (!destinationGroupId) {
+        console.error("Missing destination group ID");
+        toast.error("Failed to move participant: Missing group information");
+        return;
+      }
+      
+      console.log(`Updating participant ${participant.id} to group ${destinationGroupId}`);
+      
+      // Persist the change to the database
+      const success = await updateParticipant(participant.id, destinationGroupId);
+      
+      if (success) {
         toast.success("Participant moved successfully");
+      } else {
+        // If failed, revert the UI
+        toast.error("Failed to move participant");
+        setGroups(currentGroups);
       }
     } catch (error) {
-      console.error("Error in retry:", error);
-      retryParticipantUpdate(participantId, destGroupId, retriesLeft - 1);
+      console.error("Error during drop handling:", error);
+      toast.error("Error moving participant");
+      // Revert UI on error
+      setGroups(currentGroups);
+    } finally {
+      setIsDragPending(false);
+      // Clear drag state
+      setDraggedParticipant(null);
+      setFromGroupIndex(null);
     }
-  };
+  }, [isDragPending, draggedParticipant, fromGroupIndex, updaterFn]);
   
   return {
     handleDragStart,
     handleDragOver,
     handleDrop,
-    isDragPending: updateTourGroupsMutation.isPending
+    isDragPending
   };
 };
