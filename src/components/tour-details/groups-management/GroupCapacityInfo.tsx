@@ -18,15 +18,25 @@ export const GroupCapacityInfo = ({
   // Ensure tour.tourGroups exists
   const tourGroups = tour.tourGroups || [];
   
-  // MEGA BUGFIX: Calculate directly from the participants arrays of each group with detailed logging
+  // ULTRA BUGFIX: Calculate directly from the participants arrays with ultra detailed logging
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
-  console.log("MEGA DEBUG: GroupCapacityInfo calculating with tour groups:", {
+  console.log("ULTRA DEBUG: GroupCapacityInfo calculating with tour groups:", {
     groupsCount: tourGroups.length,
     isHighSeason,
     tourId: tour.id
   });
+  
+  // Special debug for raw group data
+  console.log("ULTRA DEBUG: Raw tour groups data:", tourGroups.map(g => ({
+    id: g.id,
+    name: g.name,
+    size: g.size,
+    childCount: g.childCount,
+    hasParticipants: Array.isArray(g.participants),
+    participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
+  })));
   
   // Detailed calculation loop for reliability - directly count each participant
   for (const group of tourGroups) {
@@ -34,30 +44,39 @@ export const GroupCapacityInfo = ({
       let groupTotal = 0;
       let groupChildCount = 0;
       
+      // Log each participant individually for clarity
+      console.log(`ULTRA DEBUG: Group "${group.name}" participant details:`, 
+        group.participants.map(p => ({ 
+          name: p.name, 
+          count: p.count, 
+          childCount: p.childCount 
+        }))
+      );
+      
       // Count directly from participants array
       for (const participant of group.participants) {
-        groupTotal += participant.count || 1;
-        groupChildCount += participant.childCount || 0;
+        const count = participant.count || 1;
+        const childCount = participant.childCount || 0;
+        
+        groupTotal += count;
+        groupChildCount += childCount;
+        
+        console.log(`ULTRA DEBUG: Adding participant "${participant.name}": count=${count}, childCount=${childCount}`);
       }
       
       calculatedTotalParticipants += groupTotal;
       calculatedTotalChildCount += groupChildCount;
       
-      console.log(`MEGA DEBUG: GroupCapacityInfo group "${group.name || 'unnamed'}" detailed calculation:`, {
+      console.log(`ULTRA DEBUG: GroupCapacityInfo group "${group.name || 'unnamed'}" final calculation:`, {
         groupId: group.id,
         groupName: group.name,
         groupParticipantCount: group.participants.length,
         groupTotal,
-        groupChildCount,
-        participants: group.participants.map(p => ({
-          name: p.name, 
-          count: p.count || 1, 
-          childCount: p.childCount || 0
-        }))
+        groupChildCount
       });
     } else if (group.size) {
       // Only fallback to size properties when absolutely necessary
-      console.log(`MEGA DEBUG: GroupCapacityInfo no participants for group ${group.name || 'unnamed'}, using size:`, {
+      console.log(`ULTRA DEBUG: GroupCapacityInfo no participants for group ${group.name || 'unnamed'}, using size:`, {
         size: group.size || 0,
         childCount: group.childCount || 0
       });
@@ -83,8 +102,8 @@ export const GroupCapacityInfo = ({
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
-  // Enhanced detailed logging for debugging
-  console.log("MEGA DEBUG: GroupCapacityInfo final calculations:", {
+  // Ultra detailed logging for debugging
+  console.log("ULTRA DEBUG: GroupCapacityInfo final calculations:", {
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     providedTotalParticipants,

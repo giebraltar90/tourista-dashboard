@@ -27,6 +27,27 @@ export const TourCardDetails = ({
 }: TourCardDetailsProps) => {
   const { guides = [] } = useGuideData() || { guides: [] };
   
+  // ULTRA BUGFIX: Manually recalculate participant totals for consistency
+  let calculatedTotalParticipants = 0;
+  let calculatedTotalChildCount = 0;
+  
+  for (const group of tourGroups) {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      // Count directly from participants array - one by one
+      for (const participant of group.participants) {
+        calculatedTotalParticipants += participant.count || 1;
+        calculatedTotalChildCount += participant.childCount || 0;
+      }
+    } else if (group.size) {
+      // Fallback to group size properties only when necessary
+      calculatedTotalParticipants += group.size;
+      calculatedTotalChildCount += group.childCount || 0;
+    }
+  }
+  
+  // Use calculated value or fall back to provided value
+  const actualTotalParticipants = calculatedTotalParticipants || totalParticipants;
+  
   // Get the actual guides assigned to the groups
   const getAssignedGuideNames = () => {
     const assignedGuideIds = tourGroups
@@ -53,13 +74,19 @@ export const TourCardDetails = ({
   const assignedGuideNames = getAssignedGuideNames();
   
   // Format participant count to show adults + children
-  const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
-  const formattedParticipantCount = totalChildCount > 0 
-    ? `${totalParticipants - totalChildCount}+${totalChildCount}` 
-    : totalParticipants;
+  const formattedParticipantCount = calculatedTotalChildCount > 0 
+    ? `${calculatedTotalParticipants - calculatedTotalChildCount}+${calculatedTotalChildCount}` 
+    : actualTotalParticipants;
   
   // Get the actual capacity based on the high season flag
   const capacity = isHighSeason ? 36 : 24;
+  
+  console.log("ULTRA DEBUG: TourCardDetails participant calculation:", {
+    calculatedTotalParticipants,
+    calculatedTotalChildCount,
+    formattedParticipantCount,
+    capacity
+  });
   
   return (
     <div className="px-4 py-3 border-t border-gray-100 bg-white">

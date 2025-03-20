@@ -39,10 +39,10 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
     return 0;
   }
   
-  // MEGA BUGFIX: Count each actual participant for accurate totals with detailed logging
+  // ULTRA BUGFIX: Count each actual participant for accurate totals with detailed logging
   let total = 0;
   
-  console.log("MEGA DEBUG: calculateTotalParticipants starting with groups:", {
+  console.log("ULTRA DEBUG: calculateTotalParticipants starting with groups:", {
     groupsCount: groups.length,
     groupDetails: groups.map(g => ({
       id: g.id,
@@ -57,27 +57,34 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
       
-      // Count directly from participants array
+      // Detailed logging of each participant
+      console.log(`ULTRA DEBUG: Group "${group.name}" participant details:`, 
+        group.participants.map(p => ({ 
+          name: p.name, 
+          count: p.count, 
+          childCount: p.childCount 
+        }))
+      );
+      
+      // Count directly from participants array - one by one
       for (const participant of group.participants) {
-        groupTotal += participant.count || 1;
+        const count = participant.count || 1;
+        groupTotal += count;
+        
+        console.log(`ULTRA DEBUG: Adding participant "${participant.name}": count=${count}`);
       }
       
       total += groupTotal;
       
-      console.log(`MEGA DEBUG: calculateTotalParticipants group "${group.name || 'unnamed'}" detailed calculation:`, {
+      console.log(`ULTRA DEBUG: calculateTotalParticipants group "${group.name || 'unnamed'}" final calculation:`, {
         groupId: group.id,
         groupName: group.name,
         groupParticipantCount: group.participants.length,
-        groupTotal,
-        participants: group.participants.map(p => ({
-          name: p.name,
-          count: p.count || 1,
-          childCount: p.childCount || 0
-        }))
+        groupTotal
       });
     } else if (group.size) {
       // Only fallback to size properties when absolutely necessary
-      console.log(`MEGA DEBUG: calculateTotalParticipants no participants for group ${group.name || 'unnamed'}, using size:`, {
+      console.log(`ULTRA DEBUG: calculateTotalParticipants no participants for group ${group.name || 'unnamed'}, using size:`, {
         size: group.size
       });
       
@@ -85,7 +92,7 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
     }
   }
   
-  console.log("MEGA DEBUG: calculateTotalParticipants final total:", total);
+  console.log("ULTRA DEBUG: calculateTotalParticipants final total:", total);
   
   return total;
 };
@@ -99,10 +106,10 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
     return 0;
   }
   
-  // MEGA BUGFIX: Count each actual child participant for accurate totals
+  // ULTRA BUGFIX: Count each actual child participant for accurate totals
   let totalChildren = 0;
   
-  console.log("MEGA DEBUG: calculateTotalChildCount starting with groups:", {
+  console.log("ULTRA DEBUG: calculateTotalChildCount starting with groups:", {
     groupsCount: groups.length,
     groupDetails: groups.map(g => ({
       id: g.id,
@@ -117,27 +124,33 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupChildCount = 0;
       
-      // Count directly from participants array
+      // Detailed logging of each participant's child count
+      console.log(`ULTRA DEBUG: Group "${group.name}" child count details:`, 
+        group.participants.map(p => ({ 
+          name: p.name, 
+          childCount: p.childCount || 0
+        }))
+      );
+      
+      // Count directly from participants array - one by one
       for (const participant of group.participants) {
-        groupChildCount += participant.childCount || 0;
+        const childCount = participant.childCount || 0;
+        groupChildCount += childCount;
+        
+        console.log(`ULTRA DEBUG: Adding children for "${participant.name}": childCount=${childCount}`);
       }
       
       totalChildren += groupChildCount;
       
-      console.log(`MEGA DEBUG: calculateTotalChildCount group "${group.name || 'unnamed'}" detailed calculation:`, {
+      console.log(`ULTRA DEBUG: calculateTotalChildCount group "${group.name || 'unnamed'}" final calculation:`, {
         groupId: group.id,
         groupName: group.name,
         groupParticipantCount: group.participants.length,
-        groupChildCount,
-        participants: group.participants.map(p => ({
-          name: p.name,
-          count: p.count || 1,
-          childCount: p.childCount || 0
-        }))
+        groupChildCount
       });
     } else if (group.childCount) {
       // Only fallback to childCount property when absolutely necessary
-      console.log(`MEGA DEBUG: calculateTotalChildCount no participants for group ${group.name || 'unnamed'}, using childCount:`, {
+      console.log(`ULTRA DEBUG: calculateTotalChildCount no participants for group ${group.name || 'unnamed'}, using childCount:`, {
         childCount: group.childCount
       });
       
@@ -145,7 +158,7 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
     }
   }
   
-  console.log("MEGA DEBUG: calculateTotalChildCount final total:", totalChildren);
+  console.log("ULTRA DEBUG: calculateTotalChildCount final total:", totalChildren);
   
   return totalChildren;
 };

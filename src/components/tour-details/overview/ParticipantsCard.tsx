@@ -18,7 +18,7 @@ export const ParticipantsCard = ({
   totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
-  // MEGA BUGFIX: Calculate participants directly from participants array with better logging
+  // CRITICAL BUGFIX: Reset calculation and do a fresh count
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
@@ -33,31 +33,40 @@ export const ParticipantsCard = ({
     }))
   });
   
-  // CRITICAL FIX: Reset and count each group's participants from scratch
+  // CRITICAL FIX: Explicitly log each participant for detailed debugging
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
       let groupChildCount = 0;
       
-      // Count directly from participants array
+      // Special debug for every single participant
+      console.log(`ULTRA DEBUG: Group "${group.name}" participant details:`, 
+        group.participants.map(p => ({ 
+          name: p.name, 
+          count: p.count, 
+          childCount: p.childCount 
+        }))
+      );
+      
+      // Count directly from participants array - ONE by ONE
       for (const participant of group.participants) {
-        groupTotal += participant.count || 1;
-        groupChildCount += participant.childCount || 0;
+        const count = participant.count || 1;
+        const childCount = participant.childCount || 0;
+        
+        groupTotal += count;
+        groupChildCount += childCount;
+        
+        console.log(`ULTRA DEBUG: Adding participant "${participant.name}": count=${count}, childCount=${childCount}`);
       }
       
       calculatedTotalParticipants += groupTotal;
       calculatedTotalChildCount += groupChildCount;
       
-      console.log(`MEGA DEBUG: ParticipantsCard group "${group.name || 'unnamed'}" detailed calculation:`, {
+      console.log(`MEGA DEBUG: ParticipantsCard group "${group.name || 'unnamed'}" final calculation:`, {
         groupId: group.id,
         groupParticipantCount: group.participants.length,
         groupTotal,
-        groupChildCount,
-        participants: group.participants.map(p => ({
-          name: p.name,
-          count: p.count || 1,
-          childCount: p.childCount || 0
-        }))
+        groupChildCount
       });
     } else if (group.size) {
       // Only fallback to size properties when absolutely necessary
@@ -86,9 +95,7 @@ export const ParticipantsCard = ({
   // CRITICAL FIX: Use strict equality to ensure proper boolean handling
   const capacity = isHighSeason === true
     ? DEFAULT_CAPACITY_SETTINGS.highSeason 
-    : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard 
-      ? DEFAULT_CAPACITY_SETTINGS.exception 
-      : DEFAULT_CAPACITY_SETTINGS.standard;
+    : DEFAULT_CAPACITY_SETTINGS.standard;
   
   // CRITICAL FIX: Use strict equality for determining required groups
   const requiredGroups = isHighSeason === true
@@ -102,8 +109,8 @@ export const ParticipantsCard = ({
     return "Standard";
   };
   
-  // Mega detailed log for troubleshooting
-  console.log("MEGA DEBUG: ParticipantsCard final calculations:", { 
+  // Ultra detailed log for troubleshooting
+  console.log("ULTRA DEBUG: ParticipantsCard final calculations:", { 
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     finalTotalParticipants: totalParticipants,
@@ -112,15 +119,7 @@ export const ParticipantsCard = ({
     formattedParticipantCount,
     isHighSeason,
     capacity,
-    requiredGroups,
-    rawGroups: tourGroups.map(g => ({
-      id: g.id, 
-      name: g.name,
-      size: g.size,
-      childCount: g.childCount,
-      hasParticipants: Array.isArray(g.participants),
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
-    }))
+    requiredGroups
   });
   
   return (

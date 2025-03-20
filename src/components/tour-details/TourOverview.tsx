@@ -33,8 +33,8 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // Ensure tourGroups exists to prevent errors
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
-  // MEGA DEBUG: Log the raw tour data in full detail
-  console.log("MEGA DEBUG: TourOverview raw tour data:", {
+  // ULTRA DEBUG: Log the raw tour data in full detail
+  console.log("ULTRA DEBUG: TourOverview raw tour data:", {
     tourId: tour.id,
     isHighSeason: tour.isHighSeason,
     tourGroupsCount: tourGroups.length,
@@ -55,48 +55,36 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     }))
   });
   
-  // MEGA BUGFIX: Directly count participants from the group participants array with detailed logging
+  // ULTRA BUGFIX: Detail each participant explicitly for accurate counting
+  console.log("ULTRA DEBUG: Full participant details:");
   let totalParticipants = 0;
   let totalChildCount = 0;
   
-  // BUGFIX: Loop through participants and count correctly
   for (const group of tourGroups) {
+    console.log(`Group: ${group.name}`);
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
       let groupChildCount = 0;
       
-      // Count directly from participants array
+      // Log each participant individually
       for (const participant of group.participants) {
-        groupTotal += participant.count || 1;
-        groupChildCount += participant.childCount || 0;
+        const count = participant.count || 1;
+        const childCount = participant.childCount || 0;
+        
+        console.log(`  Participant: ${participant.name}, count=${count}, childCount=${childCount}`);
+        
+        groupTotal += count;
+        groupChildCount += childCount;
       }
+      
+      console.log(`  Group total: ${groupTotal}, children: ${groupChildCount}`);
       
       totalParticipants += groupTotal;
       totalChildCount += groupChildCount;
-      
-      console.log(`MEGA DEBUG: TourOverview group "${group.name || 'unnamed'}" detailed calculation:`, {
-        groupId: group.id,
-        groupName: group.name,
-        groupParticipantCount: group.participants.length,
-        groupTotal,
-        groupChildCount,
-        participants: group.participants.map(p => ({
-          name: p.name,
-          count: p.count || 1,
-          childCount: p.childCount || 0
-        }))
-      });
     } else if (group.size) {
-      // Fallback to group size/childCount if no participants array is available
-      console.log(`MEGA DEBUG: TourOverview no participants for group ${group.name || 'unnamed'}, using size properties:`, {
-        groupId: group.id,
-        groupName: group.name,
-        size: group.size || 0,
-        childCount: group.childCount || 0
-      });
+      console.log(`  Using size property: ${group.size}, childCount: ${group.childCount || 0}`);
       
-      // Only use size properties when absolutely necessary (no participants array)
-      totalParticipants += group.size || 0;
+      totalParticipants += group.size;
       totalChildCount += group.childCount || 0;
     }
   }
@@ -104,7 +92,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('MEGA DEBUG: TourOverview final calculations:', {
+  console.log('ULTRA DEBUG: TourOverview final calculations:', {
     totalParticipants,
     totalChildCount, 
     adultCount: totalParticipants - totalChildCount,
