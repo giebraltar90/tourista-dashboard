@@ -8,7 +8,7 @@ import {
   TourGroupsSection
 } from "./overview";
 import { useState, useEffect } from "react";
-import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
+import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/group-management/services/participantService";
 import { GroupAssignment } from "./groups-management/GroupAssignment";
 import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
@@ -36,21 +36,19 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // Calculate total participants directly from groups for accuracy
   const totalParticipants = calculateTotalParticipants(tourGroups);
   
-  // Calculate total child count across all groups
-  const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
+  // Calculate total child count across all groups using the dedicated function
+  const totalChildCount = calculateTotalChildCount(tourGroups);
   
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
-  console.log('TourOverview: isHighSeason =', isHighSeason, 'original value =', tour.isHighSeason);
+  console.log('TourOverview: totalParticipants =', totalParticipants, 'totalChildCount =', totalChildCount);
   
   // Calculate tickets based on actual participant counts
-  const adultTickets = tour.numTickets 
-    ? Math.round(tour.numTickets * 0.7) 
-    : Math.round((totalParticipants - totalChildCount) * 0.7);
-    
-  const childTickets = tour.numTickets 
-    ? (tour.numTickets - adultTickets) 
-    : totalChildCount;
+  const adultTickets = totalParticipants - totalChildCount;
+  const childTickets = totalChildCount;
+  
+  // Use the actual calculated values for the total tickets
+  const totalTickets = totalParticipants;
 
   return (
     <div className="space-y-6">
@@ -70,7 +68,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         <TicketsCard
           adultTickets={adultTickets}
           childTickets={childTickets}
-          totalTickets={tour.numTickets || totalParticipants}
+          totalTickets={totalTickets}
         />
       </div>
       

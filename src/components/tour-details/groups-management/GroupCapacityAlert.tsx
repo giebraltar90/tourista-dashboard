@@ -17,6 +17,9 @@ export const GroupCapacityAlert = ({ tourGroups, isHighSeason }: GroupCapacityAl
   // Calculate total participants from groups for consistency
   const totalParticipants = calculateTotalParticipants(tourGroups);
   
+  // Log calculated participants for debugging
+  console.log("GroupCapacityAlert: calculated participants:", totalParticipants, "from groups:", tourGroups);
+  
   const standardCapacity = DEFAULT_CAPACITY_SETTINGS.standard;
   const highSeasonCapacity = DEFAULT_CAPACITY_SETTINGS.highSeason;
   const capacity = isHighSeason ? highSeasonCapacity : standardCapacity;

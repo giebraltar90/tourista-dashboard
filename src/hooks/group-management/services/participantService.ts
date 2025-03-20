@@ -30,10 +30,34 @@ export const updateParticipantGroupInDatabase = async (
 
 /**
  * Calculate total participants across all groups
+ * This function now accounts for participants with children
  */
 export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
-  return groups.reduce((total, group) => {
+  // Calculate total from all groups
+  const total = groups.reduce((total, group) => {
+    // If we have a participants array, use that for the most accurate count
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+    }
+    // Otherwise fall back to the group size property
     return total + (group.size || 0);
+  }, 0);
+  
+  console.log("Calculated total participants:", total, "from groups:", groups);
+  return total;
+};
+
+/**
+ * Calculate total child participants across all groups
+ */
+export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number => {
+  return groups.reduce((total, group) => {
+    // If we have a participants array, use that for the most accurate count
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return total + group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+    }
+    // Otherwise fall back to the group childCount property
+    return total + (group.childCount || 0);
   }, 0);
 };
 
@@ -56,14 +80,13 @@ export const getParticipantById = async (
     }
     
     // Map the database fields to the VentrataParticipant fields
-    // using both camelCase and snake_case for compatibility
     return {
       id: data.id,
       name: data.name,
       count: data.count || 1,
       bookingRef: data.booking_ref,
       childCount: data.child_count || 0,
-      groupId: data.group_id, // Store in camelCase as per the interface
+      groupId: data.group_id,
       // Include snake_case properties for database compatibility
       booking_ref: data.booking_ref,
       group_id: data.group_id,

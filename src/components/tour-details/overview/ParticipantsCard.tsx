@@ -3,20 +3,29 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { Badge } from "@/components/ui/badge";
+import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/group-management/services/participantService";
 
 interface ParticipantsCardProps {
   tourGroups: VentrataTourGroup[];
-  totalParticipants: number;
+  totalParticipants?: number;
   totalChildCount?: number;
   isHighSeason?: boolean;
 }
 
 export const ParticipantsCard = ({ 
   tourGroups, 
-  totalParticipants,
-  totalChildCount = 0,
+  totalParticipants: providedTotalParticipants,
+  totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
+  // Always recalculate from source of truth (tourGroups) for consistency
+  const actualTotalParticipants = calculateTotalParticipants(tourGroups);
+  const actualTotalChildCount = calculateTotalChildCount(tourGroups);
+  
+  // Use calculated values, fall back to provided values if calculation fails
+  const totalParticipants = actualTotalParticipants || providedTotalParticipants || 0;
+  const totalChildCount = actualTotalChildCount || providedTotalChildCount || 0;
+  
   const totalGroups = tourGroups.length;
   
   // Format participant count to show adults + children if there are children
@@ -44,14 +53,21 @@ export const ParticipantsCard = ({
   };
   
   // Debug log for troubleshooting
-  console.log("ParticipantsCard props:", { 
+  console.log("ParticipantsCard rendering:", { 
+    actualTotalParticipants,
+    actualTotalChildCount,
+    providedTotalParticipants,
+    providedTotalChildCount,
     isHighSeason, 
-    totalParticipants,
-    totalChildCount,
     formattedParticipantCount,
     capacity, 
     requiredGroups,
-    mode: getModeText()
+    mode: getModeText(),
+    tourGroups: tourGroups.map(g => ({
+      name: g.name, 
+      size: g.size, 
+      participants: g.participants ? g.participants.length : 'N/A'
+    }))
   });
   
   return (
