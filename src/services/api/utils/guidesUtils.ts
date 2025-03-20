@@ -42,11 +42,20 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
   if (guideId === "guide1" && tour?.guide1Id) {
     return tour.guide1Id;
   }
+  if (guideId === "guide1" && tour?.guide1) {
+    return tour.guide1;
+  }
   if (guideId === "guide2" && tour?.guide2Id) {
     return tour.guide2Id;
   }
+  if (guideId === "guide2" && tour?.guide2) {
+    return tour.guide2;
+  }
   if (guideId === "guide3" && tour?.guide3Id) {
     return tour.guide3Id;
+  }
+  if (guideId === "guide3" && tour?.guide3) {
+    return tour.guide3;
   }
   
   // If it's already a UUID, return it directly

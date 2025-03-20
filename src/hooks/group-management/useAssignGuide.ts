@@ -7,7 +7,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -58,13 +57,9 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // Map the guide ID from UI format (could be "guide1", etc.) to database format (UUID)
-      // This is a critical fix for database compatibility
-      const actualGuideId = uiGuideId ? mapSpecialGuideIdToUuid(uiGuideId, {
-        guide1Id: latestTour.guide1, 
-        guide2Id: latestTour.guide2, 
-        guide3Id: latestTour.guide3
-      }) : null;
+      // For direct guide ID assignment, we're using the actual guide ID 
+      // Either it's a special ID like "guide1" or a direct UUID
+      const actualGuideId = uiGuideId;
       
       // Find guide name for display
       let guideName = "Unassigned";
@@ -88,7 +83,7 @@ export const useAssignGuide = (tourId: string) => {
         targetGroupName: targetGroup.name,
         currentGuideId: targetGroup.guideId,
         newGuideId: uiGuideId,
-        databaseGuideId: actualGuideId,
+        actualGuideId,
         guideName
       });
       
