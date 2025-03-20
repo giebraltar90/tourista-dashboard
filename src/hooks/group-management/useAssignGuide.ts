@@ -58,9 +58,7 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // For direct guide ID assignment, we're using the actual guide ID 
-      // Either it's a special ID like "guide1" or a direct UUID
-      // IMPORTANT: We don't map it here - that will happen in updateGuideInSupabase
+      // Pass the guideId as is - the updateGuideInSupabase function will handle special IDs
       const actualGuideId = uiGuideId;
       
       // Find guide name for display
@@ -130,8 +128,7 @@ export const useAssignGuide = (tourId: string) => {
         groupName
       });
       
-      // Save to database - passing the guide ID directly to updateGuideInSupabase
-      // which will handle mapping special IDs to UUIDs
+      // Save to database - directly passing the guide ID without mapping
       const updateSuccess = await updateGuideInSupabase(
         tourId,
         groupId,

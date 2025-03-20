@@ -16,73 +16,70 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 };
 
 /**
- * Sanitize guide ID for backward compatibility
- * @deprecated Use mapSpecialGuideIdToUuid instead for database operations
- */
-export const sanitizeGuideId = (guideId?: string): string | null => {
-  if (!guideId || guideId === "_none") return null;
-  
-  // For backward compatibility, return the ID as-is
-  // This function is deprecated - use mapSpecialGuideIdToUuid for database operations
-  return guideId;
-};
-
-/**
- * Map special guide IDs to their actual UUID values from the tour record
- * This is the key fix: we translate special IDs to real UUIDs before database storage
- * 
- * @param guideId The special guide ID (guide1, guide2, guide3) or UUID
- * @param tour Tour data containing the actual guide UUID values
- * @returns A valid UUID for database storage or null
+ * Map special guide IDs to their actual values or return UUID as is
+ * This function doesn't throw errors, it just returns the input if mapping fails
  */
 export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any): string | null => {
   if (!guideId || guideId === "_none") return null;
   
   console.log("Mapping guide ID to UUID:", { 
     guideId, 
-    tour: {
-      guide1: tour?.guide1,
-      guide2: tour?.guide2,
-      guide3: tour?.guide3,
-      guide1Id: tour?.guide1Id,
-      guide2Id: tour?.guide2Id,
-      guide3Id: tour?.guide3Id
-    }
+    tour: tour ? {
+      guide1: tour.guide1,
+      guide2: tour.guide2,
+      guide3: tour.guide3,
+      guide1Id: tour.guide1Id,
+      guide2Id: tour.guide2Id,
+      guide3Id: tour.guide3Id
+    } : 'Tour data not available'
   });
   
+  // If there's no tour data, just return the guide ID as is
+  if (!tour) return guideId;
+  
   // Map special guide IDs to their UUID values from the tour record
-  if (guideId === "guide1" && tour?.guide1Id) {
+  if (guideId === "guide1" && tour.guide1Id) {
     console.log(`Mapped guide1 to UUID: ${tour.guide1Id}`);
     return tour.guide1Id;
   }
-  if (guideId === "guide1" && tour?.guide1) {
-    console.log(`Mapped guide1 to value: ${tour.guide1}`);
-    return tour.guide1;
-  }
-  if (guideId === "guide2" && tour?.guide2Id) {
+  
+  if (guideId === "guide2" && tour.guide2Id) {
     console.log(`Mapped guide2 to UUID: ${tour.guide2Id}`);
     return tour.guide2Id;
   }
-  if (guideId === "guide2" && tour?.guide2) {
-    console.log(`Mapped guide2 to value: ${tour.guide2}`);
-    return tour.guide2;
-  }
-  if (guideId === "guide3" && tour?.guide3Id) {
+  
+  if (guideId === "guide3" && tour.guide3Id) {
     console.log(`Mapped guide3 to UUID: ${tour.guide3Id}`);
     return tour.guide3Id;
-  }
-  if (guideId === "guide3" && tour?.guide3) {
-    console.log(`Mapped guide3 to value: ${tour.guide3}`);
-    return tour.guide3;
   }
   
   // If it's already a UUID, return it directly
   if (isValidUuid(guideId)) {
-    console.log(`Guide ID is already a UUID: ${guideId}`);
     return guideId;
   }
   
-  // If we get here, we don't have a valid UUID to store
-  console.error("Cannot map guide ID to UUID:", guideId, "Tour data:", tour);
-  return null;
+  // If we get here, we're dealing with a special ID without mapping
+  // Just return it as is, and let the caller handle it appropriately
+  return guideId;
+};
+
+/**
+ * For UI display, get the readable guide name from any guide ID
+ */
+export const getGuideDisplayName = (guideId: string | undefined, tour: any, guides: any[] = []): string => {
+  if (!guideId || guideId === "_none") return "Unassigned";
+  
+  // Check special IDs first
+  if (guideId === "guide1" && tour?.guide1) return tour.guide1;
+  if (guideId === "guide2" && tour?.guide2) return tour.guide2;
+  if (guideId === "guide3" && tour?.guide3) return tour.guide3;
+  
+  // Then check UUID matches in guides array
+  if (isValidUuid(guideId)) {
+    const matchingGuide = guides.find(g => g.id === guideId);
+    if (matchingGuide?.name) return matchingGuide.name;
+  }
+  
+  // Fallback for unknown IDs (should rarely happen)
+  return guideId.startsWith("guide") ? `Guide ${guideId.slice(5)}` : `Guide (${guideId.substring(0, 6)}...)`;
 };

@@ -26,6 +26,16 @@ export const AssignGuideForm = ({
   currentGuideId, 
   onSuccess 
 }: AssignGuideFormProps) => {
+  // Add detailed logging of props
+  console.log("AssignGuideForm rendering with props:", {
+    tourId,
+    groupIndex,
+    guides: guides.map(g => ({ id: g.id, name: g.name })),
+    currentGuideId,
+    hasCurrentGuide: !!currentGuideId,
+    currentGuideType: currentGuideId ? typeof currentGuideId : 'undefined'
+  });
+  
   // Use our custom hook to get form logic
   const {
     form,
@@ -40,13 +50,6 @@ export const AssignGuideForm = ({
     guides,
     currentGuideId,
     onSuccess
-  });
-  
-  console.log("AssignGuideForm rendering with:", {
-    tourId,
-    groupIndex,
-    guides: guides.length,
-    currentGuideId
   });
   
   return (
