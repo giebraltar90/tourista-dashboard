@@ -5,6 +5,7 @@ import { GuideSelectField } from "./GuideSelectField";
 import { FormActions } from "./FormActions";
 import { useGuideAssignmentForm } from "@/hooks/group-management/useGuideAssignmentForm";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { useState, useEffect } from "react";
 
 interface GuideOption {
   id: string;
@@ -27,30 +28,33 @@ export const AssignGuideForm = ({
   currentGuideId, 
   onSuccess 
 }: AssignGuideFormProps) => {
-  // Filter out duplicate guides by name, prioritizing valid UUID guides
-  const uniqueGuides: GuideOption[] = [];
-  const processedGuideNames = new Set<string>();
+  // Store processed guides in state to prevent re-processing on every render
+  const [processedGuides, setProcessedGuides] = useState<GuideOption[]>([]);
   
-  // First process guides with valid UUIDs
-  guides
-    .filter(guide => isValidUuid(guide.id))
-    .forEach(guide => {
-      if (!processedGuideNames.has(guide.name)) {
-        uniqueGuides.push(guide);
-        processedGuideNames.add(guide.name);
-      }
+  // Process guides only once when the component mounts or guides change
+  useEffect(() => {
+    // Filter out duplicate guides by name, prioritizing valid UUID guides
+    const uniqueGuides: GuideOption[] = [];
+    const processedGuideNames = new Set<string>();
+    
+    // First process guides with valid UUIDs (from database)
+    guides
+      .filter(guide => guide && guide.name && isValidUuid(guide.id))
+      .forEach(guide => {
+        if (!processedGuideNames.has(guide.name)) {
+          uniqueGuides.push(guide);
+          processedGuideNames.add(guide.name);
+        }
+      });
+    
+    console.log("AssignGuideForm processed guides:", {
+      originalCount: guides.length,
+      processedCount: uniqueGuides.length,
+      currentGuideId
     });
-  
-  // Log unique guides count
-  console.log("AssignGuideForm rendering with filtered guides:", {
-    tourId,
-    groupIndex,
-    originalGuidesCount: guides.length,
-    uniqueGuidesCount: uniqueGuides.length,
-    currentGuideId,
-    hasCurrentGuide: !!currentGuideId,
-    currentGuideType: currentGuideId ? typeof currentGuideId : 'undefined'
-  });
+    
+    setProcessedGuides(uniqueGuides);
+  }, [guides, currentGuideId]);
   
   // Use our custom hook to get form logic
   const {
@@ -63,7 +67,7 @@ export const AssignGuideForm = ({
   } = useGuideAssignmentForm({
     tourId,
     groupIndex,
-    guides: uniqueGuides, // Only pass unique guides with valid UUIDs
+    guides: processedGuides, // Use processed guides for form handling
     currentGuideId,
     onSuccess
   });
@@ -73,7 +77,7 @@ export const AssignGuideForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <GuideSelectField 
           form={form} 
-          guides={uniqueGuides} // Only use unique guides
+          guides={processedGuides} // Use processed guides for select options
           defaultValue={currentGuideId || "_none"} 
         />
         

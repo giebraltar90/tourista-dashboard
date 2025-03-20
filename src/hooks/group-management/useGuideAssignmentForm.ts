@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -39,8 +39,14 @@ export const useGuideAssignmentForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
   
-  // Set the default value to "_none" if no guide is assigned
-  const defaultGuideId = currentGuideId || "_none";
+  // Track the current guide ID for form state
+  const [currentValue, setCurrentValue] = useState(currentGuideId || "_none");
+  
+  // Update form value when currentGuideId prop changes
+  useEffect(() => {
+    setCurrentValue(currentGuideId || "_none");
+    form.setValue("guideId", currentGuideId || "_none");
+  }, [currentGuideId]);
   
   // Debug log for troubleshooting
   console.log("useGuideAssignmentForm initialized with:", {
@@ -48,20 +54,20 @@ export const useGuideAssignmentForm = ({
     groupIndex,
     guidesCount: guides.length,
     currentGuideId,
-    defaultGuideId,
+    currentValue,
     availableGuideIds: guides.map(g => ({id: g.id, name: g.name}))
   });
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      guideId: defaultGuideId,
+      guideId: currentValue,
     },
   });
   
   const handleSubmit = async (values: FormValues) => {
     // If no change, just close the dialog
-    if (values.guideId === defaultGuideId) {
+    if (values.guideId === currentValue) {
       onSuccess();
       return;
     }
@@ -88,7 +94,8 @@ export const useGuideAssignmentForm = ({
       const success = await assignGuide(groupIndex, values.guideId);
       
       if (success) {
-        toast.success("Guide assigned successfully");
+        // Update the current value to match the form
+        setCurrentValue(values.guideId || "_none");
         onSuccess();
       } else {
         toast.error("Failed to assign guide. Please try again.");
@@ -112,7 +119,8 @@ export const useGuideAssignmentForm = ({
       const success = await assignGuide(groupIndex, "_none");
       
       if (success) {
-        toast.success("Guide removed successfully");
+        // Update the current value to reflect the removed guide
+        setCurrentValue("_none");
         onSuccess();
       } else {
         toast.error("Failed to remove guide. Please try again.");
@@ -126,8 +134,8 @@ export const useGuideAssignmentForm = ({
     }
   };
   
-  const hasChanges = form.getValues().guideId !== defaultGuideId;
-  const hasCurrentGuide = !!currentGuideId && currentGuideId !== "_none";
+  const hasChanges = form.getValues().guideId !== currentValue;
+  const hasCurrentGuide = currentGuideId !== undefined && currentGuideId !== null && currentGuideId !== "_none";
   
   return {
     form,

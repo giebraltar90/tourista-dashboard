@@ -7,7 +7,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideInfo, useGuideData } from "@/hooks/guides";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GroupCard } from "./GroupCard";
 import { AssignGuideDialog } from "./dialogs/AssignGuideDialog";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
@@ -25,20 +25,22 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+  const [availableGuides, setAvailableGuides] = useState<any[]>([]);
   
-  console.log("GroupAssignment: Current tour data:", {
-    tourId: tour.id,
-    guide1: tour.guide1,
-    guide2: tour.guide2,
-    guide3: tour.guide3,
-    groupCount: tour.tourGroups.length,
-    groups: tour.tourGroups.map(g => ({ 
-      id: g.id, 
-      name: g.name, 
-      guideId: g.guideId,
-      size: g.size
-    }))
-  });
+  // Process guides once when component loads or dependencies change
+  useEffect(() => {
+    // Get valid guides for guide selection - ONLY use guides from the database (with valid UUIDs)
+    const validGuides = guides
+      .filter(guide => guide.id && isValidUuid(guide.id) && guide.name)
+      .map(guide => ({
+        id: guide.id,
+        name: guide.name,
+        info: guide
+      }));
+    
+    console.log("Available guides for assignment:", validGuides.length);
+    setAvailableGuides(validGuides);
+  }, [guides]);
   
   const isHighSeason = !!tour.isHighSeason;
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
@@ -48,22 +50,14 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
   const handleOpenAssignGuide = (groupIndex: number) => {
-    console.log(`Opening guide assignment dialog for group ${groupIndex}:`, tour.tourGroups[groupIndex]);
+    console.log(`Opening guide assignment dialog for group ${groupIndex}:`, {
+      group: tour.tourGroups[groupIndex],
+      groupName: tour.tourGroups[groupIndex]?.name,
+      guideId: tour.tourGroups[groupIndex]?.guideId
+    });
     setSelectedGroupIndex(groupIndex);
     setIsAssignGuideOpen(true);
   };
-
-  // Get valid guides for guide selection - ONLY use guides from the database (with valid UUIDs)
-  const validGuides = guides
-    .filter(guide => guide.id && isValidUuid(guide.id) && guide.name)
-    .map(guide => ({
-      id: guide.id,
-      name: guide.name,
-      info: guide
-    }));
-  
-  // Log the filtered guides
-  console.log("Available guides for assignment:", validGuides);
   
   return (
     <Card>
@@ -131,7 +125,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
           onOpenChange={setIsAssignGuideOpen}
           tourId={tour.id}
           groupIndex={selectedGroupIndex}
-          guides={validGuides}
+          guides={availableGuides}
           currentGuideId={tour.tourGroups[selectedGroupIndex]?.guideId}
         />
       )}

@@ -52,14 +52,8 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // Cancel any in-flight queries to prevent race conditions
-      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
-      
-      // Get the latest data before making changes
-      const latestTour = queryClient.getQueryData(['tour', tourId]) as TourCardProps | undefined || tour;
-      
       // Get the target group
-      const targetGroup = latestTour.tourGroups[groupIndex];
+      const targetGroup = tour.tourGroups[groupIndex];
       if (!targetGroup) {
         toast.error("Group not found");
         return false;
@@ -74,35 +68,6 @@ export const useAssignGuide = (tourId: string) => {
         }
       }
       
-      console.log("Before optimistic update:", {
-        targetGroupId: targetGroup.id,
-        targetGroupName: targetGroup.name,
-        currentGuideId: targetGroup.guideId,
-        newGuideId: actualGuideId,
-        guideName
-      });
-      
-      // Apply optimistic update to the cache
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        
-        // Create a deep copy to avoid reference issues
-        const newData = JSON.parse(JSON.stringify(oldData));
-        
-        // Update the specific group
-        if (newData.tourGroups[groupIndex]) {
-          console.log("Applying optimistic update to cache:", {
-            groupId: newData.tourGroups[groupIndex].id,
-            oldGuideId: newData.tourGroups[groupIndex].guideId,
-            newGuideId: actualGuideId
-          });
-          
-          newData.tourGroups[groupIndex].guideId = actualGuideId;
-        }
-        
-        return newData;
-      });
-      
       // Get the group ID
       const groupId = targetGroup.id;
       if (!groupId) {
@@ -110,7 +75,7 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
-      // Generate a new group name
+      // Generate a new group name with the guide name
       const groupName = actualGuideId 
         ? `Group ${groupIndex + 1} (${guideName})` 
         : `Group ${groupIndex + 1}`;
@@ -133,6 +98,22 @@ export const useAssignGuide = (tourId: string) => {
       console.log("Database update result:", updateSuccess ? "Success" : "Failed");
       
       if (updateSuccess) {
+        // Apply optimistic update to the UI
+        queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+          if (!oldData) return null;
+          
+          // Create a deep copy to avoid reference issues
+          const newData = JSON.parse(JSON.stringify(oldData));
+          
+          // Update the specific group
+          if (newData.tourGroups[groupIndex]) {
+            newData.tourGroups[groupIndex].guideId = actualGuideId;
+            newData.tourGroups[groupIndex].name = groupName;
+          }
+          
+          return newData;
+        });
+        
         // Record the modification
         const modificationDescription = actualGuideId 
           ? `Assigned guide ${guideName} to Group ${groupIndex + 1}` 
@@ -150,7 +131,7 @@ export const useAssignGuide = (tourId: string) => {
           queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
           queryClient.invalidateQueries({ queryKey: ['tours'] });
           refetch();
-        }, 500);
+        }, 800);
         
         toast.success(actualGuideId 
           ? `Guide ${guideName} assigned to Group ${groupIndex + 1}` 

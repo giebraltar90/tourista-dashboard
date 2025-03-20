@@ -12,6 +12,7 @@ import { GroupsManagement } from "./groups-management";
 import { GroupAssignment } from "./groups-management/GroupAssignment";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -21,6 +22,16 @@ interface TourOverviewProps {
 }
 
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("groups");
+  
+  // Force a data refresh when tab changes to ensure UI is consistent
+  useEffect(() => {
+    if (tour && tour.id) {
+      queryClient.invalidateQueries({ queryKey: ['tour', tour.id] });
+    }
+  }, [activeTab, tour?.id, queryClient]);
+  
   // Ensure tourGroups exists to prevent errors
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
@@ -60,16 +71,13 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   };
 
   // Log for debugging synchronization issues
-  console.log("TourOverview rendering with counts:", {
-    totalParticipants,
-    totalChildCount,
-    adultParticipants: totalParticipants - totalChildCount,
-    adultTickets,
-    childTickets,
-    groupSizes: tourGroups.map(g => ({
+  console.log("TourOverview rendering with tour groups:", {
+    groupsCount: tourGroups.length,
+    groupDetails: tourGroups.map(g => ({
+      id: g.id, 
       name: g.name, 
-      size: g.size, 
-      childCount: g.childCount
+      guideId: g.guideId,
+      size: g.size
     }))
   });
 
@@ -97,7 +105,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       <Separator className="my-6" />
       
-      <Tabs defaultValue="groups" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="groups">Group Assignment</TabsTrigger>
           <TabsTrigger value="participants">Participant Management</TabsTrigger>
