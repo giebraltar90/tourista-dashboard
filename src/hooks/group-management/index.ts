@@ -7,3 +7,4 @@ export * from './useParticipantMovement';
 export * from './useUpdateGroup';
 export * from './useAssignGuide';
 export * from './useGuideNameInfo';
+export * from './useGuideAssignmentForm';
