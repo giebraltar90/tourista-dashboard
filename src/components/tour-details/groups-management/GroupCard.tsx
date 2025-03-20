@@ -1,13 +1,17 @@
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { ParticipantDropZone } from "./ParticipantDropZone";
 import { DraggableParticipant } from "./DraggableParticipant";
 import { ParticipantItem } from "./ParticipantItem";
-import { useGuideNameInfo } from "@/hooks/group-management";
-import { Users } from "lucide-react";
+import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
+import { Users, UserCheck, UserX } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
+import { useState } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -44,6 +48,9 @@ export const GroupCard = ({
   guide3Info
 }: GroupCardProps) => {
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+  const { assignGuide } = useAssignGuide(tour?.id || "");
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
   
   // Calculate participant counts from the participants array directly for accuracy
   const participants = Array.isArray(group.participants) ? group.participants : [];
@@ -65,13 +72,34 @@ export const GroupCard = ({
   // Use standardized group name
   const displayName = `Group ${groupIndex + 1}`;
   
+  // Create guide options for selection
+  const guideOptions = [
+    { id: "_none", name: "Unassign", info: null },
+    ...(tour.guide1 ? [{ id: "guide1", name: tour.guide1, info: guide1Info }] : []),
+    ...(tour.guide2 ? [{ id: "guide2", name: tour.guide2, info: guide2Info }] : []),
+    ...(tour.guide3 ? [{ id: "guide3", name: tour.guide3, info: guide3Info }] : [])
+  ];
+  
+  const handleAssignGuide = async (guideId: string) => {
+    setIsAssigning(true);
+    setIsSelecting(false);
+    
+    try {
+      await assignGuide(groupIndex, guideId === "_none" ? undefined : guideId);
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+  
+  const isGuideAssigned = guideName !== "Unassigned";
+  
   return (
     <ParticipantDropZone 
       groupIndex={groupIndex}
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
-      <Card className={`border-2 ${guideName !== "Unassigned" ? "border-green-200" : "border-muted"}`}>
+      <Card className={`border-2 ${isGuideAssigned ? "border-green-200" : "border-muted"}`}>
         <CardHeader className="pb-2 bg-muted/30">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -84,19 +112,53 @@ export const GroupCard = ({
             </Badge>
           </div>
           <div className="flex justify-between items-center">
-            <CardDescription className="flex items-center">
-              <Users className="h-4 w-4 mr-1.5 text-muted-foreground" />
-              <span>Guide: </span>
-              {guideName !== "Unassigned" ? (
-                <Badge variant="outline" className="ml-1.5 bg-green-100 text-green-800">
-                  {guideName}
-                </Badge>
+            <div className="flex items-center gap-1">
+              <div className={`p-1 rounded-full ${isGuideAssigned ? 'bg-green-100' : 'bg-amber-100'}`}>
+                {isGuideAssigned ? 
+                  <UserCheck className="h-3.5 w-3.5 text-green-600" /> : 
+                  <UserX className="h-3.5 w-3.5 text-amber-600" />
+                }
+              </div>
+              
+              {isSelecting ? (
+                <Select onValueChange={handleAssignGuide} defaultValue={group.guideId || "_none"}>
+                  <SelectTrigger className="h-7 w-40">
+                    <SelectValue placeholder="Select guide" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_none">Unassigned</SelectItem>
+                    {guideOptions.filter(g => g.id !== "_none").map((guide) => (
+                      <SelectItem key={guide.id} value={guide.id}>
+                        {guide.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               ) : (
-                <Badge variant="outline" className="ml-1.5 bg-yellow-100 text-yellow-800">
-                  Unassigned
-                </Badge>
+                <>
+                  <span className="text-sm">Guide: </span>
+                  {isGuideAssigned ? (
+                    <Badge variant="outline" className="ml-1 bg-green-100 text-green-800">
+                      {guideName}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="ml-1 bg-amber-100 text-amber-800">
+                      Unassigned
+                    </Badge>
+                  )}
+                  
+                  <Button 
+                    size="sm" 
+                    variant="ghost"
+                    className="h-6 px-2 ml-1"
+                    onClick={() => setIsSelecting(true)}
+                    disabled={isAssigning}
+                  >
+                    {isAssigning ? "..." : "Change"}
+                  </Button>
+                </>
               )}
-            </CardDescription>
+            </div>
             
             {totalChildCount > 0 && (
               <Badge variant="outline" className="bg-blue-100 text-blue-800">

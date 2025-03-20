@@ -3,18 +3,23 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchTourData } from './services/tourDataService';
 
 /**
- * Custom hook to fetch tour data by ID with improved error handling
+ * Custom hook to fetch tour data by ID with improved caching
  */
 export const useTourById = (tourId: string) => {
   return useQuery({
     queryKey: ['tour', tourId],
     queryFn: () => fetchTourData(tourId),
     enabled: !!tourId,
-    staleTime: 30000, // Increased stale time to reduce unnecessary refetches
-    gcTime: 300000, // Keep unused data in cache for 5 minutes
-    retry: 3, // Retry failed requests 3 times
-    retryDelay: attemptIndex => Math.min(1000 * Math.pow(2, attemptIndex), 10000), // Exponential backoff
-    refetchOnWindowFocus: true, // Refresh when tab gets focus
-    refetchOnMount: true, // Always refresh when component mounts
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch automatically on window focus
+    refetchOnMount: true,
+    retry: 2,
+    // Properly type the error handling
+    meta: {
+      onError: (error: Error) => {
+        console.error('Error fetching tour data:', error);
+      }
+    }
   });
 };
