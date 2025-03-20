@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
@@ -22,21 +21,18 @@ export const prepareGroupUpdate = (
     return updatedTourGroups;
   }
   
-  // Get the current group name
-  let groupName = updatedTourGroups[groupIndex].name || `Group ${groupIndex + 1}`;
+  // Generate a proper group name based on index
+  const baseGroupName = `Group ${groupIndex + 1}`;
   
-  // Generate a new group name only if we're assigning a guide (not unassigning)
-  // and only if the current name follows the default pattern
-  let newGroupName = groupName;
-  if (actualGuideId) {
-    // Fixed: Pass the groupIndex parameter as a number instead of guideName as a string
-    newGroupName = generateGroupName(groupName, groupIndex);
-  }
+  // Add guide name in parenthesis if assigned
+  const newGroupName = actualGuideId ? 
+    `${baseGroupName} (${guideName})` : 
+    baseGroupName;
   
   // Create a deep copy of the updatedTourGroups to avoid mutation issues
   const result = JSON.parse(JSON.stringify(updatedTourGroups));
   
-  // Update the group with new guide ID and possibly new name
+  // Update the group with new guide ID and name
   result[groupIndex] = {
     ...result[groupIndex],
     guideId: actualGuideId,

@@ -30,8 +30,12 @@ export const updateTourGroups = async (
               isSpecial: isSpecialGuideId(group.guideId)
             });
             
-            // Store guide ID directly without sanitization - this is the key fix
+            // Store guide ID directly without sanitization
             const safeGuideId = group.guideId;
+            
+            // Ensure name reflects group index position
+            const groupIndex = updatedGroups.findIndex(g => g.id === group.id);
+            const baseName = `Group ${groupIndex + 1}`;
             
             // Update existing group
             const updateData: any = {
@@ -62,12 +66,17 @@ export const updateTourGroups = async (
             // Store guide ID directly for new groups too
             const safeGuideId = group.guideId;
             
+            // Get index for new group
+            const newIndex = updatedGroups.filter(g => !g.id).indexOf(group);
+            const existingCount = updatedGroups.filter(g => g.id).length;
+            const groupIndex = existingCount + newIndex;
+            
             // Insert new group if no ID
             const { error } = await supabase
               .from('tour_groups')
               .insert({
                 tour_id: tourId,
-                name: group.name,
+                name: `Group ${groupIndex + 1}`,
                 size: group.size || 0,
                 entry_time: group.entryTime,
                 guide_id: safeGuideId, // Use unsanitized ID for database
@@ -80,6 +89,10 @@ export const updateTourGroups = async (
             }
           }
         }
+        
+        // Force a delay to allow the database to settle
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         success = true;
         console.log(`Updated ${updatedGroups.length} tour groups in Supabase for tour ${tourId}`);
       } catch (supabaseError) {
