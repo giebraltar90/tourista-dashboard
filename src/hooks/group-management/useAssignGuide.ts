@@ -82,6 +82,9 @@ export const useAssignGuide = (tourId: string) => {
       const targetGroup = tour!.tourGroups![groupIndex];
       const groupId = targetGroup.id;
       
+      // CRITICAL: Preserve participants when updating the group
+      const existingParticipants = targetGroup.participants || [];
+      
       // Get group number for name generation
       const groupNumber = groupIndex + 1;
       
@@ -96,7 +99,9 @@ export const useAssignGuide = (tourId: string) => {
       updatedGroups[groupIndex] = {
         ...updatedGroups[groupIndex],
         guideId: actualGuideId,
-        name: groupName
+        name: groupName,
+        // CRITICAL: Preserve the existing participants
+        participants: existingParticipants
       };
       
       // Apply optimistic update to UI
@@ -128,7 +133,8 @@ export const useAssignGuide = (tourId: string) => {
           groupIndex,
           groupId,
           guideId: actualGuideId,
-          guideName
+          guideName,
+          participantCount: existingParticipants.length // Include participant count in modification record
         });
         
         return true;

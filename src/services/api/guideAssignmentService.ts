@@ -22,6 +22,18 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
+    // First, fetch the current group to ensure we have all data
+    const { data: currentGroup, error: fetchError } = await supabase
+      .from('tour_groups')
+      .select('*')
+      .eq('id', groupId)
+      .single();
+      
+    if (fetchError) {
+      console.error("Error fetching current group data:", fetchError);
+      // Continue with update anyway
+    }
+    
     // Build update object based on what data is provided
     const updateData: any = {};
     

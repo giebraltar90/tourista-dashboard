@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
@@ -8,6 +8,8 @@ import { useGuideInfo } from "@/hooks/guides";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -38,7 +40,8 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     handleDrop,
     setSelectedParticipant,
     isMovePending,
-    loadParticipants
+    loadParticipants,
+    refreshParticipants
   } = useGroupManagement(tour);
 
   // Load participants data when component mounts
@@ -89,9 +92,21 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Participant Management</CardTitle>
-        <CardDescription>Drag and drop participants between groups</CardDescription>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle>Participant Management</CardTitle>
+          <CardDescription>Drag and drop participants between groups</CardDescription>
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={refreshParticipants}
+          disabled={isMovePending}
+          className="flex items-center"
+        >
+          <RefreshCw className={`h-4 w-4 mr-1 ${isMovePending ? 'animate-spin' : ''}`} />
+          Refresh Participants
+        </Button>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
@@ -110,9 +125,13 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
+            onRefreshParticipants={refreshParticipants}
           />
         </div>
       </CardContent>
+      <CardFooter className="border-t p-4 text-sm text-muted-foreground">
+        Note: Changes to participants and group assignments are saved automatically.
+      </CardFooter>
 
       {/* Render all dialogs */}
       {dialogsComponent}

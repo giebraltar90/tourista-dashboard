@@ -50,11 +50,6 @@ export const TourGroupGuide = ({
     participantsLength: Array.isArray(group.participants) ? group.participants.length : 'N/A'
   });
   
-  // Create a handler for assigning guides
-  const handleAssignGuide = async (guideId: string) => {
-    return await assignGuide(groupIndex, guideId);
-  };
-  
   return (
     <Card>
       <CardHeader className="pb-2">

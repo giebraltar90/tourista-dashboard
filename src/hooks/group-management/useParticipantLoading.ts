@@ -11,6 +11,7 @@ import { fetchParticipantsForTour } from "@/services/api/tourApi";
  */
 export const useParticipantLoading = () => {
   const queryClient = useQueryClient();
+  const [isLoading, setIsLoading] = useState(false);
   
   // Load participants data from Supabase
   const loadParticipants = useCallback(async (
@@ -18,20 +19,24 @@ export const useParticipantLoading = () => {
     setLocalTourGroups: React.Dispatch<React.SetStateAction<VentrataTourGroup[]>>
   ) => {
     console.log("loadParticipants called for tourId:", tourId);
+    setIsLoading(true);
+    
     try {
       // Fetch tour groups to get their IDs
       const { data: groups, error: groupsError } = await supabase
         .from('tour_groups')
-        .select('id')
+        .select('id, guide_id, name')
         .eq('tour_id', tourId);
         
       if (groupsError) {
         console.error("Error fetching tour groups:", groupsError);
+        setIsLoading(false);
         return;
       }
       
       if (!groups || groups.length === 0) {
         console.log("No groups found for tour ID:", tourId);
+        setIsLoading(false);
         
         // Fallback: Let's try getting participants directly from the tour API
         try {
@@ -80,6 +85,7 @@ export const useParticipantLoading = () => {
         
       if (participantsError) {
         console.error("Error fetching participants:", participantsError);
+        setIsLoading(false);
         return;
       }
       
@@ -125,23 +131,42 @@ export const useParticipantLoading = () => {
           } else {
             // Create demo participants if none found
             console.log("No participants found in API either, creating demo data");
-            createDemoParticipants(tourId, groupIds, setLocalTourGroups);
+            createDemoParticipants(tourId, groupIds, groups, setLocalTourGroups);
           }
         } catch (apiError) {
           console.error("API fallback fetch failed:", apiError);
           // Create demo participants as last resort
-          createDemoParticipants(tourId, groupIds, setLocalTourGroups);
+          createDemoParticipants(tourId, groupIds, groups, setLocalTourGroups);
         }
+        setIsLoading(false);
         return;
       }
+      
+      // CRITICAL FIX: Map groups by their IDs for easier lookups
+      const groupsById = groups.reduce((map, group) => {
+        map[group.id] = group;
+        return map;
+      }, {} as Record<string, any>);
       
       // Update local groups with participants
       setLocalTourGroups(prevGroups => {
         console.log("Updating localTourGroups with participants, prevGroups:", prevGroups);
+        
+        // First, ensure all groups have the same IDs as the ones from the database
+        // This is necessary to match participants to groups correctly
         const updatedGroups = prevGroups.map(group => {
+          // Find the corresponding group in the database groups
+          const matchingDbGroup = groups.find(g => g.id === group.id);
+          
+          if (!matchingDbGroup) {
+            console.warn(`No matching database group found for group ID ${group.id}`);
+            return group;
+          }
+          
+          // Get participants for this group
           const groupParticipants = participants
             ? participants
-                .filter(p => p.group_id === group.id)
+                .filter(p => p.group_id === matchingDbGroup.id)
                 .map(p => ({
                   id: p.id,
                   name: p.name,
@@ -152,10 +177,12 @@ export const useParticipantLoading = () => {
                 }))
             : [];
             
-          console.log(`Group ${group.id} has ${groupParticipants.length} participants:`, groupParticipants);
+          console.log(`Group ${matchingDbGroup.id} (${matchingDbGroup.name}) has ${groupParticipants.length} participants:`, groupParticipants);
             
           return {
             ...group,
+            // CRITICAL: Ensure we preserve guide_id from the database when available
+            guideId: matchingDbGroup.guide_id || group.guideId,
             participants: groupParticipants,
             // Update group size and childCount based on participants
             size: groupParticipants.reduce((total, p) => total + (p.count || 1), 0) || group.size || 0,
@@ -182,21 +209,23 @@ export const useParticipantLoading = () => {
         try {
           const { data: groups } = await supabase
             .from('tour_groups')
-            .select('id')
+            .select('id, name, guide_id')
             .eq('tour_id', tourId);
             
           if (groups && groups.length > 0) {
             const groupIds = groups.map(g => g.id);
-            createDemoParticipants(tourId, groupIds, setLocalTourGroups);
+            createDemoParticipants(tourId, groupIds, groups, setLocalTourGroups);
           }
         } catch (e) {
           console.error("Failed to get group IDs:", e);
         }
       }
+    } finally {
+      setIsLoading(false);
     }
   }, [queryClient]);
   
-  return { loadParticipants };
+  return { loadParticipants, isLoading };
 };
 
 /**
@@ -205,6 +234,7 @@ export const useParticipantLoading = () => {
 export const createDemoParticipants = (
   tourId: string, 
   groupIds: string[], 
+  groupsData: any[],
   setGroups: React.Dispatch<React.SetStateAction<VentrataTourGroup[]>>
 ) => {
   console.log("Creating demo participants for groups:", groupIds);
@@ -214,6 +244,12 @@ export const createDemoParticipants = (
     console.log("No group IDs to create demo participants for");
     return;
   }
+  
+  // Map groups by their IDs for easier lookups
+  const groupsById = groupsData.reduce((map, group) => {
+    map[group.id] = group;
+    return map;
+  }, {} as Record<string, any>);
   
   // Create demo participants
   const demoParticipants = [
@@ -268,10 +304,15 @@ export const createDemoParticipants = (
   // Update groups with demo participants
   setGroups(prevGroups => {
     const updatedGroups = prevGroups.map(group => {
+      // Find the corresponding group data
+      const matchingGroupData = groupsById[group.id];
+      
       const groupParticipants = demoParticipants.filter(p => p.group_id === group.id);
       
       return {
         ...group,
+        // CRITICAL: Ensure we preserve guide_id from the database when available
+        guideId: matchingGroupData?.guide_id || group.guideId,
         participants: groupParticipants,
         size: groupParticipants.reduce((total, p) => total + (p.count || 1), 0) || group.size || 0,
         childCount: groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0) || group.childCount || 0

@@ -34,12 +34,26 @@ export const useGroupManagement = (tour: TourCardProps) => {
         ...group,
         participants: Array.isArray(group.participants) ? group.participants : []
       }));
+      
+      // Log stably formatted groups for debugging
+      console.log("Stable tour groups:", normalizedGroups.map(g => ({
+        id: g.id,
+        name: g.name,
+        size: g.size,
+        entryTime: g.entryTime,
+        guideId: g.guideId,
+        childCount: g.childCount,
+        participants: g.participants,
+        originalIndex: tour.tourGroups.findIndex((og: any) => og.id === g.id),
+        displayName: g.name
+      })));
+      
       setLocalTourGroups(normalizedGroups);
     }
   }, [tour.tourGroups]);
   
   // Get participant loading capabilities
-  const { loadParticipants: loadParticipantsInner } = useParticipantLoading();
+  const { loadParticipants: loadParticipantsInner, isLoading: isLoadingParticipants } = useParticipantLoading();
   
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
@@ -128,6 +142,14 @@ export const useGroupManagement = (tour: TourCardProps) => {
     }
   };
 
+  // Add a refresh function to manually trigger participant loading
+  const refreshParticipants = useCallback(() => {
+    if (tour.id) {
+      toast.info("Refreshing participants...");
+      loadParticipants(tour.id);
+    }
+  }, [tour.id, loadParticipants]);
+
   return {
     localTourGroups,
     selectedParticipant,
@@ -138,8 +160,9 @@ export const useGroupManagement = (tour: TourCardProps) => {
     handleDragLeave,
     handleDrop,
     setSelectedParticipant,
-    isMovePending: isMovePending || isDragPending,
+    isMovePending: isMovePending || isDragPending || isLoadingParticipants,
     loadParticipants,
+    refreshParticipants,
     draggedParticipant
   };
 };
