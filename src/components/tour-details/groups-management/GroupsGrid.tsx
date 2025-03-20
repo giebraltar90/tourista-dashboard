@@ -12,7 +12,10 @@ interface GroupsGridProps {
   guide3Info: GuideInfo | null;
   onDrop: (e: React.DragEvent, toGroupIndex: number) => void;
   onDragOver: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDragEnter?: (e: React.DragEvent) => void;
   onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onMoveClick: (data: { participant: VentrataParticipant, fromGroupIndex: number }) => void;
   selectedParticipant: { participant: VentrataParticipant, fromGroupIndex: number } | null;
   handleMoveParticipant: (toGroupIndex: number) => void;
@@ -27,7 +30,10 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
   guide3Info,
   onDrop,
   onDragOver,
+  onDragLeave,
+  onDragEnter,
   onDragStart,
+  onDragEnd,
   onMoveClick,
   selectedParticipant,
   handleMoveParticipant,
@@ -37,7 +43,7 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {tourGroups.map((group, index) => (
         <GroupCard
-          key={index}
+          key={group.id || index}
           group={group}
           groupIndex={index}
           tour={tour}
@@ -46,7 +52,10 @@ export const GroupsGrid: React.FC<GroupsGridProps> = ({
           guide3Info={guide3Info}
           onDrop={onDrop}
           onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDragEnter={onDragEnter}
           onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
           onMoveClick={onMoveClick}
           selectedParticipant={selectedParticipant}
           handleMoveParticipant={handleMoveParticipant}

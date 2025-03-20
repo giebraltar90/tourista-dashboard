@@ -1,8 +1,12 @@
 
 import { useCallback, useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
-import { toast } from "sonner";
-import { updateParticipant } from "@/services/api/tourApi";
+import { 
+  handleDragStartEvent, 
+  handleDragEndEvent,
+  processDrop,
+  extractParticipantFromDropEvent
+} from "./services/dragAndDropService";
 
 type UpdaterFunction = (
   fromGroupIndex: number,
@@ -25,21 +29,41 @@ export const useDragAndDrop = (
     participant: VentrataParticipant,
     fromGroup: number
   ) => {
-    console.log("Drag started:", { participant, fromGroup });
-    e.dataTransfer.setData("application/json", JSON.stringify({
-      participant,
-      fromGroupIndex: fromGroup
-    }));
+    const dragData = handleDragStartEvent(e, participant, fromGroup);
     
-    // Also store in state for safety (in case dataTransfer fails)
-    setDraggedParticipant(participant);
-    setFromGroupIndex(fromGroup);
+    // Store in state for safety (in case dataTransfer fails)
+    setDraggedParticipant(dragData.participant);
+    setFromGroupIndex(dragData.fromGroupIndex);
   }, []);
+  
+  // Handler for drag end
+  const handleDragEnd = useCallback((e: React.DragEvent) => {
+    handleDragEndEvent(e);
+    
+    // Only clear drag state on successful drops
+    if (!isDragPending) {
+      setDraggedParticipant(null);
+      setFromGroupIndex(null);
+    }
+  }, [isDragPending]);
   
   // Handler for drag over
   const handleDragOver = useCallback((e: React.DragEvent) => {
     // Necessary to make the element a drop target
     e.preventDefault();
+    
+    // Add visual indication that this is a drop target
+    if (e.currentTarget.classList) {
+      e.currentTarget.classList.add('drag-over');
+    }
+  }, []);
+  
+  // Handler for drag leave
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    // Remove visual indication
+    if (e.currentTarget.classList) {
+      e.currentTarget.classList.remove('drag-over');
+    }
   }, []);
   
   // Handler for drop
@@ -52,38 +76,28 @@ export const useDragAndDrop = (
     e.preventDefault();
     console.log("Drop detected on group index:", toGroupIndex);
     
+    // Remove visual indication
+    if (e.currentTarget.classList) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    
     // Block during pending operations
     if (isDragPending) {
       console.log("Drop ignored - operation already pending");
       return;
     }
     
-    let dropData;
+    // Extract data from the drop event
+    const { participant, fromGroupIndex: sourceGroupIndex } = extractParticipantFromDropEvent(
+      e,
+      draggedParticipant,
+      fromGroupIndex
+    );
     
-    try {
-      // Get data from dataTransfer
-      const jsonData = e.dataTransfer.getData("application/json");
-      if (jsonData) {
-        dropData = JSON.parse(jsonData);
-      }
-    } catch (error) {
-      console.error("Error parsing drag data:", error);
-    }
-    
-    // Fallback to state if dataTransfer failed
-    if (!dropData && draggedParticipant && fromGroupIndex !== null) {
-      dropData = {
-        participant: draggedParticipant,
-        fromGroupIndex
-      };
-    }
-    
-    if (!dropData) {
-      console.error("No drag data available");
+    if (!participant || sourceGroupIndex === null) {
+      console.error("Invalid drop operation - missing required data");
       return;
     }
-    
-    const { participant, fromGroupIndex: sourceGroupIndex } = dropData;
     
     console.log("Drop data:", { participant, sourceGroupIndex, toGroupIndex });
     
@@ -93,53 +107,25 @@ export const useDragAndDrop = (
       return;
     }
     
-    // Block invalid operations
-    if (!participant || sourceGroupIndex === undefined || toGroupIndex === undefined) {
-      console.error("Invalid drop operation - missing required data", { participant, sourceGroupIndex, toGroupIndex });
-      return;
-    }
-    
     try {
       setIsDragPending(true);
       
-      console.log("Updating groups via updaterFn");
-      // Apply the update function to get new groups state
-      const updatedGroups = updaterFn(sourceGroupIndex, toGroupIndex, participant, currentGroups);
+      // Process the drop operation
+      const { success, updatedGroups } = await processDrop(
+        sourceGroupIndex,
+        toGroupIndex,
+        participant,
+        currentGroups,
+        updaterFn
+      );
       
-      if (!updatedGroups) {
-        console.log("Update function returned null, aborting");
-        return;
-      }
-      
-      // Update UI immediately (optimistic update)
-      setGroups(updatedGroups);
-      
-      // Get the destination group ID
-      const destinationGroupId = currentGroups[toGroupIndex]?.id;
-      
-      if (!destinationGroupId) {
-        console.error("Missing destination group ID");
-        toast.error("Failed to move participant: Missing group information");
-        return;
-      }
-      
-      console.log(`Updating participant ${participant.id} to group ${destinationGroupId}`);
-      
-      // Persist the change to the database
-      const success = await updateParticipant(participant.id, destinationGroupId);
-      
-      if (success) {
-        toast.success("Participant moved successfully");
-      } else {
-        // If failed, revert the UI
-        toast.error("Failed to move participant");
+      // Update state if successful
+      if (success && updatedGroups) {
+        setGroups(updatedGroups);
+      } else if (!success) {
+        // If operation failed but we tried to update UI, revert
         setGroups(currentGroups);
       }
-    } catch (error) {
-      console.error("Error during drop handling:", error);
-      toast.error("Error moving participant");
-      // Revert UI on error
-      setGroups(currentGroups);
     } finally {
       setIsDragPending(false);
       // Clear drag state
@@ -150,8 +136,12 @@ export const useDragAndDrop = (
   
   return {
     handleDragStart,
+    handleDragEnd,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
-    isDragPending
+    isDragPending,
+    draggedParticipant,
+    fromGroupIndex
   };
 };

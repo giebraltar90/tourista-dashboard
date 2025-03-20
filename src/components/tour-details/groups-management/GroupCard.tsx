@@ -21,7 +21,10 @@ interface GroupCardProps {
   // Adding props for participant management
   onDrop?: (e: React.DragEvent, toGroupIndex: number) => void;
   onDragOver?: (e: React.DragEvent) => void;
+  onDragEnter?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
   onDragStart?: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
   onMoveClick?: (data: { participant: VentrataParticipant, fromGroupIndex: number }) => void;
   selectedParticipant?: { participant: VentrataParticipant, fromGroupIndex: number } | null;
   handleMoveParticipant?: (toGroupIndex: number) => void;
@@ -38,7 +41,10 @@ export const GroupCard = ({
   onAssignGuide,
   onDrop,
   onDragOver,
+  onDragEnter,
+  onDragLeave,
   onDragStart,
+  onDragEnd,
   onMoveClick,
   selectedParticipant,
   handleMoveParticipant,
@@ -73,7 +79,7 @@ export const GroupCard = ({
   const isMoveTarget = selectedParticipant !== null && selectedParticipant.fromGroupIndex !== groupIndex;
 
   return (
-    <Card className={`${isGuideAssigned ? 'border-green-200 bg-green-50/50' : 'border-gray-200'}`}>
+    <Card className={`${isGuideAssigned ? 'border-green-200 bg-green-50/50' : 'border-gray-200'} transition-all duration-300 hover:shadow-md`}>
       <CardHeader className="p-4 pb-2">
         <div className="flex justify-between items-center">
           <h3 className="text-md font-medium">{group.name}</h3>
@@ -140,6 +146,8 @@ export const GroupCard = ({
               groupIndex={groupIndex}
               onDrop={onDrop}
               onDragOver={onDragOver}
+              onDragEnter={onDragEnter}
+              onDragLeave={onDragLeave}
               isDropTarget={isDropTarget}
               onMoveHere={handleMoveParticipant}
               isMoveTarget={isMoveTarget}
@@ -153,11 +161,12 @@ export const GroupCard = ({
                       participant={participant}
                       groupIndex={groupIndex}
                       onDragStart={onDragStart}
+                      onDragEnd={onDragEnd}
                       onMoveClick={onMoveClick}
                     />
                   ))
                 ) : (
-                  <div className="text-sm text-gray-500 py-2 text-center italic">
+                  <div className="text-sm text-gray-500 py-4 text-center italic border border-dashed border-gray-200 rounded-md">
                     No participants in this group
                   </div>
                 )}

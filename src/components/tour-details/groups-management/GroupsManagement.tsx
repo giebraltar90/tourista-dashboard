@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
@@ -31,7 +32,9 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     selectedParticipant,
     handleMoveParticipant,
     handleDragStart,
+    handleDragEnd,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
     setSelectedParticipant,
     isMovePending,
@@ -57,6 +60,33 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
 
   const { dialogsComponent } = dialogUtils;
 
+  // Add CSS for drag and drop styling
+  useEffect(() => {
+    // Add global styles for drag and drop operations
+    const styleElement = document.createElement('style');
+    styleElement.textContent = `
+      .drag-over {
+        background-color: rgba(var(--primary-rgb), 0.1);
+        border: 2px dashed hsl(var(--primary));
+        border-radius: 0.5rem;
+      }
+      
+      [data-drop-target="true"] {
+        min-height: 100px;
+      }
+      
+      [data-drop-target="true"]:empty:not(.drag-over) {
+        border: 1px dashed rgba(0, 0, 0, 0.1);
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    // Clean up the style element on unmount
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -73,7 +103,9 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             guide3Info={guide3Info}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
             onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
             onMoveClick={setSelectedParticipant}
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}

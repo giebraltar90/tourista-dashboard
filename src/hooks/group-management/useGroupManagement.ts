@@ -58,9 +58,12 @@ export const useGroupManagement = (tour: TourCardProps) => {
   // Use the drag and drop functionality with a participant updater function
   const { 
     handleDragStart,
+    handleDragEnd,
     handleDragOver,
+    handleDragLeave,
     handleDrop: dropParticipant,
-    isDragPending
+    isDragPending,
+    draggedParticipant
   } = useDragAndDrop(tour.id, (fromGroupIndex, toGroupIndex, participant, currentGroups) => {
     // Exit early if trying to drop in the same group
     if (fromGroupIndex === toGroupIndex) {
@@ -91,6 +94,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
     // Update participant's group_id
     const updatedParticipant = {
       ...participant, 
+      groupId: updatedGroups[toGroupIndex].id,
       group_id: updatedGroups[toGroupIndex].id
     };
     updatedGroups[toGroupIndex].participants.push(updatedParticipant);
@@ -129,10 +133,13 @@ export const useGroupManagement = (tour: TourCardProps) => {
     selectedParticipant,
     handleMoveParticipant,
     handleDragStart,
+    handleDragEnd,
     handleDragOver,
+    handleDragLeave,
     handleDrop,
     setSelectedParticipant,
     isMovePending: isMovePending || isDragPending,
-    loadParticipants
+    loadParticipants,
+    draggedParticipant
   };
 };

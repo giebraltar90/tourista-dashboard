@@ -2,11 +2,14 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight } from "lucide-react";
+import { useDropTarget } from "@/hooks/group-management/useDropTarget";
 
 interface ParticipantDropZoneProps {
   groupIndex: number;
   onDrop?: (e: React.DragEvent, toGroupIndex: number) => void;
   onDragOver?: (e: React.DragEvent) => void;
+  onDragLeave?: (e: React.DragEvent) => void;
+  onDragEnter?: (e: React.DragEvent) => void;
   children: React.ReactNode;
   isDropTarget?: boolean;
   onMoveHere?: (toGroupIndex: number) => void;
@@ -18,29 +21,45 @@ export const ParticipantDropZone = ({
   groupIndex,
   onDrop,
   onDragOver,
+  onDragLeave,
+  onDragEnter,
   children,
   isDropTarget,
   onMoveHere,
   isMoveTarget,
   isMovePending
 }: ParticipantDropZoneProps) => {
-  const [isDragOver, setIsDragOver] = React.useState(false);
+  const {
+    isDragOver,
+    handleDragEnter,
+    handleDragOver: handleLocalDragOver,
+    handleDragLeave: handleLocalDragLeave,
+    handleDrop: handleLocalDrop
+  } = useDropTarget();
   
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
+    handleLocalDragOver(e);
     if (onDragOver) {
       onDragOver(e);
     }
   };
   
-  const handleDragLeave = () => {
-    setIsDragOver(false);
+  const handleDragLeave = (e: React.DragEvent) => {
+    handleLocalDragLeave(e);
+    if (onDragLeave) {
+      onDragLeave(e);
+    }
+  };
+  
+  const handleDragEnter = (e: React.DragEvent) => {
+    handleDragEnter(e);
+    if (onDragEnter) {
+      onDragEnter(e);
+    }
   };
   
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
+    handleLocalDrop(e);
     if (onDrop) {
       console.log("Handling drop in ParticipantDropZone, groupIndex:", groupIndex);
       onDrop(e, groupIndex);
@@ -52,10 +71,11 @@ export const ParticipantDropZone = ({
       onDrop={handleDrop} 
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
-      onDragExit={handleDragLeave}
+      onDragEnter={handleDragEnter}
       className={`h-full relative rounded-md transition-all duration-200 ${
-        isDragOver ? 'bg-primary/10 border-2 border-dashed border-primary' : ''
-      } ${isMoveTarget ? 'border-2 border-dashed border-primary/60 rounded-md' : ''}`}
+        isDragOver ? 'bg-primary/20 border-2 border-dashed border-primary ring-2 ring-primary/10 ring-offset-1' : ''
+      } ${isMoveTarget ? 'border-2 border-dashed border-primary/60 rounded-md bg-primary/5' : ''}`}
+      data-drop-target="true"
     >
       {children}
       
@@ -66,7 +86,7 @@ export const ParticipantDropZone = ({
             onClick={() => onMoveHere?.(groupIndex)}
             disabled={isMovePending}
             variant="default"
-            className="text-sm"
+            className="text-sm shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
           >
             {isMovePending ? (
               <>
