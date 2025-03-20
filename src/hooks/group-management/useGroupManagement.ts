@@ -75,8 +75,8 @@ export const useGroupManagement = (tour: TourCardProps) => {
                   id: p.id,
                   name: p.name,
                   count: p.count || 1,
-                  bookingRef: p.bookingRef || p.booking_ref,
-                  childCount: p.childCount || p.child_count || 0,
+                  bookingRef: p.bookingRef,
+                  childCount: p.childCount || 0,
                   group_id: updatedGroups[0].id
                 })),
                 size: participants.reduce((sum, p) => sum + (p.count || 1), 0)
@@ -122,8 +122,8 @@ export const useGroupManagement = (tour: TourCardProps) => {
               id: p.id || `mock-${index}`,
               name: p.name || `Participant ${index+1}`,
               count: p.count || 1,
-              bookingRef: p.bookingRef || p.booking_ref || `BR-${index+100}`,
-              childCount: p.childCount || p.child_count || 0,
+              bookingRef: p.bookingRef || `BR-${index+100}`,
+              childCount: p.childCount || 0,
               group_id: groupIds[0] // Assign all to first group by default
             }));
             
@@ -170,8 +170,8 @@ export const useGroupManagement = (tour: TourCardProps) => {
                   id: p.id,
                   name: p.name,
                   count: p.count || 1,
-                  bookingRef: p.booking_ref || p.bookingRef,
-                  childCount: p.child_count || p.childCount || 0,
+                  bookingRef: p.booking_ref, // Fixed: Use p.booking_ref instead of p.bookingRef
+                  childCount: p.child_count || 0, // Fixed: Use p.child_count instead of p.childCount
                   group_id: p.group_id // Keep the group_id for reference
                 }))
             : [];

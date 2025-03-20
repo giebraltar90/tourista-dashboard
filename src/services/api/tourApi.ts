@@ -60,6 +60,30 @@ export const fetchParticipantsForTour = async (tourId: string): Promise<Ventrata
 };
 
 /**
+ * Update participant's group assignment
+ */
+export const updateParticipant = async (participantId: string, newGroupId: string): Promise<boolean> => {
+  console.log(`Updating participant ${participantId} to group ${newGroupId}`);
+  
+  try {
+    const { error } = await supabase
+      .from('participants')
+      .update({ group_id: newGroupId })
+      .eq('id', participantId);
+      
+    if (error) {
+      console.error(`Error updating participant ${participantId}:`, error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error in updateParticipant:`, error);
+    return false;
+  }
+};
+
+/**
  * Update tour groups (implementation)
  */
 export const updateTourGroups = async (tourId: string, updatedGroups: any[]): Promise<boolean> => {
