@@ -16,6 +16,18 @@ export const isSpecialGuideId = (guideId?: string): boolean => {
 };
 
 /**
+ * Sanitize guide ID for backward compatibility
+ * @deprecated Use mapSpecialGuideIdToUuid instead for database operations
+ */
+export const sanitizeGuideId = (guideId?: string): string | null => {
+  if (!guideId || guideId === "_none") return null;
+  
+  // For backward compatibility, return the ID as-is
+  // This function is deprecated - use mapSpecialGuideIdToUuid for database operations
+  return guideId;
+};
+
+/**
  * Map special guide IDs to their actual UUID values from the tour record
  * This is the key fix: we translate special IDs to real UUIDs before database storage
  * 

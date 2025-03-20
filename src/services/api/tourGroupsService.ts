@@ -1,7 +1,7 @@
 
 import { VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidUuid, sanitizeGuideId, isSpecialGuideId } from "./utils/guidesUtils";
+import { isValidUuid, isSpecialGuideId, mapSpecialGuideIdToUuid } from "./utils/guidesUtils";
 
 /**
  * Update tour groups (e.g., move participants between groups)
@@ -27,8 +27,7 @@ export const updateTourGroups = async (
             // Debug log to identify guide ID issues
             console.log(`Processing group ${group.id} with guideId:`, {
               rawGuideId: group.guideId,
-              isSpecial: isSpecialGuideId(group.guideId),
-              sanitized: sanitizeGuideId(group.guideId)
+              isSpecial: isSpecialGuideId(group.guideId)
             });
             
             // Store guide ID directly without sanitization - this is the key fix

@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { persistGuideAssignment } from "../guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
-import { isValidUuid, sanitizeGuideId } from "@/services/api/utils/guidesUtils";
+import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Applies an optimistic update to the UI cache
