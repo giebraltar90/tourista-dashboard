@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { VentrataParticipant } from "@/types/ventrata";
 
@@ -6,79 +5,74 @@ import { VentrataParticipant } from "@/types/ventrata";
  * Fetch participants for a specific tour
  */
 export const fetchParticipantsForTour = async (tourId: string): Promise<VentrataParticipant[]> => {
-  console.log(`Fetching participants for tour: ${tourId}`);
-  
+  // First get the tour groups
   try {
-    // First get the tour groups for this tour
     const { data: groups, error: groupsError } = await supabase
       .from('tour_groups')
       .select('id')
       .eq('tour_id', tourId);
       
-    if (groupsError) {
+    if (groupsError || !groups || groups.length === 0) {
       console.error("Error fetching tour groups:", groupsError);
       return [];
     }
     
-    if (!groups || groups.length === 0) {
-      console.log(`No groups found for tour ID: ${tourId}`);
-      return [];
-    }
+    // Get the group IDs
+    const groupIds = groups.map(g => g.id);
     
-    // Get group IDs
-    const groupIds = groups.map(group => group.id);
-    
-    // Fetch participants for these groups
+    // Now fetch participants for these groups
     const { data: participants, error: participantsError } = await supabase
       .from('participants')
       .select('*')
       .in('group_id', groupIds);
-      
+    
     if (participantsError) {
       console.error("Error fetching participants:", participantsError);
       return [];
     }
     
-    if (!participants || participants.length === 0) {
-      console.log(`No participants found for tour ID: ${tourId}`);
-      return [];
-    }
-    
-    // Transform the data to match our VentrataParticipant type
-    return participants.map(p => ({
+    // Format the data to match the VentrataParticipant interface
+    return (participants || []).map(p => ({
       id: p.id,
       name: p.name,
       count: p.count || 1,
       bookingRef: p.booking_ref,
       childCount: p.child_count || 0,
-      group_id: p.group_id
+      group_id: p.group_id,
+      // Include snake_case properties for database compatibility
+      booking_ref: p.booking_ref,
+      child_count: p.child_count
     }));
   } catch (error) {
-    console.error(`Error in fetchParticipantsForTour for tour ${tourId}:`, error);
+    console.error("Error fetching participants:", error);
     return [];
   }
 };
 
 /**
- * Update participant's group assignment
+ * Update a participant's group assignment
  */
-export const updateParticipant = async (participantId: string, newGroupId: string): Promise<boolean> => {
-  console.log(`Updating participant ${participantId} to group ${newGroupId}`);
-  
+export const updateParticipant = async (
+  participantId: string,
+  newGroupId: string
+): Promise<boolean> => {
   try {
+    console.log(`Updating participant ${participantId} to group ${newGroupId}`);
+    
     const { error } = await supabase
       .from('participants')
       .update({ group_id: newGroupId })
       .eq('id', participantId);
       
     if (error) {
-      console.error(`Error updating participant ${participantId}:`, error);
+      console.error("Error updating participant group:", error);
       return false;
     }
     
+    console.log(`Successfully updated participant ${participantId} to group ${newGroupId}`);
     return true;
   } catch (error) {
-    console.error(`Error in updateParticipant:`, error);
+    console.error("Error updating participant group:", error);
     return false;
   }
 };
