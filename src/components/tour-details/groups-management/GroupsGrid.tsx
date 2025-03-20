@@ -18,7 +18,7 @@ interface GroupsGridProps {
   onDragLeave: (e: React.DragEvent) => void;
   onDrop: (e: React.DragEvent, groupIndex: number) => void;
   onDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
-  onDragEnd: () => void;
+  onDragEnd: (e?: React.DragEvent) => void; // Updated to make e parameter optional
   onMoveClick: (data: { participant: VentrataParticipant; fromGroupIndex: number }) => void;
   selectedParticipant: { participant: VentrataParticipant; fromGroupIndex: number } | null;
   handleMoveParticipant: (toGroupIndex: number) => void;

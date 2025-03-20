@@ -119,7 +119,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDragStart={handleDragStart}
-            onDragEnd={(e) => handleDragEnd(e)} 
+            onDragEnd={handleDragEnd} 
             onMoveClick={setSelectedParticipant}
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
