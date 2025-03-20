@@ -1,3 +1,4 @@
+
 import { Badge } from "@/components/ui/badge";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup } from "@/types/ventrata";
@@ -10,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useGuideData } from "@/hooks/guides/useGuideData";
-import { mapGuideIdToUuid } from "@/hooks/group-management/services/guideAssignmentService";
+import { mapGuideIdToUuid } from "@/hooks/group-management/services/utils/guideMappingService";
 
 interface TourGroupGuideProps {
   tour: TourCardProps;
