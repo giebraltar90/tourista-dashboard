@@ -18,19 +18,56 @@ export const GroupCapacityInfo = ({
   // Ensure tour.tourGroups exists
   const tourGroups = tour.tourGroups || [];
   
+  // ENHANCED DEBUG: Log input data
+  console.log("ENHANCED DEBUG: GroupCapacityInfo input data:", {
+    providedTotalParticipants,
+    isHighSeason,
+    tourId: tour.id,
+    groupsCount: tourGroups.length
+  });
+  
   // CRITICAL FIX: Calculate directly from the participants arrays of each group
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
   // Detailed calculation loop for reliability
   for (const group of tourGroups) {
+    console.log(`ENHANCED DEBUG: Processing group ${group.name}:`, {
+      id: group.id,
+      size: group.size,
+      childCount: group.childCount,
+      hasParticipantsArray: Array.isArray(group.participants),
+      participantsLength: Array.isArray(group.participants) ? group.participants.length : 0
+    });
+    
     if (Array.isArray(group.participants) && group.participants.length > 0) {
+      // Calculate from participants array for most accuracy
+      let groupParticipantCount = 0;
+      let groupChildCount = 0;
+      
       for (const participant of group.participants) {
-        calculatedTotalParticipants += participant.count || 1;
-        calculatedTotalChildCount += participant.childCount || 0;
+        const participantCount = participant.count || 1;
+        const childCount = participant.childCount || 0;
+        
+        groupParticipantCount += participantCount;
+        groupChildCount += childCount;
       }
+      
+      console.log(`ENHANCED DEBUG: Group ${group.name} calculated from participants array:`, {
+        participantCount: groupParticipantCount,
+        childCount: groupChildCount,
+        participantDetails: group.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
+      });
+      
+      calculatedTotalParticipants += groupParticipantCount;
+      calculatedTotalChildCount += groupChildCount;
     } else {
       // Fallback to group properties when participants array isn't available
+      console.log(`ENHANCED DEBUG: Group ${group.name} using size properties:`, {
+        size: group.size || 0,
+        childCount: group.childCount || 0
+      });
+      
       calculatedTotalParticipants += group.size || 0;
       calculatedTotalChildCount += group.childCount || 0;
     }
@@ -53,7 +90,7 @@ export const GroupCapacityInfo = ({
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
   
   // Enhanced detailed logging for debugging
-  console.log("COUNTING: GroupCapacityInfo direct calculation results:", {
+  console.log("ENHANCED DEBUG: GroupCapacityInfo final calculations:", {
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     providedTotalParticipants,
@@ -63,23 +100,7 @@ export const GroupCapacityInfo = ({
     formattedParticipantCount,
     isHighSeason,
     capacity,
-    requiredGroups,
-    tourGroupsCount: tourGroups.length,
-    groupDetails: tourGroups.map(g => ({
-      name: g.name, 
-      size: g.size, 
-      childCount: g.childCount,
-      directParticipantCount: Array.isArray(g.participants) 
-        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
-        : 'No participants array',
-      directChildCount: Array.isArray(g.participants) 
-        ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
-        : 'No participants array',
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 'N/A',
-      participantDetails: Array.isArray(g.participants) 
-        ? g.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
-        : 'No participant details available'
-    }))
+    requiredGroups
   });
   
   return (

@@ -18,20 +18,49 @@ export const ParticipantsCard = ({
   totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
+  // ENHANCED DEBUG: More comprehensive logging for debugging
+  console.log("ENHANCED DEBUG: ParticipantsCard input data:", {
+    providedTotalParticipants,
+    providedTotalChildCount,
+    isHighSeason,
+    tourGroupsCount: tourGroups.length,
+    rawTourGroups: tourGroups
+  });
+
   // CRITICAL FIX: Always calculate from participants arrays directly
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
   // Calculate directly from participants array data for consistency
   for (const group of tourGroups) {
-    if (Array.isArray(group.participants)) {
+    console.log(`ENHANCED DEBUG: Processing group ${group.name}:`, {
+      id: group.id,
+      size: group.size,
+      childCount: group.childCount,
+      hasParticipantsArray: Array.isArray(group.participants),
+      participantsLength: Array.isArray(group.participants) ? group.participants.length : 0
+    });
+
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
       // Sum the count values for participants in this group
-      for (const participant of group.participants) {
-        calculatedTotalParticipants += participant.count || 1;
-        calculatedTotalChildCount += participant.childCount || 0;
-      }
-    } else if (group.size) {
+      const groupParticipantCount = group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+      const groupChildCount = group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
+      
+      console.log(`ENHANCED DEBUG: Group ${group.name} calculated from participants array:`, {
+        participantCount: groupParticipantCount,
+        childCount: groupChildCount,
+        participantDetails: group.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
+      });
+      
+      calculatedTotalParticipants += groupParticipantCount;
+      calculatedTotalChildCount += groupChildCount;
+    } else if (group.size !== undefined) {
       // Fallback to group size properties if participants array isn't available
+      console.log(`ENHANCED DEBUG: Group ${group.name} using size properties:`, {
+        size: group.size,
+        childCount: group.childCount || 0
+      });
+      
       calculatedTotalParticipants += group.size;
       calculatedTotalChildCount += group.childCount || 0;
     }
@@ -69,33 +98,16 @@ export const ParticipantsCard = ({
   };
   
   // Detailed log for troubleshooting
-  console.log("COUNTING: ParticipantsCard direct calculations:", { 
+  console.log("ENHANCED DEBUG: ParticipantsCard final calculations:", { 
     calculatedTotalParticipants,
     calculatedTotalChildCount,
-    providedTotalParticipants,
-    providedTotalChildCount,
     finalTotalParticipants: totalParticipants,
     finalTotalChildCount: totalChildCount,
     adultCount,
     formattedParticipantCount,
     isHighSeason,
     capacity,
-    requiredGroups,
-    tourGroupsCount: tourGroups.length,
-    groupDetails: tourGroups.map(g => ({
-      name: g.name, 
-      size: g.size, 
-      childCount: g.childCount,
-      participantCount: Array.isArray(g.participants) 
-        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
-        : g.size || 0,
-      childrenInParticipants: Array.isArray(g.participants) 
-        ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0) 
-        : g.childCount || 0,
-      participantDetails: Array.isArray(g.participants) 
-        ? g.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
-        : 'No participant details available'
-    }))
+    requiredGroups
   });
   
   return (

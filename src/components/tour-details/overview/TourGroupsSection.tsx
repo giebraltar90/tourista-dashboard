@@ -2,12 +2,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
-import { Users, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
-import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
@@ -32,32 +30,18 @@ export const TourGroupsSection = ({
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
   };
   
-  // Log all group data for debugging
-  const groupDetailsForLogging = tourGroups.map(g => {
-    // Calculate participant counts directly from participants array
-    const participantCount = Array.isArray(g.participants) && g.participants.length > 0
-      ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0)
-      : g.size || 0;
-      
-    const childCount = Array.isArray(g.participants) && g.participants.length > 0
-      ? g.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
-      : g.childCount || 0;
-      
-    return {
+  // ENHANCED DEBUG: Log all tour groups
+  console.log("ENHANCED DEBUG: TourGroupsSection tour groups:", {
+    groupsCount: tourGroups.length,
+    groups: tourGroups.map(g => ({
+      id: g.id,
       name: g.name,
+      guideId: g.guideId,
       size: g.size,
-      childCount: g.childCount,
-      calculatedParticipantCount: participantCount,
-      calculatedChildCount: childCount,
-      displayParticipants: formatParticipantCount(participantCount, childCount),
-      participantsArray: Array.isArray(g.participants) ? g.participants.length : 'N/A',
-      participantDetails: Array.isArray(g.participants) 
-        ? g.participants.map(p => ({ name: p.name, count: p.count || 1, childCount: p.childCount || 0 }))
-        : 'N/A'
-    };
+      hasParticipants: Array.isArray(g.participants),
+      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
+    }))
   });
-  
-  console.log("COUNTING: TourGroupsSection detailed group analysis:", groupDetailsForLogging);
 
   return (
     <Card>

@@ -38,29 +38,31 @@ export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number 
     return 0;
   }
   
+  console.log("ENHANCED DEBUG: calculateTotalParticipants input:", {
+    groupsCount: groups.length,
+    groupDetails: groups.map(g => ({
+      id: g.id,
+      name: g.name,
+      size: g.size,
+      hasParticipants: Array.isArray(g.participants),
+      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0
+    }))
+  });
+  
   // CRITICAL FIX: Calculate total from participants arrays when available, fall back to size property
   const total = groups.reduce((total, group) => {
     // If we have a participants array, use that for the most accurate count
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       const participantsCount = group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
-      console.log(`Group ${group.name || 'unnamed'}: ${participantsCount} participants from array`);
+      console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${participantsCount} participants from array`);
       return total + participantsCount;
     }
     // Otherwise fall back to the group size property
-    console.log(`Group ${group.name || 'unnamed'}: ${group.size || 0} participants from size property`);
+    console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${group.size || 0} participants from size property`);
     return total + (group.size || 0);
   }, 0);
   
-  console.log("COUNTING: Total participants:", total, "from groups:", 
-    groups.map(g => ({
-      name: g.name,
-      size: g.size,
-      participantsArray: Array.isArray(g.participants) ? g.participants.length : 'N/A',
-      participantsCount: Array.isArray(g.participants) 
-        ? g.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
-        : 'N/A'
-    }))
-  );
+  console.log("ENHANCED DEBUG: Total participants calculation result:", total);
   
   return total;
 };
@@ -74,20 +76,24 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
     return 0;
   }
   
+  console.log("ENHANCED DEBUG: calculateTotalChildCount input:", {
+    groupsCount: groups.length
+  });
+  
   // CRITICAL FIX: Calculate from participants arrays when available, fall back to childCount property
   const totalChildren = groups.reduce((total, group) => {
     // If we have a participants array, use that for the most accurate count
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       const childCount = group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0);
-      console.log(`Group ${group.name || 'unnamed'}: ${childCount} children from array`);
+      console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${childCount} children from array`);
       return total + childCount;
     }
     // Otherwise fall back to the group childCount property
-    console.log(`Group ${group.name || 'unnamed'}: ${group.childCount || 0} children from childCount property`);
+    console.log(`ENHANCED DEBUG: Group ${group.name || 'unnamed'}: ${group.childCount || 0} children from childCount property`);
     return total + (group.childCount || 0);
   }, 0);
   
-  console.log("COUNTING: Total child count:", totalChildren);
+  console.log("ENHANCED DEBUG: Total child count calculation result:", totalChildren);
   
   return totalChildren;
 };
