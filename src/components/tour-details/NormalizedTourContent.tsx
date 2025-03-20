@@ -39,7 +39,6 @@ export const NormalizedTourContent = ({
     <div className="max-w-screen-2xl mx-auto px-4 md:px-10 py-6 space-y-6">
       <TourHeader 
         tour={tour}
-        tourId={tourId}
       />
       
       <TourTabs 
@@ -64,7 +63,12 @@ export const NormalizedTourContent = ({
         )}
         
         {activeTab === "tickets" && (
-          <TicketsManagement tour={tour} />
+          <TicketsManagement 
+            tour={tour}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+          />
         )}
         
         {activeTab === "modifications" && (

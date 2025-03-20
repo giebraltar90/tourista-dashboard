@@ -1,5 +1,5 @@
 
-import { fetchTourById } from '@/services/api/tourApi';
+import { fetchTourFromSupabase } from '@/services/api/tour/fetchSupabaseTour';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { normalizeTourData } from '../helpers/normalizeTourData';
 
@@ -14,7 +14,7 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
   }
   
   try {
-    const tourData = await fetchTourById(tourId);
+    const tourData = await fetchTourFromSupabase(tourId);
     return normalizeTourData(tourData, tourId);
   } catch (error) {
     console.error(`Error in fetchTourData for tour ${tourId}:`, error);
