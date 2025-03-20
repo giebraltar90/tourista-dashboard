@@ -56,7 +56,33 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
     return tour.guide3Id;
   }
   
-  // If we couldn't map the ID, return null
+  // If we couldn't map the ID directly using the tour data, 
+  // try to find the guide in the guides list by name
+  if (guideId === "guide1" && tour.guide1 && tour.guides) {
+    const guide = tour.guides.find(g => g.name === tour.guide1);
+    if (guide && isValidUuid(guide.id)) {
+      console.log(`Mapped guide1 (${tour.guide1}) to UUID: ${guide.id} from guides list`);
+      return guide.id;
+    }
+  }
+  
+  if (guideId === "guide2" && tour.guide2 && tour.guides) {
+    const guide = tour.guides.find(g => g.name === tour.guide2);
+    if (guide && isValidUuid(guide.id)) {
+      console.log(`Mapped guide2 (${tour.guide2}) to UUID: ${guide.id} from guides list`);
+      return guide.id;
+    }
+  }
+  
+  if (guideId === "guide3" && tour.guide3 && tour.guides) {
+    const guide = tour.guides.find(g => g.name === tour.guide3);
+    if (guide && isValidUuid(guide.id)) {
+      console.log(`Mapped guide3 (${tour.guide3}) to UUID: ${guide.id} from guides list`);
+      return guide.id;
+    }
+  }
+  
+  // If we still couldn't map the ID, return null
   console.error(`Could not map special guide ID "${guideId}" to UUID - no matching ID found in tour data`);
   return null;
 };

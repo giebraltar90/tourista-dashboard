@@ -29,12 +29,11 @@ export const updateGuideInSupabase = async (
     if (guideId === null || guideId === "_none") {
       // Set to null to unassign
       updateData.guide_id = null;
-    } else if (guideId === "guide1" || guideId === "guide2" || guideId === "guide3") {
-      // These are special identifiers, they get stored as-is
-      updateData.guide_id = guideId;
+      console.log("Setting guide_id to null (unassigning)");
     } else if (isValidUuid(guideId)) {
       // Only add valid UUIDs
       updateData.guide_id = guideId;
+      console.log(`Setting guide_id to UUID: ${guideId}`);
     } else {
       console.error("Invalid UUID format for guide_id:", guideId);
       return false;

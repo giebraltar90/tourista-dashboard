@@ -31,7 +31,7 @@ export const useAssignGuide = (tourId: string) => {
         groupIndex, 
         guideId, 
         tourId, 
-        currentGroups: tour.tourGroups.map(g => ({id: g.id, name: g.name, guideId: g.guideId}))
+        currentGroups: tour.tourGroups?.map(g => ({id: g.id, name: g.name, guideId: g.guideId})) || []
       });
       
       // Validate groupIndex is within bounds
@@ -52,7 +52,7 @@ export const useAssignGuide = (tourId: string) => {
       }
       
       // Get the target group
-      const targetGroup = tour.tourGroups[groupIndex];
+      const targetGroup = tour.tourGroups?.[groupIndex];
       if (!targetGroup) {
         toast.error("Group not found");
         return false;
@@ -67,6 +67,14 @@ export const useAssignGuide = (tourId: string) => {
           console.log(`Found guide name: ${guideName} for ID: ${actualGuideId}`);
         } else {
           console.warn(`Could not find guide name for ID: ${actualGuideId} in available guides`);
+          // Try harder to find the name
+          if (tour.guide1Id === actualGuideId && tour.guide1) {
+            guideName = tour.guide1;
+          } else if (tour.guide2Id === actualGuideId && tour.guide2) {
+            guideName = tour.guide2;
+          } else if (tour.guide3Id === actualGuideId && tour.guide3) {
+            guideName = tour.guide3;
+          }
         }
       }
       
@@ -77,10 +85,13 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
       
+      // Get group number for name generation
+      const groupNumber = groupIndex + 1;
+      
       // Generate a new group name with the guide name
       const groupName = actualGuideId 
-        ? `Group ${groupIndex + 1} (${guideName})` 
-        : `Group ${groupIndex + 1}`;
+        ? `Group ${groupNumber} (${guideName})` 
+        : `Group ${groupNumber}`;
       
       console.log("Calling updateGuideInSupabase with:", {
         tourId,
@@ -109,9 +120,16 @@ export const useAssignGuide = (tourId: string) => {
           const newData = JSON.parse(JSON.stringify(oldData));
           
           // Update the specific group
-          if (newData.tourGroups[groupIndex]) {
+          if (newData.tourGroups && newData.tourGroups[groupIndex]) {
             newData.tourGroups[groupIndex].guideId = actualGuideId;
             newData.tourGroups[groupIndex].name = groupName;
+            
+            // Also update guideName if present
+            if (actualGuideId) {
+              newData.tourGroups[groupIndex].guideName = guideName;
+            } else {
+              newData.tourGroups[groupIndex].guideName = undefined;
+            }
           }
           
           return newData;
@@ -119,8 +137,8 @@ export const useAssignGuide = (tourId: string) => {
         
         // Record the modification
         const modificationDescription = actualGuideId 
-          ? `Assigned guide ${guideName} to Group ${groupIndex + 1}` 
-          : `Removed guide from Group ${groupIndex + 1}`;
+          ? `Assigned guide ${guideName} to Group ${groupNumber}` 
+          : `Removed guide from Group ${groupNumber}`;
           
         await addModification(modificationDescription, {
           groupIndex,
@@ -137,8 +155,8 @@ export const useAssignGuide = (tourId: string) => {
         }, 800);
         
         toast.success(actualGuideId 
-          ? `Guide ${guideName} assigned to Group ${groupIndex + 1}` 
-          : `Guide removed from Group ${groupIndex + 1}`
+          ? `Guide ${guideName} assigned to Group ${groupNumber}` 
+          : `Guide removed from Group ${groupNumber}`
         );
         
         return true;

@@ -7,6 +7,7 @@ import { GuideInfo } from "@/types/ventrata";
 import { useAssignGuide } from "./useAssignGuide";
 import { toast } from "sonner";
 import { isValidUuid, mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -40,6 +41,7 @@ export const useGuideAssignmentForm = ({
 }: UseGuideAssignmentFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
+  const { guides: allGuides = [] } = useGuideData() || { guides: [] };
   
   // Track the current guide ID for form state
   const [currentValue, setCurrentValue] = useState(currentGuideId || "_none");
@@ -66,6 +68,16 @@ export const useGuideAssignmentForm = ({
       guideId: currentValue,
     },
   });
+
+  // Helper function to find guide UUID by name
+  const findGuideUuidByName = (guideName: string): string | null => {
+    const guide = allGuides.find(g => g.name === guideName);
+    if (guide && isValidUuid(guide.id)) {
+      console.log(`Found guide UUID ${guide.id} for name: ${guideName}`);
+      return guide.id;
+    }
+    return null;
+  };
   
   const handleSubmit = async (values: FormValues) => {
     // If no change, just close the dialog
@@ -81,13 +93,39 @@ export const useGuideAssignmentForm = ({
       let guideIdToAssign: string | null = values.guideId as string;
       
       if (guideIdToAssign !== "_none") {
-        // If it's not a UUID, try to map it to one using the tour data
+        // Prepare enhanced tour data for mapping
+        const enhancedTour = {
+          ...tour,
+          guides: allGuides // Add all guides to the tour data for more robust mapping
+        };
+        
+        // If it's not a UUID, try to map it to one using the enhanced tour data
         if (!isValidUuid(guideIdToAssign)) {
-          guideIdToAssign = mapSpecialGuideIdToUuid(guideIdToAssign, tour);
-          console.log("Mapped special guide ID to UUID:", { 
-            original: values.guideId, 
-            mapped: guideIdToAssign 
-          });
+          // Find the selected guide by id in our guides array to get the name
+          const selectedGuide = guides.find(g => g.id === guideIdToAssign);
+          
+          if (selectedGuide && selectedGuide.name) {
+            // Try to find the UUID by name first
+            const uuidByName = findGuideUuidByName(selectedGuide.name);
+            if (uuidByName) {
+              guideIdToAssign = uuidByName;
+              console.log(`Mapped guide name ${selectedGuide.name} to UUID: ${guideIdToAssign}`);
+            } else {
+              // If we can't find by name, use the special ID mapper
+              guideIdToAssign = mapSpecialGuideIdToUuid(guideIdToAssign, enhancedTour);
+              console.log("Mapped special guide ID to UUID:", { 
+                original: values.guideId, 
+                mapped: guideIdToAssign 
+              });
+            }
+          } else {
+            // Just try the standard mapping
+            guideIdToAssign = mapSpecialGuideIdToUuid(guideIdToAssign, enhancedTour);
+            console.log("Mapped special guide ID to UUID:", { 
+              original: values.guideId, 
+              mapped: guideIdToAssign 
+            });
+          }
           
           // If mapping failed, show an error
           if (guideIdToAssign === null) {
