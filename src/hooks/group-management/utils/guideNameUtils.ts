@@ -1,3 +1,4 @@
+
 import { GuideInfo } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
@@ -36,11 +37,11 @@ export const findGuideName = (
 
 /**
  * Generate a group name based on guide assignment and group index
- * Ensures each group gets a unique sequential number
+ * Ensures each group gets a unique sequential number (Group 1, Group 2, etc.)
  */
-export const generateGroupName = (currentName: string, groupIndex: number): string => {
-  // Always use standardized naming format with sequential numbering
-  return `Group ${groupIndex + 1}`;
+export const generateGroupName = (existingGroups: any[], newGroupIndex: number): string => {
+  // Always use sequential numbering starting from 1
+  return `Group ${newGroupIndex + 1}`;
 };
 
 /**

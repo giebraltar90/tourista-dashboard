@@ -51,12 +51,14 @@ export const GroupsTable = ({
           // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
-          // Use sequential group naming
-          const groupDisplayName = `Group ${index + 1}${isGuideAssigned ? ` (${guideName})` : ''}`;
+          // Use the actual group name or a sequential fallback
+          const groupDisplayName = group.name || `Group ${index + 1}`;
           
           return (
             <TableRow key={index}>
-              <TableCell className="font-medium">{groupDisplayName}</TableCell>
+              <TableCell className="font-medium">
+                {groupDisplayName}{isGuideAssigned ? ` (${guideName})` : ''}
+              </TableCell>
               <TableCell>{formattedParticipantCount} participants</TableCell>
               <TableCell>{group.entryTime}</TableCell>
               <TableCell>

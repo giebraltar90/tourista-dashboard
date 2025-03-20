@@ -2,6 +2,7 @@
 import { VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid, isSpecialGuideId, mapSpecialGuideIdToUuid } from "./utils/guidesUtils";
+import { generateGroupName } from "@/hooks/group-management/utils/guideNameUtils";
 
 /**
  * Update tour groups (e.g., move participants between groups)
@@ -21,7 +22,7 @@ export const updateTourGroups = async (
         console.log("Updating tour groups in Supabase:", updatedGroups);
         
         // Update each group individually to handle multiple updates properly
-        for (const group of updatedGroups) {
+        for (const [index, group] of updatedGroups.entries()) {
           // Check if the group has an id (existing group) or needs to be created
           if (group.id) {
             // Debug log to identify guide ID issues
@@ -34,12 +35,11 @@ export const updateTourGroups = async (
             const safeGuideId = group.guideId;
             
             // Ensure name reflects group index position
-            const groupIndex = updatedGroups.findIndex(g => g.id === group.id);
-            const baseName = `Group ${groupIndex + 1}`;
+            const groupName = group.name || `Group ${index + 1}`;
             
             // Update existing group
             const updateData: any = {
-              name: group.name,
+              name: groupName,
               size: group.size || 0,
               child_count: group.childCount || 0,
               guide_id: safeGuideId // Use unsanitized ID for database
@@ -66,17 +66,15 @@ export const updateTourGroups = async (
             // Store guide ID directly for new groups too
             const safeGuideId = group.guideId;
             
-            // Get index for new group
-            const newIndex = updatedGroups.filter(g => !g.id).indexOf(group);
-            const existingCount = updatedGroups.filter(g => g.id).length;
-            const groupIndex = existingCount + newIndex;
+            // Generate sequential group name based on position
+            const groupName = `Group ${index + 1}`;
             
             // Insert new group if no ID
             const { error } = await supabase
               .from('tour_groups')
               .insert({
                 tour_id: tourId,
-                name: `Group ${groupIndex + 1}`,
+                name: groupName,
                 size: group.size || 0,
                 entry_time: group.entryTime,
                 guide_id: safeGuideId, // Use unsanitized ID for database
