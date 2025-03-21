@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { autoFixDatabaseIssues } from "@/services/api/checkDatabaseTables";
 import { createTestParticipants } from "@/services/api/createParticipants";
@@ -8,11 +8,17 @@ import { toast } from "sonner";
 export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void) => {
   const [databaseError, setDatabaseError] = useState<string | null>(null);
   const [isFixingDatabase, setIsFixingDatabase] = useState(false);
+  const hasCheckedRef = useRef(false);
   
   // Check database table existence
   useEffect(() => {
+    // Only run once per component lifecycle
+    if (hasCheckedRef.current) return;
+    
     const checkTableExistence = async () => {
       try {
+        hasCheckedRef.current = true;
+        
         // Try to directly query the participants table
         const { error } = await supabase
           .from('participants')
@@ -39,6 +45,8 @@ export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void
   
   // Handle database fix
   const handleFixDatabase = async () => {
+    if (isFixingDatabase) return; // Prevent multiple simultaneous fixes
+    
     setIsFixingDatabase(true);
     try {
       const success = await autoFixDatabaseIssues();
