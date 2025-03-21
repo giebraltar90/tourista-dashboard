@@ -10,13 +10,19 @@ export const fetchParticipantsForTour = async (tourId: string): Promise<Ventrata
   
   try {
     // Try to fetch from Supabase
-    const { data: groups } = await supabase
+    const { data: groups, error: groupsError } = await supabase
       .from('tour_groups')
       .select('id')
       .eq('tour_id', tourId);
       
+    if (groupsError) {
+      console.error("PARTICIPANTS DEBUG: Error fetching groups:", groupsError);
+      return [];
+    }
+    
     if (groups && groups.length > 0) {
       const groupIds = groups.map(g => g.id);
+      console.log("PARTICIPANTS DEBUG: Found group ids:", groupIds);
       
       const { data, error } = await supabase
         .from('participants')
@@ -40,7 +46,11 @@ export const fetchParticipantsForTour = async (tourId: string): Promise<Ventrata
           childCount: p.child_count || 0,
           group_id: p.group_id
         }));
+      } else {
+        console.log("PARTICIPANTS DEBUG: No participants found for these groups");
       }
+    } else {
+      console.log("PARTICIPANTS DEBUG: No groups found for tour:", tourId);
     }
     
     // If no data found, return empty array
@@ -61,6 +71,8 @@ export const updateParticipantGroup = async (
   newGroupId: string
 ): Promise<boolean> => {
   try {
+    console.log(`PARTICIPANTS DEBUG: Moving participant ${participantId} to group ${newGroupId}`);
+    
     const { error } = await supabase
       .from('participants')
       .update({ group_id: newGroupId })
@@ -71,6 +83,7 @@ export const updateParticipantGroup = async (
       return false;
     }
     
+    console.log(`PARTICIPANTS DEBUG: Successfully moved participant ${participantId} to group ${newGroupId}`);
     return true;
   } catch (error) {
     console.error("Error in updateParticipantGroup:", error);

@@ -91,7 +91,7 @@ export const useParticipantLoading = () => {
       // Try direct SQL query to check participants table
       const { data: directCheck, error: directError } = await supabase.rpc('debug_check_participants', {
         group_ids: groupIds
-      }).single();
+      } as any).single();
       
       if (directError) {
         console.error("DATABASE DEBUG: Error in debug_check_participants:", directError);
@@ -116,6 +116,7 @@ export const useParticipantLoading = () => {
       console.log(`DATABASE DEBUG: Found ${participantsData ? participantsData.length : 0} total participants`);
       
       // If no participants were found, let's check if the participants table exists
+      let finalParticipantsData = participantsData;
       if (!participantsData || participantsData.length === 0) {
         console.log("DATABASE DEBUG: No participants found. Checking if the participants table exists...");
         
@@ -156,7 +157,7 @@ export const useParticipantLoading = () => {
             
             // Use these test participants if we found any
             if (testParticipantsData && testParticipantsData.length > 0) {
-              participantsData = testParticipantsData;
+              finalParticipantsData = testParticipantsData;
             }
           }
         } catch (e) {
@@ -167,8 +168,8 @@ export const useParticipantLoading = () => {
       // Create an array of groups with their participants
       const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
         // Get participants for this group
-        const groupParticipants = participantsData
-          ? participantsData
+        const groupParticipants = finalParticipantsData
+          ? finalParticipantsData
               .filter(p => p.group_id === group.id)
               .map(p => ({
                 id: p.id,

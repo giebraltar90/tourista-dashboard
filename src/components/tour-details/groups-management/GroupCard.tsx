@@ -109,6 +109,8 @@ export const GroupCard = ({
             isMovePending={isMovePending}
             onAssignGuide={onAssignGuide}
             guideName={guideName}
+            tourId={tour.id}
+            onRefreshCallback={onRefreshParticipants}
           />
         </CardContent>
       )}

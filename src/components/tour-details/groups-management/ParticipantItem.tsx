@@ -6,7 +6,7 @@ import { GripVertical, User, Users } from "lucide-react";
 
 export interface ParticipantItemProps {
   participant: VentrataParticipant;
-  groupIndex: number; // Added groupIndex prop
+  groupIndex: number;
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: (e?: React.DragEvent) => void;
   onMoveClick: () => void;
@@ -16,7 +16,7 @@ export interface ParticipantItemProps {
 
 export const ParticipantItem = ({
   participant,
-  groupIndex, // Include groupIndex in props
+  groupIndex,
   onDragStart,
   onDragEnd,
   onMoveClick,
