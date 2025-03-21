@@ -83,7 +83,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
-    return loadParticipantsInner(tourId, (groups) => {
+    return loadParticipantsInner(tourId, (groups: VentrataTourGroup[]) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing ${groups.length} groups`);
       
       // Ensure correct size calculations before setting state
@@ -240,52 +240,47 @@ export const useGroupManagement = (tour: TourCardProps) => {
       
       // Force recalculation of all group sizes
       setTimeout(() => {
-        setLocalTourGroups(prevGroups => {
-          console.log("PARTICIPANTS DEBUG: Running post-refresh group size recalculation");
-          
-          // Create deep copy to avoid mutation issues
-          const updatedGroups = JSON.parse(JSON.stringify(prevGroups));
-          
-          // Recalculate all group sizes from participants
-          const recalculatedGroups = updatedGroups.map((group: VentrataTourGroup) => {
-            // Calculate directly from participants array if it exists
-            if (Array.isArray(group.participants) && group.participants.length > 0) {
-              let totalSize = 0;
-              let totalChildCount = 0;
-              
-              for (const p of group.participants) {
-                totalSize += p.count || 1;
-                totalChildCount += p.childCount || 0;
-              }
-              
-              console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" recalculated:`, {
-                size: totalSize,
-                childCount: totalChildCount,
-                participantsCount: group.participants.length
-              });
-              
-              // Return updated group with recalculated values
-              return {
-                ...group,
-                size: totalSize,
-                childCount: totalChildCount
-              };
-            } else {
-              // If no participants, size should be 0
-              console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants, setting counts to 0`);
-              return {
-                ...group,
-                size: 0,
-                childCount: 0
-              };
+        const updatedGroups = JSON.parse(JSON.stringify(localTourGroups));
+        
+        // Recalculate all group sizes from participants
+        const recalculatedGroups = updatedGroups.map((group: VentrataTourGroup) => {
+          // Calculate directly from participants array if it exists
+          if (Array.isArray(group.participants) && group.participants.length > 0) {
+            let totalSize = 0;
+            let totalChildCount = 0;
+            
+            for (const p of group.participants) {
+              totalSize += p.count || 1;
+              totalChildCount += p.childCount || 0;
             }
-          });
-          
-          return recalculatedGroups;
+            
+            console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" recalculated:`, {
+              size: totalSize,
+              childCount: totalChildCount,
+              participantsCount: group.participants.length
+            });
+            
+            // Return updated group with recalculated values
+            return {
+              ...group,
+              size: totalSize,
+              childCount: totalChildCount
+            };
+          } else {
+            // If no participants, size should be 0
+            console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants, setting counts to 0`);
+            return {
+              ...group,
+              size: 0,
+              childCount: 0
+            };
+          }
         });
+        
+        setLocalTourGroups(recalculatedGroups);
       }, 500);
     }
-  }, [tour.id, loadParticipants]);
+  }, [tour.id, loadParticipants, localTourGroups]);
 
   return {
     localTourGroups,
