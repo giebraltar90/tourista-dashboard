@@ -45,7 +45,7 @@ export const useParticipantLoading = () => {
       console.log("PARTICIPANT LOADING: Found group IDs:", groupIds);
       
       // Fetch ALL participants for the groups in a single query, even if some groups have no participants
-      const { data: participants, error: participantsError } = await supabase
+      const { data: participantsData, error: participantsError } = await supabase
         .from('participants')
         .select('*')
         .in('group_id', groupIds);
@@ -56,11 +56,11 @@ export const useParticipantLoading = () => {
         return;
       }
       
-      console.log("PARTICIPANT LOADING: Fetched participants from Supabase:", participants);
+      console.log("PARTICIPANT LOADING: Fetched participants from Supabase:", participantsData);
       
       // Check if there might be missing participants for groups with size > 0
       const groupsWithMissingParticipants = groups.filter(group => {
-        const groupParticipants = participants ? participants.filter(p => p.group_id === group.id) : [];
+        const groupParticipants = participantsData ? participantsData.filter(p => p.group_id === group.id) : [];
         // Calculate size from participants
         const participantSize = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
         // If the group has a size but no or too few participants, it's missing data
@@ -73,12 +73,12 @@ export const useParticipantLoading = () => {
             id: g.id,
             name: g.name,
             size: g.size,
-            participantsCount: participants ? participants.filter(p => p.group_id === g.id).length : 0
+            participantsCount: participantsData ? participantsData.filter(p => p.group_id === g.id).length : 0
           }))
         );
         
         // Attempt to generate placeholder participants for these groups if there's a size but no participants
-        let modifiedParticipants = [...(participants || [])];
+        let modifiedParticipants = [...(participantsData || [])];
         
         for (const group of groupsWithMissingParticipants) {
           const existingParticipants = modifiedParticipants.filter(p => p.group_id === group.id);
@@ -89,92 +89,130 @@ export const useParticipantLoading = () => {
             // Add a placeholder participant to represent the missing participants
             console.log(`PARTICIPANT LOADING: Adding placeholder for ${missingCount} participants in group ${group.id}`);
             
+            const currentDate = new Date().toISOString();
+            
             modifiedParticipants.push({
               id: `placeholder-${group.id}`,
               name: "Group Members",
               count: missingCount,
               booking_ref: "AUTO",
               child_count: group.child_count || 0,
-              group_id: group.id
+              group_id: group.id,
+              created_at: currentDate,
+              updated_at: currentDate
             });
           }
         }
         
         // Use the modified participants list with placeholders
-        participants = modifiedParticipants;
-      }
+        const finalParticipantsData = modifiedParticipants;
       
-      // Create an array of groups with their participants
-      const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
-        // Get participants for this group
-        const groupParticipants = participants
-          ? participants
-              .filter(p => p.group_id === group.id)
-              .map(p => ({
-                id: p.id,
-                name: p.name,
-                count: p.count || 1,
-                bookingRef: p.booking_ref,
-                childCount: p.child_count || 0,
-                group_id: p.group_id
-              }))
-          : [];
+        // Create an array of groups with their participants
+        const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
+          // Get participants for this group
+          const groupParticipants = finalParticipantsData
+            ? finalParticipantsData
+                .filter(p => p.group_id === group.id)
+                .map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  count: p.count || 1,
+                  bookingRef: p.booking_ref,
+                  childCount: p.child_count || 0,
+                  group_id: p.group_id
+                }))
+            : [];
+            
+          // Calculate size and childCount from participants
+          const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
+          const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
           
-        // Calculate size and childCount from participants
-        const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
-        const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
-        
-        console.log(`PARTICIPANT LOADING: Group ${group.id} (${group.name || 'Unnamed'}) processed:`, {
-          rawSize: group.size,
-          calculatedSize: size,
-          rawChildCount: group.child_count,
-          calculatedChildCount: childCount,
-          participantsCount: groupParticipants.length,
-          participantsSample: groupParticipants.slice(0, 2)
+          console.log(`PARTICIPANT LOADING: Group ${group.id} (${group.name || 'Unnamed'}) processed:`, {
+            rawSize: group.size,
+            calculatedSize: size,
+            rawChildCount: group.child_count,
+            calculatedChildCount: childCount,
+            participantsCount: groupParticipants.length,
+            participantsSample: groupParticipants.slice(0, 2)
+          });
+          
+          // If we still have missing participants but there's a size
+          if (groupParticipants.length === 0 && group.size > 0) {
+            console.log(`PARTICIPANT LOADING: Adding fallback group member for ${group.id} with size ${group.size}`);
+            groupParticipants.push({
+              id: `fallback-${group.id}`,
+              name: "Group Members",
+              count: group.size,
+              bookingRef: "AUTO",
+              childCount: group.child_count || 0,
+              group_id: group.id
+            });
+          }
+          
+          return {
+            id: group.id,
+            name: group.name,
+            guideId: group.guide_id,
+            entryTime: group.entry_time || "9:00", // Default entry time if not provided
+            size: size > 0 ? size : (group.size || 0),
+            childCount: childCount > 0 ? childCount : (group.child_count || 0),
+            participants: groupParticipants
+          };
         });
         
-        // If we still have missing participants but there's a size
-        if (groupParticipants.length === 0 && group.size > 0) {
-          console.log(`PARTICIPANT LOADING: Adding fallback group member for ${group.id} with size ${group.size}`);
-          groupParticipants.push({
-            id: `fallback-${group.id}`,
-            name: "Group Members",
-            count: group.size,
-            bookingRef: "AUTO",
-            childCount: group.child_count || 0,
-            group_id: group.id
-          });
-        }
-        
-        return {
-          id: group.id,
-          name: group.name,
-          guideId: group.guide_id,
-          entryTime: group.entry_time || "9:00", // Default entry time if not provided
-          size: size > 0 ? size : (group.size || 0),
-          childCount: childCount > 0 ? childCount : (group.child_count || 0),
-          participants: groupParticipants
-        };
-      });
-      
-      console.log("PARTICIPANT LOADING: Final groups with participants:", 
-        groupsWithParticipants.map(g => ({
-          id: g.id,
-          name: g.name || 'Unnamed',
-          entryTime: g.entryTime,
-          size: g.size,
-          childCount: g.childCount,
-          participantsCount: g.participants?.length || 0,
-          firstParticipants: (g.participants || []).slice(0, 2).map(p => ({
-            name: p.name,
-            count: p.count,
-            childCount: p.childCount
+        console.log("PARTICIPANT LOADING: Final groups with participants:", 
+          groupsWithParticipants.map(g => ({
+            id: g.id,
+            name: g.name || 'Unnamed',
+            entryTime: g.entryTime,
+            size: g.size,
+            childCount: g.childCount,
+            participantsCount: g.participants?.length || 0,
+            firstParticipants: (g.participants || []).slice(0, 2).map(p => ({
+              name: p.name,
+              count: p.count,
+              childCount: p.childCount
+            }))
           }))
-        }))
-      );
-      
-      // Call the callback with the groups data
-      onParticipantsLoaded(groupsWithParticipants);
+        );
+        
+        // Call the callback with the groups data
+        onParticipantsLoaded(groupsWithParticipants);
+      } else {
+        // No missing participants, process normally
+        const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
+          // Get participants for this group
+          const groupParticipants = participantsData
+            ? participantsData
+                .filter(p => p.group_id === group.id)
+                .map(p => ({
+                  id: p.id,
+                  name: p.name,
+                  count: p.count || 1,
+                  bookingRef: p.booking_ref,
+                  childCount: p.child_count || 0,
+                  group_id: p.group_id
+                }))
+            : [];
+            
+          // Calculate size and childCount from participants
+          const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
+          const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
+          
+          return {
+            id: group.id,
+            name: group.name,
+            guideId: group.guide_id,
+            entryTime: group.entry_time || "9:00",
+            size: size > 0 ? size : (group.size || 0),
+            childCount: childCount > 0 ? childCount : (group.child_count || 0),
+            participants: groupParticipants
+          };
+        });
+        
+        // Call the callback with the groups data
+        onParticipantsLoaded(groupsWithParticipants);
+      }
       
       // Invalidate queries to force UI updates
       setTimeout(() => {
