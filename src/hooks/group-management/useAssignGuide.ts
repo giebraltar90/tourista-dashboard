@@ -5,26 +5,14 @@ import { useModifications } from "../useModifications";
 import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { 
-  validateGuideAssignment 
-} from "./services/utils/validationService";
-import {
-  findGuideName,
-  generateGroupNameWithGuide,
-  createModificationDescription
-} from "./services/utils/namingService";
-import {
-  performOptimisticUpdate
-} from "./services/utils/optimisticUpdateService";
-import { 
-  persistGuideAssignmentChanges 
-} from "./services/utils/persistenceService";
-import { 
-  handleUIUpdates 
-} from "./services/utils/notificationService";
-import { 
-  mapGuideIdToUuid 
-} from "./services/utils/guideMappingService";
+
+// Import refactored utilities
+import { mapGuideIdToUuid } from "./utils/guideAssignmentMapping";
+import { validateGuideAssignment } from "./utils/guideAssignmentValidation";
+import { preserveParticipants, createUpdatedGroupWithPreservedParticipants } from "./utils/participantPreservation";
+import { findGuideName, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
+import { persistGuideAssignmentChanges } from "./utils/databaseOperations";
+import { performOptimisticUpdate, handleUIUpdates } from "./utils/optimisticUpdates";
 
 /**
  * Hook to assign or unassign guides to tour groups
@@ -40,21 +28,7 @@ export const useAssignGuide = (tourId: string) => {
    */
   const assignGuide = useCallback(async (groupIndex: number, guideId?: string | null) => {
     try {
-      console.log("Starting guide assignment:", { 
-        groupIndex, 
-        guideId, 
-        tourId, 
-        currentGroups: tour?.tourGroups?.map(g => ({
-          id: g.id, 
-          name: g.name, 
-          guideId: g.guideId,
-          participants: Array.isArray(g.participants) 
-            ? g.participants.length 
-            : 'No participants array',
-          size: g.size,
-          childCount: g.childCount
-        })) || []
-      });
+      console.log("Starting guide assignment:", { groupIndex, guideId, tourId });
       
       // Validate parameters
       const validationResult = validateGuideAssignment(tour, groupIndex, guideId);
@@ -84,20 +58,13 @@ export const useAssignGuide = (tourId: string) => {
       const targetGroup = tour!.tourGroups![groupIndex];
       const groupId = targetGroup.id;
       
-      // CRITICAL FIX: Preserve participants when updating the group
-      // Make a deep copy to avoid reference issues
-      const existingParticipants = targetGroup.participants 
-        ? JSON.parse(JSON.stringify(targetGroup.participants)) 
-        : [];
+      // Preserve participants to avoid losing them during update
+      const existingParticipants = preserveParticipants(targetGroup);
       
       // Log existing participants for debugging
       console.log("PARTICIPANTS PRESERVATION: Existing participants before guide change:", {
         groupId,
-        groupIndex,
-        participantsCount: existingParticipants.length,
-        participants: existingParticipants,
-        groupSize: targetGroup.size,
-        groupChildCount: targetGroup.childCount
+        participantsCount: existingParticipants.length
       });
       
       // Get group number for name generation
@@ -111,28 +78,15 @@ export const useAssignGuide = (tourId: string) => {
       
       // Prepare for optimistic UI update
       const updatedGroups = [...tour!.tourGroups!];
-      updatedGroups[groupIndex] = {
-        ...updatedGroups[groupIndex],
-        guideId: actualGuideId,
-        name: groupName,
-        // CRITICAL: Preserve the existing participants
-        participants: existingParticipants,
-        // CRITICAL: Maintain the original size and childCount
-        size: targetGroup.size,
-        childCount: targetGroup.childCount
-      };
+      updatedGroups[groupIndex] = createUpdatedGroupWithPreservedParticipants(
+        updatedGroups[groupIndex],
+        actualGuideId,
+        groupName,
+        existingParticipants
+      );
       
       // Apply optimistic update to UI
       performOptimisticUpdate(queryClient, tourId, updatedGroups);
-      
-      // Log for debugging
-      console.log("PARTICIPANTS PRESERVATION: Optimistic update with preserved participants:", {
-        groupIndex,
-        existingParticipantsCount: existingParticipants.length,
-        updatedGroupParticipantCount: updatedGroups[groupIndex].participants?.length || 0,
-        updatedGroupSize: updatedGroups[groupIndex].size,
-        updatedGroupChildCount: updatedGroups[groupIndex].childCount
-      });
       
       // Save to database
       const updateSuccess = await persistGuideAssignmentChanges(
@@ -141,10 +95,6 @@ export const useAssignGuide = (tourId: string) => {
         actualGuideId,
         groupName,
         updatedGroups
-      );
-      
-      console.log("PARTICIPANTS PRESERVATION: Database update result:", 
-        updateSuccess ? "Success" : "Failed"
       );
       
       // Update UI based on result
@@ -163,7 +113,7 @@ export const useAssignGuide = (tourId: string) => {
           groupId,
           guideId: actualGuideId,
           guideName,
-          participantCount: existingParticipants.length // Include participant count in modification record
+          participantCount: existingParticipants.length
         });
         
         // Force a refresh to ensure data consistency, but don't lose participants
@@ -180,7 +130,7 @@ export const useAssignGuide = (tourId: string) => {
               newData.tourGroups[groupIndex].guideId = actualGuideId;
               newData.tourGroups[groupIndex].name = groupName;
               
-              // CRITICAL FIX: Preserve participants if they exist
+              // Preserve participants if they exist
               if (!Array.isArray(newData.tourGroups[groupIndex].participants) || 
                   newData.tourGroups[groupIndex].participants.length === 0) {
                 newData.tourGroups[groupIndex].participants = existingParticipants;
@@ -207,10 +157,4 @@ export const useAssignGuide = (tourId: string) => {
   }, [tour, tourId, guides, addModification, queryClient, refetch]);
   
   return { assignGuide };
-};
-
-// Helper function to validate UUID format
-const isValidUuid = (id: string | undefined): boolean => {
-  if (!id) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };
