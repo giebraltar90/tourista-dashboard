@@ -51,11 +51,13 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     refreshParticipants
   } = useGroupManagement(tour);
 
-  // Load participants data when component mounts
+  // Load participants data when component mounts - but only once and without toast
   useEffect(() => {
     if (tour.id) {
       console.log("GroupsManagement: Initial loading of participants for tour:", tour.id);
-      loadParticipants(tour.id);
+      
+      // Pass false to prevent showing toast during initial load
+      loadParticipants(tour.id, false);
       
       // Also try to directly check the table existence
       const checkTableExistence = async () => {
@@ -85,26 +87,10 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     }
   }, [tour.id, loadParticipants]);
   
-  // Listen for participants-loaded event
-  useEffect(() => {
-    const handleParticipantsLoaded = () => {
-      console.log("GroupsManagement: Received participants-loaded event");
-      if (tour.id) {
-        refreshParticipants();
-      }
-    };
-    
-    window.addEventListener('participants-loaded', handleParticipantsLoaded);
-    
-    return () => {
-      window.removeEventListener('participants-loaded', handleParticipantsLoaded);
-    };
-  }, [tour.id, refreshParticipants]);
-  
   // Handle manual refresh
   const handleManualRefresh = () => {
     setIsManualRefreshing(true);
-    refreshParticipants();
+    refreshParticipants(); // This will handle showing a toast itself
     setTimeout(() => setIsManualRefreshing(false), 1500);
   };
   

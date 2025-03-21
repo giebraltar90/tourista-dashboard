@@ -32,7 +32,7 @@ export const useParticipantRefresh = (
       // Set a short delay to allow other operations to complete
       const timer = window.setTimeout(() => {
         console.log(`PARTICIPANTS DEBUG: Executing delayed initial load for tour ${tourId}`);
-        loadParticipants(tourId);
+        loadParticipants(tourId, false); // Don't show toast for auto-load
         // Update last refresh time
         lastRefreshTimeRef.current = Date.now();
       }, 500);
@@ -42,7 +42,7 @@ export const useParticipantRefresh = (
   }, [tourId]);
   
   // Wrapper for loadParticipants to include setLocalTourGroups
-  const loadParticipants = useCallback((tourId: string) => {
+  const loadParticipants = useCallback((tourId: string, showToast = false) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
     
     // Prevent too frequent refreshes (minimum 5 seconds between refreshes)
@@ -112,7 +112,7 @@ export const useParticipantRefresh = (
         
         refreshTimeoutRef.current = null;
       }, 200);
-    });
+    }, showToast); // Pass the showToast parameter
   }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes]);
 
   // Add a refresh function with improved debounce to manually trigger participant loading
@@ -138,7 +138,7 @@ export const useParticipantRefresh = (
     
     // Set a short timeout to debounce multiple clicks
     refreshTimeoutRef.current = window.setTimeout(() => {
-      loadParticipants(tourId);
+      loadParticipants(tourId, true); // Show toast for manual refresh
       refreshTimeoutRef.current = null;
     }, 100);
   }, [tourId, loadParticipants]);

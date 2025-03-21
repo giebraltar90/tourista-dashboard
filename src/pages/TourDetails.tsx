@@ -5,7 +5,7 @@ import { useTourDetailsData } from "@/hooks/tour-details/useTourDetailsData";
 import { LoadingState } from "@/components/tour-details/LoadingState";
 import { ErrorState } from "@/components/tour-details/ErrorState";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { GuideInfo, GuideType } from "@/types/ventrata";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
+  const initialCheckCompleted = useRef(false);
   
   // Always ensure id has a value for the query
   const tourId = id || "";
@@ -34,8 +35,9 @@ const TourDetails = () => {
   
   // Force data refresh when component mounts and load participants
   useEffect(() => {
-    if (tourId) {
+    if (tourId && !initialCheckCompleted.current) {
       console.log("DATABASE DEBUG: Initial tour data load for:", tourId);
+      initialCheckCompleted.current = true;
       
       // Invalidate tour query to force fresh data
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
@@ -120,51 +122,8 @@ const TourDetails = () => {
       // Run the database schema check
       checkDatabaseSchema();
       
-      // Load participants directly if possible
-      const loadParticipants = async () => {
-        try {
-          // Get group IDs
-          const { data: groups } = await supabase
-            .from('tour_groups')
-            .select('id')
-            .eq('tour_id', tourId);
-            
-          if (groups && groups.length > 0) {
-            const groupIds = groups.map(g => g.id);
-            
-            // Load participants for these groups
-            const { data: participants, error } = await supabase
-              .from('participants')
-              .select('*')
-              .in('group_id', groupIds);
-              
-            if (error) {
-              console.error("DATABASE DEBUG: Error loading participants:", error);
-            } else {
-              console.log(`DATABASE DEBUG: Direct query for participants found ${participants ? participants.length : 0} participants`);
-              
-              if (participants && participants.length > 0) {
-                // Log first participant for inspection
-                console.log("DATABASE DEBUG: Sample participant data:", participants[0]);
-              } else {
-                console.log("DATABASE DEBUG: No participants found in direct query");
-              }
-            }
-            
-            // Force refresh of tour data to reflect these participants
-            setTimeout(() => {
-              queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-              
-              // Set a custom event that components can listen for
-              window.dispatchEvent(new CustomEvent('participants-loaded'));
-            }, 500);
-          }
-        } catch (error) {
-          console.error("DATABASE DEBUG: Error in direct participant load:", error);
-        }
-      };
-      
-      loadParticipants();
+      // Load participants directly if possible - but only ONCE not multiple times
+      // We'll rely on the GroupsManagement component to handle loading participants
     }
   }, [tourId, queryClient, handleRefetch]);
   

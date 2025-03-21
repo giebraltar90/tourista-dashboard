@@ -21,7 +21,8 @@ export const useParticipantLoading = () => {
   // Load participants data from Supabase
   const loadParticipants = useCallback(async (
     tourId: string,
-    onParticipantsLoaded: (groups: VentrataTourGroup[]) => void
+    onParticipantsLoaded: (groups: VentrataTourGroup[]) => void,
+    showSuccessToast = false // Add parameter to control success toast
   ) => {
     console.log("DATABASE DEBUG: loadParticipants called for tourId:", tourId);
     setIsLoading(true);
@@ -56,7 +57,11 @@ export const useParticipantLoading = () => {
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
         window.dispatchEvent(new CustomEvent('participants-loaded'));
-        toast.success("Participant data refreshed");
+        
+        // Only show success toast if requested
+        if (showSuccessToast) {
+          toast.success("Participant data refreshed");
+        }
       }, 500);
     } catch (error) {
       console.error("DATABASE DEBUG: Exception in loadParticipants:", error);
