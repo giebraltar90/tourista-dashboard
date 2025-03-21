@@ -2,6 +2,13 @@
 import { useState, useEffect } from "react";
 import { getOgImage, getFavicon, DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
 
+// Add TypeScript declaration for the window.updateMetaTags function
+declare global {
+  interface Window {
+    updateMetaTags?: (ogImageUrl: string, faviconUrl: string) => void;
+  }
+}
+
 export function useSeoSettings() {
   const [ogImage, setOgImage] = useState<string>(DEFAULT_OG_IMAGE);
   const [favicon, setFavicon] = useState<string>(DEFAULT_FAVICON);
