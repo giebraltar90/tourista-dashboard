@@ -1,7 +1,64 @@
-
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+/**
+ * Format the participant count to show adults + children if there are children
+ */
+export const formatParticipantCount = (totalParticipants: number, childCount: number) => {
+  console.log("PARTICIPANTS DEBUG: formatParticipantCount called with", {
+    totalParticipants,
+    childCount
+  });
+  
+  // Ensure we're working with valid numbers
+  const validTotal = isNaN(totalParticipants) ? 0 : Math.max(0, totalParticipants);
+  const validChildCount = isNaN(childCount) ? 0 : Math.max(0, childCount);
+  
+  // Calculate adult count
+  const adultCount = Math.max(0, validTotal - validChildCount);
+  
+  if (validChildCount > 0) {
+    console.log(`PARTICIPANTS DEBUG: Formatting as adults+children: ${adultCount}+${validChildCount}`);
+    return `${adultCount}+${validChildCount}`;
+  } else {
+    console.log(`PARTICIPANTS DEBUG: Formatting as just total: ${validTotal}`);
+    return `${validTotal}`;
+  }
+};
+
+/**
+ * Move a participant from one group to another
+ */
+export const moveParticipant = async (
+  participantId: string,
+  currentGroupId: string,
+  newGroupId: string
+): Promise<boolean> => {
+  console.log("PARTICIPANTS DEBUG: Moving participant", { participantId, currentGroupId, newGroupId });
+  
+  try {
+    const { data, error } = await supabase
+      .from('participants')
+      .update({ group_id: newGroupId })
+      .eq('id', participantId)
+      .select();
+      
+    if (error) {
+      console.error("PARTICIPANTS DEBUG: Error moving participant:", error);
+      toast.error("Failed to move participant");
+      return false;
+    }
+    
+    console.log("PARTICIPANTS DEBUG: Participant moved successfully:", data);
+    toast.success("Participant moved successfully");
+    return true;
+  } catch (error) {
+    console.error("PARTICIPANTS DEBUG: Error in moveParticipant:", error);
+    toast.error("Error moving participant");
+    return false;
+  }
+};
 
 /**
  * Calculates the total number of participants across all groups
@@ -85,25 +142,6 @@ export const calculateTotalChildCount = (tourGroups: VentrataTourGroup[]): numbe
   
   console.log("PARTICIPANTS DEBUG: calculateTotalChildCount final result:", totalChildCount);
   return totalChildCount;
-};
-
-/**
- * Formats participant count as "adults+children" if there are children
- */
-export const formatParticipantCount = (totalParticipants: number, childCount: number): string => {
-  console.log("PARTICIPANTS DEBUG: formatParticipantCount called with", {
-    totalParticipants,
-    childCount
-  });
-  
-  if (childCount > 0) {
-    const adultCount = totalParticipants - childCount;
-    console.log(`PARTICIPANTS DEBUG: Formatting as adults+children: ${adultCount}+${childCount}`);
-    return `${adultCount}+${childCount}`;
-  }
-  
-  console.log(`PARTICIPANTS DEBUG: Formatting as just total: ${totalParticipants}`);
-  return `${totalParticipants}`;
 };
 
 /**

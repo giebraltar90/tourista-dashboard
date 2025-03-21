@@ -18,31 +18,31 @@ export const useParticipantLoading = () => {
     tourId: string,
     onParticipantsLoaded: (groups: VentrataTourGroup[]) => void
   ) => {
-    console.log("PARTICIPANTS DEBUG: loadParticipants called for tourId:", tourId);
+    console.log("PARTICIPANT LOADING: loadParticipants called for tourId:", tourId);
     setIsLoading(true);
     
     try {
       // Fetch tour groups to get their IDs
       const { data: groups, error: groupsError } = await supabase
         .from('tour_groups')
-        .select('id, guide_id, name, entry_time')
+        .select('id, guide_id, name, entry_time, size, child_count')
         .eq('tour_id', tourId);
         
       if (groupsError) {
-        console.error("PARTICIPANTS DEBUG: Error fetching tour groups:", groupsError);
+        console.error("PARTICIPANT LOADING: Error fetching tour groups:", groupsError);
         setIsLoading(false);
         return;
       }
       
       if (!groups || groups.length === 0) {
-        console.log("PARTICIPANTS DEBUG: No groups found for tour ID:", tourId);
+        console.log("PARTICIPANT LOADING: No groups found for tour ID:", tourId);
         setIsLoading(false);
         return;
       }
       
       // Get group IDs
       const groupIds = groups.map(group => group.id);
-      console.log("PARTICIPANTS DEBUG: Found group IDs:", groupIds);
+      console.log("PARTICIPANT LOADING: Found group IDs:", groupIds);
       
       // Fetch participants for these groups
       const { data: participants, error: participantsError } = await supabase
@@ -51,12 +51,12 @@ export const useParticipantLoading = () => {
         .in('group_id', groupIds);
         
       if (participantsError) {
-        console.error("PARTICIPANTS DEBUG: Error fetching participants:", participantsError);
+        console.error("PARTICIPANT LOADING: Error fetching participants:", participantsError);
         setIsLoading(false);
         return;
       }
       
-      console.log("PARTICIPANTS DEBUG: Fetched participants from Supabase:", participants);
+      console.log("PARTICIPANT LOADING: Fetched participants from Supabase:", participants);
       
       // Create an array of groups with their participants
       const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
@@ -78,20 +78,27 @@ export const useParticipantLoading = () => {
         const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
         const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
         
-        console.log(`PARTICIPANTS DEBUG: Group ${group.id} (${group.name || 'Unnamed'}) has ${groupParticipants.length} participants with size=${size}, childCount=${childCount}`);
+        console.log(`PARTICIPANT LOADING: Group ${group.id} (${group.name || 'Unnamed'}) processed:`, {
+          rawSize: group.size,
+          calculatedSize: size,
+          rawChildCount: group.child_count,
+          calculatedChildCount: childCount,
+          participantsCount: groupParticipants.length,
+          participantsSample: groupParticipants.slice(0, 2)
+        });
         
         return {
           id: group.id,
           name: group.name,
           guideId: group.guide_id,
           entryTime: group.entry_time || "9:00", // Default entry time if not provided
-          size: size,
-          childCount: childCount,
+          size: groupParticipants.length > 0 ? size : (group.size || 0),
+          childCount: groupParticipants.length > 0 ? childCount : (group.child_count || 0),
           participants: groupParticipants
         };
       });
       
-      console.log("PARTICIPANTS DEBUG: Final groups with participants:", 
+      console.log("PARTICIPANT LOADING: Final groups with participants:", 
         groupsWithParticipants.map(g => ({
           id: g.id,
           name: g.name || 'Unnamed',
@@ -99,11 +106,10 @@ export const useParticipantLoading = () => {
           size: g.size,
           childCount: g.childCount,
           participantsCount: g.participants?.length || 0,
-          participants: g.participants?.map(p => ({
-            id: p.id,
+          firstParticipants: (g.participants || []).slice(0, 2).map(p => ({
             name: p.name,
-            count: p.count || 1,
-            childCount: p.childCount || 0
+            count: p.count,
+            childCount: p.childCount
           }))
         }))
       );
@@ -116,7 +122,7 @@ export const useParticipantLoading = () => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       }, 500);
     } catch (error) {
-      console.error("PARTICIPANTS DEBUG: Error loading participants:", error);
+      console.error("PARTICIPANT LOADING: Error loading participants:", error);
       toast.error("Failed to load participants");
       setIsLoading(false);
     } finally {
@@ -126,5 +132,3 @@ export const useParticipantLoading = () => {
   
   return { loadParticipants, isLoading };
 };
-
-// Removed createDemoParticipants function completely

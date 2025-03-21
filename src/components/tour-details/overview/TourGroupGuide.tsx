@@ -27,21 +27,79 @@ export const TourGroupGuide = ({
 }: TourGroupGuideProps) => {
   const { assignGuide } = useAssignGuide(tour.id);
   
+  // Critical debug output to track data coming in
+  console.log(`TourGroupGuide(${groupIndex}) rendering with:`, {
+    groupId: group.id,
+    groupName: group.name || `Group ${groupIndex + 1}`,
+    hasParticipantsArray: Array.isArray(group.participants),
+    participantsLength: Array.isArray(group.participants) ? group.participants.length : 0,
+    sizeProp: group.size,
+    childCountProp: group.childCount,
+    rawGroup: group
+  });
+  
   // Calculate participant count directly from participants array if available
-  const participantCount = Array.isArray(group.participants) && group.participants.length > 0
-    ? group.participants.reduce((sum, p) => sum + (p.count || 1), 0)
-    : group.size || 0;
+  let participantCount = 0;
+  let childCount = 0;
+  
+  if (Array.isArray(group.participants) && group.participants.length > 0) {
+    // Count from participants array
+    participantCount = group.participants.reduce((sum, p) => {
+      const count = typeof p.count === 'number' ? p.count : (p.count ? parseInt(p.count.toString()) : 1);
+      return sum + count;
+    }, 0);
     
-  // Calculate child count from participants array if available  
-  const childCount = Array.isArray(group.participants) && group.participants.length > 0
-    ? group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
-    : group.childCount || 0;
+    childCount = group.participants.reduce((sum, p) => {
+      const childCount = typeof p.childCount === 'number' ? p.childCount : (p.childCount ? parseInt(p.childCount.toString()) : 0);
+      return sum + childCount;
+    }, 0);
+    
+    console.log(`TourGroupGuide(${groupIndex}) calculated from participants:`, {
+      participantCount,
+      childCount
+    });
+  } else if (typeof group.size === 'number' && group.size > 0) {
+    // Fallback to size property if it's a number
+    participantCount = group.size;
+    childCount = typeof group.childCount === 'number' ? group.childCount : 0;
+    
+    console.log(`TourGroupGuide(${groupIndex}) using size property:`, {
+      participantCount,
+      childCount
+    });
+  } else {
+    // Final fallback - parse from strings if needed
+    try {
+      participantCount = group.size ? parseInt(group.size.toString()) : 0;
+      childCount = group.childCount ? parseInt(group.childCount.toString()) : 0;
+      
+      console.log(`TourGroupGuide(${groupIndex}) parsed from strings:`, {
+        participantCount,
+        childCount
+      });
+    } catch (e) {
+      console.error(`TourGroupGuide(${groupIndex}) error parsing size:`, e);
+      participantCount = 0;
+      childCount = 0;
+    }
+  }
+  
+  // Ensure we have valid non-negative numbers
+  participantCount = Math.max(0, participantCount);
+  childCount = Math.max(0, childCount);
   
   // Calculate adult count (total minus children)
-  const adultCount = participantCount - childCount;
+  const adultCount = Math.max(0, participantCount - childCount);
   
   // Format participant count to show adults + children if there are children
   const displayParticipants = formatParticipantCount(participantCount, childCount);
+  
+  console.log(`TourGroupGuide(${groupIndex}) final display values:`, {
+    participantCount,
+    childCount,
+    adultCount,
+    displayParticipants
+  });
   
   return (
     <Card>
