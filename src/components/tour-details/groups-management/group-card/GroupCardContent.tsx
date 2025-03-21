@@ -124,7 +124,7 @@ export const GroupCardContent = ({
                 participant={participant}
                 groupIndex={groupIndex}
                 onDragStart={(e) => onDragStart(e, participant, groupIndex)}
-                onDragEnd={onDragEnd}
+                onDragEnd={() => onDragEnd()}
                 onMoveClick={() => onMoveClick({ participant, fromGroupIndex: groupIndex })}
                 isSelected={selectedParticipant?.participant.id === participant.id}
                 isMovePending={isMovePending}

@@ -29,7 +29,7 @@ export const useGroupCardState = (
       childCount
     });
     
-    if (Array.isArray(participants)) {
+    if (Array.isArray(participants) && participants.length > 0) {
       // Don't filter out placeholder participants - display all of them
       setLocalParticipants(participants);
     } else {
@@ -46,6 +46,7 @@ export const useGroupCardState = (
           bookingRef: "AUTO",
           childCount: childCount || 0,
           group_id: groupId,
+          // Add the missing properties
           created_at: currentDate,
           updated_at: currentDate
         };

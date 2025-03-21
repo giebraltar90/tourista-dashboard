@@ -5,20 +5,26 @@ import { UserRound, ChevronRight, Users } from "lucide-react";
 
 export interface ParticipantItemProps {
   participant: VentrataParticipant;
+  groupIndex: number; // Added missing prop
   onDragStart: (e: React.DragEvent) => void;
   onDragEnd: () => void;
   onMoveClick: () => void;
   isDragging?: boolean;
   disabled?: boolean;
+  isSelected?: boolean;
+  isMovePending?: boolean;
 }
 
 export const ParticipantItem = ({
   participant,
+  groupIndex, // Added to function parameters
   onDragStart,
   onDragEnd,
   onMoveClick,
   isDragging,
-  disabled
+  disabled,
+  isSelected,
+  isMovePending
 }: ParticipantItemProps) => {
   // Format participant count to show nicely
   const formattedCount = participant.childCount 
@@ -31,7 +37,7 @@ export const ParticipantItem = ({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       className={`rounded-md border ${
-        isDragging ? "bg-muted border-primary" : "bg-card hover:bg-accent/10"
+        isDragging || isSelected ? "bg-muted border-primary" : "bg-card hover:bg-accent/10"
       } cursor-grab flex items-center justify-between p-2 transition-colors`}
       data-participant-id={participant.id}
     >
@@ -57,7 +63,7 @@ export const ParticipantItem = ({
         variant="ghost"
         className="h-8 w-8"
         onClick={onMoveClick}
-        disabled={disabled}
+        disabled={disabled || isMovePending}
       >
         <ChevronRight className="h-4 w-4" />
         <span className="sr-only">Move</span>

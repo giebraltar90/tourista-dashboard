@@ -1,3 +1,4 @@
+
 // Define Ventrata API types based on their documentation
 import { Json } from "@/integrations/supabase/types";
 
@@ -8,6 +9,8 @@ export interface VentrataParticipant {
   bookingRef: string;
   childCount?: number; // Number of children in this participant group
   groupId?: string; // Added to align with ventrata.d.ts
+  created_at?: string; // Added missing property
+  updated_at?: string; // Added missing property
   // For database compatibility
   booking_ref?: string;
   group_id?: string;

@@ -12,6 +12,8 @@ export interface VentrataParticipant {
   group_id?: string; // Snake_case version
   booking_ref?: string; // Snake_case version
   child_count?: number; // Snake_case version
+  created_at?: string; // Added missing property
+  updated_at?: string; // Added missing property
 }
 
 export interface VentrataTourGroup {
