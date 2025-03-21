@@ -100,7 +100,10 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }
 
         <div className="flex justify-between items-center pt-2 mt-2 border-t">
           <span className="font-medium">Total Available:</span>
-          <Badge variant={hasEnoughBucketTickets ? "success" : "destructive"} className={hasEnoughBucketTickets ? "bg-green-100 text-green-800" : ""}>
+          <Badge 
+            variant={hasEnoughBucketTickets ? "secondary" : "destructive"} 
+            className={hasEnoughBucketTickets ? "bg-green-100 text-green-800" : ""}
+          >
             {totalBucketTickets} tickets
             {requiredTickets > 0 && (
               <span className="ml-1">
