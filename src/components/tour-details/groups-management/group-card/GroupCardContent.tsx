@@ -2,8 +2,10 @@
 import { Button } from "@/components/ui/button";
 import { VentrataParticipant } from "@/types/ventrata";
 import { ParticipantItem } from "../ParticipantItem";
-import { AlertCircle, Users, RefreshCw, Database, Info } from "lucide-react";
+import { AlertCircle, Users, RefreshCw, Database, Info, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { createTestParticipants } from "@/services/api/createParticipants";
+import { toast } from "sonner";
 
 interface GroupCardContentProps {
   groupIndex: number;
@@ -44,6 +46,32 @@ export const GroupCardContent = ({
   const moveHereHandler = () => {
     if (isDropTargetActive && !isMovePending) {
       handleMoveParticipant(groupIndex);
+    }
+  };
+  
+  const handleCreateTestParticipants = async () => {
+    toast.loading("Creating test participants...");
+    try {
+      // Get the tour ID from the URL
+      const urlParts = window.location.pathname.split('/');
+      const tourId = urlParts[urlParts.length - 1];
+      
+      if (!tourId) {
+        toast.error("Could not determine tour ID");
+        return;
+      }
+      
+      const result = await createTestParticipants(tourId);
+      if (result.success) {
+        toast.success("Test participants created successfully!");
+        // Trigger refresh
+        window.dispatchEvent(new CustomEvent('refresh-participants'));
+      } else {
+        toast.error(`Failed to create test participants: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error creating test participants:", error);
+      toast.error("An error occurred while creating test participants");
     }
   };
   
@@ -109,15 +137,26 @@ export const GroupCardContent = ({
                   <span>Possible database issue - check if participants table exists.</span>
                 </div>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full mt-2 border-amber-300 hover:bg-amber-100"
-                onClick={() => window.dispatchEvent(new CustomEvent('refresh-participants'))}
-              >
-                <RefreshCw className="h-3 w-3 mr-2" /> 
-                Refresh Participants
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2 border-amber-300 hover:bg-amber-100"
+                  onClick={() => window.dispatchEvent(new CustomEvent('refresh-participants'))}
+                >
+                  <RefreshCw className="h-3 w-3 mr-2" /> 
+                  Refresh Participants
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="w-full mt-2 border-green-300 hover:bg-green-100 text-green-800"
+                  onClick={handleCreateTestParticipants}
+                >
+                  <Plus className="h-3 w-3 mr-2" /> 
+                  Create Test Participants
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         ) : (

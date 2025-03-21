@@ -1,73 +1,78 @@
 
-import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { VentrataParticipant } from "@/types/ventrata";
-import { UserRound, ChevronRight, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GripVertical, User, Users } from "lucide-react";
 
 export interface ParticipantItemProps {
   participant: VentrataParticipant;
-  groupIndex: number; // Added missing prop
+  groupIndex: number; // Added groupIndex prop
   onDragStart: (e: React.DragEvent) => void;
-  onDragEnd: () => void;
+  onDragEnd: (e?: React.DragEvent) => void;
   onMoveClick: () => void;
-  isDragging?: boolean;
-  disabled?: boolean;
-  isSelected?: boolean;
-  isMovePending?: boolean;
+  isSelected: boolean;
+  isMovePending: boolean;
 }
 
 export const ParticipantItem = ({
   participant,
-  groupIndex, // Added to function parameters
+  groupIndex, // Include groupIndex in props
   onDragStart,
   onDragEnd,
   onMoveClick,
-  isDragging,
-  disabled,
   isSelected,
   isMovePending
 }: ParticipantItemProps) => {
-  // Format participant count to show nicely
-  const formattedCount = participant.childCount 
-    ? `${(participant.count || 1) - (participant.childCount || 0)}+${participant.childCount}`
-    : participant.count || 1;
-
+  // Calculate total count
+  const totalCount = participant.count || 1;
+  const childCount = participant.childCount || 0;
+  const adultCount = totalCount - childCount;
+  
+  // Format display label
+  const countLabel = childCount > 0 
+    ? `${adultCount}+${childCount}` 
+    : `${totalCount}`;
+  
   return (
-    <div
-      draggable={!disabled}
+    <Card
+      className={`p-2 shadow-sm relative ${
+        isSelected ? "ring-2 ring-primary bg-primary/5" : ""
+      }`}
+      draggable
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
-      className={`rounded-md border ${
-        isDragging || isSelected ? "bg-muted border-primary" : "bg-card hover:bg-accent/10"
-      } cursor-grab flex items-center justify-between p-2 transition-colors`}
       data-participant-id={participant.id}
+      data-group-index={groupIndex}
     >
-      <div className="flex items-center space-x-2 flex-1 min-w-0">
-        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
-          <UserRound className="h-4 w-4" />
-        </div>
-        <div className="truncate flex-1 min-w-0">
-          <div className="flex items-center">
-            <span className="font-medium truncate">{participant.name}</span>
-            {participant.bookingRef && (
-              <span className="ml-1 text-xs text-muted-foreground">| #{participant.bookingRef}</span>
-            )}
+      <div className="flex items-center gap-2">
+        <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab" />
+        <div className="flex flex-col gap-1 flex-1">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-1">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">{participant.name}</span>
+            </div>
+            <div className="flex items-center gap-1 bg-muted rounded px-1.5 py-0.5">
+              <Users className="h-3 w-3 text-muted-foreground" />
+              <span className="text-xs font-medium">{countLabel}</span>
+            </div>
           </div>
-          <div className="flex items-center text-xs text-muted-foreground">
-            <Users className="h-3 w-3 mr-1" />
-            <span>{formattedCount}</span>
-          </div>
+          {participant.bookingRef && (
+            <div className="text-xs text-muted-foreground">
+              Ref: {participant.bookingRef}
+            </div>
+          )}
         </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-1 h-7"
+          onClick={onMoveClick}
+          disabled={isMovePending}
+        >
+          {isMovePending && isSelected ? "Moving..." : "Move"}
+        </Button>
       </div>
-      <Button
-        size="icon"
-        variant="ghost"
-        className="h-8 w-8"
-        onClick={onMoveClick}
-        disabled={disabled || isMovePending}
-      >
-        <ChevronRight className="h-4 w-4" />
-        <span className="sr-only">Move</span>
-      </Button>
-    </div>
+    </Card>
   );
 };
