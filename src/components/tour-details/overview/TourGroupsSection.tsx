@@ -42,19 +42,23 @@ export const TourGroupsSection = ({
     setIsAssignGuideOpen(true);
   };
   
-  // Get valid guide options
+  // Get valid guide options - making sure each guide has all required properties
   const validGuides = guides.map(guide => ({
     id: guide.id,
     name: guide.name,
     info: guide
   }));
   
-  // Add special guides if they exist in the tour
+  // Add special guides if they exist in the tour, ensuring each has required properties
   if (tour.guide1 && !validGuides.some(g => g.name === tour.guide1)) {
     validGuides.push({
       id: "guide1",
       name: tour.guide1,
-      info: guide1Info
+      info: guide1Info ? {
+        ...guide1Info,
+        // Add id if it doesn't exist in guide1Info
+        id: guide1Info.id || "guide1"
+      } : null
     });
   }
   
@@ -62,7 +66,11 @@ export const TourGroupsSection = ({
     validGuides.push({
       id: "guide2",
       name: tour.guide2,
-      info: guide2Info
+      info: guide2Info ? {
+        ...guide2Info,
+        // Add id if it doesn't exist in guide2Info
+        id: guide2Info.id || "guide2"
+      } : null
     });
   }
   
@@ -70,7 +78,11 @@ export const TourGroupsSection = ({
     validGuides.push({
       id: "guide3",
       name: tour.guide3,
-      info: guide3Info
+      info: guide3Info ? {
+        ...guide3Info,
+        // Add id if it doesn't exist in guide3Info
+        id: guide3Info.id || "guide3"
+      } : null
     });
   }
 
