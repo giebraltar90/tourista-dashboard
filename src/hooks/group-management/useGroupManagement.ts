@@ -240,6 +240,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
       
       // Force recalculation of all group sizes
       setTimeout(() => {
+        // Create a deep copy to avoid mutation issues
         const updatedGroups = JSON.parse(JSON.stringify(localTourGroups));
         
         // Recalculate all group sizes from participants
