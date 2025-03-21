@@ -11,6 +11,7 @@ export const DEFAULT_FAVICON = "/favicon.ico";
  */
 export const getSetting = async (key: string): Promise<string | null> => {
   try {
+    console.log(`Fetching setting: ${key}`);
     const { data, error } = await supabase
       .from('app_settings')
       .select('setting_value')
@@ -22,6 +23,7 @@ export const getSetting = async (key: string): Promise<string | null> => {
       return null;
     }
 
+    console.log(`Retrieved setting ${key}:`, data?.setting_value || 'null');
     return data?.setting_value || null;
   } catch (error) {
     console.error(`Error in getSetting for ${key}:`, error);
@@ -33,8 +35,14 @@ export const getSetting = async (key: string): Promise<string | null> => {
  * Get the app logo from settings
  */
 export const getAppLogo = async (): Promise<string> => {
-  const logo = await getSetting('appLogo');
-  return logo || DEFAULT_LOGO;
+  try {
+    const logo = await getSetting('appLogo');
+    console.log("Retrieved logo:", logo || DEFAULT_LOGO);
+    return logo || DEFAULT_LOGO;
+  } catch (error) {
+    console.error("Error getting app logo:", error);
+    return DEFAULT_LOGO;
+  }
 };
 
 /**

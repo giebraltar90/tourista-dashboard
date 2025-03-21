@@ -1,21 +1,25 @@
 
 import { useState, useEffect } from "react";
-import { getAppLogo } from "@/services/settingsService";
-
-// Default logo to use as fallback
-const DEFAULT_LOGO = "/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png";
+import { getAppLogo, DEFAULT_LOGO } from "@/services/settingsService";
 
 export function AppLogo() {
   const [logo, setLogo] = useState<string>(DEFAULT_LOGO);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const loadLogo = async () => {
       try {
+        setIsLoading(true);
+        setHasError(false);
         const logoUrl = await getAppLogo();
+        console.log("Loaded app logo:", logoUrl);
         setLogo(logoUrl);
       } catch (error) {
         console.error("Failed to load logo:", error);
+        setHasError(true);
+        // Fall back to default logo
+        setLogo(DEFAULT_LOGO);
       } finally {
         setIsLoading(false);
       }
@@ -33,7 +37,10 @@ export function AppLogo() {
       src={logo} 
       alt="App Logo" 
       className="h-8 w-auto"
-      onError={() => setLogo(DEFAULT_LOGO)}
+      onError={() => {
+        console.error("Error loading logo image, falling back to default");
+        setLogo(DEFAULT_LOGO);
+      }}
     />
   );
 }
