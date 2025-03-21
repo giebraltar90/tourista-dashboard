@@ -29,39 +29,65 @@ export const createTestParticipants = async (tourId: string) => {
     
     // Create test participants for each group
     const results = [];
+    const allParticipants = [];
     
+    // Make sure all groups get participants
     for (const group of groups) {
       // Create 2-3 test participants per group
       const numParticipants = Math.floor(Math.random() * 2) + 2; // 2 or 3
+      const groupParticipants = [];
       
       for (let i = 0; i < numParticipants; i++) {
-        const { data, error } = await supabase
-          .from('participants')
-          .insert({
-            name: `Test Participant ${i+1} (${group.name || 'Group'})`,
-            count: Math.floor(Math.random() * 2) + 1, // 1 or 2
-            child_count: Math.random() > 0.5 ? 1 : 0, // 50% chance of a child
-            group_id: group.id,
-            booking_ref: `TEST-${uuidv4().substring(0, 8)}`
-          })
-          .select();
-          
-        if (error) {
-          console.error(`DATABASE DEBUG: Error creating test participant for group ${group.id}:`, error);
-          results.push({ groupId: group.id, success: false, error: error.message });
-        } else {
-          console.log(`DATABASE DEBUG: Created test participant for group ${group.id}:`, data);
-          results.push({ groupId: group.id, success: true, data });
-        }
+        const participantName = getRandomParticipantName();
+        const participantCount = Math.floor(Math.random() * 3) + 1; // 1-3 people
+        const childCount = Math.random() > 0.7 ? 1 : 0; // 30% chance of a child
+        
+        const participant = {
+          name: participantName,
+          count: participantCount,
+          child_count: childCount,
+          group_id: group.id,
+          booking_ref: `TEST-${uuidv4().substring(0, 8)}`
+        };
+        
+        groupParticipants.push(participant);
+        allParticipants.push(participant);
       }
+      
+      console.log(`DATABASE DEBUG: Created ${groupParticipants.length} participants for group ${group.id} (${group.name || 'Unnamed'})`);
+      results.push({ groupId: group.id, participantsCreated: groupParticipants.length });
     }
     
-    return { 
-      success: results.every(r => r.success), 
-      results
-    };
+    // Insert all participants at once
+    if (allParticipants.length > 0) {
+      const { data, error } = await supabase
+        .from('participants')
+        .insert(allParticipants)
+        .select();
+        
+      if (error) {
+        console.error(`DATABASE DEBUG: Error creating participants:`, error);
+        return { success: false, error: error.message, results };
+      }
+      
+      console.log(`DATABASE DEBUG: Successfully created ${data?.length || 0} participants`);
+      return { success: true, data, results };
+    }
+    
+    return { success: true, results };
   } catch (error) {
     console.error("DATABASE DEBUG: Error creating test participants:", error);
     return { success: false, error: String(error) };
   }
 };
+
+// Helper function to generate more realistic participant names
+function getRandomParticipantName() {
+  const firstNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller"];
+  const descriptors = ["Family", "Couple", "Group", "Reservation"];
+  
+  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+  const descriptor = descriptors[Math.floor(Math.random() * descriptors.length)];
+  
+  return `${firstName} ${descriptor}`;
+}

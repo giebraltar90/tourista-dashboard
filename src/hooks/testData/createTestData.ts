@@ -9,7 +9,7 @@ import { createTestTickets } from "./createTickets";
 import { createTestParticipants } from "./createParticipants";
 
 /**
- * Creates complete test data for a specific tour
+ * Creates test data for a specific tour
  */
 export const createTestDataForTour = async (tourId: string) => {
   try {
@@ -32,12 +32,42 @@ export const createTestDataForTour = async (tourId: string) => {
       toast.warning("No groups found for this tour");
       return false;
     }
+
+    console.log(`Found ${tourGroups.length} groups for tour ${tourId}`);
     
-    // Create test participants for these groups
-    const participantsCreated = await createTestParticipants(tourGroups);
+    // Check if there are already participants for these groups
+    let existingParticipants = 0;
     
-    if (participantsCreated && participantsCreated.length > 0) {
-      toast.success(`Created ${participantsCreated.length} test participants`);
+    for (const group of tourGroups) {
+      const { count, error: countError } = await supabase
+        .from('participants')
+        .select('*', { count: 'exact', head: true })
+        .eq('group_id', group.id);
+        
+      if (!countError) {
+        existingParticipants += count || 0;
+      }
+    }
+    
+    if (existingParticipants > 0) {
+      console.log(`Found ${existingParticipants} existing participants`);
+      const confirmAdd = window.confirm(`Found ${existingParticipants} existing participants. Do you want to add more test participants?`);
+      
+      if (!confirmAdd) {
+        toast.info("No new participants added");
+        return true;
+      }
+    }
+    
+    // Create test participants for all groups
+    // Use our createTestParticipants function with the tour ID
+    const result = await createTestParticipants(tourGroups);
+    
+    if (result && result.length > 0) {
+      toast.success(`Created ${result.length} test participants`);
+      
+      // Refresh the UI
+      window.dispatchEvent(new Event('refresh-participants'));
       return true;
     } else {
       toast.error("Failed to create test participants");
@@ -92,6 +122,12 @@ export const createCompleteTestData = async () => {
     // Step 4: Create test participants for the groups
     const participants = await createTestParticipants(groups);
     
+    if (!participants || participants.length === 0) {
+      console.error("Failed to create test participants");
+    } else {
+      console.log(`Successfully created ${participants.length} participants`);
+    }
+    
     // Step 5: Create test tickets and modifications
     const tickets = await createTestTickets(tours);
     const modifications = await createTestModifications(tours);
@@ -121,23 +157,11 @@ export const addTestParticipants = async (tourId: string) => {
   
   toast.info("Adding test participants...");
   
-  // Check if participants already exist
-  const { data: existingParticipants, error: checkError } = await supabase
-    .from('participants')
-    .select('id')
-    .limit(1);
-    
-  if (!checkError && existingParticipants && existingParticipants.length > 0) {
-    // Participants already exist, ask if we should add more
-    if (confirm("Participants already exist. Do you want to add more test participants?")) {
-      await createTestDataForTour(tourId);
-    }
-    return;
-  }
-  
-  // No participants exist, create them
+  // Create participants directly for this tour
   await createTestDataForTour(tourId);
   
-  // Refresh the page
-  window.dispatchEvent(new Event('refresh-participants'));
+  // Force UI refresh
+  setTimeout(() => {
+    window.dispatchEvent(new Event('refresh-participants'));
+  }, 500);
 };

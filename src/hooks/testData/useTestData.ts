@@ -54,11 +54,15 @@ export const useTestData = () => {
       }
       
       // Step 4: Create test participants for the groups
+      // Log the groups we're passing to createTestParticipants
+      console.log("Creating participants for groups:", groups.map(g => ({ id: g.id, name: g.name })));
       const participants = await createTestParticipants(groups);
       
-      if (!participants || participants.length === 0) {
+      if (!participants) {
         toast.warning("Failed to create test participants");
         // Continue anyway, this is not critical
+      } else {
+        console.log(`Created ${participants.length} test participants`);
       }
       
       // Step 5: Create test tickets for the tours
@@ -70,6 +74,7 @@ export const useTestData = () => {
       // Invalidate queries to refresh all data
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       queryClient.invalidateQueries({ queryKey: ['guides'] });
+      queryClient.invalidateQueries({ queryKey: ['participants'] });
       
       toast.success(`Test data created successfully: ${tours.length} tours, ${groups.length} groups, ${participants?.length || 0} participants`);
       return true;
@@ -90,6 +95,7 @@ export const useTestData = () => {
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       queryClient.invalidateQueries({ queryKey: ['guides'] });
+      queryClient.invalidateQueries({ queryKey: ['participants'] });
       
       toast.success("Test data cleared successfully");
       return true;
