@@ -60,7 +60,10 @@ export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
     throw error;
   }
   
-  return data[0] as TicketBucket;
+  return {
+    ...data[0],
+    date: new Date(data[0].date)
+  } as TicketBucket;
 };
 
 export const updateTicketBucket = async (id: string, updates: Partial<TicketBucketFormValues>) => {
@@ -81,7 +84,10 @@ export const updateTicketBucket = async (id: string, updates: Partial<TicketBuck
     throw error;
   }
   
-  return data[0] as TicketBucket;
+  return {
+    ...data[0],
+    date: new Date(data[0].date)
+  } as TicketBucket;
 };
 
 export const deleteTicketBucket = async (id: string) => {
@@ -127,7 +133,10 @@ export const uploadCSVBuckets = async (buckets: CSVTicketBucket[]) => {
     throw error;
   }
   
-  return data as TicketBucket[];
+  return data.map(bucket => ({
+    ...bucket,
+    date: new Date(bucket.date)
+  })) as TicketBucket[];
 };
 
 // Helper function to determine bucket type based on reference number

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -91,7 +90,6 @@ export function TicketBucketsManagement() {
     return matchesSearch && matchesDate;
   });
   
-  // Group buckets by date
   const bucketsByDate = filteredBuckets.reduce((acc, bucket) => {
     const dateStr = format(bucket.date, 'yyyy-MM-dd');
     if (!acc[dateStr]) {
@@ -101,7 +99,6 @@ export function TicketBucketsManagement() {
     return acc;
   }, {} as Record<string, TicketBucket[]>);
   
-  // Sort dates
   const sortedDates = Object.keys(bucketsByDate).sort();
   
   return (
@@ -253,7 +250,7 @@ export function TicketBucketsManagement() {
                               <TableCell>{bucket.allocated_tickets}</TableCell>
                               <TableCell>
                                 <Badge 
-                                  variant={bucket.available_tickets > 5 ? "success" : "warning"}
+                                  variant={bucket.available_tickets > 5 ? "secondary" : "outline"}
                                   className={bucket.available_tickets > 5 
                                     ? "bg-green-100 text-green-800 hover:bg-green-200" 
                                     : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"}

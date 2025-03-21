@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -79,9 +78,7 @@ export function CreateTicketBucketForm({ onSuccess, onCancel }: CreateTicketBuck
     setIsSubmitting(true);
     
     try {
-      const bucketData: TicketBucketFormValues = {
-        ...values,
-      };
+      const bucketData: TicketBucketFormValues = values;
       
       await createTicketBucket(bucketData);
       toast.success("Ticket bucket created successfully");
