@@ -11,14 +11,16 @@ import { useGroupManagement } from "@/hooks/group-management";
 import { MoveParticipantSheet } from "./MoveParticipantSheet";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
 }
 
 export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
-  console.log("GroupAssignment rendering with tour:", tour);
+  console.log("DATABASE DEBUG: GroupAssignment rendering with tour:", tour);
   
   const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
   const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
@@ -30,6 +32,11 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [availableGuides, setAvailableGuides] = useState<any[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [dbCheckResult, setDbCheckResult] = useState<{
+    hasTable: boolean;
+    participantCount: number;
+    error?: string;
+  } | null>(null);
 
   // Get participant management capabilities
   const {
@@ -46,10 +53,69 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     loadParticipants
   } = useGroupManagement(tour);
   
+  // Check database structure on mount
+  useEffect(() => {
+    const checkDatabase = async () => {
+      try {
+        console.log("DATABASE DEBUG: Checking database structure");
+        
+        // Check if participants table exists and has any data
+        const { count, error } = await supabase
+          .from('participants')
+          .select('*', { count: 'exact', head: true });
+          
+        if (error) {
+          console.error("DATABASE DEBUG: Error checking participants table:", error);
+          setDbCheckResult({
+            hasTable: false,
+            participantCount: 0,
+            error: error.message
+          });
+        } else {
+          console.log(`DATABASE DEBUG: Participants table exists with ${count} records`);
+          setDbCheckResult({
+            hasTable: true,
+            participantCount: count || 0
+          });
+          
+          // If we have participants, let's check if any belong to our tour
+          if (count && count > 0) {
+            // Get the group IDs for this tour
+            const { data: groups } = await supabase
+              .from('tour_groups')
+              .select('id')
+              .eq('tour_id', tour.id);
+              
+            if (groups && groups.length > 0) {
+              const groupIds = groups.map(g => g.id);
+              
+              // Check for participants in these groups
+              const { data: tourParticipants, error: tourParticipantsError } = await supabase
+                .from('participants')
+                .select('id')
+                .in('group_id', groupIds)
+                .limit(10);
+                
+              if (tourParticipantsError) {
+                console.error("DATABASE DEBUG: Error checking tour participants:", tourParticipantsError);
+              } else {
+                console.log(`DATABASE DEBUG: This tour has ${tourParticipants?.length || 0} participants`);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("DATABASE DEBUG: Error in database check:", error);
+      }
+    };
+    
+    checkDatabase();
+  }, [tour.id]);
+  
   // Manually load participants when component mounts
   useEffect(() => {
     if (tour.id) {
-      console.log("Loading participants for tour:", tour.id);
+      console.log("DATABASE DEBUG: Loading participants for tour:", tour.id);
       // Force an initial load when the component mounts
       const timer = setTimeout(() => {
         loadParticipants(tour.id);
@@ -61,10 +127,13 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   
   // Use a stable reference for the groups to prevent reordering during renders
   const stableTourGroups = useMemo(() => {
-    console.log("Creating stable tour groups from:", localTourGroups);
+    console.log("DATABASE DEBUG: Creating stable tour groups from:", {
+      localTourGroupsLength: localTourGroups?.length || 0,
+      tourGroupsLength: tour.tourGroups?.length || 0
+    });
     
     if (!localTourGroups || localTourGroups.length === 0) {
-      console.log("Using tour.tourGroups as fallback");
+      console.log("DATABASE DEBUG: Using tour.tourGroups as fallback");
       if (!tour.tourGroups) return [];
       
       // Create a copy of the groups with their original indices preserved
@@ -83,7 +152,11 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     }));
   }, [localTourGroups, tour.tourGroups]);
   
-  console.log("Stable tour groups:", stableTourGroups);
+  console.log("DATABASE DEBUG: Stable tour groups:", stableTourGroups.map(g => ({
+    id: g.id,
+    name: g.displayName,
+    participantsCount: g.participants?.length || 0
+  })));
   
   // Handle manual refresh of participant data
   const handleRefreshParticipants = async () => {
@@ -91,11 +164,30 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     
     setIsRefreshing(true);
     try {
-      console.log("Manually refreshing participants for tour:", tour.id);
+      console.log("DATABASE DEBUG: Manually refreshing participants for tour:", tour.id);
+      
+      // Check if the participants table exists
+      const { error: tableCheckError } = await supabase
+        .from('participants')
+        .select('id')
+        .limit(1);
+        
+      if (tableCheckError) {
+        console.error("DATABASE DEBUG: Error checking participants table:", tableCheckError);
+        toast.error("Participants table not found in database");
+        setDbCheckResult({
+          hasTable: false,
+          participantCount: 0,
+          error: tableCheckError.message
+        });
+        return;
+      }
+      
+      // Table exists, refresh participants
       await refreshParticipants();
       toast.success("Participant data refreshed");
     } catch (error) {
-      console.error("Error refreshing participants:", error);
+      console.error("DATABASE DEBUG: Error refreshing participants:", error);
       toast.error("Failed to refresh participants");
     } finally {
       setIsRefreshing(false);
@@ -140,14 +232,35 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       
       <CardContent>
         <div className="space-y-6">
+          {/* Database status alert */}
+          {dbCheckResult && !dbCheckResult.hasTable && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                Participants table not found in database. Please check your database setup.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {dbCheckResult && dbCheckResult.hasTable && dbCheckResult.participantCount === 0 && (
+            <Alert className="bg-amber-50 border-amber-200">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                Participants table exists but contains no records. You need to add participants to the database.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Display tour groups with their assigned guides and participants */}
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stableTourGroups.map((group) => {
                 const index = group.originalIndex !== undefined ? group.originalIndex : 0;
                 
-                console.log(`Rendering group ${index}:`, group);
-                console.log(`Group ${index} participants:`, group.participants);
+                console.log(`DATABASE DEBUG: Rendering group ${index} (${group.displayName}):`, {
+                  id: group.id,
+                  participantsCount: Array.isArray(group.participants) ? group.participants.length : 0
+                });
                 
                 return (
                   <GroupCard

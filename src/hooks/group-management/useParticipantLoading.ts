@@ -17,10 +17,26 @@ export const useParticipantLoading = () => {
     tourId: string,
     onParticipantsLoaded: (groups: VentrataTourGroup[]) => void
   ) => {
-    console.log("PARTICIPANT LOADING: loadParticipants called for tourId:", tourId);
+    console.log("DATABASE DEBUG: loadParticipants called for tourId:", tourId);
     setIsLoading(true);
     
     try {
+      // First, check if the tour exists
+      const { data: tourData, error: tourError } = await supabase
+        .from('tours')
+        .select('id')
+        .eq('id', tourId)
+        .single();
+        
+      if (tourError) {
+        console.error("DATABASE DEBUG: Error fetching tour data:", tourError);
+        console.log("DATABASE DEBUG: This could indicate the tour doesn't exist or there's a DB issue");
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log("DATABASE DEBUG: Found tour with ID:", tourData.id);
+      
       // Fetch tour groups to get their IDs
       const { data: groups, error: groupsError } = await supabase
         .from('tour_groups')
@@ -28,20 +44,34 @@ export const useParticipantLoading = () => {
         .eq('tour_id', tourId);
         
       if (groupsError) {
-        console.error("PARTICIPANT LOADING: Error fetching tour groups:", groupsError);
+        console.error("DATABASE DEBUG: Error fetching tour groups:", groupsError);
         setIsLoading(false);
         return;
       }
       
+      console.log(`DATABASE DEBUG: Found ${groups ? groups.length : 0} groups for tour ID: ${tourId}`);
+      
       if (!groups || groups.length === 0) {
-        console.log("PARTICIPANT LOADING: No groups found for tour ID:", tourId);
+        console.log("DATABASE DEBUG: No groups found for tour ID:", tourId);
         setIsLoading(false);
         return;
       }
+      
+      // Log each group for debugging
+      groups.forEach((group, index) => {
+        console.log(`DATABASE DEBUG: Group ${index + 1}:`, {
+          id: group.id,
+          name: group.name,
+          entry_time: group.entry_time,
+          size: group.size,
+          child_count: group.child_count,
+          guide_id: group.guide_id,
+        });
+      });
       
       // Get group IDs
       const groupIds = groups.map(group => group.id);
-      console.log("PARTICIPANT LOADING: Found group IDs:", groupIds);
+      console.log("DATABASE DEBUG: Group IDs for participant lookup:", groupIds);
       
       // Fetch ALL participants for the groups in a single query
       const { data: participantsData, error: participantsError } = await supabase
@@ -50,13 +80,45 @@ export const useParticipantLoading = () => {
         .in('group_id', groupIds);
         
       if (participantsError) {
-        console.error("PARTICIPANT LOADING: Error fetching participants:", participantsError);
+        console.error("DATABASE DEBUG: Error fetching participants:", participantsError);
+        console.log("DATABASE DEBUG: SQL error details:", participantsError.details, participantsError.message);
         setIsLoading(false);
         return;
       }
       
-      console.log("PARTICIPANT LOADING: Fetched participants from Supabase:", 
-        participantsData ? participantsData.length : 0);
+      console.log(`DATABASE DEBUG: Found ${participantsData ? participantsData.length : 0} total participants`);
+      
+      // If no participants were found, let's check if the participants table exists
+      if (!participantsData || participantsData.length === 0) {
+        console.log("DATABASE DEBUG: No participants found. Checking if the participants table exists...");
+        
+        try {
+          const { error: tableCheckError } = await supabase
+            .from('participants')
+            .select('count(*)')
+            .limit(1);
+            
+          if (tableCheckError) {
+            console.error("DATABASE DEBUG: Error checking participants table:", tableCheckError);
+            console.log("DATABASE DEBUG: This might indicate the participants table doesn't exist");
+          } else {
+            console.log("DATABASE DEBUG: Participants table exists but no data found for these groups");
+            
+            // Let's check if there are any participants at all
+            const { count, error: countError } = await supabase
+              .from('participants')
+              .select('*', { count: 'exact', head: true });
+              
+            if (countError) {
+              console.error("DATABASE DEBUG: Error counting participants:", countError);
+            } else {
+              console.log(`DATABASE DEBUG: Total participants in database: ${count}`);
+            }
+          }
+        } catch (e) {
+          console.error("DATABASE DEBUG: Exception when checking participants table:", e);
+        }
+      }
       
       // Create an array of groups with their participants
       const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
@@ -79,11 +141,18 @@ export const useParticipantLoading = () => {
               }))
           : [];
           
+        console.log(`DATABASE DEBUG: Group ${group.id} (${group.name || 'Unnamed'}) has ${groupParticipants.length} participants`);
+        
+        if (groupParticipants.length > 0) {
+          console.log(`DATABASE DEBUG: First participant in group ${group.name || 'Unnamed'}:`, 
+            JSON.stringify(groupParticipants[0], null, 2));
+        }
+          
         // Calculate size and childCount from participants
         const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
         const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
         
-        console.log(`PARTICIPANT LOADING: Group ${group.id} (${group.name || 'Unnamed'}) processed:`, {
+        console.log(`DATABASE DEBUG: Group ${group.id} (${group.name || 'Unnamed'}) processed:`, {
           participants: groupParticipants.length,
           calculatedSize: size,
           databaseSize: group.size
@@ -104,7 +173,7 @@ export const useParticipantLoading = () => {
         };
       });
       
-      console.log("PARTICIPANT LOADING: Final groups with participants:", 
+      console.log("DATABASE DEBUG: Final groups with participants:", 
         groupsWithParticipants.map(g => ({
           id: g.id,
           name: g.name || 'Unnamed',
@@ -123,7 +192,7 @@ export const useParticipantLoading = () => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       }, 500);
     } catch (error) {
-      console.error("PARTICIPANT LOADING: Error loading participants:", error);
+      console.error("DATABASE DEBUG: Exception in loadParticipants:", error);
       toast.error("Failed to load participants");
     } finally {
       setIsLoading(false);

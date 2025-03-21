@@ -26,7 +26,26 @@ export const ParticipantsCard = ({
     adultCount,
     formattedParticipantCount
   } = useMemo(() => {
-    console.log("PARTICIPANTS DEBUG: ParticipantsCard calculating counts");
+    console.log("DATABASE DEBUG: ParticipantsCard calculating counts with groups:", {
+      tourGroupsLength: tourGroups.length,
+      tourGroupsWithParticipants: tourGroups.filter(g => 
+        Array.isArray(g.participants) && g.participants.length > 0
+      ).length
+    });
+    
+    // Log the raw group data for debugging
+    tourGroups.forEach((group, index) => {
+      console.log(`DATABASE DEBUG: Group ${index + 1} (${group.name || 'Unnamed'}) data:`, {
+        id: group.id,
+        size: group.size,
+        childCount: group.childCount,
+        hasParticipantsArray: Array.isArray(group.participants),
+        participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
+        firstParticipant: Array.isArray(group.participants) && group.participants.length > 0 
+          ? group.participants[0] 
+          : null
+      });
+    });
     
     // Calculate from actual participants in the database
     let calculatedTotal = 0;
@@ -34,15 +53,20 @@ export const ParticipantsCard = ({
     
     // Only count from participants arrays if they exist
     if (Array.isArray(tourGroups)) {
-      console.log("PARTICIPANTS DEBUG: Calculating from tour groups");
+      console.log("DATABASE DEBUG: Calculating from tour groups participants");
       for (const group of tourGroups) {
         if (Array.isArray(group.participants) && group.participants.length > 0) {
+          console.log(`DATABASE DEBUG: Processing participants for group ${group.name || 'Unnamed'}`);
           for (const participant of group.participants) {
             const count = participant.count || 1;
             const childCount = participant.childCount || 0;
             calculatedTotal += count;
             calculatedChildren += childCount;
+            
+            console.log(`DATABASE DEBUG: Counted participant ${participant.name}: count=${count}, childCount=${childCount}`);
           }
+        } else {
+          console.log(`DATABASE DEBUG: No participants array for group ${group.name || 'Unnamed'}`);
         }
       }
     }
@@ -50,7 +74,7 @@ export const ParticipantsCard = ({
     // Calculate adult count
     const adultCount = calculatedTotal - calculatedChildren;
     
-    console.log("PARTICIPANTS DEBUG: Final calculated values:", {
+    console.log("DATABASE DEBUG: ParticipantsCard final calculated values:", {
       calculatedTotal,
       calculatedChildren,
       adultCount: calculatedTotal - calculatedChildren,

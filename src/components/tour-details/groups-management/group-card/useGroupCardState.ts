@@ -19,9 +19,18 @@ export const useGroupCardState = (
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
+  // Debug log on initial render
+  useEffect(() => {
+    console.log(`DATABASE DEBUG: useGroupCardState initialized for group ${groupName} (ID: ${groupId})`, {
+      hasParticipantsArray: Array.isArray(participants),
+      participantsLength: Array.isArray(participants) ? participants.length : 0,
+      firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null
+    });
+  }, []);
+  
   // Initialize local participants state
   useEffect(() => {
-    console.log(`GROUP CARD STATE: Setting participants for ${groupName}:`, {
+    console.log(`DATABASE DEBUG: Setting participants for ${groupName} (${groupId}):`, {
       rawParticipants: participants,
       hasParticipantsArray: Array.isArray(participants),
       participantsLength: Array.isArray(participants) ? participants.length : 0,
@@ -30,18 +39,23 @@ export const useGroupCardState = (
     });
     
     if (Array.isArray(participants) && participants.length > 0) {
+      console.log(`DATABASE DEBUG: Using actual participants for ${groupName}`);
       setLocalParticipants(participants);
     } else {
-      // If no participants are available, set an empty array
+      // If no participants are available, set an empty array - do NOT create placeholders
+      console.log(`DATABASE DEBUG: No participants available for ${groupName}, using empty array`);
       setLocalParticipants([]);
     }
   }, [participants, groupId, groupName, size, childCount]);
   
   // Handle refreshing participants
   const handleRefreshParticipants = useCallback(() => {
-    if (!onRefreshParticipants) return;
+    if (!onRefreshParticipants) {
+      console.log(`DATABASE DEBUG: No refresh function available for ${groupName}`);
+      return;
+    }
     
-    console.log(`GROUP CARD STATE: Refreshing participants for ${groupName} (${groupId})`);
+    console.log(`DATABASE DEBUG: Refreshing participants for ${groupName} (${groupId})`);
     setIsRefreshing(true);
     
     // Call the refresh function
@@ -64,18 +78,17 @@ export const useGroupCardState = (
       childCount1 += participant.childCount || 0;
     }
     
-    console.log(`GROUP CARD STATE: Calculated from participants for ${groupName}:`, {
+    console.log(`DATABASE DEBUG: Calculated from participants for ${groupName}:`, {
       totalParticipants,
       childCount: childCount1,
       participantsCount: localParticipants.length
     });
-  } else if (typeof size === 'number' && size > 0) {
-    // Fallback to size property if provided and we have no participants
-    // This will be removed in the UI with a message to refresh
+  } else {
+    // We don't use placeholders anymore - set to 0
     totalParticipants = 0;
     childCount1 = 0;
     
-    console.log(`GROUP CARD STATE: No participants for ${groupName}, database size: ${size}`);
+    console.log(`DATABASE DEBUG: No participants for ${groupName}, showing 0`);
   }
   
   // Calculate adult count
@@ -84,7 +97,7 @@ export const useGroupCardState = (
   // Format the participant count for display
   const displayParticipants = formatParticipantCount(totalParticipants, childCount1);
   
-  console.log(`GROUP CARD STATE: Final calculations for ${groupName}:`, {
+  console.log(`DATABASE DEBUG: Final calculations for ${groupName}:`, {
     totalParticipants,
     childCount: childCount1,
     adultCount,

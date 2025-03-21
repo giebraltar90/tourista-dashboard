@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { VentrataParticipant } from "@/types/ventrata";
 import { ParticipantItem } from "../ParticipantItem";
-import { AlertCircle, Users, RefreshCw } from "lucide-react";
+import { AlertCircle, Users, RefreshCw, Database, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface GroupCardContentProps {
@@ -47,10 +47,11 @@ export const GroupCardContent = ({
     }
   };
   
-  console.log(`GROUP CONTENT: Rendering participants for group ${groupIndex}:`, {
+  console.log(`DATABASE DEBUG: GroupCardContent for group ${groupIndex}:`, {
     totalParticipants,
     participantsCount: localParticipants.length,
-    participants: localParticipants
+    hasParticipantsArray: Array.isArray(localParticipants),
+    firstParticipant: localParticipants.length > 0 ? localParticipants[0] : null
   });
   
   return (
@@ -101,7 +102,13 @@ export const GroupCardContent = ({
           <Alert className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-600" />
             <AlertDescription className="flex flex-col space-y-2">
-              <span className="text-amber-800">No participants data available. Please load participants to see them.</span>
+              <div className="text-amber-800">
+                <span>No participants data available.</span>
+                <div className="flex items-center gap-1 mt-1 text-xs">
+                  <Database className="h-3 w-3" />
+                  <span>Possible database issue - check if participants table exists.</span>
+                </div>
+              </div>
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -121,7 +128,7 @@ export const GroupCardContent = ({
                 participant={participant}
                 groupIndex={groupIndex}
                 onDragStart={(e) => onDragStart(e, participant, groupIndex)}
-                onDragEnd={() => onDragEnd()}
+                onDragEnd={onDragEnd}
                 onMoveClick={() => onMoveClick({ participant, fromGroupIndex: groupIndex })}
                 isSelected={selectedParticipant?.participant.id === participant.id}
                 isMovePending={isMovePending}
