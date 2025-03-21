@@ -1,17 +1,25 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 interface TicketsCardProps {
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
+  requiredTickets?: number; // Added to show missing tickets
 }
 
-export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: TicketsCardProps) => {
+export const TicketsCard = ({ 
+  adultTickets, 
+  childTickets, 
+  totalTickets,
+  requiredTickets
+}: TicketsCardProps) => {
   console.log("PARTICIPANTS DEBUG: TicketsCard initial input values:", {
     adultTickets,
     childTickets,
-    totalTickets
+    totalTickets,
+    requiredTickets
   });
   
   // Extra validation to ensure counts are non-negative numbers
@@ -24,12 +32,18 @@ export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: Ticket
   
   // Always use the calculated total for consistency
   const displayTotal = calculatedTotal;
+
+  // Calculate missing tickets if required tickets is provided
+  const missingTickets = requiredTickets && requiredTickets > displayTotal 
+    ? requiredTickets - displayTotal 
+    : 0;
   
   console.log("PARTICIPANTS DEBUG: TicketsCard final values:", {
-    originalValues: { adultTickets, childTickets, totalTickets },
+    originalValues: { adultTickets, childTickets, totalTickets, requiredTickets },
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,
-    displayTotal
+    displayTotal,
+    missingTickets
   });
 
   return (
@@ -53,6 +67,15 @@ export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: Ticket
               {displayTotal} tickets
             </span>
           </div>
+          
+          {missingTickets > 0 && (
+            <div className="flex justify-between items-center mt-2 pt-2 border-t">
+              <span className="text-muted-foreground">Missing:</span>
+              <Badge variant="destructive" className="text-xs font-medium">
+                {missingTickets} tickets needed
+              </Badge>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

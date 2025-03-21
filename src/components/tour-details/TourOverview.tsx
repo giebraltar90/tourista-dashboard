@@ -12,6 +12,7 @@ import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/gr
 import { GroupAssignment } from "./groups-management/GroupAssignment";
 import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
+import { useGroupManagement } from "@/hooks/group-management";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -23,24 +24,33 @@ interface TourOverviewProps {
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
   const queryClient = useQueryClient();
   
+  // Use useGroupManagement to get the accurate participant data
+  const { localTourGroups, refreshParticipants } = useGroupManagement(tour);
+  
   // Force a data refresh to ensure UI is consistent
   useEffect(() => {
     if (tour && tour.id) {
       queryClient.invalidateQueries({ queryKey: ['tour', tour.id] });
+      
+      // Initial load of participants
+      refreshParticipants();
     }
-  }, [tour?.id, queryClient]);
+  }, [tour?.id, queryClient, refreshParticipants]);
   
   console.log("PARTICIPANTS DEBUG: TourOverview initializing with tour:", {
     tourId: tour.id,
     tourName: tour.tourName,
     isHighSeason: tour.isHighSeason,
-    tourGroupsCount: Array.isArray(tour.tourGroups) ? tour.tourGroups.length : 0
+    tourGroupsCount: Array.isArray(tour.tourGroups) ? tour.tourGroups.length : 0,
+    localTourGroupsCount: Array.isArray(localTourGroups) ? localTourGroups.length : 0
   });
   
-  // Ensure tourGroups exists to prevent errors
-  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
+  // We prioritize localTourGroups for accurate data from the participant management
+  const tourGroups = Array.isArray(localTourGroups) && localTourGroups.length > 0 
+    ? localTourGroups 
+    : (Array.isArray(tour.tourGroups) ? tour.tourGroups : []);
   
-  // CRITICAL DEBUG: Log complete tour groups data
+  // CRUCIAL DEBUG: Log complete tour groups data
   console.log("PARTICIPANTS DEBUG: TourOverview detailed tourGroups data:", 
     tourGroups.map(g => ({
       id: g.id,
@@ -94,6 +104,14 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       totalChildCount += groupChildCount;
     } else {
       console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
+      
+      // Fall back to size for the UI display if we need to
+      if (group.size && group.size > 0) {
+        totalParticipants += group.size;
+        totalChildCount += group.childCount || 0;
+        
+        console.log(`PARTICIPANTS DEBUG: Falling back to group size: ${group.size}, childCount: ${group.childCount || 0}`);
+      }
     }
   }
   
@@ -114,6 +132,9 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   
   // Use the actual calculated values for the total tickets
   const totalTickets = totalParticipants;
+  
+  // Pass the required tickets to show missing tickets if any
+  const requiredTickets = tour.numTickets || 0;
 
   return (
     <div className="space-y-6">
@@ -134,6 +155,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
           adultTickets={adultTickets}
           childTickets={childTickets}
           totalTickets={totalTickets}
+          requiredTickets={requiredTickets > 0 ? requiredTickets : totalParticipants}
         />
       </div>
       

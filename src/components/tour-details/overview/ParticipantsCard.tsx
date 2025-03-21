@@ -43,59 +43,74 @@ export const ParticipantsCard = ({
     }))
   );
   
-  // CRITICAL BUGFIX: Reset calculation and do a fresh count
+  // CRITICAL BUGFIX: Use provided values if they exist and are greater than 0
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
-  // FIX: ONLY count from participants array and IGNORE the size property completely
-  for (const group of tourGroups) {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      let groupTotal = 0;
-      let groupChildCount = 0;
-      
-      console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}" participants:`, 
-        group.participants.map(p => ({ 
-          name: p.name, 
-          count: p.count || 1, 
-          childCount: p.childCount || 0 
-        }))
-      );
-      
-      // Count directly from participants array - ONE by ONE
-      for (const participant of group.participants) {
-        const count = participant.count || 1;
-        const childCount = participant.childCount || 0;
+  // Only calculate if provided values aren't already available
+  if (providedTotalParticipants === undefined || providedTotalParticipants <= 0) {
+    // FIX: ONLY count from participants array and IGNORE the size property completely
+    for (const group of tourGroups) {
+      if (Array.isArray(group.participants) && group.participants.length > 0) {
+        let groupTotal = 0;
+        let groupChildCount = 0;
         
-        groupTotal += count;
-        groupChildCount += childCount;
+        console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}" participants:`, 
+          group.participants.map(p => ({ 
+            name: p.name, 
+            count: p.count || 1, 
+            childCount: p.childCount || 0 
+          }))
+        );
         
-        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" to group "${group.name || 'Unnamed'}":`, {
-          count,
-          childCount,
-          groupRunningTotal: groupTotal,
-          groupRunningChildCount: groupChildCount
+        // Count directly from participants array - ONE by ONE
+        for (const participant of group.participants) {
+          const count = participant.count || 1;
+          const childCount = participant.childCount || 0;
+          
+          groupTotal += count;
+          groupChildCount += childCount;
+          
+          console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" to group "${group.name || 'Unnamed'}":`, {
+            count,
+            childCount,
+            groupRunningTotal: groupTotal,
+            groupRunningChildCount: groupChildCount
+          });
+        }
+        
+        calculatedTotalParticipants += groupTotal;
+        calculatedTotalChildCount += groupChildCount;
+        
+        console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" final counts:`, {
+          groupId: group.id,
+          groupTotal,
+          groupChildCount,
+          overallRunningTotal: calculatedTotalParticipants,
+          overallRunningChildCount: calculatedTotalChildCount
         });
+      } else {
+        console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
+        
+        // If no participants data, fall back to the group size
+        if (group.size && group.size > 0) {
+          calculatedTotalParticipants += group.size;
+          calculatedTotalChildCount += group.childCount || 0;
+          
+          console.log(`PARTICIPANTS DEBUG: Using group size as fallback: ${group.size} (child: ${group.childCount || 0})`);
+        }
       }
-      
-      calculatedTotalParticipants += groupTotal;
-      calculatedTotalChildCount += groupChildCount;
-      
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" final counts:`, {
-        groupId: group.id,
-        groupTotal,
-        groupChildCount,
-        overallRunningTotal: calculatedTotalParticipants,
-        overallRunningChildCount: calculatedTotalChildCount
-      });
-    } else {
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
     }
-    // CRITICAL FIX: Remove the fallback to size property completely
   }
   
-  // Use calculated values ONLY if they're greater than zero
-  const totalParticipants = calculatedTotalParticipants > 0 ? calculatedTotalParticipants : (providedTotalParticipants || 0);
-  const totalChildCount = calculatedTotalChildCount > 0 ? calculatedTotalChildCount : (providedTotalChildCount || 0);
+  // Use provided values if they exist, otherwise use calculated values
+  const totalParticipants = (providedTotalParticipants !== undefined && providedTotalParticipants > 0) 
+    ? providedTotalParticipants 
+    : calculatedTotalParticipants;
+    
+  const totalChildCount = (providedTotalChildCount !== undefined && providedTotalChildCount > 0)
+    ? providedTotalChildCount
+    : calculatedTotalChildCount;
   
   // Calculate adult count (total minus children)
   const adultCount = totalParticipants - totalChildCount;

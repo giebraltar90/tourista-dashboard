@@ -84,9 +84,18 @@ export const GroupCard = ({
     if (Array.isArray(group.participants)) {
       setLocalParticipants(group.participants);
     } else {
+      // Ensure we always have an array, even if empty
       setLocalParticipants([]);
     }
   }, [group.participants, groupIndex, group.id, group.name]);
+
+  // Force refresh when needed to repopulate the participants list
+  useEffect(() => {
+    if (localParticipants.length === 0 && group.size > 0 && onRefreshParticipants) {
+      console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] has participants mismatch, triggering refresh.`);
+      onRefreshParticipants();
+    }
+  }, [localParticipants.length, group.size, groupIndex, onRefreshParticipants]);
 
   const handleRefreshParticipants = () => {
     if (onRefreshParticipants) {
@@ -118,10 +127,10 @@ export const GroupCard = ({
       });
     }
   } else {
-    console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] has no participants, setting counts to 0`);
-    // Group has no participants, explicitly set to 0
-    totalParticipants = 0;
-    childCount = 0;
+    console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] has no participants, using group size`);
+    // Group has no participants, use group size
+    totalParticipants = group.size || 0;
+    childCount = group.childCount || 0;
   }
   
   const adultCount = totalParticipants - childCount;
@@ -216,9 +225,17 @@ export const GroupCard = ({
                 </div>
               ) : (
                 <ParticipantDropZone groupIndex={groupIndex}>
-                  <p className="text-center text-muted-foreground text-sm py-4">
-                    Drop participants here
-                  </p>
+                  {totalParticipants > 0 ? (
+                    <p className="text-center text-muted-foreground text-sm py-4">
+                      This group has {totalParticipants} participants but data isn't loaded.
+                      <br />
+                      Click refresh above to load participants.
+                    </p>
+                  ) : (
+                    <p className="text-center text-muted-foreground text-sm py-4">
+                      Drop participants here
+                    </p>
+                  )}
                 </ParticipantDropZone>
               )}
             </div>
