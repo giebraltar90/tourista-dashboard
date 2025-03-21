@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { GuideOption } from "@/hooks/group-management/types";
 
 interface GuideSelectionPopoverProps {
@@ -62,9 +63,20 @@ export const GuideSelectionPopover = ({
     }
   };
 
+  // Process guide options to ensure all have readable names
+  const processedOptions = guideOptions.map(guide => {
+    if (!guide.name || guide.name.includes('...')) {
+      return {
+        ...guide,
+        name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
+      };
+    }
+    return guide;
+  });
+
   // Make sure guideOptions is properly filtered to only include valid options
-  const validOptions = Array.isArray(guideOptions) 
-    ? guideOptions
+  const validOptions = Array.isArray(processedOptions) 
+    ? processedOptions
         .filter(guide => guide && guide.id && guide.name)
         .sort((a, b) => a.name.localeCompare(b.name))
     : [];
@@ -100,7 +112,14 @@ export const GuideSelectionPopover = ({
               <SelectItem value="_none">None (Unassigned)</SelectItem>
               {validOptions.map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
-                  {guide.name || guide.id}
+                  <div className="flex items-center gap-2">
+                    <span>{guide.name}</span>
+                    {guide.info?.guideType && (
+                      <Badge variant="outline" className="text-xs">
+                        {guide.info.guideType}
+                      </Badge>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

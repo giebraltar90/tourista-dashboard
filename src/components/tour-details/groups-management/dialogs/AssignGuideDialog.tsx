@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
 import { GuideInfo } from "@/types/ventrata";
 import { toast } from "sonner";
+import { useEffect, useState } from "react";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 interface AssignGuideDialogProps {
   isOpen: boolean;
@@ -22,16 +24,35 @@ export const AssignGuideDialog = ({
   onOpenChange, 
   tourId, 
   groupIndex, 
-  guides, 
+  guides: inputGuides, 
   currentGuideId 
 }: AssignGuideDialogProps) => {
-  console.log('AssignGuideDialog rendering with props:', {
-    tourId,
-    groupIndex,
-    guidesCount: guides.length,
-    currentGuideId,
-    guides: guides.map(g => ({ id: g.id, name: g.name }))
-  });
+  // Process guide data to ensure readable names
+  const [processedGuides, setProcessedGuides] = useState(inputGuides);
+  
+  useEffect(() => {
+    // Ensure all guides have readable names
+    const processedGuidesList = inputGuides.map(guide => {
+      // If guide has a UUID as name or name with "..." in it, give it a better name
+      if (!guide.name || guide.name.includes('...')) {
+        return {
+          ...guide,
+          name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
+        };
+      }
+      return guide;
+    });
+    
+    setProcessedGuides(processedGuidesList);
+    
+    console.log('AssignGuideDialog processing guides:', {
+      tourId,
+      groupIndex,
+      guidesCount: processedGuidesList.length,
+      currentGuideId,
+      guides: processedGuidesList.map(g => ({ id: g.id, name: g.name }))
+    });
+  }, [inputGuides, tourId, groupIndex, currentGuideId]);
 
   const handleSuccess = () => {
     toast.success("Guide assignment updated successfully");
@@ -51,7 +72,7 @@ export const AssignGuideDialog = ({
         <AssignGuideForm
           tourId={tourId}
           groupIndex={groupIndex}
-          guides={guides}
+          guides={processedGuides}
           currentGuideId={currentGuideId}
           onSuccess={handleSuccess}
         />

@@ -2,88 +2,72 @@
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
- * Maps a guide ID to a UUID format expected by the database
- * This handles special guide IDs like "guide1", "guide2", etc.
+ * Maps guide IDs to their UUID equivalents for database operations
  */
 export const mapGuideIdToUuid = (
-  guideId: string, 
-  tour: any, 
+  guideId: string,
+  tour: any,
   guides: any[] = []
 ): string | null => {
-  // If it's already a UUID, return it directly
-  if (isValidUuid(guideId)) {
-    return guideId;
-  }
+  // If it's empty or _none, return null to unassign
+  if (!guideId || guideId === "_none") return null;
   
-  // Special handling for standard tour guide references
-  if (guideId === "guide1" && tour.guide1) {
-    // Try to find the UUID for this guide in guides array
+  // If it's already a UUID, return it
+  if (isValidUuid(guideId)) return guideId;
+  
+  // Handle special guide IDs
+  if (guideId === "guide1" && tour?.guide1) {
+    // Try to find the UUID for guide1
     const guide = guides.find(g => g.name === tour.guide1);
     if (guide && isValidUuid(guide.id)) {
-      console.log(`Mapped guide1 "${tour.guide1}" to UUID: ${guide.id}`);
+      console.log(`Found UUID for guide1 (${tour.guide1}): ${guide.id}`);
       return guide.id;
     }
-    // If no match in guides, use the name directly if it looks like a UUID
-    if (tour.guide1 && isValidUuid(tour.guide1)) {
-      return tour.guide1;
+    
+    // Fall back to the tour's guide1Id if available
+    if (tour.guide1Id && isValidUuid(tour.guide1Id)) {
+      console.log(`Using guide1Id from tour: ${tour.guide1Id}`);
+      return tour.guide1Id;
     }
   }
   
-  // Similar handling for guide2
-  if (guideId === "guide2" && tour.guide2) {
+  if (guideId === "guide2" && tour?.guide2) {
+    // Try to find the UUID for guide2
     const guide = guides.find(g => g.name === tour.guide2);
     if (guide && isValidUuid(guide.id)) {
-      console.log(`Mapped guide2 "${tour.guide2}" to UUID: ${guide.id}`);
+      console.log(`Found UUID for guide2 (${tour.guide2}): ${guide.id}`);
       return guide.id;
     }
-    if (tour.guide2 && isValidUuid(tour.guide2)) {
-      return tour.guide2;
+    
+    // Fall back to the tour's guide2Id if available
+    if (tour.guide2Id && isValidUuid(tour.guide2Id)) {
+      console.log(`Using guide2Id from tour: ${tour.guide2Id}`);
+      return tour.guide2Id;
     }
   }
   
-  // Similar handling for guide3
-  if (guideId === "guide3" && tour.guide3) {
+  if (guideId === "guide3" && tour?.guide3) {
+    // Try to find the UUID for guide3
     const guide = guides.find(g => g.name === tour.guide3);
     if (guide && isValidUuid(guide.id)) {
-      console.log(`Mapped guide3 "${tour.guide3}" to UUID: ${guide.id}`);
+      console.log(`Found UUID for guide3 (${tour.guide3}): ${guide.id}`);
       return guide.id;
     }
-    if (tour.guide3 && isValidUuid(tour.guide3)) {
-      return tour.guide3;
+    
+    // Fall back to the tour's guide3Id if available
+    if (tour.guide3Id && isValidUuid(tour.guide3Id)) {
+      console.log(`Using guide3Id from tour: ${tour.guide3Id}`);
+      return tour.guide3Id;
     }
   }
   
-  // For other cases, try to find the guide by name in the guides array
-  const guideName = guideNameFromId(guideId, tour);
-  if (guideName) {
-    const guide = guides.find(g => g.name === guideName);
-    if (guide && isValidUuid(guide.id)) {
-      console.log(`Mapped guide "${guideName}" to UUID: ${guide.id}`);
-      return guide.id;
-    }
+  // Try to find by name match as a last resort
+  const matchingGuide = guides.find(g => g.name === guideId);
+  if (matchingGuide && isValidUuid(matchingGuide.id)) {
+    console.log(`Found guide by name match: ${matchingGuide.id}`);
+    return matchingGuide.id;
   }
   
-  console.warn(`Could not map guide ID "${guideId}" to a valid UUID`);
+  console.error(`Could not map guide ID "${guideId}" to a valid UUID`);
   return null;
-};
-
-/**
- * Try to extract a guide name from a guide ID using tour data
- */
-const guideNameFromId = (guideId: string, tour: any): string | null => {
-  if (!tour) return null;
-  
-  if (guideId === "guide1") return tour.guide1 || null;
-  if (guideId === "guide2") return tour.guide2 || null;
-  if (guideId === "guide3") return tour.guide3 || null;
-  
-  return null;
-};
-
-/**
- * Validates if a string is a valid UUID
- */
-export const isValidGuideUuid = (id: string | undefined): boolean => {
-  if (!id) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };

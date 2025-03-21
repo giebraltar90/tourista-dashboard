@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { GuideInfo } from "@/types/ventrata";
 
 interface GuideSelectFieldProps {
@@ -26,6 +27,23 @@ interface GuideSelectFieldProps {
 }
 
 export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFieldProps) => {
+  // Ensure all guides have readable names
+  const processedGuides = guides.map(guide => {
+    // If guide has a UUID as name or name with "..." in it, try to give it a better name
+    if (!guide.name || guide.name.includes('...')) {
+      return {
+        ...guide,
+        name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
+      };
+    }
+    return guide;
+  });
+  
+  // Filter out any invalid guides
+  const validGuides = processedGuides.filter(guide => 
+    guide && guide.id && guide.id.trim() !== ""
+  );
+  
   return (
     <FormField
       control={form.control}
@@ -44,9 +62,16 @@ export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFiel
             </FormControl>
             <SelectContent>
               <SelectItem value="_none">None (Unassign Guide)</SelectItem>
-              {guides.map((guide) => (
+              {validGuides.map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
-                  {guide.name}
+                  <div className="flex items-center gap-2">
+                    <span>{guide.name}</span>
+                    {guide.info?.guideType && (
+                      <Badge variant="outline" className="text-xs">
+                        {guide.info.guideType}
+                      </Badge>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>

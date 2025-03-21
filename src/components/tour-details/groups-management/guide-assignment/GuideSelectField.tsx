@@ -35,7 +35,9 @@ export const GuideSelectField = ({
   defaultValue 
 }: GuideSelectFieldProps) => {
   // Filter out any guides with empty ids to avoid the Select.Item error
-  const validGuides = guides ? guides.filter(guide => guide && guide.id && guide.id.trim() !== "") : [];
+  const validGuides = guides ? guides.filter(guide => 
+    guide && guide.id && guide.id.trim() !== "" && guide.name
+  ) : [];
   
   return (
     <FormField
