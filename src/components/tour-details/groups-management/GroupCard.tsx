@@ -1,9 +1,9 @@
 
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { GroupCardHeader, GroupCardContent, useGroupCardState } from "./group-card";
+import { GroupCardContainer } from "./group-card/GroupCardContainer";
+import { useGroupCardState } from "./group-card";
 
 interface GroupCardProps {
   group: VentrataTourGroup;
@@ -44,6 +44,7 @@ export const GroupCard = ({
   onRefreshParticipants,
   onAssignGuide
 }: GroupCardProps) => {
+  // Get guide information
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
 
@@ -68,52 +69,40 @@ export const GroupCard = ({
     onRefreshParticipants
   );
 
-  console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] final counts:`, {
+  console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] initial render with:`, {
     groupId: group.id,
     groupName: group.name || `Group ${groupIndex + 1}`,
-    totalParticipants,
-    childCount,
-    adultCount,
-    displayParticipants,
-    participantsCount: localParticipants.length
+    participantsLength: Array.isArray(group.participants) ? group.participants.length : 0
   });
 
+  // Render the container component with all props
   return (
-    <Card className="relative overflow-hidden">
-      <CardHeader className="pb-2">
-        <GroupCardHeader
-          groupName={group.name || `Group ${groupIndex + 1}`}
-          displayParticipants={displayParticipants}
-          totalParticipants={totalParticipants}
-          isExpanded={isExpanded}
-          setIsExpanded={setIsExpanded}
-          handleRefreshParticipants={handleRefreshParticipants}
-          isRefreshing={isRefreshing}
-        />
-      </CardHeader>
-      
-      {isExpanded && (
-        <CardContent className="pb-3 pt-0">
-          <GroupCardContent
-            groupIndex={groupIndex}
-            totalParticipants={totalParticipants}
-            localParticipants={localParticipants}
-            onDragOver={onDragOver}
-            onDragLeave={onDragLeave}
-            onDrop={onDrop}
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
-            onMoveClick={onMoveClick}
-            selectedParticipant={selectedParticipant}
-            handleMoveParticipant={handleMoveParticipant}
-            isMovePending={isMovePending}
-            onAssignGuide={onAssignGuide}
-            guideName={guideName}
-            tourId={tour.id}
-            onRefreshCallback={onRefreshParticipants}
-          />
-        </CardContent>
-      )}
-    </Card>
+    <GroupCardContainer
+      group={group}
+      groupIndex={groupIndex}
+      guideName={guideName}
+      guideInfo={guideInfo}
+      isExpanded={isExpanded}
+      setIsExpanded={setIsExpanded}
+      localParticipants={localParticipants}
+      isRefreshing={isRefreshing}
+      handleRefreshParticipants={handleRefreshParticipants}
+      totalParticipants={totalParticipants}
+      childCount={childCount}
+      adultCount={adultCount}
+      displayParticipants={displayParticipants}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onMoveClick={onMoveClick}
+      selectedParticipant={selectedParticipant}
+      handleMoveParticipant={handleMoveParticipant}
+      isMovePending={isMovePending}
+      onAssignGuide={onAssignGuide}
+      tourId={tour.id}
+      onRefreshCallback={onRefreshParticipants}
+    />
   );
 };

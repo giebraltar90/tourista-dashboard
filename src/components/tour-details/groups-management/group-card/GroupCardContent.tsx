@@ -2,11 +2,12 @@
 import { Button } from "@/components/ui/button";
 import { VentrataParticipant } from "@/types/ventrata";
 import { ParticipantItem } from "../ParticipantItem";
-import { AlertCircle, Users, RefreshCw, Database, Info, Plus } from "lucide-react";
+import { AlertCircle, RefreshCw, Database } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { createTestParticipants } from "@/services/api/createParticipants";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useParticipantHandlers } from "./useParticipantHandlers";
 
 interface GroupCardContentProps {
   groupIndex: number;
@@ -47,6 +48,22 @@ export const GroupCardContent = ({
 }: GroupCardContentProps) => {
   const [isCreatingTestData, setIsCreatingTestData] = useState(false);
   
+  // Use our custom hook for participant handlers
+  const {
+    handleParticipantDragStart,
+    handleParticipantMoveClick,
+    isParticipantSelected,
+    handleMoveToThisGroup,
+    isTransferring
+  } = useParticipantHandlers(
+    groupIndex,
+    onDragStart,
+    onDragEnd,
+    onMoveClick,
+    selectedParticipant,
+    handleMoveParticipant
+  );
+  
   // Check if we have any participant data
   const hasParticipantData = Array.isArray(localParticipants) && localParticipants.length > 0;
   
@@ -54,30 +71,6 @@ export const GroupCardContent = ({
   const handleGuideClick = () => {
     if (typeof onAssignGuide === 'function') {
       onAssignGuide(groupIndex);
-    }
-  };
-  
-  // Handle drag start for a participant
-  const handleParticipantDragStart = (e: React.DragEvent, participant: VentrataParticipant) => {
-    onDragStart(e, participant, groupIndex);
-  };
-  
-  // Handle move click for a participant
-  const handleParticipantMoveClick = (participant: VentrataParticipant) => {
-    onMoveClick({ participant, fromGroupIndex: groupIndex });
-  };
-  
-  // Check if a participant is currently selected
-  const isParticipantSelected = (participantId: string) => {
-    return selectedParticipant && 
-           selectedParticipant.participant.id === participantId && 
-           selectedParticipant.fromGroupIndex === groupIndex;
-  };
-  
-  // Handle move to this group click
-  const handleMoveToThisGroup = () => {
-    if (selectedParticipant && selectedParticipant.fromGroupIndex !== groupIndex) {
-      handleMoveParticipant(groupIndex);
     }
   };
   
@@ -148,9 +141,9 @@ export const GroupCardContent = ({
                 size="sm" 
                 variant="default"
                 onClick={handleMoveToThisGroup}
-                disabled={isMovePending}
+                disabled={isMovePending || isTransferring}
               >
-                {isMovePending ? "Moving..." : "Move Here"}
+                {isMovePending || isTransferring ? "Moving..." : "Move Here"}
               </Button>
             </div>
           </div>
