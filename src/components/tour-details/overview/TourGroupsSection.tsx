@@ -116,20 +116,13 @@ export const TourGroupsSection = ({
                     <div className="flex items-center space-x-2">
                       <h3 className="font-medium">{displayName}</h3>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="text-sm text-muted-foreground">
-                        {guideName ? (
-                          <span className="font-medium">{guideName}</span>
-                        ) : (
-                          <span className="italic">No guide assigned</span>
-                        )}
-                      </div>
+                    <div>
                       <Button 
                         variant="outline" 
                         size="sm" 
                         onClick={() => handleAssignGuide(index)}
                       >
-                        {guideName ? "Change Guide" : "Assign Guide"}
+                        {guideName && guideName !== "Unassigned" ? "Change Guide" : "Assign Guide"}
                       </Button>
                     </div>
                   </div>
