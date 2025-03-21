@@ -19,8 +19,9 @@ export {
   findGuideUuidByName
 } from './guideAssignmentUtils';
 
+// Let's fix this re-export which is causing an error - we need to check what's actually exported
 export {
-  findGuideName as findGuideNameFromInfo
+  getGuideNameAndInfo
 } from './guideInfoUtils';
 
 export {

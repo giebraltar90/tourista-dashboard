@@ -1,4 +1,3 @@
-
 import { useTourById } from "../tourData/useTourById";
 import { useGuideData } from "../guides/useGuideData";
 import { useModifications } from "../useModifications";
@@ -10,7 +9,7 @@ import { toast } from "sonner";
 import { mapGuideIdToUuid } from "./utils/guideAssignmentMapping";
 import { validateGuideAssignment } from "./utils/guideAssignmentValidation";
 import { preserveParticipants, createUpdatedGroupWithPreservedParticipants } from "./utils/participantPreservation";
-import { findGuideNameForGroup, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
+import { findGuideName, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
 import { persistGuideAssignmentChanges } from "./utils/databaseOperations";
 import { performOptimisticUpdate, handleUIUpdates } from "./utils/optimisticUpdates";
 
@@ -70,8 +69,8 @@ export const useAssignGuide = (tourId: string) => {
       // Get group number for name generation
       const groupNumber = groupIndex + 1;
       
-      // Find guide name for display - using the renamed import
-      const guideName = findGuideNameForGroup(actualGuideId, guides, tour);
+      // Find guide name for display
+      const guideName = findGuideName(actualGuideId, guides, tour);
       
       // Generate a new group name with the guide name
       const groupName = generateGroupNameWithGuide(groupNumber, guideName);

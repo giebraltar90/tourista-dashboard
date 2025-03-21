@@ -51,3 +51,9 @@ export const getGuideNameAndInfo = (
   // If all else fails, return a formatted guide ID as the name
   return { name: `Guide ${guideId.substring(0, 8)}...`, info: null };
 };
+
+// For backward compatibility, let's add this function
+export const findGuideName = (guideId: string | undefined, guides: any[] = []): string => {
+  const result = getGuideNameAndInfo(undefined, undefined, undefined, null, null, null, guides, guideId);
+  return result.name;
+};
