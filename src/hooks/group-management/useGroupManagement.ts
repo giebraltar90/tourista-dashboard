@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
@@ -6,15 +7,20 @@ import { useDragAndDrop } from "./useDragAndDrop";
 import { useParticipantLoading } from "./useParticipantLoading";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { recalculateAllTourGroupSizes } from "./services/participantService";
 
 export const useGroupManagement = (tour: TourCardProps) => {
   const queryClient = useQueryClient();
-  console.log("useGroupManagement initialized with tour:", tour.id);
+  console.log("PARTICIPANTS DEBUG: useGroupManagement initialized with tour:", tour.id);
   
   const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>(() => {
-    console.log("Initial localTourGroups setup from tour.tourGroups:", tour.tourGroups);
+    console.log("PARTICIPANTS DEBUG: Initial localTourGroups setup from tour.tourGroups:", {
+      tourGroupsCount: Array.isArray(tour.tourGroups) ? tour.tourGroups.length : 0,
+      hasTourGroups: Array.isArray(tour.tourGroups)
+    });
+    
     // Create a deep copy of tour groups with participants
-    const groups = JSON.parse(JSON.stringify(tour.tourGroups || []));
+    const groups = Array.isArray(tour.tourGroups) ? JSON.parse(JSON.stringify(tour.tourGroups)) : [];
     
     // Ensure each group has a participants array
     return groups.map((group: VentrataTourGroup) => ({
@@ -25,26 +31,46 @@ export const useGroupManagement = (tour: TourCardProps) => {
   
   // Update local groups when tour groups change
   useEffect(() => {
-    if (tour.tourGroups) {
-      console.log("Tour groups changed, updating localTourGroups:", tour.tourGroups);
-      const updatedGroups = JSON.parse(JSON.stringify(tour.tourGroups));
-      // Ensure each group has a participants array
-      const normalizedGroups = updatedGroups.map((group: VentrataTourGroup) => ({
-        ...group,
-        participants: Array.isArray(group.participants) ? group.participants : []
-      }));
+    if (Array.isArray(tour.tourGroups)) {
+      console.log("PARTICIPANTS DEBUG: Tour groups changed, updating localTourGroups:", {
+        tourGroupsCount: tour.tourGroups.length,
+        firstGroupHasParticipants: tour.tourGroups.length > 0 ? 
+          !!tour.tourGroups[0].participants : false
+      });
       
-      // Log stably formatted groups for debugging
-      console.log("Stable tour groups:", normalizedGroups.map(g => ({
+      // Create a deep copy to ensure we don't get reference issues
+      const updatedGroups = JSON.parse(JSON.stringify(tour.tourGroups));
+      
+      // Ensure each group has a participants array and correct size calculations
+      const normalizedGroups = updatedGroups.map((group: VentrataTourGroup) => {
+        // Always ensure participants is an array
+        const participants = Array.isArray(group.participants) ? group.participants : [];
+        
+        // Calculate size and childCount from participants
+        let calculatedSize = 0;
+        let calculatedChildCount = 0;
+        
+        for (const participant of participants) {
+          calculatedSize += participant.count || 1;
+          calculatedChildCount += participant.childCount || 0;
+        }
+        
+        // Return an updated group with the calculated values
+        return {
+          ...group,
+          participants,
+          // CRITICAL FIX: Override size and childCount with calculated values
+          size: calculatedSize,
+          childCount: calculatedChildCount
+        };
+      });
+      
+      console.log("PARTICIPANTS DEBUG: Updated normalized tour groups:", normalizedGroups.map(g => ({
         id: g.id,
-        name: g.name,
-        size: g.size,
-        entryTime: g.entryTime,
-        guideId: g.guideId,
-        childCount: g.childCount,
-        participants: g.participants,
-        originalIndex: tour.tourGroups.findIndex((og: any) => og.id === g.id),
-        displayName: g.name
+        name: g.name || 'Unnamed',
+        calculatedSize: g.size,
+        calculatedChildCount: g.childCount,
+        participantsCount: g.participants.length
       })));
       
       setLocalTourGroups(normalizedGroups);
@@ -56,7 +82,23 @@ export const useGroupManagement = (tour: TourCardProps) => {
   
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
-    return loadParticipantsInner(tourId, setLocalTourGroups);
+    console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
+    return loadParticipantsInner(tourId, (groups) => {
+      console.log(`PARTICIPANTS DEBUG: Participants loaded, processing ${groups.length} groups`);
+      
+      // Ensure correct size calculations before setting state
+      const recalculatedGroups = recalculateAllTourGroupSizes(groups);
+      
+      console.log("PARTICIPANTS DEBUG: Groups after recalculation:", recalculatedGroups.map(g => ({
+        id: g.id,
+        name: g.name || 'Unnamed',
+        calculatedSize: g.size,
+        calculatedChildCount: g.childCount,
+        participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
+      })));
+      
+      setLocalTourGroups(recalculatedGroups);
+    });
   }, [loadParticipantsInner]);
 
   // Get participant movement capabilities from the hook
@@ -83,6 +125,15 @@ export const useGroupManagement = (tour: TourCardProps) => {
       return null;
     }
     
+    console.log(`PARTICIPANTS DEBUG: Moving participant from group ${fromGroupIndex} to group ${toGroupIndex}:`, {
+      participant: {
+        id: participant.id,
+        name: participant.name,
+        count: participant.count || 1,
+        childCount: participant.childCount || 0
+      }
+    });
+    
     // Create a deep copy to avoid mutation
     const updatedGroups = JSON.parse(JSON.stringify(currentGroups));
     
@@ -95,12 +146,27 @@ export const useGroupManagement = (tour: TourCardProps) => {
       const participantCount = participant.count || 1;
       const childCount = participant.childCount || 0;
       
-      updatedGroups[fromGroupIndex].size = Math.max(0, (updatedGroups[fromGroupIndex].size || 0) - participantCount);
-      updatedGroups[fromGroupIndex].childCount = Math.max(0, (updatedGroups[fromGroupIndex].childCount || 0) - childCount);
+      // CRITICAL FIX: Recalculate size from scratch based on remaining participants
+      let newSize = 0;
+      let newChildCount = 0;
+      
+      for (const p of updatedGroups[fromGroupIndex].participants) {
+        newSize += p.count || 1;
+        newChildCount += p.childCount || 0;
+      }
+      
+      updatedGroups[fromGroupIndex].size = newSize;
+      updatedGroups[fromGroupIndex].childCount = newChildCount;
+      
+      console.log(`PARTICIPANTS DEBUG: After removal from group ${fromGroupIndex}:`, {
+        remainingParticipants: updatedGroups[fromGroupIndex].participants.length,
+        newSize,
+        newChildCount
+      });
     }
     
     // Add to destination
-    if (!updatedGroups[toGroupIndex].participants) {
+    if (!Array.isArray(updatedGroups[toGroupIndex].participants)) {
       updatedGroups[toGroupIndex].participants = [];
     }
     
@@ -112,12 +178,23 @@ export const useGroupManagement = (tour: TourCardProps) => {
     };
     updatedGroups[toGroupIndex].participants.push(updatedParticipant);
     
-    // Update counts
-    const participantCount = participant.count || 1;
-    const childCount = participant.childCount || 0;
+    // CRITICAL FIX: Recalculate size from scratch
+    let newToSize = 0;
+    let newToChildCount = 0;
     
-    updatedGroups[toGroupIndex].size = (updatedGroups[toGroupIndex].size || 0) + participantCount;
-    updatedGroups[toGroupIndex].childCount = (updatedGroups[toGroupIndex].childCount || 0) + childCount;
+    for (const p of updatedGroups[toGroupIndex].participants) {
+      newToSize += p.count || 1;
+      newToChildCount += p.childCount || 0;
+    }
+    
+    updatedGroups[toGroupIndex].size = newToSize;
+    updatedGroups[toGroupIndex].childCount = newToChildCount;
+    
+    console.log(`PARTICIPANTS DEBUG: After addition to group ${toGroupIndex}:`, {
+      totalParticipants: updatedGroups[toGroupIndex].participants.length,
+      newSize: newToSize,
+      newChildCount: newToChildCount
+    });
     
     return updatedGroups;
   });
@@ -125,9 +202,10 @@ export const useGroupManagement = (tour: TourCardProps) => {
   // Wrapper for moving a participant to a specific group
   const handleMoveParticipant = (toGroupIndex: number) => {
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
+      console.log(`PARTICIPANTS DEBUG: Moving participant to group ${toGroupIndex}`);
       moveParticipantToGroup(toGroupIndex);
     } else {
-      console.error("Invalid group index for move operation:", toGroupIndex);
+      console.error("PARTICIPANTS DEBUG: Invalid group index for move operation:", toGroupIndex);
       toast.error("Cannot move participant: Invalid group selection");
     }
   };
@@ -135,50 +213,75 @@ export const useGroupManagement = (tour: TourCardProps) => {
   // Handler for dropping a participant into a group
   const handleDrop = (e: React.DragEvent, toGroupIndex: number) => {
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
-      dropParticipant(e, toGroupIndex, localTourGroups, setLocalTourGroups);
+      console.log(`PARTICIPANTS DEBUG: Dropping participant into group ${toGroupIndex}`);
+      dropParticipant(e, toGroupIndex, localTourGroups, (updatedGroups) => {
+        console.log(`PARTICIPANTS DEBUG: After drop into group ${toGroupIndex}, updating groups:`, 
+          updatedGroups.map(g => ({
+            id: g.id,
+            name: g.name || 'Unnamed',
+            size: g.size,
+            childCount: g.childCount,
+            participantsCount: g.participants.length
+          }))
+        );
+        setLocalTourGroups(updatedGroups);
+      });
     } else {
-      console.error("Invalid group index for drop operation:", toGroupIndex);
+      console.error("PARTICIPANTS DEBUG: Invalid group index for drop operation:", toGroupIndex);
     }
   };
 
   // Add a refresh function to manually trigger participant loading
   const refreshParticipants = useCallback(() => {
     if (tour.id) {
+      console.log(`PARTICIPANTS DEBUG: Manually refreshing participants for tour ${tour.id}`);
       toast.info("Refreshing participants...");
       loadParticipants(tour.id);
       
-      // CRITICAL FIX: Force recalculation of all group sizes after refresh
+      // Force recalculation of all group sizes
       setTimeout(() => {
         setLocalTourGroups(prevGroups => {
+          console.log("PARTICIPANTS DEBUG: Running post-refresh group size recalculation");
+          
           // Create deep copy to avoid mutation issues
           const updatedGroups = JSON.parse(JSON.stringify(prevGroups));
           
           // Recalculate all group sizes from participants
-          return updatedGroups.map((group: VentrataTourGroup) => {
-            // Create a new object to avoid mutations
-            const updatedGroup = {...group};
-            
+          const recalculatedGroups = updatedGroups.map((group: VentrataTourGroup) => {
             // Calculate directly from participants array if it exists
-            if (Array.isArray(updatedGroup.participants) && updatedGroup.participants.length > 0) {
+            if (Array.isArray(group.participants) && group.participants.length > 0) {
               let totalSize = 0;
               let totalChildCount = 0;
               
-              for (const p of updatedGroup.participants) {
+              for (const p of group.participants) {
                 totalSize += p.count || 1;
                 totalChildCount += p.childCount || 0;
               }
               
-              // Set the size and childCount based on calculated values
-              updatedGroup.size = totalSize;
-              updatedGroup.childCount = totalChildCount;
+              console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" recalculated:`, {
+                size: totalSize,
+                childCount: totalChildCount,
+                participantsCount: group.participants.length
+              });
+              
+              // Return updated group with recalculated values
+              return {
+                ...group,
+                size: totalSize,
+                childCount: totalChildCount
+              };
             } else {
               // If no participants, size should be 0
-              updatedGroup.size = 0;
-              updatedGroup.childCount = 0;
+              console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants, setting counts to 0`);
+              return {
+                ...group,
+                size: 0,
+                childCount: 0
+              };
             }
-            
-            return updatedGroup;
           });
+          
+          return recalculatedGroups;
         });
       }, 500);
     }

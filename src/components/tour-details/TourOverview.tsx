@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -29,22 +30,26 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     }
   }, [tour?.id, queryClient]);
   
+  console.log("PARTICIPANTS DEBUG: TourOverview initializing with tour:", {
+    tourId: tour.id,
+    tourName: tour.tourName,
+    isHighSeason: tour.isHighSeason,
+    tourGroupsCount: Array.isArray(tour.tourGroups) ? tour.tourGroups.length : 0
+  });
+  
   // Ensure tourGroups exists to prevent errors
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
   
-  // ULTRA DEBUG: Log the raw tour data in full detail
-  console.log("ULTRA DEBUG: TourOverview raw tour data:", {
-    tourId: tour.id,
-    isHighSeason: tour.isHighSeason,
-    tourGroupsCount: tourGroups.length,
-    rawTourGroups: tourGroups.map(g => ({
+  // CRITICAL DEBUG: Log complete tour groups data
+  console.log("PARTICIPANTS DEBUG: TourOverview detailed tourGroups data:", 
+    tourGroups.map(g => ({
       id: g.id,
-      name: g.name,
+      name: g.name || 'Unnamed',
       size: g.size,
       childCount: g.childCount,
       guideId: g.guideId,
-      hasParticipants: Array.isArray(g.participants),
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0,
+      hasParticipantsArray: Array.isArray(g.participants),
+      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0,
       participants: Array.isArray(g.participants) ? g.participants.map(p => ({
         id: p.id,
         name: p.name,
@@ -52,16 +57,16 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         childCount: p.childCount || 0
       })) : []
     }))
-  });
+  );
   
   // ULTRA BUGFIX: Detail each participant explicitly for accurate counting
-  console.log("ULTRA DEBUG: Full participant details:");
+  console.log("PARTICIPANTS DEBUG: TourOverview starting fresh participant count");
   let totalParticipants = 0;
   let totalChildCount = 0;
   
   // CRITICAL FIX: Only count from participants arrays, never use size
   for (const group of tourGroups) {
-    console.log(`Group: ${group.name}`);
+    console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}"`);
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
       let groupChildCount = 0;
@@ -71,23 +76,31 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         const count = participant.count || 1;
         const childCount = participant.childCount || 0;
         
-        console.log(`  Participant: ${participant.name}, count=${count}, childCount=${childCount}`);
+        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}":`, {
+          count,
+          childCount
+        });
         
         groupTotal += count;
         groupChildCount += childCount;
       }
       
-      console.log(`  Group total: ${groupTotal}, children: ${groupChildCount}`);
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" totals:`, {
+        groupTotal,
+        groupChildCount
+      });
       
       totalParticipants += groupTotal;
       totalChildCount += groupChildCount;
+    } else {
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
     }
   }
   
   // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('ULTRA DEBUG: TourOverview final calculations:', {
+  console.log('PARTICIPANTS DEBUG: TourOverview final calculations:', {
     totalParticipants,
     totalChildCount, 
     adultCount: totalParticipants - totalChildCount,

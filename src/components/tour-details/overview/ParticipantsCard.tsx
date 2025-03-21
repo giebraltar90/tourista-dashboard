@@ -18,20 +18,34 @@ export const ParticipantsCard = ({
   totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
+  console.log("PARTICIPANTS DEBUG: ParticipantsCard starting with raw inputs:", {
+    tourGroupsCount: tourGroups.length,
+    providedTotalParticipants,
+    providedTotalChildCount,
+    isHighSeason
+  });
+  
+  // CRITICAL DEBUG: Log complete tour groups data
+  console.log("PARTICIPANTS DEBUG: ParticipantsCard full tourGroups data:", 
+    tourGroups.map(g => ({
+      id: g.id,
+      name: g.name || 'Unnamed',
+      size: g.size,
+      childCount: g.childCount,
+      hasParticipantsArray: Array.isArray(g.participants),
+      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0,
+      participants: Array.isArray(g.participants) ? g.participants.map(p => ({
+        id: p.id,
+        name: p.name,
+        count: p.count || 1,
+        childCount: p.childCount || 0
+      })) : []
+    }))
+  );
+  
   // CRITICAL BUGFIX: Reset calculation and do a fresh count
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
-  
-  console.log("MEGA DEBUG: ParticipantsCard starting calculation with groups:", {
-    tourGroupsCount: tourGroups.length,
-    rawGroups: tourGroups.map(g => ({
-      id: g.id,
-      name: g.name,
-      size: g.size,
-      childCount: g.childCount,
-      participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
-    }))
-  });
   
   // FIX: ONLY count from participants array and IGNORE the size property completely
   for (const group of tourGroups) {
@@ -39,12 +53,11 @@ export const ParticipantsCard = ({
       let groupTotal = 0;
       let groupChildCount = 0;
       
-      // Special debug for every single participant
-      console.log(`ULTRA DEBUG: Group "${group.name}" participant details:`, 
+      console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}" participants:`, 
         group.participants.map(p => ({ 
           name: p.name, 
-          count: p.count, 
-          childCount: p.childCount 
+          count: p.count || 1, 
+          childCount: p.childCount || 0 
         }))
       );
       
@@ -56,25 +69,33 @@ export const ParticipantsCard = ({
         groupTotal += count;
         groupChildCount += childCount;
         
-        console.log(`ULTRA DEBUG: Adding participant "${participant.name}": count=${count}, childCount=${childCount}`);
+        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" to group "${group.name || 'Unnamed'}":`, {
+          count,
+          childCount,
+          groupRunningTotal: groupTotal,
+          groupRunningChildCount: groupChildCount
+        });
       }
       
       calculatedTotalParticipants += groupTotal;
       calculatedTotalChildCount += groupChildCount;
       
-      console.log(`MEGA DEBUG: ParticipantsCard group "${group.name || 'unnamed'}" final calculation:`, {
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" final counts:`, {
         groupId: group.id,
-        groupParticipantCount: group.participants.length,
         groupTotal,
-        groupChildCount
+        groupChildCount,
+        overallRunningTotal: calculatedTotalParticipants,
+        overallRunningChildCount: calculatedTotalChildCount
       });
+    } else {
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
     }
     // CRITICAL FIX: Remove the fallback to size property completely
   }
   
-  // Use calculated values, fall back to provided values if calculation fails
-  const totalParticipants = calculatedTotalParticipants || providedTotalParticipants || 0;
-  const totalChildCount = calculatedTotalChildCount || providedTotalChildCount || 0;
+  // Use calculated values ONLY if they're greater than zero
+  const totalParticipants = calculatedTotalParticipants > 0 ? calculatedTotalParticipants : (providedTotalParticipants || 0);
+  const totalChildCount = calculatedTotalChildCount > 0 ? calculatedTotalChildCount : (providedTotalChildCount || 0);
   
   // Calculate adult count (total minus children)
   const adultCount = totalParticipants - totalChildCount;
@@ -101,8 +122,8 @@ export const ParticipantsCard = ({
     return "Standard";
   };
   
-  // Ultra detailed log for troubleshooting
-  console.log("ULTRA DEBUG: ParticipantsCard final calculations:", { 
+  // Ultra detailed log for final calculations
+  console.log("PARTICIPANTS DEBUG: ParticipantsCard final calculations:", { 
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     finalTotalParticipants: totalParticipants,

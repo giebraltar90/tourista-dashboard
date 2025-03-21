@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -56,15 +57,21 @@ export const GroupCard = ({
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
 
+  console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] initial render:`, {
+    groupId: group.id,
+    groupName: group.name || `Group ${groupIndex + 1}`,
+    hasParticipantsArray: Array.isArray(group.participants),
+    participantsLength: Array.isArray(group.participants) ? group.participants.length : 0,
+    guideName
+  });
+
   useEffect(() => {
-    console.log(`MEGA DEBUG: GroupCard[${groupIndex}] participants update:`, {
+    console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] updating participants:`, {
       groupId: group.id,
-      groupName: group.name,
+      groupName: group.name || `Group ${groupIndex + 1}`,
       hasParticipantsArray: Array.isArray(group.participants),
-      participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
-      groupSize: group.size,
-      groupChildCount: group.childCount,
-      participantsDetails: Array.isArray(group.participants) 
+      participantsLength: Array.isArray(group.participants) ? group.participants.length : 0,
+      rawParticipants: Array.isArray(group.participants) 
         ? group.participants.map(p => ({
             id: p.id,
             name: p.name, 
@@ -89,31 +96,46 @@ export const GroupCard = ({
     }
   };
 
-  // MEGA BUGFIX: Calculate accurate counts by directly counting participants
+  // CRUCIAL FIX: Calculate directly from localParticipants array, ignore group.size completely
   let totalParticipants = 0;
   let childCount = 0;
   
   if (Array.isArray(localParticipants) && localParticipants.length > 0) {
+    console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] counting from ${localParticipants.length} participants`);
+    
     for (const participant of localParticipants) {
-      totalParticipants += participant.count || 1;
-      childCount += participant.childCount || 0;
+      const count = participant.count || 1;
+      const childCt = participant.childCount || 0;
+      
+      totalParticipants += count;
+      childCount += childCt;
+      
+      console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] adding participant "${participant.name}":`, {
+        count,
+        childCount: childCt,
+        runningTotal: totalParticipants,
+        runningChildCount: childCount
+      });
     }
+  } else {
+    console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] has no participants, setting counts to 0`);
+    // Group has no participants, explicitly set to 0
+    totalParticipants = 0;
+    childCount = 0;
   }
   
   const adultCount = totalParticipants - childCount;
   
   const displayParticipants = formatParticipantCount(totalParticipants, childCount);
 
-  console.log(`MEGA DEBUG: GroupCard[${groupIndex}] final calculations:`, {
+  console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] final counts:`, {
     groupId: group.id,
     groupName: group.name || `Group ${groupIndex + 1}`,
     totalParticipants,
     childCount,
     adultCount,
     displayParticipants,
-    hasParticipantsArray: Array.isArray(localParticipants),
-    participantsLength: Array.isArray(localParticipants) ? localParticipants.length : 'N/A',
-    guideName
+    participantsCount: localParticipants.length
   });
 
   return (

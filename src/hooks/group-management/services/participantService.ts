@@ -7,21 +7,41 @@ import { toast } from "sonner";
  * Calculates the total number of participants across all groups
  */
 export const calculateTotalParticipants = (tourGroups: VentrataTourGroup[]): number => {
+  console.log("PARTICIPANTS DEBUG: calculateTotalParticipants called with", {
+    tourGroupsCount: tourGroups.length,
+    tourGroupsWithParticipants: tourGroups.filter(g => Array.isArray(g.participants) && g.participants.length > 0).length
+  });
+  
   // CRITICAL FIX: Only count from participants arrays, NEVER use size property
   let totalParticipants = 0;
   
-  // First try to count from participants array
+  if (!Array.isArray(tourGroups)) {
+    console.log("PARTICIPANTS DEBUG: tourGroups is not an array, returning 0");
+    return 0;
+  }
+  
+  // Process each group one by one
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
+      let groupTotal = 0;
+      
       // Count directly from participants array for accurate totals
       for (const participant of group.participants) {
-        totalParticipants += participant.count || 1;
+        const count = participant.count || 1;
+        groupTotal += count;
+        
+        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" count ${count} to total`);
       }
+      
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" total participants: ${groupTotal}`);
+      totalParticipants += groupTotal;
+    } else {
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
     }
     // CRITICAL FIX: Completely remove fallback to group.size
   }
   
-  console.log("ULTRACHECK PARTICIPANTS: calculateTotalParticipants result:", totalParticipants);
+  console.log("PARTICIPANTS DEBUG: calculateTotalParticipants final result:", totalParticipants);
   return totalParticipants;
 };
 
@@ -29,20 +49,41 @@ export const calculateTotalParticipants = (tourGroups: VentrataTourGroup[]): num
  * Calculates the total number of children across all groups
  */
 export const calculateTotalChildCount = (tourGroups: VentrataTourGroup[]): number => {
+  console.log("PARTICIPANTS DEBUG: calculateTotalChildCount called with", {
+    tourGroupsCount: tourGroups.length,
+    tourGroupsWithParticipants: tourGroups.filter(g => Array.isArray(g.participants) && g.participants.length > 0).length
+  });
+  
   // CRITICAL FIX: Only count from participants arrays, NEVER use childCount property
   let totalChildCount = 0;
   
+  if (!Array.isArray(tourGroups)) {
+    console.log("PARTICIPANTS DEBUG: tourGroups is not an array, returning 0");
+    return 0;
+  }
+  
+  // Process each group one by one
   for (const group of tourGroups) {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
+      let groupChildCount = 0;
+      
       // Count directly from participants array
       for (const participant of group.participants) {
-        totalChildCount += participant.childCount || 0;
+        const childCount = participant.childCount || 0;
+        groupChildCount += childCount;
+        
+        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" childCount ${childCount} to total`);
       }
+      
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" total children: ${groupChildCount}`);
+      totalChildCount += groupChildCount;
+    } else {
+      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
     }
     // CRITICAL FIX: Completely remove fallback to group.childCount
   }
   
-  console.log("ULTRACHECK PARTICIPANTS: calculateTotalChildCount result:", totalChildCount);
+  console.log("PARTICIPANTS DEBUG: calculateTotalChildCount final result:", totalChildCount);
   return totalChildCount;
 };
 
@@ -50,10 +91,18 @@ export const calculateTotalChildCount = (tourGroups: VentrataTourGroup[]): numbe
  * Formats participant count as "adults+children" if there are children
  */
 export const formatParticipantCount = (totalParticipants: number, childCount: number): string => {
+  console.log("PARTICIPANTS DEBUG: formatParticipantCount called with", {
+    totalParticipants,
+    childCount
+  });
+  
   if (childCount > 0) {
     const adultCount = totalParticipants - childCount;
+    console.log(`PARTICIPANTS DEBUG: Formatting as adults+children: ${adultCount}+${childCount}`);
     return `${adultCount}+${childCount}`;
   }
+  
+  console.log(`PARTICIPANTS DEBUG: Formatting as just total: ${totalParticipants}`);
   return `${totalParticipants}`;
 };
 
@@ -65,7 +114,7 @@ export const updateParticipantGroupInDatabase = async (
   newGroupId: string
 ): Promise<boolean> => {
   try {
-    console.log(`Moving participant ${participantId} to group ${newGroupId}`);
+    console.log(`PARTICIPANTS DEBUG: Moving participant ${participantId} to group ${newGroupId}`);
     
     // First try the participants table
     const { error } = await supabase
@@ -91,6 +140,8 @@ export const updateParticipantGroupInDatabase = async (
  */
 export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
   try {
+    console.log(`PARTICIPANTS DEBUG: Syncing tour group sizes for tour ${tourId}`);
+    
     // First get all groups for this tour
     const { data: tourGroups, error: groupsError } = await supabase
       .from('tour_groups')
@@ -102,9 +153,12 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
       return false;
     }
     
+    console.log(`PARTICIPANTS DEBUG: Fetched ${tourGroups.length} groups for size sync`);
+    
     // Update each group's size and child_count based on participants
     for (const group of tourGroups) {
       if (!Array.isArray(group.participants)) {
+        console.log(`PARTICIPANTS DEBUG: Group ${group.id} has no participants array, skipping`);
         continue;
       }
       
@@ -115,7 +169,11 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
       for (const participant of group.participants) {
         totalSize += participant.count || 1;
         totalChildCount += participant.child_count || 0;
+        
+        console.log(`PARTICIPANTS DEBUG: Adding participant ${participant.id} with count ${participant.count || 1} and childCount ${participant.child_count || 0}`);
       }
+      
+      console.log(`PARTICIPANTS DEBUG: Updating group ${group.id} with size ${totalSize} and childCount ${totalChildCount}`);
       
       // Update the group with calculated values
       const { error: updateError } = await supabase
@@ -142,6 +200,17 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
  * Recalculates all group sizes for consistency
  */
 export const recalculateAllTourGroupSizes = (tourGroups: VentrataTourGroup[]): VentrataTourGroup[] => {
+  console.log("PARTICIPANTS DEBUG: recalculateAllTourGroupSizes called with", {
+    tourGroupsCount: tourGroups.length
+  });
+  
+  // Guard against invalid input
+  if (!Array.isArray(tourGroups)) {
+    console.log("PARTICIPANTS DEBUG: tourGroups is not an array, returning empty array");
+    return [];
+  }
+  
+  // Process each group
   return tourGroups.map(group => {
     // Create a copy to avoid mutating the original
     const updatedGroup = {...group};
@@ -154,15 +223,21 @@ export const recalculateAllTourGroupSizes = (tourGroups: VentrataTourGroup[]): V
       for (const participant of updatedGroup.participants) {
         calculatedSize += participant.count || 1;
         calculatedChildCount += participant.childCount || 0;
+        
+        console.log(`PARTICIPANTS DEBUG: Recalculating for participant "${participant.name}": count=${participant.count || 1}, childCount=${participant.childCount || 0}`);
       }
       
       // Update the size and childCount properties
       updatedGroup.size = calculatedSize;
       updatedGroup.childCount = calculatedChildCount;
+      
+      console.log(`PARTICIPANTS DEBUG: Group "${updatedGroup.name || 'Unnamed'}" recalculated: size=${calculatedSize}, childCount=${calculatedChildCount}`);
     } else {
       // If no participants, size should be 0
       updatedGroup.size = 0;
       updatedGroup.childCount = 0;
+      
+      console.log(`PARTICIPANTS DEBUG: Group "${updatedGroup.name || 'Unnamed'}" has no participants, setting size=0, childCount=0`);
     }
     
     return updatedGroup;

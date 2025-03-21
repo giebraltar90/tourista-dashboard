@@ -27,28 +27,55 @@ export const TourCardDetails = ({
 }: TourCardDetailsProps) => {
   const { guides = [] } = useGuideData() || { guides: [] };
   
-  // ULTRA BUGFIX: Manually recalculate participant totals for consistency
+  // CRITICAL IMPROVED LOGGING: Log each participant in each group meticulously
+  console.log("PARTICIPANTS DEBUG: TourCardDetails processing tourGroups:", 
+    tourGroups?.map(g => ({
+      id: g.id,
+      name: g.name || 'Unnamed',
+      groupSize: g.size,
+      childCount: g.childCount,
+      hasParticipantsArray: Array.isArray(g.participants),
+      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0,
+      participants: Array.isArray(g.participants) ? g.participants.map(p => ({
+        id: p.id,
+        name: p.name,
+        count: p.count || 1,
+        childCount: p.childCount || 0
+      })) : []
+    }))
+  );
+  
+  // ULTRA BUGFIX: Completely fresh recalculation of participants from scratch
   let calculatedTotalParticipants = 0;
   let calculatedTotalChildCount = 0;
   
   // CRITICAL FIX: Only count from participants arrays, never fallback to group.size
-  for (const group of tourGroups) {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      // Count directly from participants array - one by one
-      for (const participant of group.participants) {
-        calculatedTotalParticipants += participant.count || 1;
-        calculatedTotalChildCount += participant.childCount || 0;
+  if (Array.isArray(tourGroups)) {
+    for (const group of tourGroups) {
+      if (Array.isArray(group.participants) && group.participants.length > 0) {
+        // Count directly from participants array - one by one
+        for (const participant of group.participants) {
+          calculatedTotalParticipants += participant.count || 1;
+          calculatedTotalChildCount += participant.childCount || 0;
+          
+          console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" to count:`, {
+            participantCount: participant.count || 1,
+            childCount: participant.childCount || 0,
+            runningTotal: calculatedTotalParticipants,
+            runningChildCount: calculatedTotalChildCount
+          });
+        }
       }
+      // Completely remove fallback to group.size 
     }
-    // Completely remove fallback to group.size 
   }
   
-  // Use calculated value or fall back to provided value
-  const actualTotalParticipants = calculatedTotalParticipants || totalParticipants;
+  // Use calculated value or fall back to provided value only if calculation is 0
+  const actualTotalParticipants = calculatedTotalParticipants > 0 ? calculatedTotalParticipants : totalParticipants;
   
   // Get the actual guides assigned to the groups
   const getAssignedGuideNames = () => {
-    const assignedGuideIds = tourGroups
+    const assignedGuideIds = (tourGroups || [])
       .filter(group => group.guideId)
       .map(group => group.guideId);
       
@@ -79,11 +106,12 @@ export const TourCardDetails = ({
   // Get the actual capacity based on the high season flag
   const capacity = isHighSeason ? 36 : 24;
   
-  console.log("ULTRA DEBUG: TourCardDetails participant calculation:", {
+  console.log("PARTICIPANTS DEBUG: TourCardDetails final calculation:", {
     calculatedTotalParticipants,
     calculatedTotalChildCount,
     formattedParticipantCount,
-    capacity
+    capacity,
+    tourGroups: tourGroups?.length || 0
   });
   
   return (
@@ -96,7 +124,7 @@ export const TourCardDetails = ({
         
         <div className="flex items-center space-x-1 text-sm">
           <span className="text-muted-foreground">Groups:</span>
-          <span className="font-medium">{tourGroups.length}</span>
+          <span className="font-medium">{tourGroups?.length || 0}</span>
         </div>
         
         <div className="flex items-center space-x-1 text-sm">

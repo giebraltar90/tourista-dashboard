@@ -8,6 +8,12 @@ interface TicketsCardProps {
 }
 
 export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: TicketsCardProps) => {
+  console.log("PARTICIPANTS DEBUG: TicketsCard initial input values:", {
+    adultTickets,
+    childTickets,
+    totalTickets
+  });
+  
   // Extra validation to ensure counts are non-negative numbers
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
@@ -15,9 +21,11 @@ export const TicketsCard = ({ adultTickets, childTickets, totalTickets }: Ticket
   
   // Double-check that our total matches the sum of adult + child tickets
   const calculatedTotal = validAdultTickets + validChildTickets;
-  const displayTotal = calculatedTotal === validTotalTickets ? validTotalTickets : calculatedTotal;
   
-  console.log("COUNTING: TicketsCard final values:", {
+  // Always use the calculated total for consistency
+  const displayTotal = calculatedTotal;
+  
+  console.log("PARTICIPANTS DEBUG: TicketsCard final values:", {
     originalValues: { adultTickets, childTickets, totalTickets },
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,
