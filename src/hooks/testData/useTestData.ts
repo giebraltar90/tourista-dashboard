@@ -1,9 +1,14 @@
 
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createTestDataForTour } from "./createTestData";
 import { clearAllTestData } from "./helpers";
 import { supabase } from "@/integrations/supabase/client";
+import { createTestGuides } from "./createGuides";
+import { createTestTours } from "./createTours";
+import { createTestTourGroups } from "./createTourGroups";
+import { createTestModifications } from "./createModifications";
+import { createTestTickets } from "./createTickets";
+import { createTestParticipants } from "./createParticipants";
 
 /**
  * Hook for managing test data creation and clearing
@@ -12,31 +17,62 @@ export const useTestData = () => {
   const queryClient = useQueryClient();
 
   /**
-   * Create test tours
+   * Create comprehensive test data
    */
   const createTestTours = async () => {
     try {
-      // Get the first tour ID to create test data for
-      const { data: tours, error } = await supabase
-        .from('tours')
-        .select('id')
-        .limit(1);
-        
-      if (error || !tours || tours.length === 0) {
-        toast.error("No tours found to create test data for");
+      toast.info("Creating comprehensive test data...");
+      
+      // Step 1: Create test guides
+      const guides = await createTestGuides();
+      
+      if (!guides || guides.length === 0) {
+        toast.error("Failed to create test guides");
         return false;
       }
       
-      const tourId = tours[0].id;
-      const result = await createTestDataForTour(tourId);
+      // Create a map of guide names to IDs for easier reference
+      const guideMap = guides.reduce((map, guide) => {
+        map[guide.name] = guide.id;
+        return map;
+      }, {});
       
-      if (result) {
-        // Invalidate queries to refresh the data
-        queryClient.invalidateQueries({ queryKey: ['tours'] });
-        toast.success("Test data created successfully");
+      // Step 2: Create test tours
+      const tours = await createTestTours(guideMap);
+      
+      if (!tours || tours.length === 0) {
+        toast.error("Failed to create test tours");
+        return false;
       }
       
-      return result;
+      // Step 3: Create test tour groups
+      const groups = await createTestTourGroups(tours, guideMap);
+      
+      if (!groups || groups.length === 0) {
+        toast.error("Failed to create test tour groups");
+        return false;
+      }
+      
+      // Step 4: Create test participants for the groups
+      const participants = await createTestParticipants(groups);
+      
+      if (!participants || participants.length === 0) {
+        toast.warning("Failed to create test participants");
+        // Continue anyway, this is not critical
+      }
+      
+      // Step 5: Create test tickets for the tours
+      const tickets = await createTestTickets(tours);
+      
+      // Step 6: Create test modifications
+      const modifications = await createTestModifications(tours);
+      
+      // Invalidate queries to refresh all data
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['guides'] });
+      
+      toast.success(`Test data created successfully: ${tours.length} tours, ${groups.length} groups, ${participants.length} participants`);
+      return true;
     } catch (error) {
       console.error("Error creating test data:", error);
       toast.error("Failed to create test data");
@@ -53,6 +89,7 @@ export const useTestData = () => {
       
       // Invalidate queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['guides'] });
       
       toast.success("Test data cleared successfully");
       return true;
