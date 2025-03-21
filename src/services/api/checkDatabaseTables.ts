@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+// Type definition for the execute_sql parameters
 interface ExecuteSqlParams {
   sql_query: string;
 }
@@ -43,9 +44,9 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
     `;
     
     // Call the execute_sql function
-    const { error: createError } = await supabase.rpc<void, ExecuteSqlParams>(
+    const { error: createError } = await supabase.rpc(
       'execute_sql', 
-      { sql_query: createTableSQL }
+      { sql_query: createTableSQL } as ExecuteSqlParams
     );
     
     if (createError) {

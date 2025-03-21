@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Type definition for the execute_sql parameters
 interface ExecuteSqlParams {
   sql_query: string;
 }
@@ -27,9 +28,9 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     // Try to call execute_sql
     try {
-      const { error: sqlFunctionError } = await supabase.rpc<void, ExecuteSqlParams>(
+      const { error: sqlFunctionError } = await supabase.rpc(
         'execute_sql', 
-        { sql_query: createExecuteSqlFunction }
+        { sql_query: createExecuteSqlFunction } as ExecuteSqlParams
       );
       
       if (sqlFunctionError) {
@@ -66,9 +67,9 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     `;
     
     try {
-      const { error: tableCheckFunctionError } = await supabase.rpc<void, ExecuteSqlParams>(
+      const { error: tableCheckFunctionError } = await supabase.rpc(
         'execute_sql',
-        { sql_query: createCheckTableExistsFunction }
+        { sql_query: createCheckTableExistsFunction } as ExecuteSqlParams
       );
       
       if (tableCheckFunctionError) {
@@ -104,9 +105,9 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     `;
     
     try {
-      const { error: debugFunctionError } = await supabase.rpc<void, ExecuteSqlParams>(
+      const { error: debugFunctionError } = await supabase.rpc(
         'execute_sql',
-        { sql_query: createDebugCheckParticipantsFunction }
+        { sql_query: createDebugCheckParticipantsFunction } as ExecuteSqlParams
       );
       
       if (debugFunctionError) {
