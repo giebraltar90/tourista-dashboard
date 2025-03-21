@@ -27,51 +27,39 @@ export const TourCardDetails = ({
 }: TourCardDetailsProps) => {
   const { guides = [] } = useGuideData() || { guides: [] };
   
-  // CRITICAL IMPROVED LOGGING: Log each participant in each group meticulously
-  console.log("PARTICIPANTS DEBUG: TourCardDetails processing tourGroups:", 
-    tourGroups?.map(g => ({
-      id: g.id,
-      name: g.name || 'Unnamed',
-      groupSize: g.size,
-      childCount: g.childCount,
-      hasParticipantsArray: Array.isArray(g.participants),
-      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0,
-      participants: Array.isArray(g.participants) ? g.participants.map(p => ({
-        id: p.id,
-        name: p.name,
-        count: p.count || 1,
-        childCount: p.childCount || 0
-      })) : []
-    }))
-  );
-  
-  // ULTRA BUGFIX: Completely fresh recalculation of participants from scratch
-  let calculatedTotalParticipants = 0;
-  let calculatedTotalChildCount = 0;
-  
-  // CRITICAL FIX: Only count from participants arrays, never fallback to group.size
-  if (Array.isArray(tourGroups)) {
-    for (const group of tourGroups) {
-      if (Array.isArray(group.participants) && group.participants.length > 0) {
-        // Count directly from participants array - one by one
-        for (const participant of group.participants) {
-          calculatedTotalParticipants += participant.count || 1;
-          calculatedTotalChildCount += participant.childCount || 0;
-          
-          console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" to count:`, {
-            participantCount: participant.count || 1,
-            childCount: participant.childCount || 0,
-            runningTotal: calculatedTotalParticipants,
-            runningChildCount: calculatedTotalChildCount
-          });
+  // Calculate total participants and child count only once
+  const participantCounts = (() => {
+    let calculatedTotalParticipants = 0;
+    let calculatedTotalChildCount = 0;
+    
+    // Only process if tourGroups is an array
+    if (Array.isArray(tourGroups)) {
+      for (const group of tourGroups) {
+        if (Array.isArray(group.participants) && group.participants.length > 0) {
+          // Count directly from participants array - one by one
+          for (const participant of group.participants) {
+            calculatedTotalParticipants += participant.count || 1;
+            calculatedTotalChildCount += participant.childCount || 0;
+          }
         }
       }
-      // Completely remove fallback to group.size 
     }
-  }
-  
-  // Use calculated value or fall back to provided value only if calculation is 0
-  const actualTotalParticipants = calculatedTotalParticipants > 0 ? calculatedTotalParticipants : totalParticipants;
+    
+    // If calculated value is 0, fall back to provided value
+    const finalTotalParticipants = calculatedTotalParticipants > 0 ? calculatedTotalParticipants : totalParticipants;
+    
+    console.log("PARTICIPANTS DEBUG: TourCardDetails final calculation:", {
+      calculatedTotalParticipants,
+      calculatedTotalChildCount,
+      finalTotalParticipants
+    });
+    
+    return {
+      totalParticipants: finalTotalParticipants,
+      childCount: calculatedTotalChildCount,
+      adultCount: finalTotalParticipants - calculatedTotalChildCount
+    };
+  })();
   
   // Get the actual guides assigned to the groups
   const getAssignedGuideNames = () => {
@@ -99,20 +87,12 @@ export const TourCardDetails = ({
   const assignedGuideNames = getAssignedGuideNames();
   
   // Format participant count to show adults + children
-  const formattedParticipantCount = calculatedTotalChildCount > 0 
-    ? `${calculatedTotalParticipants - calculatedTotalChildCount}+${calculatedTotalChildCount}` 
-    : actualTotalParticipants;
+  const formattedParticipantCount = participantCounts.childCount > 0 
+    ? `${participantCounts.adultCount}+${participantCounts.childCount}` 
+    : participantCounts.totalParticipants.toString();
   
   // Get the actual capacity based on the high season flag
   const capacity = isHighSeason ? 36 : 24;
-  
-  console.log("PARTICIPANTS DEBUG: TourCardDetails final calculation:", {
-    calculatedTotalParticipants,
-    calculatedTotalChildCount,
-    formattedParticipantCount,
-    capacity,
-    tourGroups: tourGroups?.length || 0
-  });
   
   return (
     <div className="px-4 py-3 border-t border-gray-100 bg-white">

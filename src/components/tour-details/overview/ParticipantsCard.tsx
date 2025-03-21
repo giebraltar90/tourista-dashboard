@@ -4,6 +4,7 @@ import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { Badge } from "@/components/ui/badge";
 import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
+import { useMemo } from "react";
 
 interface ParticipantsCardProps {
   tourGroups: VentrataTourGroup[];
@@ -18,136 +19,90 @@ export const ParticipantsCard = ({
   totalChildCount: providedTotalChildCount = 0,
   isHighSeason = false
 }: ParticipantsCardProps) => {
-  console.log("PARTICIPANTS DEBUG: ParticipantsCard starting with raw inputs:", {
-    tourGroupsCount: tourGroups.length,
-    providedTotalParticipants,
-    providedTotalChildCount,
-    isHighSeason
-  });
-  
-  // CRITICAL DEBUG: Log complete tour groups data
-  console.log("PARTICIPANTS DEBUG: ParticipantsCard full tourGroups data:", 
-    tourGroups.map(g => ({
-      id: g.id,
-      name: g.name || 'Unnamed',
-      size: g.size,
-      childCount: g.childCount,
-      hasParticipantsArray: Array.isArray(g.participants),
-      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0,
-      participants: Array.isArray(g.participants) ? g.participants.map(p => ({
-        id: p.id,
-        name: p.name,
-        count: p.count || 1,
-        childCount: p.childCount || 0
-      })) : []
-    }))
-  );
-  
-  // CRITICAL BUGFIX: Use provided values if they exist and are greater than 0
-  let calculatedTotalParticipants = 0;
-  let calculatedTotalChildCount = 0;
-  
-  // Only calculate if provided values aren't already available
-  if (providedTotalParticipants === undefined || providedTotalParticipants <= 0) {
-    // FIX: ONLY count from participants array and IGNORE the size property completely
-    for (const group of tourGroups) {
-      if (Array.isArray(group.participants) && group.participants.length > 0) {
-        let groupTotal = 0;
-        let groupChildCount = 0;
-        
-        console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}" participants:`, 
-          group.participants.map(p => ({ 
-            name: p.name, 
-            count: p.count || 1, 
-            childCount: p.childCount || 0 
-          }))
-        );
-        
-        // Count directly from participants array - ONE by ONE
-        for (const participant of group.participants) {
-          const count = participant.count || 1;
-          const childCount = participant.childCount || 0;
-          
-          groupTotal += count;
-          groupChildCount += childCount;
-          
-          console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" to group "${group.name || 'Unnamed'}":`, {
-            count,
-            childCount,
-            groupRunningTotal: groupTotal,
-            groupRunningChildCount: groupChildCount
-          });
-        }
-        
-        calculatedTotalParticipants += groupTotal;
-        calculatedTotalChildCount += groupChildCount;
-        
-        console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" final counts:`, {
-          groupId: group.id,
-          groupTotal,
-          groupChildCount,
-          overallRunningTotal: calculatedTotalParticipants,
-          overallRunningChildCount: calculatedTotalChildCount
-        });
-      } else {
-        console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
-        
-        // If no participants data, fall back to the group size
-        if (group.size && group.size > 0) {
-          calculatedTotalParticipants += group.size;
-          calculatedTotalChildCount += group.childCount || 0;
-          
-          console.log(`PARTICIPANTS DEBUG: Using group size as fallback: ${group.size} (child: ${group.childCount || 0})`);
+  // Calculate participant counts using useMemo to prevent recalculation on every render
+  const {
+    totalParticipants,
+    totalChildCount,
+    adultCount,
+    formattedParticipantCount
+  } = useMemo(() => {
+    console.log("PARTICIPANTS DEBUG: ParticipantsCard calculating counts");
+    
+    // Use provided values if they exist and are greater than 0
+    if (
+      providedTotalParticipants !== undefined && 
+      providedTotalParticipants > 0 &&
+      providedTotalChildCount !== undefined &&
+      providedTotalChildCount >= 0
+    ) {
+      const adult = providedTotalParticipants - providedTotalChildCount;
+      return {
+        totalParticipants: providedTotalParticipants,
+        totalChildCount: providedTotalChildCount,
+        adultCount: adult,
+        formattedParticipantCount: formatParticipantCount(providedTotalParticipants, providedTotalChildCount)
+      };
+    }
+    
+    // Calculate from scratch if no valid provided values
+    let calculatedTotal = 0;
+    let calculatedChildren = 0;
+    
+    // Only count from participants arrays if they exist
+    if (Array.isArray(tourGroups)) {
+      for (const group of tourGroups) {
+        if (Array.isArray(group.participants) && group.participants.length > 0) {
+          for (const participant of group.participants) {
+            calculatedTotal += participant.count || 1;
+            calculatedChildren += participant.childCount || 0;
+          }
         }
       }
     }
-  }
-  
-  // Use provided values if they exist, otherwise use calculated values
-  const totalParticipants = (providedTotalParticipants !== undefined && providedTotalParticipants > 0) 
-    ? providedTotalParticipants 
-    : calculatedTotalParticipants;
     
-  const totalChildCount = (providedTotalChildCount !== undefined && providedTotalChildCount > 0)
-    ? providedTotalChildCount
-    : calculatedTotalChildCount;
-  
-  // Calculate adult count (total minus children)
-  const adultCount = totalParticipants - totalChildCount;
+    // Calculate adult count
+    const adultCount = calculatedTotal - calculatedChildren;
+    
+    // If after calculation we still have 0, try to use group.size as fallback
+    if (calculatedTotal === 0 && Array.isArray(tourGroups)) {
+      calculatedTotal = tourGroups.reduce((sum, g) => sum + (g.size || 0), 0);
+      calculatedChildren = tourGroups.reduce((sum, g) => sum + (g.childCount || 0), 0);
+    }
+    
+    return {
+      totalParticipants: calculatedTotal,
+      totalChildCount: calculatedChildren,
+      adultCount: calculatedTotal - calculatedChildren,
+      formattedParticipantCount: formatParticipantCount(calculatedTotal, calculatedChildren)
+    };
+  }, [tourGroups, providedTotalParticipants, providedTotalChildCount]);
   
   const totalGroups = tourGroups.length;
   
-  // Format participant count to show adults + children if there are children
-  const formattedParticipantCount = formatParticipantCount(totalParticipants, totalChildCount);
-  
-  // CRITICAL FIX: Use strict equality to ensure proper boolean handling
-  const capacity = isHighSeason === true
+  // Get capacity and required groups based on season
+  const capacity = isHighSeason
     ? DEFAULT_CAPACITY_SETTINGS.highSeason 
     : DEFAULT_CAPACITY_SETTINGS.standard;
   
-  // CRITICAL FIX: Use strict equality for determining required groups
-  const requiredGroups = isHighSeason === true
+  const requiredGroups = isHighSeason
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
 
-  // CRITICAL FIX: Improve mode text determination with strict comparisons
+  // Determine mode text based on season and participant count
   const getModeText = () => {
-    if (isHighSeason === true) return "High Season";
+    if (isHighSeason) return "High Season";
     if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception";
     return "Standard";
   };
   
-  // Ultra detailed log for final calculations
-  console.log("PARTICIPANTS DEBUG: ParticipantsCard final calculations:", { 
-    calculatedTotalParticipants,
-    calculatedTotalChildCount,
-    finalTotalParticipants: totalParticipants,
-    finalTotalChildCount: totalChildCount,
+  // Log final values once after calculation
+  console.log("PARTICIPANTS DEBUG: ParticipantsCard final values:", { 
+    totalParticipants,
+    totalChildCount,
     adultCount,
     formattedParticipantCount,
-    isHighSeason,
     capacity,
-    requiredGroups
+    isHighSeason
   });
   
   return (
@@ -178,7 +133,7 @@ export const ParticipantsCard = ({
             <Badge 
               variant="outline" 
               className={`font-medium ${
-                isHighSeason === true
+                isHighSeason
                   ? "bg-blue-100 text-blue-800" 
                   : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard
                     ? "bg-amber-100 text-amber-800"

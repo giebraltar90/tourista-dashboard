@@ -15,17 +15,26 @@ export const useParticipantRefresh = (
 ) => {
   // Get participant loading capabilities
   const { loadParticipants: loadParticipantsInner, isLoading: isLoadingParticipants } = useParticipantLoading();
-  // Add a debounce ref to prevent too frequent refreshes
-  const refreshTimeoutRef = useRef<number | null>(null);
   
-  // Auto-refresh when tourId changes
+  // Add refs for debouncing and tracking refreshes
+  const refreshTimeoutRef = useRef<number | null>(null);
+  const lastRefreshTimeRef = useRef<number>(0);
+  const isInitialLoadRef = useRef<boolean>(true);
+  
+  // Auto-refresh when tourId changes, but only once
   useEffect(() => {
-    if (tourId) {
-      console.log(`PARTICIPANTS DEBUG: Auto refreshing participants for tour ${tourId}`);
+    if (tourId && isInitialLoadRef.current) {
+      console.log(`PARTICIPANTS DEBUG: Initial load for tour ${tourId}`);
+      
+      // Mark initial load as complete
+      isInitialLoadRef.current = false;
+      
       // Set a short delay to allow other operations to complete
       const timer = window.setTimeout(() => {
         loadParticipants(tourId);
-      }, 300);
+        // Update last refresh time
+        lastRefreshTimeRef.current = Date.now();
+      }, 500);
       
       return () => window.clearTimeout(timer);
     }
@@ -34,6 +43,14 @@ export const useParticipantRefresh = (
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
+    
+    // Prevent too frequent refreshes (minimum 5 seconds between refreshes)
+    const now = Date.now();
+    const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
+    if (timeSinceLastRefresh < 5000 && lastRefreshTimeRef.current > 0) {
+      console.log(`PARTICIPANTS DEBUG: Skipping refresh, too soon (${timeSinceLastRefresh}ms since last refresh)`);
+      return;
+    }
     
     return loadParticipantsInner(tourId, (loadedGroups) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing groups:`, loadedGroups);
@@ -58,70 +75,79 @@ export const useParticipantRefresh = (
           entryTime: g.entryTime,
           size: g.size,
           childCount: g.childCount,
-          participantsCount: g.participants?.length || 0,
-          participants: g.participants?.map(p => ({
-            id: p.id,
-            name: p.name,
-            count: p.count || 1,
-            childCount: p.childCount || 0
-          }))
+          participantsCount: g.participants?.length || 0
         }))
       );
       
-      // Set the groups and trigger size recalculation
+      // Set the groups directly without any internal setTimeout
       setLocalTourGroups(processedGroups);
       
-      // Force a recalculation after a short delay
+      // Update the last refresh time
+      lastRefreshTimeRef.current = Date.now();
+      
+      // Clear any existing recalculation timeout
       if (refreshTimeoutRef.current) {
         window.clearTimeout(refreshTimeoutRef.current);
+        refreshTimeoutRef.current = null;
       }
       
+      // Perform a single recalculation after a short delay
       refreshTimeoutRef.current = window.setTimeout(() => {
-        // Get the recalculated groups directly
+        // Get the recalculated groups
         const updatedGroups = recalculateGroupSizes();
         
         if (Array.isArray(updatedGroups)) {
-          console.log(`PARTICIPANTS DEBUG: After recalculation, updated groups:`, 
+          console.log(`PARTICIPANTS DEBUG: Final recalculated groups:`, 
             updatedGroups.map(g => ({
               id: g.id,
               name: g.name || 'Unnamed',
               entryTime: g.entryTime,
               size: g.size,
               childCount: g.childCount,
-              participantsCount: g.participants?.length || 0,
-              participants: g.participants?.map(p => ({
-                id: p.id,
-                name: p.name,
-                count: p.count || 1,
-                childCount: p.childCount || 0
-              }))
+              participantsCount: g.participants?.length || 0
             }))
           );
+          
+          // Log a final count for easier debugging
+          const totalParticipants = updatedGroups.reduce((sum, group) => 
+            sum + (Array.isArray(group.participants) 
+              ? group.participants.reduce((s, p) => s + (p.count || 1), 0)
+              : 0), 0);
+              
+          console.log(`PARTICIPANTS DEBUG: Final total participant count: ${totalParticipants}`);
         }
         
         refreshTimeoutRef.current = null;
-      }, 300);
+      }, 200);
     });
   }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes]);
 
-  // Add a refresh function to manually trigger participant loading
+  // Add a refresh function with improved debounce to manually trigger participant loading
   const refreshParticipants = useCallback(() => {
     if (!tourId) return;
     
-    // Prevent rapid consecutive refreshes
-    if (refreshTimeoutRef.current) {
-      console.log("PARTICIPANTS DEBUG: Refresh already in progress, skipping redundant refresh");
+    // Prevent rapid consecutive refreshes with a minimum time between calls
+    const now = Date.now();
+    const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
+    
+    if (timeSinceLastRefresh < 5000 && lastRefreshTimeRef.current > 0) {
+      console.log(`PARTICIPANTS DEBUG: Skipping manual refresh, too soon (${timeSinceLastRefresh}ms since last refresh)`);
       return;
+    }
+    
+    // Clear any existing timeout
+    if (refreshTimeoutRef.current) {
+      window.clearTimeout(refreshTimeoutRef.current);
     }
     
     console.log(`PARTICIPANTS DEBUG: Manually refreshing participants for tour ${tourId}`);
     toast.info("Refreshing participants...");
     
-    // Set a long debounce to prevent repeated refreshes
+    // Set a short timeout to debounce multiple clicks
     refreshTimeoutRef.current = window.setTimeout(() => {
       loadParticipants(tourId);
       refreshTimeoutRef.current = null;
-    }, 300);
+    }, 100);
   }, [tourId, loadParticipants]);
 
   return {
