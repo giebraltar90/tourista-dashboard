@@ -53,6 +53,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       size: g.size,
       childCount: g.childCount,
       guideId: g.guideId,
+      guideName: g.guideName,
       hasParticipantsArray: Array.isArray(g.participants),
       participantsLength: Array.isArray(g.participants) ? g.participants.length : 0
     }))
@@ -113,24 +114,44 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   let guideChildTickets = 0;
   
   if (isVersaillesTour) {
-    // Check if guides need tickets
-    if (guide1Info && doesGuideNeedTicket(guide1Info, tour.location)) {
-      const ticketType = getGuideTicketType(guide1Info);
-      if (ticketType === 'adult') guideAdultTickets++;
-      if (ticketType === 'child') guideChildTickets++;
+    // Check for assigned guides in each tour group
+    for (const group of tourGroups) {
+      if (group.guideId) {
+        // Find the guide info for this group's guide
+        let guideInfo = null;
+        
+        // Check if this guide is one of the main tour guides
+        if (guide1Info && (group.guideId === guide1Info.id || group.guideName === guide1Info.name)) {
+          guideInfo = guide1Info;
+        } else if (guide2Info && (group.guideId === guide2Info.id || group.guideName === guide2Info.name)) {
+          guideInfo = guide2Info;
+        } else if (guide3Info && (group.guideId === guide3Info.id || group.guideName === guide3Info.name)) {
+          guideInfo = guide3Info;
+        }
+        
+        // If we found guide info, determine ticket requirements
+        if (guideInfo) {
+          console.log(`GUIDE TICKETS: Found guide info for group with guide ${guideInfo.name}:`, guideInfo);
+          if (doesGuideNeedTicket(guideInfo, tour.location)) {
+            const ticketType = getGuideTicketType(guideInfo);
+            if (ticketType === 'adult') {
+              guideAdultTickets++;
+              console.log(`GUIDE TICKETS: Adding adult ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
+            }
+            if (ticketType === 'child') {
+              guideChildTickets++;
+              console.log(`GUIDE TICKETS: Adding child ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
+            }
+          } else {
+            console.log(`GUIDE TICKETS: No ticket needed for guide ${guideInfo.name} (${guideInfo.guideType})`);
+          }
+        } else {
+          console.log(`GUIDE TICKETS: Could not find guide info for guideId: ${group.guideId}, guideName: ${group.guideName}`);
+        }
+      }
     }
     
-    if (guide2Info && doesGuideNeedTicket(guide2Info, tour.location)) {
-      const ticketType = getGuideTicketType(guide2Info);
-      if (ticketType === 'adult') guideAdultTickets++;
-      if (ticketType === 'child') guideChildTickets++;
-    }
-    
-    if (guide3Info && doesGuideNeedTicket(guide3Info, tour.location)) {
-      const ticketType = getGuideTicketType(guide3Info);
-      if (ticketType === 'adult') guideAdultTickets++;
-      if (ticketType === 'child') guideChildTickets++;
-    }
+    console.log(`GUIDE TICKETS: Final count: ${guideAdultTickets} adult tickets, ${guideChildTickets} child tickets required for guides`);
   }
 
   return (

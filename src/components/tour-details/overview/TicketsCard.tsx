@@ -75,8 +75,8 @@ export const TicketsCard = ({
   const missingChildTickets = Math.max(0, totalRequiredChildTickets - validChildTickets);
 
   // Consider guide tickets in the total display
-  const displayAdultTickets = validAdultTickets + guideAdultTickets;
-  const displayChildTickets = validChildTickets + guideChildTickets;
+  const displayAdultTickets = totalRequiredAdultTickets;
+  const displayChildTickets = totalRequiredChildTickets;
 
   return (
     <Card>
@@ -120,17 +120,13 @@ export const TicketsCard = ({
             <span className="text-muted-foreground">Total:</span>
             <Badge 
               variant="outline" 
-              className={`font-medium ${
-                hasEnoughTickets 
-                  ? "bg-green-100 text-green-800 border-green-300" 
-                  : "bg-amber-100 text-amber-800 border-amber-300"
-              }`}
+              className="font-medium bg-green-100 text-green-800 border-green-300"
             >
               {displayAdultTickets} + {displayChildTickets}
             </Badge>
           </div>
           
-          {missingTickets > 0 && (
+          {!hasEnoughTickets && (missingAdultTickets > 0 || missingChildTickets > 0) && (
             <div className="flex justify-between items-center mt-2 pt-2 border-t">
               <span className="text-muted-foreground">Missing:</span>
               <Badge variant="destructive" className="text-xs font-medium">
@@ -166,7 +162,7 @@ export const TicketsCard = ({
                       <p>Guide requirements at Versailles:</p>
                       <ul className="list-disc pl-4 mt-1 space-y-1">
                         <li>GA Ticket: Over 26 years old, requires an adult ticket, cannot guide inside</li>
-                        <li>GA Free: Under 26, requires a child's ticket, cannot guide inside</li>
+                        <li>GA Free: Under 26, requires a child ticket, cannot guide inside</li>
                         <li>GC: Can guide inside, no ticket needed</li>
                       </ul>
                     </TooltipContent>
