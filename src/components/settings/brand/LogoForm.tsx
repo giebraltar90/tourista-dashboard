@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { DEFAULT_LOGO, updateAppLogo } from "@/services/settingsService";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,13 @@ export function LogoForm({ initialLogo }: LogoFormProps) {
       logo: initialLogo || DEFAULT_LOGO,
     },
   });
+
+  // Update form value when logoPreview changes
+  useEffect(() => {
+    if (logoPreview) {
+      form.setValue("logo", logoPreview);
+    }
+  }, [logoPreview, form]);
 
   async function onSubmit(data: LogoFormValues) {
     try {

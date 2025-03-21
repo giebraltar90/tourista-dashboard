@@ -68,10 +68,8 @@ export function ImageUploadField({
                     accept={acceptTypes}
                     onChange={(e) => {
                       handleFileChange(e);
-                      const base64 = e.target.files?.[0] 
-                        ? URL.createObjectURL(e.target.files[0]) 
-                        : '';
-                      field.onChange(imagePreview);
+                      // This is where the problem was - we need to update the form field with the preview
+                      // when it's set in the handleFileChange callback
                     }}
                     className="hidden"
                     id={`${name}-upload`}

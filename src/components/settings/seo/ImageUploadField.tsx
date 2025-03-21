@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,8 @@ interface ImageUploadFieldProps {
   setImagePreview: (preview: string | null) => void;
   acceptTypes: string;
   recommendedSize: string;
+  onResetClick?: () => void;
+  showResetButton?: boolean;
 }
 
 export function ImageUploadField({
@@ -27,6 +29,8 @@ export function ImageUploadField({
   setImagePreview,
   acceptTypes,
   recommendedSize,
+  onResetClick,
+  showResetButton = false,
 }: ImageUploadFieldProps) {
   // Handle image file upload
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,9 +56,9 @@ export function ImageUploadField({
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <div className="border p-2 rounded-md w-32 h-16 flex items-center justify-center bg-white">
-                  {imagePreview ? (
+                  {imagePreview || field.value ? (
                     <img
-                      src={imagePreview}
+                      src={imagePreview || field.value}
                       alt={`${label} Preview`}
                       className="max-w-full max-h-full object-contain"
                     />
@@ -68,10 +72,7 @@ export function ImageUploadField({
                     accept={acceptTypes}
                     onChange={(e) => {
                       handleFileChange(e);
-                      const base64 = e.target.files?.[0] 
-                        ? URL.createObjectURL(e.target.files[0]) 
-                        : '';
-                      field.onChange(imagePreview);
+                      // Let the parent component handle updating the form value
                     }}
                     className="hidden"
                     id={`${name}-upload`}
@@ -83,6 +84,15 @@ export function ImageUploadField({
                   </label>
                 </div>
               </div>
+              {showResetButton && onResetClick && (
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  onClick={onResetClick}
+                >
+                  Reset to default
+                </Button>
+              )}
             </div>
           </FormControl>
           <FormDescription>

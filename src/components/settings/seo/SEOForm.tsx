@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { getSetting, updateSetting } from "@/services/settingsService";
+import { getSetting, updateSetting, DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
 import { toast } from "@/components/ui/use-toast";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,8 @@ export function SEOForm() {
   const form = useForm<SEOFormValues>({
     resolver: zodResolver(seoFormSchema),
     defaultValues: {
-      ogImage: settings?.ogImage || "",
-      favicon: settings?.favicon || "",
+      ogImage: "",
+      favicon: "",
     },
   });
 
@@ -36,8 +36,8 @@ export function SEOForm() {
   useEffect(() => {
     if (settings) {
       form.reset({
-        ogImage: settings.ogImage || "",
-        favicon: settings.favicon || ""
+        ogImage: settings.ogImage || DEFAULT_OG_IMAGE,
+        favicon: settings.favicon || DEFAULT_FAVICON
       });
       
       if (settings.ogImage) setOgImagePreview(settings.ogImage);
@@ -45,19 +45,39 @@ export function SEOForm() {
     }
   }, [settings, form]);
 
+  // Update form values when previews change
+  useEffect(() => {
+    if (ogImagePreview) {
+      form.setValue("ogImage", ogImagePreview);
+    }
+    if (faviconPreview) {
+      form.setValue("favicon", faviconPreview);
+    }
+  }, [ogImagePreview, faviconPreview, form]);
+
+  const handleResetOgImage = () => {
+    setOgImagePreview(DEFAULT_OG_IMAGE);
+    form.setValue("ogImage", DEFAULT_OG_IMAGE);
+  };
+
+  const handleResetFavicon = () => {
+    setFaviconPreview(DEFAULT_FAVICON);
+    form.setValue("favicon", DEFAULT_FAVICON);
+  };
+
   async function onSubmit(data: SEOFormValues) {
     try {
       let successCount = 0;
 
       // Save OG image to database
-      if (ogImagePreview) {
-        const success = await updateSetting('ogImage', ogImagePreview);
+      if (data.ogImage) {
+        const success = await updateSetting('ogImage', data.ogImage);
         if (success) successCount++;
       }
 
       // Save favicon to database
-      if (faviconPreview) {
-        const success = await updateSetting('favicon', faviconPreview);
+      if (data.favicon) {
+        const success = await updateSetting('favicon', data.favicon);
         if (success) successCount++;
       }
       
@@ -91,6 +111,8 @@ export function SEOForm() {
           setImagePreview={setOgImagePreview}
           acceptTypes="image/*"
           recommendedSize="Recommended size: 1200x630px."
+          onResetClick={handleResetOgImage}
+          showResetButton={!!ogImagePreview && ogImagePreview !== DEFAULT_OG_IMAGE}
         />
 
         <ImageUploadField
@@ -102,6 +124,8 @@ export function SEOForm() {
           setImagePreview={setFaviconPreview}
           acceptTypes="image/x-icon,image/png,image/svg+xml"
           recommendedSize="Recommended format: ICO, PNG, or SVG (32x32px)."
+          onResetClick={handleResetFavicon}
+          showResetButton={!!faviconPreview && faviconPreview !== DEFAULT_FAVICON}
         />
 
         <Button type="submit">Save changes</Button>
