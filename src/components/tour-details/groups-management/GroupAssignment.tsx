@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideInfo, useGuideData } from "@/hooks/guides";
@@ -11,9 +10,10 @@ import { useGroupManagement } from "@/hooks/group-management";
 import { MoveParticipantSheet } from "./MoveParticipantSheet";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, AlertCircle } from "lucide-react";
+import { RefreshCw, AlertCircle, PlusCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
+import { addTestParticipants } from "@/hooks/testData/createTestData";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
@@ -38,7 +38,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     error?: string;
   } | null>(null);
 
-  // Get participant management capabilities
   const {
     localTourGroups,
     selectedParticipant,
@@ -53,13 +52,11 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     loadParticipants
   } = useGroupManagement(tour);
   
-  // Check database structure on mount
   useEffect(() => {
     const checkDatabase = async () => {
       try {
         console.log("DATABASE DEBUG: Checking database structure");
         
-        // Check if participants table exists and has any data
         const { count, error } = await supabase
           .from('participants')
           .select('*', { count: 'exact', head: true });
@@ -78,9 +75,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
             participantCount: count || 0
           });
           
-          // If we have participants, let's check if any belong to our tour
           if (count && count > 0) {
-            // Get the group IDs for this tour
             const { data: groups } = await supabase
               .from('tour_groups')
               .select('id')
@@ -89,7 +84,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
             if (groups && groups.length > 0) {
               const groupIds = groups.map(g => g.id);
               
-              // Check for participants in these groups
               const { data: tourParticipants, error: tourParticipantsError } = await supabase
                 .from('participants')
                 .select('id')
@@ -112,11 +106,9 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     checkDatabase();
   }, [tour.id]);
   
-  // Manually load participants when component mounts
   useEffect(() => {
     if (tour.id) {
       console.log("DATABASE DEBUG: Loading participants for tour:", tour.id);
-      // Force an initial load when the component mounts
       const timer = setTimeout(() => {
         loadParticipants(tour.id);
       }, 500);
@@ -125,7 +117,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     }
   }, [tour.id, loadParticipants]);
   
-  // Use a stable reference for the groups to prevent reordering during renders
   const stableTourGroups = useMemo(() => {
     console.log("DATABASE DEBUG: Creating stable tour groups from:", {
       localTourGroupsLength: localTourGroups?.length || 0,
@@ -136,7 +127,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       console.log("DATABASE DEBUG: Using tour.tourGroups as fallback");
       if (!tour.tourGroups) return [];
       
-      // Create a copy of the groups with their original indices preserved
       return tour.tourGroups.map((group, index) => ({
         ...group,
         originalIndex: index,
@@ -144,7 +134,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       }));
     }
     
-    // Create a copy of the groups with their original indices preserved
     return localTourGroups.map((group, index) => ({
       ...group,
       originalIndex: index,
@@ -158,7 +147,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     participantsCount: g.participants?.length || 0
   })));
   
-  // Handle manual refresh of participant data
   const handleRefreshParticipants = async () => {
     if (!tour.id) return;
     
@@ -166,7 +154,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     try {
       console.log("DATABASE DEBUG: Manually refreshing participants for tour:", tour.id);
       
-      // Check if the participants table exists
       const { error: tableCheckError } = await supabase
         .from('participants')
         .select('id')
@@ -183,7 +170,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
         return;
       }
       
-      // Table exists, refresh participants
       await refreshParticipants();
       toast.success("Participant data refreshed");
     } catch (error) {
@@ -194,9 +180,15 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     }
   };
   
-  // Process guides once when component loads or dependencies change
+  const handleAddTestParticipants = async () => {
+    if (!tour.id) return;
+    await addTestParticipants(tour.id);
+    setTimeout(() => {
+      refreshParticipants();
+    }, 500);
+  };
+  
   useEffect(() => {
-    // Get valid guides for guide selection - ONLY use guides from the database (with valid UUIDs)
     const validGuides = guides
       .filter(guide => guide.id && isValidUuid(guide.id) && guide.name)
       .map(guide => ({
@@ -218,21 +210,30 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Group & Participant Management</CardTitle>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={handleRefreshParticipants}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh Participants'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleAddTestParticipants}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Test Participants
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleRefreshParticipants}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Participants'}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       
       <CardContent>
         <div className="space-y-6">
-          {/* Database status alert */}
           {dbCheckResult && !dbCheckResult.hasTable && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -251,7 +252,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
             </Alert>
           )}
           
-          {/* Display tour groups with their assigned guides and participants */}
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stableTourGroups.map((group) => {
@@ -301,7 +301,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
         />
       )}
 
-      {/* Move participant dialog */}
       {selectedParticipant && (
         <MoveParticipantSheet
           selectedParticipant={selectedParticipant}

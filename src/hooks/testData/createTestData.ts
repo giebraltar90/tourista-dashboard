@@ -1,72 +1,78 @@
 
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { createGuideIdMap } from "./helpers";
-import { createTestGuides } from "./createGuides";
-import { createTestTours } from "./createTours";
-import { createTestTourGroups } from "./createTourGroups";
 import { createTestParticipants } from "./createParticipants";
-import { createTestModifications } from "./createModifications";
-import { createTestTickets } from "./createTickets";
-import { clearAllTestData } from "./helpers";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
- * Main function to create all test data
+ * Creates test data for a specific tour
  */
-export const createAllTestData = async (): Promise<boolean> => {
+export const createTestDataForTour = async (tourId: string) => {
   try {
-    console.log("Creating test tour data...");
+    console.log("Creating test data for tour:", tourId);
     
-    // First, clear any existing test data
-    await clearAllTestData();
-    
-    // Create test guides
-    const guideData = await createTestGuides();
-    
-    // Map guide names to their IDs
-    const guideMap = createGuideIdMap(guideData);
-    
-    // Validate guide IDs to ensure they are all UUIDs
-    const validGuideMap: Record<string, string> = {};
-    let hasInvalidGuides = false;
-    
-    for (const guideName in guideMap) {
-      const guideId = guideMap[guideName];
-      if (isValidUuid(guideId)) {
-        validGuideMap[guideName] = guideId;
-      } else {
-        console.error(`Invalid guide ID for ${guideName}: ${guideId}`);
-        hasInvalidGuides = true;
-      }
+    // First, get the tour groups
+    const { data: tourGroups, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id, name')
+      .eq('tour_id', tourId);
+      
+    if (groupsError) {
+      console.error("Error fetching tour groups:", groupsError);
+      toast.error("Failed to fetch tour groups");
+      return false;
     }
     
-    if (hasInvalidGuides) {
-      console.error("Found invalid guide IDs. This may cause issues with guide assignments.");
+    if (!tourGroups || tourGroups.length === 0) {
+      console.error("No tour groups found for this tour");
+      toast.warning("No groups found for this tour");
+      return false;
     }
     
-    // Log the validated guide map
-    console.log("Validated Guide UUID Map:", validGuideMap);
+    // Create test participants for these groups
+    const participantsCreated = await createTestParticipants(tourGroups);
     
-    // Create test tours
-    const tourData = await createTestTours(validGuideMap);
-    
-    // Create test tour groups
-    const groupData = await createTestTourGroups(tourData, validGuideMap);
-    
-    // Create test participants
-    await createTestParticipants(groupData);
-    
-    // Create test tickets for tours
-    await createTestTickets(tourData);
-    
-    // Create test modifications
-    await createTestModifications(tourData);
-    
-    toast.success("Test data created successfully");
-    return true;
+    if (participantsCreated && participantsCreated.length > 0) {
+      toast.success(`Created ${participantsCreated.length} test participants`);
+      return true;
+    } else {
+      toast.error("Failed to create test participants");
+      return false;
+    }
   } catch (error) {
     console.error("Error creating test data:", error);
     toast.error("Failed to create test data");
     return false;
   }
+};
+
+/**
+ * Utility to generate test data for the current tour
+ */
+export const addTestParticipants = async (tourId: string) => {
+  if (!tourId) {
+    toast.error("Invalid tour ID");
+    return;
+  }
+  
+  toast.info("Adding test participants...");
+  
+  // Check if participants already exist
+  const { data: existingParticipants, error: checkError } = await supabase
+    .from('participants')
+    .select('id')
+    .limit(1);
+    
+  if (!checkError && existingParticipants && existingParticipants.length > 0) {
+    // Participants already exist, ask if we should add more
+    if (confirm("Participants already exist. Do you want to add more test participants?")) {
+      await createTestDataForTour(tourId);
+    }
+    return;
+  }
+  
+  // No participants exist, create them
+  await createTestDataForTour(tourId);
+  
+  // Refresh the page
+  window.dispatchEvent(new Event('refresh-participants'));
 };

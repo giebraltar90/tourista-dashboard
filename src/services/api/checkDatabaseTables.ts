@@ -38,10 +38,10 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
       );
     `;
     
-    // Properly type the SQL parameter for the RPC call
+    // Call the execute_sql function
     const { error: createError } = await supabase.rpc(
       'execute_sql', 
-      { sql_query: createTableSQL } as { sql_query: string }
+      { sql_query: createTableSQL }
     );
     
     if (createError) {

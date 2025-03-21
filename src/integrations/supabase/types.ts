@@ -342,7 +342,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_table_exists: {
+        Args: {
+          table_name: string
+        }
+        Returns: boolean
+      }
+      debug_check_participants: {
+        Args: {
+          group_ids: string[]
+        }
+        Returns: Json
+      }
+      execute_sql: {
+        Args: {
+          sql_query: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       guide_type: "GA Ticket" | "GA Free" | "GC"
