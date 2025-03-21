@@ -1,8 +1,7 @@
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { recalculateAllTourGroupSizes } from "./services/participantService";
 
 /**
  * Hook for managing tour group state and calculations
@@ -24,6 +23,9 @@ export const useTourGroupState = (tour: TourCardProps) => {
     }));
   });
   
+  // Add a debounce ref to prevent too frequent updates
+  const updateTimeoutRef = useRef<number | null>(null);
+  
   // Update local groups when tour groups change
   useEffect(() => {
     if (Array.isArray(tour.tourGroups)) {
@@ -33,42 +35,56 @@ export const useTourGroupState = (tour: TourCardProps) => {
           !!tour.tourGroups[0].participants : false
       });
       
-      // Create a deep copy to ensure we don't get reference issues
-      const updatedGroups = JSON.parse(JSON.stringify(tour.tourGroups));
+      // Prevent too frequent updates by debouncing
+      if (updateTimeoutRef.current) {
+        window.clearTimeout(updateTimeoutRef.current);
+      }
       
-      // Ensure each group has a participants array and correct size calculations
-      const normalizedGroups = updatedGroups.map((group: VentrataTourGroup) => {
-        // Always ensure participants is an array
-        const participants = Array.isArray(group.participants) ? group.participants : [];
+      updateTimeoutRef.current = window.setTimeout(() => {
+        // Create a deep copy to ensure we don't get reference issues
+        const updatedGroups = JSON.parse(JSON.stringify(tour.tourGroups));
         
-        // Calculate size and childCount from participants
-        let calculatedSize = 0;
-        let calculatedChildCount = 0;
+        // Ensure each group has a participants array and correct size calculations
+        const normalizedGroups = updatedGroups.map((group: VentrataTourGroup) => {
+          // Always ensure participants is an array
+          const participants = Array.isArray(group.participants) ? group.participants : [];
+          
+          // Calculate size and childCount from participants
+          let calculatedSize = 0;
+          let calculatedChildCount = 0;
+          
+          for (const participant of participants) {
+            calculatedSize += participant.count || 1;
+            calculatedChildCount += participant.childCount || 0;
+          }
+          
+          // Return an updated group with the calculated values
+          return {
+            ...group,
+            participants,
+            // Override size and childCount with calculated values
+            size: calculatedSize,
+            childCount: calculatedChildCount
+          };
+        });
         
-        for (const participant of participants) {
-          calculatedSize += participant.count || 1;
-          calculatedChildCount += participant.childCount || 0;
+        console.log("PARTICIPANTS DEBUG: Updated normalized tour groups:", normalizedGroups.map(g => ({
+          id: g.id,
+          name: g.name || 'Unnamed',
+          calculatedSize: g.size,
+          calculatedChildCount: g.childCount,
+          participantsCount: g.participants.length
+        })));
+        
+        setLocalTourGroups(normalizedGroups);
+        updateTimeoutRef.current = null;
+      }, 300);
+      
+      return () => {
+        if (updateTimeoutRef.current) {
+          window.clearTimeout(updateTimeoutRef.current);
         }
-        
-        // Return an updated group with the calculated values
-        return {
-          ...group,
-          participants,
-          // Override size and childCount with calculated values
-          size: calculatedSize,
-          childCount: calculatedChildCount
-        };
-      });
-      
-      console.log("PARTICIPANTS DEBUG: Updated normalized tour groups:", normalizedGroups.map(g => ({
-        id: g.id,
-        name: g.name || 'Unnamed',
-        calculatedSize: g.size,
-        calculatedChildCount: g.childCount,
-        participantsCount: g.participants.length
-      })));
-      
-      setLocalTourGroups(normalizedGroups);
+      };
     }
   }, [tour.tourGroups]);
 

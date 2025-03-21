@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { VentrataParticipant } from "@/types/ventrata";
 import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
@@ -15,6 +15,7 @@ export const useGroupCardState = (
   const [isExpanded, setIsExpanded] = useState(true);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshTimeoutRef = useRef<number | null>(null);
 
   // Update local participants when the group's participants change
   useEffect(() => {
@@ -41,29 +42,45 @@ export const useGroupCardState = (
     }
   }, [rawParticipants, groupIndex, groupId, groupName]);
 
-  // Force refresh when needed to repopulate the participants list
+  // Force refresh when needed to repopulate the participants list - but with debounce
   useEffect(() => {
     // Only trigger a refresh if we have a mismatch - group has size but no participants
     const shouldRefresh = localParticipants.length === 0 && groupSize > 0 && onRefreshParticipants;
     
     if (shouldRefresh) {
       console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] has participants mismatch, triggering refresh.`);
+      
+      // Clear any existing timeout
+      if (refreshTimeoutRef.current) {
+        window.clearTimeout(refreshTimeoutRef.current);
+      }
+      
       // Debounce the refresh to avoid multiple calls
-      const timer = setTimeout(() => {
+      refreshTimeoutRef.current = window.setTimeout(() => {
         if (onRefreshParticipants) {
           onRefreshParticipants();
         }
-      }, 2000); // Only refresh after 2 seconds of no changes
+        refreshTimeoutRef.current = null;
+      }, 5000); // Only refresh after 5 seconds of no changes
       
-      return () => clearTimeout(timer);
+      return () => {
+        if (refreshTimeoutRef.current) {
+          window.clearTimeout(refreshTimeoutRef.current);
+        }
+      };
     }
   }, [localParticipants.length, groupSize, groupIndex, onRefreshParticipants]);
 
   const handleRefreshParticipants = () => {
     if (onRefreshParticipants) {
+      // Prevent multiple refreshes
+      if (isRefreshing) return;
+      
       setIsRefreshing(true);
       onRefreshParticipants();
-      setTimeout(() => setIsRefreshing(false), 1000);
+      
+      // Reset refresh state after a delay
+      window.setTimeout(() => setIsRefreshing(false), 2000);
     }
   };
 

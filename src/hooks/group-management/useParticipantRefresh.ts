@@ -1,5 +1,5 @@
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { useParticipantLoading } from "./useParticipantLoading";
@@ -15,11 +15,13 @@ export const useParticipantRefresh = (
 ) => {
   // Get participant loading capabilities
   const { loadParticipants: loadParticipantsInner, isLoading: isLoadingParticipants } = useParticipantLoading();
+  // Add a debounce ref to prevent too frequent refreshes
+  const refreshTimeoutRef = useRef<number | null>(null);
   
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
-    return loadParticipantsInner(tourId, (groups: VentrataTourGroup[]) => {
+    return loadParticipantsInner(tourId, (groups) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing ${groups.length} groups`);
       
       // Ensure each group has a participants array
@@ -30,9 +32,26 @@ export const useParticipantRefresh = (
       
       // Set the groups and trigger size recalculation
       setLocalTourGroups(processedGroups);
-      setTimeout(() => {
-        recalculateGroupSizes();
-      }, 100);
+      
+      // Force a recalculation after a short delay
+      if (refreshTimeoutRef.current) {
+        window.clearTimeout(refreshTimeoutRef.current);
+      }
+      
+      refreshTimeoutRef.current = window.setTimeout(() => {
+        // Get the recalculated groups directly
+        const updatedGroups = recalculateGroupSizes();
+        console.log(`PARTICIPANTS DEBUG: After recalculation, updated groups:`, 
+          updatedGroups.map(g => ({
+            id: g.id,
+            name: g.name || 'Unnamed',
+            size: g.size,
+            childCount: g.childCount,
+            participantsCount: g.participants?.length || 0
+          }))
+        );
+        refreshTimeoutRef.current = null;
+      }, 300);
     });
   }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes]);
 
@@ -40,16 +59,21 @@ export const useParticipantRefresh = (
   const refreshParticipants = useCallback(() => {
     if (!tourId) return;
     
+    // Prevent rapid consecutive refreshes
+    if (refreshTimeoutRef.current) {
+      console.log("PARTICIPANTS DEBUG: Refresh already in progress, skipping redundant refresh");
+      return;
+    }
+    
     console.log(`PARTICIPANTS DEBUG: Manually refreshing participants for tour ${tourId}`);
     toast.info("Refreshing participants...");
-    loadParticipants(tourId);
     
-    // Force recalculation of all group sizes after loading
-    setTimeout(() => {
-      // Fixed: Don't call map on the return value of recalculateGroupSizes
-      recalculateGroupSizes();
-    }, 500);
-  }, [tourId, loadParticipants, recalculateGroupSizes]);
+    // Set a long debounce to prevent repeated refreshes
+    refreshTimeoutRef.current = window.setTimeout(() => {
+      loadParticipants(tourId);
+      refreshTimeoutRef.current = null;
+    }, 300);
+  }, [tourId, loadParticipants]);
 
   return {
     loadParticipants,
