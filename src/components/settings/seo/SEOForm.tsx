@@ -1,0 +1,111 @@
+
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { getSetting, updateSetting } from "@/services/settingsService";
+import { toast } from "@/components/ui/use-toast";
+import { Form } from "@/components/ui/form";
+import { Button } from "@/components/ui/button";
+import { seoFormSchema, SEOFormValues } from "./types";
+import { ImageUploadField } from "./ImageUploadField";
+import { useQuery } from "@tanstack/react-query";
+
+export function SEOForm() {
+  const [ogImagePreview, setOgImagePreview] = useState<string | null>(null);
+  const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ['seo-settings'],
+    queryFn: async () => {
+      const ogImage = await getSetting('ogImage');
+      const favicon = await getSetting('favicon');
+      return { ogImage, favicon };
+    }
+  });
+
+  // Initialize form with default values
+  const form = useForm<SEOFormValues>({
+    resolver: zodResolver(seoFormSchema),
+    defaultValues: {
+      ogImage: settings?.ogImage || "",
+      favicon: settings?.favicon || "",
+    },
+  });
+
+  // Need to update form values when settings are loaded
+  useEffect(() => {
+    if (settings) {
+      form.reset({
+        ogImage: settings.ogImage || "",
+        favicon: settings.favicon || ""
+      });
+      
+      if (settings.ogImage) setOgImagePreview(settings.ogImage);
+      if (settings.favicon) setFaviconPreview(settings.favicon);
+    }
+  }, [settings, form]);
+
+  async function onSubmit(data: SEOFormValues) {
+    try {
+      let successCount = 0;
+
+      // Save OG image to database
+      if (ogImagePreview) {
+        const success = await updateSetting('ogImage', ogImagePreview);
+        if (success) successCount++;
+      }
+
+      // Save favicon to database
+      if (faviconPreview) {
+        const success = await updateSetting('favicon', faviconPreview);
+        if (success) successCount++;
+      }
+      
+      if (successCount > 0) {
+        toast({
+          title: "Settings updated",
+          description: "Your SEO settings have been updated successfully.",
+        });
+      } else {
+        throw new Error("Failed to update settings");
+      }
+    } catch (error) {
+      console.error("Error saving SEO settings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save SEO settings to the database",
+        variant: "destructive",
+      });
+    }
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <ImageUploadField
+          control={form.control}
+          name="ogImage"
+          label="Social Media Preview Image"
+          description="This image will be displayed when sharing your site on social media."
+          imagePreview={ogImagePreview}
+          setImagePreview={setOgImagePreview}
+          acceptTypes="image/*"
+          recommendedSize="Recommended size: 1200x630px."
+        />
+
+        <ImageUploadField
+          control={form.control}
+          name="favicon"
+          label="Favicon"
+          description="This icon will appear in browser tabs."
+          imagePreview={faviconPreview}
+          setImagePreview={setFaviconPreview}
+          acceptTypes="image/x-icon,image/png,image/svg+xml"
+          recommendedSize="Recommended format: ICO, PNG, or SVG (32x32px)."
+        />
+
+        <Button type="submit">Save changes</Button>
+      </form>
+    </Form>
+  );
+}
