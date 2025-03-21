@@ -1,3 +1,4 @@
+
 import { VentrataTourGroup } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid, isSpecialGuideId, mapSpecialGuideIdToUuid } from "./utils/guidesUtils";

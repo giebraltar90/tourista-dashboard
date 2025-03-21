@@ -113,17 +113,23 @@ export const useParticipantOperations = (
   const handleDrop = useCallback((e: React.DragEvent, toGroupIndex: number) => {
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
       console.log(`PARTICIPANTS DEBUG: Dropping participant into group ${toGroupIndex}`);
+      
+      // Fixed: Pass a direct VentrataTourGroup[] array to the callback
       dropParticipant(e, toGroupIndex, localTourGroups, (updatedGroups) => {
-        console.log(`PARTICIPANTS DEBUG: After drop into group ${toGroupIndex}, updating groups:`, 
-          updatedGroups.map(g => ({
-            id: g.id,
-            name: g.name || 'Unnamed',
-            size: g.size,
-            childCount: g.childCount,
-            participantsCount: g.participants.length
-          }))
-        );
-        setLocalTourGroups(updatedGroups);
+        if (updatedGroups) {
+          console.log(`PARTICIPANTS DEBUG: After drop into group ${toGroupIndex}, updating groups:`, 
+            updatedGroups.map(g => ({
+              id: g.id,
+              name: g.name || 'Unnamed',
+              size: g.size,
+              childCount: g.childCount,
+              participantsCount: g.participants.length
+            }))
+          );
+          
+          // Fixed: directly set the updated groups, not using the function form
+          setLocalTourGroups(updatedGroups);
+        }
       });
     } else {
       console.error("PARTICIPANTS DEBUG: Invalid group index for drop operation:", toGroupIndex);

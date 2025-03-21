@@ -46,6 +46,7 @@ export const useParticipantRefresh = (
     
     // Force recalculation of all group sizes after loading
     setTimeout(() => {
+      // Fixed: Don't call map on the return value of recalculateGroupSizes
       recalculateGroupSizes();
     }, 500);
   }, [tourId, loadParticipants, recalculateGroupSizes]);
