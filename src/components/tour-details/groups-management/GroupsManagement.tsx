@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { autoFixDatabaseIssues } from "@/services/api/checkDatabaseTables";
 import { toast } from "sonner";
+import { createTestParticipants } from "@/hooks/testData/createParticipants";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -56,40 +57,31 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       console.log("GroupsManagement: Initial loading of participants for tour:", tour.id);
       loadParticipants(tour.id);
       
-      // Also try to directly load participants
-      const directLoadParticipants = async () => {
+      // Also try to directly check the table existence
+      const checkTableExistence = async () => {
         try {
-          // Get tour groups
-          const { data: groups } = await supabase
-            .from('tour_groups')
-            .select('id')
-            .eq('tour_id', tour.id);
+          // Try to directly query the participants table
+          const { error } = await supabase
+            .from('participants')
+            .select('count(*)', { count: 'exact', head: true });
             
-          if (groups && groups.length > 0) {
-            const groupIds = groups.map(g => g.id);
+          if (error) {
+            console.error("DATABASE DEBUG: Error checking participants table:", error);
             
-            // Get participants for these groups
-            const { data: participants, error: participantsError } = await supabase
-              .from('participants')
-              .select('*')
-              .in('group_id', groupIds);
-              
-            if (participantsError) {
-              console.error("DATABASE DEBUG: Error loading participants:", participantsError);
-              setDatabaseError("Could not load participants: " + participantsError.message);
+            if (error.code === '42P01') { // relation doesn't exist error
+              setDatabaseError("The participants table does not exist in the database. Click 'Fix Database' to create it.");
             } else {
-              console.log(`GroupsManagement: Direct load found ${participants ? participants.length : 0} participants`);
-              if (participants && participants.length > 0) {
-                setDatabaseError(null);
-              }
+              setDatabaseError(`Database error: ${error.message}`);
             }
+          } else {
+            setDatabaseError(null);
           }
         } catch (error) {
-          console.error("Direct load participants error:", error);
+          console.error("DATABASE DEBUG: Exception checking participants table:", error);
         }
       };
       
-      directLoadParticipants();
+      checkTableExistence();
     }
   }, [tour.id, loadParticipants]);
   
@@ -124,6 +116,15 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
       if (success) {
         toast.success("Database issues have been fixed");
         setDatabaseError(null);
+        
+        // Attempt to add test participants for all groups after fixing the database
+        if (tour.tourGroups && tour.tourGroups.length > 0) {
+          const createdParticipants = await createTestParticipants(tour.tourGroups);
+          if (createdParticipants.length > 0) {
+            toast.success(`Created ${createdParticipants.length} test participants`);
+          }
+        }
+        
         // Refresh participants after fixing the database
         setTimeout(() => {
           refreshParticipants();

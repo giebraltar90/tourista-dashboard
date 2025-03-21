@@ -8,29 +8,42 @@ export const checkParticipantsTable = async () => {
   console.log("DATABASE DEBUG: Checking participants table existence");
   
   try {
-    // Try to get the definition of the participants table
-    const { data: tableExists, error: definitionError } = await supabase
+    // Use the database function to check if the table exists
+    const { data: tableExists, error: tableCheckError } = await supabase
       .rpc('check_table_exists', { 
-        table_name: 'participants' 
-      }) as { data: boolean, error: any };
-    
-    if (definitionError) {
-      console.error("DATABASE DEBUG: Error checking table definition:", definitionError);
+        table_name: 'participants'
+      });
       
-      // Fall back to a simple query to see if we can access the table
+    if (tableCheckError) {
+      console.error("DATABASE DEBUG: Error using check_table_exists function:", tableCheckError);
+      
+      // Fall back to a direct query to check if the table exists
       const { data: fallbackCheck, error: fallbackError } = await supabase
         .from('participants')
-        .select('count(*)', { count: 'exact', head: true });
+        .select('id')
+        .limit(1);
         
       if (fallbackError) {
-        console.error("DATABASE DEBUG: Fallback check failed:", fallbackError);
-        return {
-          exists: false,
-          error: fallbackError.message,
-          message: "The participants table does not appear to exist in the database"
-        };
+        if (fallbackError.code === '42P01') {
+          // This specific error code means relation doesn't exist
+          console.error("DATABASE DEBUG: Participants table does not exist (confirmed by error code)");
+          return {
+            exists: false,
+            error: "Table does not exist",
+            message: "The participants table does not exist in the database"
+          };
+        } else {
+          console.error("DATABASE DEBUG: Other error checking table:", fallbackError);
+          // Maybe the table exists but we can't query it for other reasons
+          return {
+            exists: false,
+            error: fallbackError.message,
+            message: "Error checking participants table"
+          };
+        }
       }
       
+      // If no error from the fallback, the table exists
       return {
         exists: true,
         records: 0,
@@ -40,6 +53,7 @@ export const checkParticipantsTable = async () => {
     
     // If tableExists is false, the table doesn't exist
     if (!tableExists) {
+      console.log("DATABASE DEBUG: check_table_exists returned false");
       return {
         exists: false,
         message: "The participants table does not exist in the database"
@@ -61,6 +75,7 @@ export const checkParticipantsTable = async () => {
       };
     }
     
+    console.log(`DATABASE DEBUG: Found ${count || 0} participants in the table`);
     return {
       exists: true,
       records: count || 0,

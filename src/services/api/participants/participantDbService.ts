@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
@@ -160,14 +159,37 @@ export const createTestParticipants = async (groups: any[]) => {
  */
 export const loadParticipantsData = async (tourId: string) => {
   try {
-    // First, check if the participants table exists
+    // First, check if the participants table exists using our improved function
     const tableCheck = await checkParticipantsTable();
     console.log("DATABASE DEBUG: Participants table check result:", tableCheck);
     
     if (!tableCheck.exists) {
       console.error("DATABASE DEBUG: Participants table doesn't exist:", tableCheck.message);
-      toast.error("Participants table doesn't exist in the database");
-      return { success: false, error: tableCheck.message };
+      // Instead of showing a toast error immediately, try to create test participants
+      console.log("DATABASE DEBUG: Will attempt to auto-fix the table issue...");
+      
+      // Check if the tour exists first
+      const tourCheck = await checkTourExists(tourId);
+      if (!tourCheck.exists) {
+        toast.error(`Failed to find tour: ${tourCheck.error}`);
+        return { success: false, error: tourCheck.error };
+      }
+      
+      // Fetch tour groups
+      const { success: groupsSuccess, groups, error: groupsError } = await fetchTourGroups(tourId);
+      if (!groupsSuccess || !groups) {
+        toast.error(`Failed to fetch tour groups: ${groupsError}`);
+        return { success: false, error: groupsError };
+      }
+      
+      // At this point, we have groups but no participants table. 
+      // Return what we have with a special flag
+      return { 
+        success: true, 
+        groups, 
+        participants: [],
+        needsTableCreate: true
+      };
     }
     
     // Check if the tour exists

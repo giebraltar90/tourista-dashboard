@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { createDatabaseFunctions } from "./createDbFunctions";
 
 // Type definition for the execute_sql parameters
 interface ExecuteSqlParams {
@@ -16,17 +17,17 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
     
     // First check if the table exists
     const { data: tableExists, error: tableCheckError } = await supabase
-      .from('participants')
-      .select('id')
-      .limit(1);
+      .rpc('check_table_exists', { 
+        table_name: 'participants' 
+      });
       
-    // If there's no error, the table exists
-    if (!tableCheckError) {
+    // If there's no error and tableExists is true, the table exists
+    if (!tableCheckError && tableExists === true) {
       console.log("DATABASE DEBUG: Participants table already exists");
       return true;
     }
     
-    console.error("DATABASE DEBUG: Participants table check failed:", tableCheckError);
+    console.log("DATABASE DEBUG: Table check result:", { tableExists, error: tableCheckError });
     console.log("DATABASE DEBUG: Attempting to create participants table");
     
     // Create participants table
@@ -37,10 +38,16 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
         count INTEGER DEFAULT 1,
         child_count INTEGER DEFAULT 0,
         group_id UUID REFERENCES public.tour_groups(id) ON DELETE CASCADE,
-        booking_ref TEXT,
+        booking_ref TEXT NOT NULL,
         created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
       );
+      
+      -- Make sure the participants table has the proper permissions
+      ALTER TABLE IF EXISTS public.participants ENABLE ROW LEVEL SECURITY;
+      
+      -- Grant access to anon and authenticated users
+      GRANT SELECT, INSERT, UPDATE, DELETE ON public.participants TO anon, authenticated;
     `;
     
     // Call the execute_sql function
@@ -70,6 +77,9 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
 export const autoFixDatabaseIssues = async (): Promise<boolean> => {
   try {
     console.log("DATABASE DEBUG: Running database auto-fix routine");
+    
+    // First make sure we have all the necessary functions
+    await createDatabaseFunctions();
     
     // Attempt to create the participants table if needed
     const tableCreated = await createParticipantsTableIfNeeded();

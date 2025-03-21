@@ -46,7 +46,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       // Continue with other function creation attempts
     }
     
-    // Create check_table_exists function
+    // Create check_table_exists function with improved query
     const createCheckTableExistsFunction = `
       CREATE OR REPLACE FUNCTION check_table_exists(table_name TEXT)
       RETURNS BOOLEAN
@@ -74,6 +74,8 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       
       if (tableCheckFunctionError) {
         console.error("DATABASE DEBUG: Failed to create check_table_exists function:", tableCheckFunctionError);
+      } else {
+        console.log("DATABASE DEBUG: Successfully created/updated check_table_exists function");
       }
     } catch (error) {
       console.error("DATABASE DEBUG: Exception creating check_table_exists function:", error);
@@ -112,6 +114,8 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       
       if (debugFunctionError) {
         console.error("DATABASE DEBUG: Failed to create debug_check_participants function:", debugFunctionError);
+      } else {
+        console.log("DATABASE DEBUG: Successfully created/updated debug_check_participants function");
       }
     } catch (error) {
       console.error("DATABASE DEBUG: Exception creating debug_check_participants function:", error);
