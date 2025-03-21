@@ -117,18 +117,23 @@ export const useParticipantOperations = (
       // Pass the actual groups array to dropParticipant
       dropParticipant(e, toGroupIndex, localTourGroups, (updatedGroups) => {
         if (updatedGroups) {
-          console.log(`PARTICIPANTS DEBUG: After drop into group ${toGroupIndex}, updating groups:`, 
-            updatedGroups.map(g => ({
-              id: g.id,
-              name: g.name || 'Unnamed',
-              size: g.size,
-              childCount: g.childCount,
-              participantsCount: g.participants?.length || 0
-            }))
-          );
-          
-          // Call the state setter with the updated groups
-          setLocalTourGroups(updatedGroups);
+          // Ensure updatedGroups is actually an array before using array methods
+          if (Array.isArray(updatedGroups)) {
+            console.log(`PARTICIPANTS DEBUG: After drop into group ${toGroupIndex}, updating groups:`, 
+              updatedGroups.map(g => ({
+                id: g.id,
+                name: g.name || 'Unnamed',
+                size: g.size,
+                childCount: g.childCount,
+                participantsCount: g.participants?.length || 0
+              }))
+            );
+            
+            // Call the state setter with the updated groups array
+            setLocalTourGroups(updatedGroups);
+          } else {
+            console.error("PARTICIPANTS DEBUG: Expected array of groups but got:", typeof updatedGroups);
+          }
         }
       });
     } else {

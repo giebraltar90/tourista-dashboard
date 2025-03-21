@@ -46,15 +46,19 @@ export const useParticipantRefresh = (
       refreshTimeoutRef.current = window.setTimeout(() => {
         // Get the recalculated groups directly
         const updatedGroups = recalculateGroupSizes();
-        console.log(`PARTICIPANTS DEBUG: After recalculation, updated groups:`, 
-          updatedGroups.map(g => ({
-            id: g.id,
-            name: g.name || 'Unnamed',
-            size: g.size,
-            childCount: g.childCount,
-            participantsCount: g.participants?.length || 0
-          }))
-        );
+        
+        if (Array.isArray(updatedGroups)) {
+          console.log(`PARTICIPANTS DEBUG: After recalculation, updated groups:`, 
+            updatedGroups.map(g => ({
+              id: g.id,
+              name: g.name || 'Unnamed',
+              size: g.size,
+              childCount: g.childCount,
+              participantsCount: g.participants?.length || 0
+            }))
+          );
+        }
+        
         refreshTimeoutRef.current = null;
       }, 300);
     });
