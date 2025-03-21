@@ -12,7 +12,7 @@ import { GroupAssignment } from "./groups-management/group-assignment";
 import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGroupManagement } from "@/hooks/group-management";
-import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/useGuideData";
+import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuideTickets";
 
 interface TourOverviewProps {
   tour: TourCardProps;

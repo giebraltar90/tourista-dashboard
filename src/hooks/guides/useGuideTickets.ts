@@ -27,7 +27,7 @@ export function getGuideTicketType(guide: GuideInfo): 'adult' | 'child' | null {
     case 'GA Ticket':
       return 'adult'; // Needs an adult ticket
     case 'GA Free':
-      return 'child'; // Needs a child ticket (FIXED: previously was returning 'adult')
+      return 'child'; // Needs a child ticket
     case 'GC':
     default:
       return null; // No ticket needed
