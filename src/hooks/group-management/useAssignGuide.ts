@@ -6,11 +6,11 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-// Import refactored utilities
+// Import refactored utilities with updated names
 import { mapGuideIdToUuid } from "./utils/guideAssignmentMapping";
 import { validateGuideAssignment } from "./utils/guideAssignmentValidation";
 import { preserveParticipants, createUpdatedGroupWithPreservedParticipants } from "./utils/participantPreservation";
-import { findGuideName, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
+import { findGuideNameForGroup, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
 import { persistGuideAssignmentChanges } from "./utils/databaseOperations";
 import { performOptimisticUpdate, handleUIUpdates } from "./utils/optimisticUpdates";
 
@@ -70,8 +70,8 @@ export const useAssignGuide = (tourId: string) => {
       // Get group number for name generation
       const groupNumber = groupIndex + 1;
       
-      // Find guide name for display
-      const guideName = findGuideName(actualGuideId, guides, tour);
+      // Find guide name for display - using the renamed import
+      const guideName = findGuideNameForGroup(actualGuideId, guides, tour);
       
       // Generate a new group name with the guide name
       const groupName = generateGroupNameWithGuide(groupNumber, guideName);

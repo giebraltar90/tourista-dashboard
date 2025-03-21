@@ -1,11 +1,10 @@
-
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
 import { useGuideData } from "@/hooks/guides";
-import { findGuideName } from "@/hooks/group-management/utils/guideNameUtils";
+import { findGuideNameByTour } from "@/hooks/group-management/utils";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -39,22 +38,17 @@ export const GroupsTable = ({
       </TableHeader>
       <TableBody>
         {tourGroups.map((group, index) => {
-          // Get guide info using the guideId from the group
           const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
           
-          // Count total participants (accounting for families/groups)
           const totalParticipants = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
           
-          // Format participant count to show adults + children
           const childCount = group.childCount || 0;
           const formattedParticipantCount = childCount > 0 
             ? `${totalParticipants - childCount}+${childCount}` 
             : totalParticipants;
           
-          // Check if guide is assigned
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           
-          // Extract the original group number from the name or use the index as fallback
           let groupNumber = index + 1;
           if (group.name) {
             const match = group.name.match(/Group (\d+)/);
