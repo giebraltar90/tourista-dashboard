@@ -43,7 +43,7 @@ export const TourGroupGuide = ({
   // Format participant count to show adults + children if there are children
   const displayParticipants = formatParticipantCount(participantCount, childCount);
   
-  console.log(`COUNTING: TourGroupGuide for ${group.name} calculations:`, {
+  console.log(`PARTICIPANTS DEBUG: TourGroupGuide for ${group.name || `Group ${groupIndex + 1}`} calculations:`, {
     participantCount,
     childCount,
     adultCount,

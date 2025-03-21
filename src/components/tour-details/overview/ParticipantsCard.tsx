@@ -28,6 +28,27 @@ export const ParticipantsCard = ({
   } = useMemo(() => {
     console.log("PARTICIPANTS DEBUG: ParticipantsCard calculating counts");
     
+    // Extra detailed logging of input data
+    console.log("PARTICIPANTS DEBUG: ParticipantsCard input data:", {
+      providedTotalParticipants,
+      providedTotalChildCount,
+      isHighSeason,
+      tourGroupsCount: tourGroups?.length || 0,
+      tourGroupsDetails: Array.isArray(tourGroups) ? tourGroups.map(g => ({
+        id: g.id,
+        name: g.name || 'Unnamed',
+        size: g.size,
+        childCount: g.childCount,
+        hasParticipantsArray: Array.isArray(g.participants),
+        participantsCount: Array.isArray(g.participants) ? g.participants.length : 0,
+        participants: Array.isArray(g.participants) ? g.participants.map(p => ({
+          name: p.name,
+          count: p.count || 1,
+          childCount: p.childCount || 0
+        })) : []
+      })) : 'No tour groups'
+    });
+    
     // Use provided values if they exist and are greater than 0
     if (
       providedTotalParticipants !== undefined && 
@@ -35,6 +56,7 @@ export const ParticipantsCard = ({
       providedTotalChildCount !== undefined &&
       providedTotalChildCount >= 0
     ) {
+      console.log("PARTICIPANTS DEBUG: Using provided values:", providedTotalParticipants, providedTotalChildCount);
       const adult = providedTotalParticipants - providedTotalChildCount;
       return {
         totalParticipants: providedTotalParticipants,
@@ -50,12 +72,41 @@ export const ParticipantsCard = ({
     
     // Only count from participants arrays if they exist
     if (Array.isArray(tourGroups)) {
+      console.log("PARTICIPANTS DEBUG: Manually calculating from tour groups");
       for (const group of tourGroups) {
+        console.log(`PARTICIPANTS DEBUG: Processing group ${group.name || 'Unnamed'}:`, {
+          id: group.id,
+          hasParticipants: Array.isArray(group.participants),
+          participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
+          size: group.size,
+          childCount: group.childCount
+        });
+        
         if (Array.isArray(group.participants) && group.participants.length > 0) {
           for (const participant of group.participants) {
-            calculatedTotal += participant.count || 1;
-            calculatedChildren += participant.childCount || 0;
+            const count = participant.count || 1;
+            const childCount = participant.childCount || 0;
+            calculatedTotal += count;
+            calculatedChildren += childCount;
+            
+            console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}":`, {
+              count,
+              childCount,
+              runningTotal: calculatedTotal,
+              runningChildren: calculatedChildren
+            });
           }
+        } else if (group.size > 0) {
+          // If no participants but group.size exists, use that as fallback
+          calculatedTotal += group.size;
+          calculatedChildren += group.childCount || 0;
+          
+          console.log(`PARTICIPANTS DEBUG: Using group.size fallback:`, {
+            size: group.size,
+            childCount: group.childCount || 0,
+            runningTotal: calculatedTotal,
+            runningChildren: calculatedChildren
+          });
         }
       }
     }
@@ -65,9 +116,17 @@ export const ParticipantsCard = ({
     
     // If after calculation we still have 0, try to use group.size as fallback
     if (calculatedTotal === 0 && Array.isArray(tourGroups)) {
+      console.log("PARTICIPANTS DEBUG: No participants found, using group.size as final fallback");
       calculatedTotal = tourGroups.reduce((sum, g) => sum + (g.size || 0), 0);
       calculatedChildren = tourGroups.reduce((sum, g) => sum + (g.childCount || 0), 0);
     }
+    
+    console.log("PARTICIPANTS DEBUG: Final calculated values:", {
+      calculatedTotal,
+      calculatedChildren,
+      adultCount: calculatedTotal - calculatedChildren,
+      formatted: formatParticipantCount(calculatedTotal, calculatedChildren)
+    });
     
     return {
       totalParticipants: calculatedTotal,

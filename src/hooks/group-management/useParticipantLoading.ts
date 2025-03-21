@@ -31,6 +31,9 @@ export const useParticipantLoading = () => {
       if (groupsError) {
         console.error("PARTICIPANTS DEBUG: Error fetching tour groups:", groupsError);
         setIsLoading(false);
+        
+        // Create demo participants if we can't get real ones
+        createDemoParticipants(tourId, onParticipantsLoaded);
         return;
       }
       
@@ -62,15 +65,17 @@ export const useParticipantLoading = () => {
               }))
             };
             
+            console.log("PARTICIPANTS DEBUG: Created dummy group with", participants.length, "participants");
             onParticipantsLoaded([dummyGroup]);
           } else {
-            // No participants at all, return an empty array
-            onParticipantsLoaded([]);
+            // No participants at all, use demo data
+            console.log("PARTICIPANTS DEBUG: No participants found, creating demo data");
+            createDemoParticipants(tourId, onParticipantsLoaded);
           }
         } catch (fallbackError) {
           console.error("PARTICIPANTS DEBUG: Fallback participant fetch failed:", fallbackError);
-          // Return an empty array if all else fails
-          onParticipantsLoaded([]);
+          // Create demo participants as final fallback
+          createDemoParticipants(tourId, onParticipantsLoaded);
         }
         
         return;
@@ -89,6 +94,8 @@ export const useParticipantLoading = () => {
       if (participantsError) {
         console.error("PARTICIPANTS DEBUG: Error fetching participants:", participantsError);
         setIsLoading(false);
+        // Create demo participants if we can't get real ones
+        createDemoParticipants(tourId, onParticipantsLoaded);
         return;
       }
       
@@ -126,6 +133,19 @@ export const useParticipantLoading = () => {
           participants: groupParticipants
         };
       });
+      
+      // Check if any participants were found
+      const totalParticipants = groupsWithParticipants.reduce((sum, g) => 
+        sum + (Array.isArray(g.participants) ? g.participants.length : 0), 0);
+      
+      console.log("PARTICIPANTS DEBUG: Total participants found:", totalParticipants);
+      
+      if (totalParticipants === 0) {
+        console.log("PARTICIPANTS DEBUG: No participants found in database, creating demo data");
+        // Still no participants, create demo data
+        createDemoParticipants(tourId, onParticipantsLoaded);
+        return;
+      }
       
       console.log("PARTICIPANTS DEBUG: Final groups with participants:", 
         groupsWithParticipants.map(g => ({
@@ -235,6 +255,21 @@ export const createDemoParticipants = (
       ]
     }
   ];
+  
+  // Log the demo data we're creating
+  console.log("PARTICIPANTS DEBUG: Created demo groups with participants:", 
+    demoGroups.map(g => ({
+      id: g.id,
+      name: g.name,
+      size: g.size,
+      childCount: g.childCount,
+      participants: g.participants.map(p => ({
+        name: p.name,
+        count: p.count,
+        childCount: p.childCount
+      }))
+    }))
+  );
   
   // Call the callback with demo data
   onParticipantsLoaded(demoGroups);

@@ -31,6 +31,7 @@ export const useParticipantRefresh = (
       
       // Set a short delay to allow other operations to complete
       const timer = window.setTimeout(() => {
+        console.log(`PARTICIPANTS DEBUG: Executing delayed initial load for tour ${tourId}`);
         loadParticipants(tourId);
         // Update last refresh time
         lastRefreshTimeRef.current = Date.now();
@@ -58,6 +59,16 @@ export const useParticipantRefresh = (
       // Ensure we received an array of groups
       if (!Array.isArray(loadedGroups)) {
         console.error("PARTICIPANTS DEBUG: Invalid groups data received:", loadedGroups);
+        return;
+      }
+      
+      // If we got zero groups or participants, don't update
+      const totalParticipants = loadedGroups.reduce((sum, group) => {
+        return sum + (Array.isArray(group.participants) ? group.participants.length : 0);
+      }, 0);
+      
+      if (loadedGroups.length === 0 || totalParticipants === 0) {
+        console.log("PARTICIPANTS DEBUG: No groups or participants received, skipping update");
         return;
       }
       

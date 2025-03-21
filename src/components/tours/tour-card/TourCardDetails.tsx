@@ -29,18 +29,52 @@ export const TourCardDetails = ({
   
   // Calculate total participants and child count only once
   const participantCounts = (() => {
+    console.log("PARTICIPANTS DEBUG: TourCardDetails calculating counts");
+    
     let calculatedTotalParticipants = 0;
     let calculatedTotalChildCount = 0;
     
     // Only process if tourGroups is an array
     if (Array.isArray(tourGroups)) {
+      console.log("PARTICIPANTS DEBUG: Processing tourGroups:", tourGroups.map(g => ({
+        id: g.id,
+        name: g.name || 'Unnamed',
+        size: g.size,
+        childCount: g.childCount,
+        hasParticipantsArray: Array.isArray(g.participants),
+        participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
+      })));
+      
       for (const group of tourGroups) {
         if (Array.isArray(group.participants) && group.participants.length > 0) {
+          console.log(`PARTICIPANTS DEBUG: Processing ${group.participants.length} participants in group ${group.name || 'Unnamed'}`);
+          
           // Count directly from participants array - one by one
           for (const participant of group.participants) {
-            calculatedTotalParticipants += participant.count || 1;
-            calculatedTotalChildCount += participant.childCount || 0;
+            const count = participant.count || 1;
+            const childCount = participant.childCount || 0;
+            
+            calculatedTotalParticipants += count;
+            calculatedTotalChildCount += childCount;
+            
+            console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}":`, {
+              count, 
+              childCount,
+              runningTotal: calculatedTotalParticipants,
+              runningChildCount: calculatedTotalChildCount
+            });
           }
+        } else if (group.size > 0) {
+          // Use size value as fallback if no participants array
+          calculatedTotalParticipants += group.size;
+          calculatedTotalChildCount += group.childCount || 0;
+          
+          console.log(`PARTICIPANTS DEBUG: Using size fallback for group ${group.name || 'Unnamed'}:`, {
+            size: group.size,
+            childCount: group.childCount || 0,
+            runningTotal: calculatedTotalParticipants,
+            runningChildCount: calculatedTotalChildCount
+          });
         }
       }
     }
@@ -51,6 +85,7 @@ export const TourCardDetails = ({
     console.log("PARTICIPANTS DEBUG: TourCardDetails final calculation:", {
       calculatedTotalParticipants,
       calculatedTotalChildCount,
+      providedTotalParticipants: totalParticipants,
       finalTotalParticipants
     });
     
@@ -70,6 +105,8 @@ export const TourCardDetails = ({
     // Remove duplicates
     const uniqueGuideIds = [...new Set(assignedGuideIds)];
     
+    console.log("PARTICIPANTS DEBUG: Unique guide IDs:", uniqueGuideIds);
+    
     // Map guide IDs to guide names using findGuideName
     return uniqueGuideIds.map(guideId => {
       // Create a simplified tour object with just the guides we need
@@ -79,7 +116,9 @@ export const TourCardDetails = ({
       };
       
       // Use the utility function to find the proper name
-      return findGuideName(guideId, tourObj, guides);
+      const guideName = findGuideName(guideId, tourObj, guides);
+      console.log(`PARTICIPANTS DEBUG: Resolved guide ${guideId} to name "${guideName}"`);
+      return guideName;
     });
   };
   
