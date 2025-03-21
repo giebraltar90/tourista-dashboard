@@ -142,6 +142,59 @@ export type Database = {
           },
         ]
       }
+      ticket_buckets: {
+        Row: {
+          access_time: string | null
+          allocated_tickets: number | null
+          available_tickets: number | null
+          bucket_type: string
+          created_at: string | null
+          date: string
+          id: string
+          max_tickets: number
+          reference_number: string
+          tickets_range: string
+          tour_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_time?: string | null
+          allocated_tickets?: number | null
+          available_tickets?: number | null
+          bucket_type: string
+          created_at?: string | null
+          date: string
+          id?: string
+          max_tickets: number
+          reference_number: string
+          tickets_range: string
+          tour_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_time?: string | null
+          allocated_tickets?: number | null
+          available_tickets?: number | null
+          bucket_type?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          max_tickets?: number
+          reference_number?: string
+          tickets_range?: string
+          tour_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_buckets_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tours"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tickets: {
         Row: {
           created_at: string
@@ -359,6 +412,12 @@ export type Database = {
           sql_query: string
         }
         Returns: undefined
+      }
+      get_bucket_type: {
+        Args: {
+          ticket_count: number
+        }
+        Returns: string
       }
     }
     Enums: {
