@@ -23,13 +23,14 @@ export const TicketsCard = ({
   guideChildTickets = 0,
   location = ''
 }: TicketsCardProps) => {
-  console.log("PARTICIPANTS DEBUG: TicketsCard initial input values:", {
+  console.log("GUIDE TICKET DEBUG: TicketsCard rendering with values:", {
     adultTickets,
     childTickets,
     totalTickets,
     requiredTickets,
     guideAdultTickets,
-    guideChildTickets
+    guideChildTickets,
+    location
   });
   
   // Extra validation to ensure counts are non-negative numbers
@@ -59,7 +60,7 @@ export const TicketsCard = ({
   // Determine if we have enough tickets
   const hasEnoughTickets = totalRequiredTickets <= validTotalTickets;
   
-  console.log("PARTICIPANTS DEBUG: TicketsCard final values:", {
+  console.log("GUIDE TICKET DEBUG: TicketsCard final calculations:", {
     originalValues: { adultTickets, childTickets, totalTickets, requiredTickets },
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,

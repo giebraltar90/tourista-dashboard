@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -12,6 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGroupManagement } from "@/hooks/group-management";
 import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuideTickets";
+import { getGuideNameAndInfo } from "@/hooks/group-management/utils/guideInfoUtils";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -22,6 +25,7 @@ interface TourOverviewProps {
 
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
   const queryClient = useQueryClient();
+  const { guides: allGuides = [] } = useGuideData() || { guides: [] };
   
   const { localTourGroups, refreshParticipants } = useGroupManagement(tour);
   
@@ -32,10 +36,13 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     }
   }, [tour?.id, queryClient, refreshParticipants]);
   
-  console.log("PARTICIPANTS DEBUG: TourOverview initializing with tour:", {
+  console.log("GUIDE TICKET DEBUG: TourOverview initializing with tour:", {
     tourId: tour.id,
     tourName: tour.tourName,
     isHighSeason: tour.isHighSeason,
+    guide1Info: guide1Info ? { id: guide1Info.id, name: guide1Info.name, guideType: guide1Info.guideType } : null,
+    guide2Info: guide2Info ? { id: guide2Info.id, name: guide2Info.name, guideType: guide2Info.guideType } : null,
+    guide3Info: guide3Info ? { id: guide3Info.id, name: guide3Info.name, guideType: guide3Info.guideType } : null,
     tourGroupsCount: Array.isArray(tour.tourGroups) ? tour.tourGroups.length : 0,
     localTourGroupsCount: Array.isArray(localTourGroups) ? localTourGroups.length : 0
   });
@@ -44,7 +51,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     ? localTourGroups 
     : (Array.isArray(tour.tourGroups) ? tour.tourGroups : []);
   
-  console.log("PARTICIPANTS DEBUG: TourOverview detailed tourGroups data:", 
+  console.log("GUIDE TICKET DEBUG: TourOverview detailed tourGroups data:", 
     tourGroups.map(g => ({
       id: g.id,
       name: g.name || 'Unnamed',
@@ -61,7 +68,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   let totalChildCount = 0;
   
   for (const group of tourGroups) {
-    console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}"`);
+    console.log(`GUIDE TICKET DEBUG: Processing group "${group.name || 'Unnamed'}"`);
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
       let groupChildCount = 0;
@@ -74,7 +81,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
         groupChildCount += childCount;
       }
       
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" totals:`, {
+      console.log(`GUIDE TICKET DEBUG: Group "${group.name || 'Unnamed'}" totals:`, {
         groupTotal,
         groupChildCount
       });
@@ -85,7 +92,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       totalParticipants += group.size;
       totalChildCount += group.childCount || 0;
       
-      console.log(`PARTICIPANTS DEBUG: Falling back to group size: ${group.size}, childCount: ${group.childCount || 0}`);
+      console.log(`GUIDE TICKET DEBUG: Falling back to group size: ${group.size}, childCount: ${group.childCount || 0}`);
     }
   }
   
@@ -107,44 +114,47 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     
     for (const group of tourGroups) {
       if (group.guideId && !countedGuideIds.has(group.guideId)) {
-        let guideInfo = null;
-        
-        if (guide1Info && (group.guideId === guide1Info.id || 
-            (typeof guide1Info.id === 'string' && guide1Info.id === group.guideId))) {
-          guideInfo = guide1Info;
-        } else if (guide2Info && (group.guideId === guide2Info.id || 
-            (typeof guide2Info.id === 'string' && guide2Info.id === group.guideId))) {
-          guideInfo = guide2Info;
-        } else if (guide3Info && (group.guideId === guide3Info.id || 
-            (typeof guide3Info.id === 'string' && guide3Info.id === group.guideId))) {
-          guideInfo = guide3Info;
-        }
+        // Use our improved utility to get guide info
+        const { info: guideInfo } = getGuideNameAndInfo(
+          tour.guide1,
+          tour.guide2,
+          tour.guide3,
+          guide1Info,
+          guide2Info,
+          guide3Info,
+          allGuides,
+          group.guideId
+        );
         
         if (guideInfo) {
           countedGuideIds.add(group.guideId);
           
-          console.log(`GUIDE TICKETS: Found guide info for group with guide ${guideInfo.name}:`, guideInfo);
+          console.log(`GUIDE TICKET DEBUG: Found guide info for group with guide ${guideInfo.name}:`, {
+            id: guideInfo.id,
+            name: guideInfo.name,
+            guideType: guideInfo.guideType
+          });
           
           if (doesGuideNeedTicket(guideInfo, tour.location)) {
             const ticketType = getGuideTicketType(guideInfo);
             if (ticketType === 'adult') {
               guideAdultTickets++;
-              console.log(`GUIDE TICKETS: Adding adult ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
+              console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
             }
             if (ticketType === 'child') {
               guideChildTickets++;
-              console.log(`GUIDE TICKETS: Adding child ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
+              console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
             }
           } else {
-            console.log(`GUIDE TICKETS: No ticket needed for guide ${guideInfo.name} (${guideInfo.guideType})`);
+            console.log(`GUIDE TICKET DEBUG: No ticket needed for guide ${guideInfo.name} (${guideInfo.guideType})`);
           }
         } else {
-          console.log(`GUIDE TICKETS: Could not find guide info for guideId: ${group.guideId}, guideName: ${group.guideName}`);
+          console.log(`GUIDE TICKET DEBUG: Could not find guide info for guideId: ${group.guideId}`);
         }
       }
     }
     
-    console.log(`GUIDE TICKETS: Final count: ${guideAdultTickets} adult tickets, ${guideChildTickets} child tickets required for guides`);
+    console.log(`GUIDE TICKET DEBUG: Final count: ${guideAdultTickets} adult tickets, ${guideChildTickets} child tickets required for guides`);
   }
 
   return (
