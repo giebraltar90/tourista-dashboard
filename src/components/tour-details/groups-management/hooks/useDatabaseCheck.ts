@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { autoFixDatabaseIssues } from "@/services/api/checkDatabaseTables";
-import { createTestParticipants } from "@/hooks/testData/createParticipants";
+import { createTestParticipants } from "@/services/api/createParticipants";
 import { toast } from "sonner";
 
 export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void) => {
