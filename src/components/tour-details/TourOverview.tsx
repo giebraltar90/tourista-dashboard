@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -29,7 +28,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   useEffect(() => {
     if (tour && tour.id) {
       queryClient.invalidateQueries({ queryKey: ['tour', tour.id] });
-      
       refreshParticipants();
     }
   }, [tour?.id, queryClient, refreshParticipants]);
@@ -93,14 +91,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  console.log('PARTICIPANTS DEBUG: TourOverview final calculations:', {
-    totalParticipants,
-    totalChildCount, 
-    adultCount: totalParticipants - totalChildCount,
-    isHighSeason,
-    tourGroups: tourGroups.length
-  });
-  
   const adultTickets = totalParticipants - totalChildCount;
   const childTickets = totalChildCount;
   
@@ -108,30 +98,33 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   
   const requiredTickets = tour.numTickets || 0;
   
-  // Calculate guide ticket requirements for Versailles
   const isVersaillesTour = tour.location.toLowerCase().includes('versailles');
   let guideAdultTickets = 0;
   let guideChildTickets = 0;
   
   if (isVersaillesTour) {
-    // Check for assigned guides in each tour group
+    const countedGuideIds = new Set();
+    
     for (const group of tourGroups) {
-      if (group.guideId) {
-        // Find the guide info for this group's guide
+      if (group.guideId && !countedGuideIds.has(group.guideId)) {
         let guideInfo = null;
         
-        // Check if this guide is one of the main tour guides
-        if (guide1Info && (group.guideId === guide1Info.id || group.guideName === guide1Info.name)) {
+        if (guide1Info && (group.guideId === guide1Info.id || 
+            (typeof guide1Info.id === 'string' && guide1Info.id === group.guideId))) {
           guideInfo = guide1Info;
-        } else if (guide2Info && (group.guideId === guide2Info.id || group.guideName === guide2Info.name)) {
+        } else if (guide2Info && (group.guideId === guide2Info.id || 
+            (typeof guide2Info.id === 'string' && guide2Info.id === group.guideId))) {
           guideInfo = guide2Info;
-        } else if (guide3Info && (group.guideId === guide3Info.id || group.guideName === guide3Info.name)) {
+        } else if (guide3Info && (group.guideId === guide3Info.id || 
+            (typeof guide3Info.id === 'string' && guide3Info.id === group.guideId))) {
           guideInfo = guide3Info;
         }
         
-        // If we found guide info, determine ticket requirements
         if (guideInfo) {
+          countedGuideIds.add(group.guideId);
+          
           console.log(`GUIDE TICKETS: Found guide info for group with guide ${guideInfo.name}:`, guideInfo);
+          
           if (doesGuideNeedTicket(guideInfo, tour.location)) {
             const ticketType = getGuideTicketType(guideInfo);
             if (ticketType === 'adult') {

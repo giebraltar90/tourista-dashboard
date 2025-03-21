@@ -11,9 +11,26 @@ import { TicketStatus } from "./TicketStatus";
 import { TicketSufficiencyAlert } from "./TicketSufficiencyAlert";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
-  const adultTickets = Math.round(tour.numTickets * 0.7) || Math.round(totalParticipants * 0.7);
-  const childTickets = (tour.numTickets || totalParticipants) - adultTickets;
+  const totalParticipants = tour.tourGroups.reduce((sum, group) => {
+    // Calculate total from participants if available
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return sum + group.participants.reduce((groupSum, p) => groupSum + (p.count || 1), 0);
+    }
+    // Fall back to size field
+    return sum + group.size;
+  }, 0);
+  
+  const totalChildCount = tour.tourGroups.reduce((sum, group) => {
+    // Calculate from participants if available
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return sum + group.participants.reduce((groupSum, p) => groupSum + (p.childCount || 0), 0);
+    }
+    // Fall back to childCount field
+    return sum + (group.childCount || 0);
+  }, 0);
+  
+  const adultTickets = totalParticipants - totalChildCount;
+  const childTickets = totalChildCount;
   
   // Determine if this is a Versailles tour
   const isVersaillesTour = tour.location.toLowerCase().includes('versailles');

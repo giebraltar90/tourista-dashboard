@@ -33,6 +33,19 @@ export const getGuideNameAndInfo = (
     return { name: guide3Name, info: guide3Info || null };
   }
   
+  // Check if guideId directly matches one of the main guide IDs
+  if (guide1Info && (guideId === guide1Info.id)) {
+    return { name: guide1Name || "Guide 1", info: guide1Info };
+  }
+  
+  if (guide2Info && (guideId === guide2Info.id)) {
+    return { name: guide2Name || "Guide 2", info: guide2Info };
+  }
+  
+  if (guide3Info && (guideId === guide3Info.id)) {
+    return { name: guide3Name || "Guide 3", info: guide3Info };
+  }
+  
   // Check if it's a UUID and try to find in all guides
   if (isValidUuid(guideId) && allGuides && allGuides.length > 0) {
     const guide = allGuides.find(g => g.id === guideId);
@@ -40,6 +53,7 @@ export const getGuideNameAndInfo = (
       return { 
         name: guide.name || `Guide ${guideId.substring(0, 4)}...`, 
         info: {
+          id: guide.id,
           name: guide.name || `Guide ${guideId.substring(0, 4)}...`,
           birthday: guide.birthday || new Date(),
           guideType: guide.guideType || "GA Ticket"
@@ -52,7 +66,7 @@ export const getGuideNameAndInfo = (
   return { name: `Guide ${guideId.substring(0, 8)}...`, info: null };
 };
 
-// For backward compatibility, let's add this function
+// For backward compatibility and simpler usage
 export const findGuideName = (guideId: string | undefined, guides: any[] = []): string => {
   const result = getGuideNameAndInfo(undefined, undefined, undefined, null, null, null, guides, guideId);
   return result.name;
