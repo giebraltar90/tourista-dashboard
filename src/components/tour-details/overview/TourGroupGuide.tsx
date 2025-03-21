@@ -45,12 +45,12 @@ export const TourGroupGuide = ({
   if (Array.isArray(group.participants) && group.participants.length > 0) {
     // Count from participants array
     participantCount = group.participants.reduce((sum, p) => {
-      const count = typeof p.count === 'number' ? p.count : (p.count ? parseInt(p.count.toString()) : 1);
+      const count = typeof p.count === 'number' ? p.count : (p.count ? parseInt(String(p.count)) : 1);
       return sum + count;
     }, 0);
     
     childCount = group.participants.reduce((sum, p) => {
-      const childCount = typeof p.childCount === 'number' ? p.childCount : (p.childCount ? parseInt(p.childCount.toString()) : 0);
+      const childCount = typeof p.childCount === 'number' ? p.childCount : (p.childCount ? parseInt(String(p.childCount)) : 0);
       return sum + childCount;
     }, 0);
     
@@ -70,8 +70,8 @@ export const TourGroupGuide = ({
   } else {
     // Final fallback - parse from strings if needed
     try {
-      participantCount = group.size ? parseInt(group.size.toString()) : 0;
-      childCount = group.childCount ? parseInt(group.childCount.toString()) : 0;
+      participantCount = group.size ? parseInt(String(group.size)) : 0;
+      childCount = group.childCount ? parseInt(String(group.childCount)) : 0;
       
       console.log(`TourGroupGuide(${groupIndex}) parsed from strings:`, {
         participantCount,

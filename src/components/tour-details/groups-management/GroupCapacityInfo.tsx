@@ -58,9 +58,9 @@ export const GroupCapacityInfo = ({
         // Count directly from participants array
         for (const participant of group.participants) {
           const count = typeof participant.count === 'number' ? participant.count : 
-                        (participant.count ? parseInt(participant.count.toString()) : 1);
+                        (participant.count ? parseInt(String(participant.count)) : 1);
           const childCount = typeof participant.childCount === 'number' ? participant.childCount :
-                            (participant.childCount ? parseInt(participant.childCount.toString()) : 0);
+                            (participant.childCount ? parseInt(String(participant.childCount)) : 0);
           
           groupTotal += count;
           groupChildCount += childCount;
@@ -90,8 +90,8 @@ export const GroupCapacityInfo = ({
       } else if (group.size) {
         // Last resort - try to parse size from string
         try {
-          const parsedSize = parseInt(group.size.toString());
-          const parsedChildCount = group.childCount ? parseInt(group.childCount.toString()) : 0;
+          const parsedSize = parseInt(String(group.size));
+          const parsedChildCount = group.childCount ? parseInt(String(group.childCount)) : 0;
           
           if (!isNaN(parsedSize)) {
             calculatedTotalParticipants += parsedSize;
