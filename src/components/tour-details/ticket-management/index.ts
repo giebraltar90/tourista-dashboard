@@ -1,7 +1,8 @@
 
 export * from './TicketsManagement';
 export * from './TicketCountCard';
-export * from './GuideTicketInfo';
 export * from './TicketStatus';
+export * from './GuideTicketInfo';
 export * from './TicketSufficiencyAlert';
+export * from './TicketBucketInfo';
 export * from './types';

@@ -1,6 +1,7 @@
 
 import { TourCardProps } from "@/components/tours/TourCard";
 import { GuideInfo } from "@/types/ventrata";
+import { TicketBucket } from "@/types/ticketBuckets";
 
 export interface TicketsManagementProps {
   tour: TourCardProps;
@@ -40,4 +41,11 @@ export interface TicketSufficiencyAlertProps {
   requiredTickets: number;
   requiredAdultTickets: number;
   requiredChildTickets: number;
+}
+
+export interface TicketBucketInfoProps {
+  buckets: TicketBucket[];
+  isLoading: boolean;
+  tourId: string;
+  requiredTickets: number;
 }

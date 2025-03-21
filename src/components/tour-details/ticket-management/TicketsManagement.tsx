@@ -2,13 +2,15 @@
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { PenSquare } from "lucide-react";
+import { PenSquare, Ticket } from "lucide-react";
 import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/useGuideData";
 import { TicketsManagementProps } from "./types";
 import { TicketCountCard } from "./TicketCountCard";
 import { GuideTicketInfo } from "./GuideTicketInfo";
 import { TicketStatus } from "./TicketStatus";
 import { TicketSufficiencyAlert } from "./TicketSufficiencyAlert";
+import { TicketBucketInfo } from "./TicketBucketInfo";
+import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   const totalParticipants = tour.tourGroups.reduce((sum, group) => {
@@ -109,6 +111,9 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     });
   }
 
+  // Get ticket buckets for this tour
+  const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
+
   return (
     <Card>
       <CardHeader>
@@ -134,6 +139,16 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
               totalCount={requiredChildTickets}
             />
           </div>
+          
+          <Separator />
+          
+          {/* Ticket Buckets Section */}
+          <TicketBucketInfo 
+            buckets={ticketBuckets} 
+            isLoading={isLoadingBuckets} 
+            tourId={tour.id}
+            requiredTickets={requiredTickets}
+          />
           
           <Separator />
           
