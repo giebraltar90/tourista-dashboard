@@ -123,7 +123,7 @@ export const useParticipantOperations = (
               name: g.name || 'Unnamed',
               size: g.size,
               childCount: g.childCount,
-              participantsCount: g.participants.length
+              participantsCount: g.participants?.length || 0
             }))
           );
           
