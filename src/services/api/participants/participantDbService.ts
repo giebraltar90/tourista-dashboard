@@ -77,7 +77,7 @@ export const debugCheckParticipantsTable = async (groupIds: string[]) => {
     // Properly type the group_ids parameter
     const { data: directCheck, error: directError } = await supabase.rpc(
       'debug_check_participants',
-      { group_ids: groupIds }
+      { group_ids: groupIds } as { group_ids: string[] }
     ).single();
     
     if (directError) {

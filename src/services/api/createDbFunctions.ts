@@ -25,7 +25,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     try {
       const { error: sqlFunctionError } = await supabase.rpc(
         'execute_sql', 
-        { sql_query: createExecuteSqlFunction }
+        { sql_query: createExecuteSqlFunction } as { sql_query: string }
       );
       
       if (sqlFunctionError) {
@@ -64,7 +64,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     try {
       const { error: tableCheckFunctionError } = await supabase.rpc(
         'execute_sql',
-        { sql_query: createCheckTableExistsFunction }
+        { sql_query: createCheckTableExistsFunction } as { sql_query: string }
       );
       
       if (tableCheckFunctionError) {
@@ -102,7 +102,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     try {
       const { error: debugFunctionError } = await supabase.rpc(
         'execute_sql',
-        { sql_query: createDebugCheckParticipantsFunction }
+        { sql_query: createDebugCheckParticipantsFunction } as { sql_query: string }
       );
       
       if (debugFunctionError) {
