@@ -5,12 +5,12 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
 import { useGuideInfo } from "@/hooks/guides";
-import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { useDatabaseCheck } from "./hooks/useDatabaseCheck";
 import { useManualRefresh } from "./hooks/useManualRefresh";
 import { GroupsHeader } from "./components/GroupsHeader";
 import { DatabaseErrorAlert } from "./components/DatabaseErrorAlert";
 import { GroupsFooter } from "./components/GroupsFooter";
+import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
