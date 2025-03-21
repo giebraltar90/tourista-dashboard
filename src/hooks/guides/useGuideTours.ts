@@ -48,8 +48,6 @@ export function useGuideTours() {
             guide1,
             guide2,
             guide3,
-            totalParticipants,
-            childCount,
             referenceCode: tour.reference_code || "",
             numTickets: tour.num_tickets || 0,
             isHighSeason: tour.is_high_season || false,
