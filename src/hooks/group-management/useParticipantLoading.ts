@@ -1,7 +1,6 @@
 
 import { useState, useCallback } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { 

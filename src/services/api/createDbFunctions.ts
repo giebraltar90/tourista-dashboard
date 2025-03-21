@@ -21,18 +21,24 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       $$;
     `;
     
-    const { error: sqlFunctionError } = await supabase.rpc(
-      'execute_sql', 
-      { sql_query: createExecuteSqlFunction } as { sql_query: string }
-    );
-    
-    if (sqlFunctionError) {
-      // Function might not exist yet, try direct SQL
-      console.error("DATABASE DEBUG: Failed to create execute_sql function:", sqlFunctionError);
-      console.log("DATABASE DEBUG: Function might not exist yet. Please create it manually in the Supabase SQL editor");
+    // Try to call execute_sql
+    try {
+      const { error: sqlFunctionError } = await supabase.rpc(
+        'execute_sql', 
+        { sql_query: createExecuteSqlFunction }
+      );
       
-      // We can't use direct SQL execution in the client, so we'll just log an error
-      return false;
+      if (sqlFunctionError) {
+        // Function might not exist yet, try direct SQL
+        console.error("DATABASE DEBUG: Failed to create execute_sql function:", sqlFunctionError);
+        console.log("DATABASE DEBUG: Function might not exist yet. Please create it manually in the Supabase SQL editor");
+        
+        // We can't use direct SQL execution in the client, so we'll just log an error
+        return false;
+      }
+    } catch (error) {
+      console.error("DATABASE DEBUG: Exception creating execute_sql function:", error);
+      // Continue with other function creation attempts
     }
     
     // Create check_table_exists function
@@ -55,13 +61,17 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       $$;
     `;
     
-    const { error: tableCheckFunctionError } = await supabase.rpc(
-      'execute_sql',
-      { sql_query: createCheckTableExistsFunction } as { sql_query: string }
-    );
-    
-    if (tableCheckFunctionError) {
-      console.error("DATABASE DEBUG: Failed to create check_table_exists function:", tableCheckFunctionError);
+    try {
+      const { error: tableCheckFunctionError } = await supabase.rpc(
+        'execute_sql',
+        { sql_query: createCheckTableExistsFunction }
+      );
+      
+      if (tableCheckFunctionError) {
+        console.error("DATABASE DEBUG: Failed to create check_table_exists function:", tableCheckFunctionError);
+      }
+    } catch (error) {
+      console.error("DATABASE DEBUG: Exception creating check_table_exists function:", error);
     }
     
     // Create debug_check_participants function
@@ -89,13 +99,17 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       $$;
     `;
     
-    const { error: debugFunctionError } = await supabase.rpc(
-      'execute_sql',
-      { sql_query: createDebugCheckParticipantsFunction } as { sql_query: string }
-    );
-    
-    if (debugFunctionError) {
-      console.error("DATABASE DEBUG: Failed to create debug_check_participants function:", debugFunctionError);
+    try {
+      const { error: debugFunctionError } = await supabase.rpc(
+        'execute_sql',
+        { sql_query: createDebugCheckParticipantsFunction }
+      );
+      
+      if (debugFunctionError) {
+        console.error("DATABASE DEBUG: Failed to create debug_check_participants function:", debugFunctionError);
+      }
+    } catch (error) {
+      console.error("DATABASE DEBUG: Exception creating debug_check_participants function:", error);
     }
     
     return true;
