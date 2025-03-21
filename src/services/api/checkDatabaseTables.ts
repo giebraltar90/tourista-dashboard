@@ -2,6 +2,10 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+interface ExecuteSqlParams {
+  sql_query: string;
+}
+
 /**
  * Creates the participants table if it doesn't exist
  */
@@ -39,7 +43,7 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
     `;
     
     // Call the execute_sql function
-    const { error: createError } = await supabase.rpc(
+    const { error: createError } = await supabase.rpc<void, ExecuteSqlParams>(
       'execute_sql', 
       { sql_query: createTableSQL }
     );

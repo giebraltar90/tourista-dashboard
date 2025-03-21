@@ -1,6 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+interface CheckTableExistsParams {
+  table_name: string;
+}
+
 /**
  * Utility to check if the participants table exists and contains data
  */
@@ -10,7 +14,7 @@ export const checkParticipantsTable = async () => {
   try {
     // Try to get the definition of the participants table
     const { data: tableExists, error: definitionError } = await supabase
-      .rpc('check_table_exists', { 
+      .rpc<boolean, CheckTableExistsParams>('check_table_exists', { 
         table_name: 'participants' 
       });
     

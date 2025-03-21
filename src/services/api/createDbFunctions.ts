@@ -1,6 +1,10 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+interface ExecuteSqlParams {
+  sql_query: string;
+}
+
 /**
  * Establishes necessary database functions
  */
@@ -23,7 +27,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     // Try to call execute_sql
     try {
-      const { error: sqlFunctionError } = await supabase.rpc(
+      const { error: sqlFunctionError } = await supabase.rpc<void, ExecuteSqlParams>(
         'execute_sql', 
         { sql_query: createExecuteSqlFunction }
       );
@@ -62,7 +66,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     `;
     
     try {
-      const { error: tableCheckFunctionError } = await supabase.rpc(
+      const { error: tableCheckFunctionError } = await supabase.rpc<void, ExecuteSqlParams>(
         'execute_sql',
         { sql_query: createCheckTableExistsFunction }
       );
@@ -100,7 +104,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     `;
     
     try {
-      const { error: debugFunctionError } = await supabase.rpc(
+      const { error: debugFunctionError } = await supabase.rpc<void, ExecuteSqlParams>(
         'execute_sql',
         { sql_query: createDebugCheckParticipantsFunction }
       );

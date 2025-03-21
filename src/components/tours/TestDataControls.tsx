@@ -1,8 +1,9 @@
 
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, Bug } from "lucide-react";
 import { useState } from "react";
 import { useTestData } from "@/hooks/testData/useTestData";
+import { useDebugMode } from "@/contexts/DebugContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,6 +20,7 @@ export const TestDataControls = () => {
   const { createTestTours, clearTestData } = useTestData();
   const [isCreating, setIsCreating] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+  const debugMode = useDebugMode();
   
   const handleCreateTestData = async () => {
     setIsCreating(true);
@@ -33,41 +35,50 @@ export const TestDataControls = () => {
   };
   
   return (
-    <div className="flex gap-3 mt-4 justify-end">
-      <Button 
-        variant="outline" 
-        onClick={handleCreateTestData}
-        disabled={isCreating || isClearing}
-      >
-        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Create Test Data
-      </Button>
+    <div className="flex flex-col gap-3 mt-4">
+      {debugMode && (
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-2 text-amber-700 text-xs flex items-center mb-2">
+          <Bug className="h-4 w-4 mr-2" />
+          <span>Debug mode enabled - console logs active</span>
+        </div>
+      )}
       
-      <AlertDialog>
-        <AlertDialogTrigger asChild>
-          <Button 
-            variant="destructive" 
-            disabled={isCreating || isClearing}
-          >
-            {isClearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Clear Test Data
-          </Button>
-        </AlertDialogTrigger>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will delete all test data from the database. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleClearTestData}>
-              Yes, Clear All Data
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <div className="flex gap-3 justify-end">
+        <Button 
+          variant="outline" 
+          onClick={handleCreateTestData}
+          disabled={isCreating || isClearing}
+        >
+          {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Create Test Data
+        </Button>
+        
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="destructive" 
+              disabled={isCreating || isClearing}
+            >
+              {isClearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Clear Test Data
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will delete all test data from the database. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleClearTestData}>
+                Yes, Clear All Data
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </div>
   );
 };
