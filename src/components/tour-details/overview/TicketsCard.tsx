@@ -74,6 +74,10 @@ export const TicketsCard = ({
   const missingAdultTickets = Math.max(0, totalRequiredAdultTickets - validAdultTickets);
   const missingChildTickets = Math.max(0, totalRequiredChildTickets - validChildTickets);
 
+  // Consider guide tickets in the total display
+  const displayAdultTickets = validAdultTickets + guideAdultTickets;
+  const displayChildTickets = validChildTickets + guideChildTickets;
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -122,7 +126,7 @@ export const TicketsCard = ({
                   : "bg-amber-100 text-amber-800 border-amber-300"
               }`}
             >
-              {validAdultTickets} + {validChildTickets}
+              {displayAdultTickets} + {displayChildTickets}
             </Badge>
           </div>
           
