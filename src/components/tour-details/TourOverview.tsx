@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -11,6 +12,7 @@ import { GroupAssignment } from "./groups-management/group-assignment";
 import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGroupManagement } from "@/hooks/group-management";
+import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/useGuideData";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -104,6 +106,32 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   const totalTickets = totalParticipants;
   
   const requiredTickets = tour.numTickets || 0;
+  
+  // Calculate guide ticket requirements for Versailles
+  const isVersaillesTour = tour.location.toLowerCase().includes('versailles');
+  let guideAdultTickets = 0;
+  let guideChildTickets = 0;
+  
+  if (isVersaillesTour) {
+    // Check if guides need tickets
+    if (guide1Info && doesGuideNeedTicket(guide1Info, tour.location)) {
+      const ticketType = getGuideTicketType(guide1Info);
+      if (ticketType === 'adult') guideAdultTickets++;
+      if (ticketType === 'child') guideChildTickets++;
+    }
+    
+    if (guide2Info && doesGuideNeedTicket(guide2Info, tour.location)) {
+      const ticketType = getGuideTicketType(guide2Info);
+      if (ticketType === 'adult') guideAdultTickets++;
+      if (ticketType === 'child') guideChildTickets++;
+    }
+    
+    if (guide3Info && doesGuideNeedTicket(guide3Info, tour.location)) {
+      const ticketType = getGuideTicketType(guide3Info);
+      if (ticketType === 'adult') guideAdultTickets++;
+      if (ticketType === 'child') guideChildTickets++;
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -125,6 +153,9 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
           childTickets={childTickets}
           totalTickets={totalTickets}
           requiredTickets={requiredTickets > 0 ? requiredTickets : totalParticipants}
+          guideAdultTickets={guideAdultTickets}
+          guideChildTickets={guideChildTickets}
+          location={tour.location}
         />
       </div>
       

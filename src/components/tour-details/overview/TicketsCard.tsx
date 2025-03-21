@@ -1,25 +1,35 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Info } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TicketsCardProps {
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
   requiredTickets?: number; // Added to show missing tickets
+  guideAdultTickets?: number; // For guides who need adult tickets
+  guideChildTickets?: number; // For guides who need child tickets
+  location?: string; // To check if it's a Versailles tour
 }
 
 export const TicketsCard = ({ 
   adultTickets, 
   childTickets, 
   totalTickets,
-  requiredTickets
+  requiredTickets,
+  guideAdultTickets = 0,
+  guideChildTickets = 0,
+  location = ''
 }: TicketsCardProps) => {
   console.log("PARTICIPANTS DEBUG: TicketsCard initial input values:", {
     adultTickets,
     childTickets,
     totalTickets,
-    requiredTickets
+    requiredTickets,
+    guideAdultTickets,
+    guideChildTickets
   });
   
   // Extra validation to ensure counts are non-negative numbers
@@ -37,13 +47,23 @@ export const TicketsCard = ({
   const missingTickets = requiredTickets && requiredTickets > displayTotal 
     ? requiredTickets - displayTotal 
     : 0;
+    
+  // Total required tickets, including guides
+  const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
+  const totalRequiredChildTickets = validChildTickets + guideChildTickets;
+  const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
+  
+  // Check if it's a Versailles tour
+  const isVersaillesTour = location.toLowerCase().includes('versailles');
   
   console.log("PARTICIPANTS DEBUG: TicketsCard final values:", {
     originalValues: { adultTickets, childTickets, totalTickets, requiredTickets },
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,
     displayTotal,
-    missingTickets
+    missingTickets,
+    guideTickets: { guideAdultTickets, guideChildTickets },
+    totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets }
   });
 
   return (
@@ -61,10 +81,35 @@ export const TicketsCard = ({
             <span className="text-muted-foreground">Child (Under 18):</span>
             <span className="font-medium">{validChildTickets} tickets</span>
           </div>
-          <div className="flex justify-between">
+          
+          {(guideAdultTickets > 0 || guideChildTickets > 0) && (
+            <>
+              <div className="pt-2 pb-1 border-t">
+                <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
+              </div>
+              
+              {guideAdultTickets > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GA Ticket (Adult):</span>
+                  <span className="font-medium">{guideAdultTickets} tickets</span>
+                </div>
+              )}
+              
+              {guideChildTickets > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GA Free (Child):</span>
+                  <span className="font-medium">{guideChildTickets} tickets</span>
+                </div>
+              )}
+            </>
+          )}
+          
+          <div className="flex justify-between pt-2 border-t">
             <span className="text-muted-foreground">Total:</span>
             <span className="font-medium">
-              {displayTotal} tickets
+              {totalRequiredTickets > displayTotal 
+                ? `${displayTotal} (need ${totalRequiredAdultTickets}+${totalRequiredChildTickets})`
+                : `${displayTotal} tickets`}
             </span>
           </div>
           
@@ -74,6 +119,31 @@ export const TicketsCard = ({
               <Badge variant="destructive" className="text-xs font-medium">
                 {missingTickets} tickets needed
               </Badge>
+            </div>
+          )}
+          
+          {isVersaillesTour && (
+            <div className="mt-3 pt-3 border-t text-xs">
+              <div className="flex items-start mb-1">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Info className="h-3.5 w-3.5 text-muted-foreground mr-1.5 mt-0.5" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Guide requirements at Versailles:</p>
+                      <ul className="list-disc pl-4 mt-1 space-y-1">
+                        <li>GA Ticket: Over 26 years old, requires an adult ticket, cannot guide inside</li>
+                        <li>GA Free: Under 26, requires a child's ticket, cannot guide inside</li>
+                        <li>GC: Can guide inside, no ticket needed</li>
+                      </ul>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <span className="text-muted-foreground">
+                  Versailles guide tickets required based on guide type
+                </span>
+              </div>
             </div>
           )}
         </div>
