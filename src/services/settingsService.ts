@@ -15,7 +15,7 @@ export const getSetting = async (key: string): Promise<string | null> => {
       .from('app_settings')
       .select('setting_value')
       .eq('setting_key', key)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error(`Error fetching setting ${key}:`, error);
@@ -58,6 +58,8 @@ export const getFavicon = async (): Promise<string> => {
  */
 export const updateSetting = async (key: string, value: string): Promise<boolean> => {
   try {
+    console.log(`Updating setting ${key} with value ${value.substring(0, 50)}...`);
+    
     const { error } = await supabase
       .from('app_settings')
       .upsert({ 
@@ -73,6 +75,7 @@ export const updateSetting = async (key: string, value: string): Promise<boolean
       return false;
     }
 
+    console.log(`Successfully updated setting ${key}`);
     return true;
   } catch (error) {
     console.error(`Error in updateSetting for ${key}:`, error);

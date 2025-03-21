@@ -13,6 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 export function SEOForm() {
   const [ogImagePreview, setOgImagePreview] = useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ['seo-settings'],
@@ -67,16 +68,19 @@ export function SEOForm() {
 
   async function onSubmit(data: SEOFormValues) {
     try {
+      setIsSaving(true);
       let successCount = 0;
 
       // Save OG image to database
       if (data.ogImage) {
+        console.log("Saving OG image");
         const success = await updateSetting('ogImage', data.ogImage);
         if (success) successCount++;
       }
 
       // Save favicon to database
       if (data.favicon) {
+        console.log("Saving favicon");
         const success = await updateSetting('favicon', data.favicon);
         if (success) successCount++;
       }
@@ -96,7 +100,13 @@ export function SEOForm() {
         description: "Failed to save SEO settings to the database",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
+  }
+
+  if (isLoading) {
+    return <div className="text-center py-4">Loading settings...</div>;
   }
 
   return (
@@ -128,7 +138,9 @@ export function SEOForm() {
           showResetButton={!!faviconPreview && faviconPreview !== DEFAULT_FAVICON}
         />
 
-        <Button type="submit">Save changes</Button>
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save changes"}
+        </Button>
       </form>
     </Form>
   );

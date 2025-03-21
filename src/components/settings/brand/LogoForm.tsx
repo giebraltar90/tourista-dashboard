@@ -15,6 +15,7 @@ interface LogoFormProps {
 
 export function LogoForm({ initialLogo }: LogoFormProps) {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Initialize form with default values
   const form = useForm<LogoFormValues>({
@@ -33,8 +34,10 @@ export function LogoForm({ initialLogo }: LogoFormProps) {
 
   async function onSubmit(data: LogoFormValues) {
     try {
+      setIsSaving(true);
       // Save logo to database
       if (data.logo) {
+        console.log("Saving logo");
         const success = await updateAppLogo(data.logo);
         
         if (success) {
@@ -53,11 +56,13 @@ export function LogoForm({ initialLogo }: LogoFormProps) {
         description: "Failed to save settings to the database",
         variant: "destructive",
       });
+    } finally {
+      setIsSaving(false);
     }
   }
 
   const handleResetLogo = () => {
-    setLogoPreview(null);
+    setLogoPreview(DEFAULT_LOGO);
     form.setValue("logo", DEFAULT_LOGO);
   };
 
@@ -74,9 +79,11 @@ export function LogoForm({ initialLogo }: LogoFormProps) {
           acceptTypes="image/*"
           recommendedSize="Recommended size: 200x50px."
           onResetClick={handleResetLogo}
-          showResetButton={!!logoPreview}
+          showResetButton={!!logoPreview && logoPreview !== DEFAULT_LOGO}
         />
-        <Button type="submit">Save changes</Button>
+        <Button type="submit" disabled={isSaving}>
+          {isSaving ? "Saving..." : "Save changes"}
+        </Button>
       </form>
     </Form>
   );
