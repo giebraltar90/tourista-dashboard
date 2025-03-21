@@ -2,51 +2,27 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { getSetting, updateSetting, DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
+import { updateSetting, DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
 import { toast } from "@/components/ui/use-toast";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { seoFormSchema, SEOFormValues } from "./types";
 import { ImageUploadField } from "./ImageUploadField";
 import { useQuery } from "@tanstack/react-query";
-
-// Helper function to update meta tags
-const updateMetaTags = (ogImage?: string, favicon?: string) => {
-  if (window.updateMetaTags) {
-    window.updateMetaTags(
-      ogImage || DEFAULT_OG_IMAGE,
-      favicon || DEFAULT_FAVICON
-    );
-  } else {
-    // Fallback direct DOM manipulation
-    if (ogImage) {
-      const ogImageElement = document.getElementById('og-image') as HTMLMetaElement;
-      if (ogImageElement) {
-        ogImageElement.setAttribute('content', ogImage);
-      }
-    }
-    if (favicon) {
-      const faviconElement = document.getElementById('favicon') as HTMLLinkElement;
-      if (faviconElement) {
-        faviconElement.setAttribute('href', favicon);
-      }
-    }
-  }
-};
+import { useSeoSettings } from "@/hooks/useSeoSettings";
 
 export function SEOForm() {
   const [ogImagePreview, setOgImagePreview] = useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  const { data: settings, isLoading } = useQuery({
-    queryKey: ['seo-settings'],
-    queryFn: async () => {
-      const ogImage = await getSetting('ogImage');
-      const favicon = await getSetting('favicon');
-      return { ogImage, favicon };
-    }
-  });
+  
+  // Use our enhanced hook
+  const { 
+    ogImage: initialOgImage, 
+    favicon: initialFavicon, 
+    isLoading,
+    updateMetaTags 
+  } = useSeoSettings();
 
   // Initialize form with default values
   const form = useForm<SEOFormValues>({
@@ -57,18 +33,23 @@ export function SEOForm() {
     },
   });
 
-  // Need to update form values when settings are loaded
+  // Update form values when initial settings are loaded
   useEffect(() => {
-    if (settings) {
+    if (!isLoading) {
       form.reset({
-        ogImage: settings.ogImage || DEFAULT_OG_IMAGE,
-        favicon: settings.favicon || DEFAULT_FAVICON
+        ogImage: initialOgImage || DEFAULT_OG_IMAGE,
+        favicon: initialFavicon || DEFAULT_FAVICON
       });
       
-      if (settings.ogImage) setOgImagePreview(settings.ogImage);
-      if (settings.favicon) setFaviconPreview(settings.favicon);
+      if (initialOgImage) setOgImagePreview(initialOgImage);
+      if (initialFavicon) setFaviconPreview(initialFavicon);
+      
+      console.log("Initial SEO settings loaded into form:", {
+        ogImage: initialOgImage || DEFAULT_OG_IMAGE,
+        favicon: initialFavicon || DEFAULT_FAVICON
+      });
     }
-  }, [settings, form]);
+  }, [initialOgImage, initialFavicon, isLoading, form]);
 
   // Update form values when previews change
   useEffect(() => {
@@ -92,25 +73,33 @@ export function SEOForm() {
 
   async function onSubmit(data: SEOFormValues) {
     try {
+      console.log("Submitting SEO form with data:", data);
       setIsSaving(true);
       let successCount = 0;
 
       // Save OG image to database
       if (data.ogImage) {
-        console.log("Saving OG image");
+        console.log("Saving OG image:", data.ogImage.substring(0, 50) + "...");
         const success = await updateSetting('ogImage', data.ogImage);
-        if (success) successCount++;
+        if (success) {
+          console.log("Successfully saved OG image to database");
+          successCount++;
+        }
       }
 
       // Save favicon to database
       if (data.favicon) {
-        console.log("Saving favicon");
+        console.log("Saving favicon:", data.favicon.substring(0, 50) + "...");
         const success = await updateSetting('favicon', data.favicon);
-        if (success) successCount++;
+        if (success) {
+          console.log("Successfully saved favicon to database");
+          successCount++;
+        }
       }
       
       if (successCount > 0) {
         // Update meta tags immediately after successful save
+        console.log("Updating meta tags after successful save");
         updateMetaTags(data.ogImage, data.favicon);
         
         toast({

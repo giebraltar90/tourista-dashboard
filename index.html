@@ -32,20 +32,52 @@
       window.updateMetaTags = function(ogImageUrl, faviconUrl) {
         if (ogImageUrl) {
           // Update all OG image meta tags
-          const ogTags = ['og-image', 'og-image-url', 'og-image-secure', 'twitter-image'];
-          ogTags.forEach(id => {
-            const element = document.getElementById(id);
+          const ogTags = [
+            { id: 'og-image', property: 'og:image' },
+            { id: 'og-image-url', property: 'og:image:url' },
+            { id: 'og-image-secure', property: 'og:image:secure_url' },
+            { id: 'twitter-image', property: 'twitter:image' }
+          ];
+          
+          ogTags.forEach(tag => {
+            const element = document.querySelector(`meta[property="${tag.property}"]`);
             if (element) {
               element.setAttribute('content', ogImageUrl);
+              console.log(`Updated ${tag.property} meta tag to:`, ogImageUrl);
+            } else {
+              console.warn(`Meta tag ${tag.property} not found`);
             }
           });
-          console.log("Updated OG image meta tags:", ogImageUrl);
         }
+        
         if (faviconUrl) {
-          document.getElementById('favicon').setAttribute('href', faviconUrl);
-          console.log("Updated favicon:", faviconUrl);
+          const faviconElement = document.getElementById('favicon');
+          if (faviconElement) {
+            faviconElement.setAttribute('href', faviconUrl);
+            console.log("Updated favicon to:", faviconUrl);
+          }
         }
-      }
+        
+        // Force browser to refresh cached meta tags (important for link previews)
+        const metaRefresh = document.createElement('meta');
+        metaRefresh.httpEquiv = 'refresh';
+        metaRefresh.content = '0';
+        document.head.appendChild(metaRefresh);
+        setTimeout(() => {
+          document.head.removeChild(metaRefresh);
+        }, 100);
+      };
+      
+      // Expose a global debug function
+      window.debugSeoSettings = function() {
+        const ogImage = document.querySelector('meta[property="og:image"]')?.getAttribute('content');
+        const favicon = document.getElementById('favicon')?.getAttribute('href');
+        console.log('Current SEO settings:', {
+          ogImage,
+          favicon
+        });
+        return { ogImage, favicon };
+      };
     </script>
   </head>
 

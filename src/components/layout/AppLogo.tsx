@@ -25,7 +25,15 @@ export function AppLogo() {
       }
     };
 
+    // Initial load
     loadLogo();
+    
+    // Set up interval to periodically check for updates
+    const refreshInterval = setInterval(loadLogo, 60000); // Check every minute
+    
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   if (isLoading) {
