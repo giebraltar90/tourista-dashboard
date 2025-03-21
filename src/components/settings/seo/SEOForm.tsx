@@ -10,6 +10,30 @@ import { seoFormSchema, SEOFormValues } from "./types";
 import { ImageUploadField } from "./ImageUploadField";
 import { useQuery } from "@tanstack/react-query";
 
+// Helper function to update meta tags
+const updateMetaTags = (ogImage?: string, favicon?: string) => {
+  if (window.updateMetaTags) {
+    window.updateMetaTags(
+      ogImage || DEFAULT_OG_IMAGE,
+      favicon || DEFAULT_FAVICON
+    );
+  } else {
+    // Fallback direct DOM manipulation
+    if (ogImage) {
+      const ogImageElement = document.getElementById('og-image') as HTMLMetaElement;
+      if (ogImageElement) {
+        ogImageElement.setAttribute('content', ogImage);
+      }
+    }
+    if (favicon) {
+      const faviconElement = document.getElementById('favicon') as HTMLLinkElement;
+      if (faviconElement) {
+        faviconElement.setAttribute('href', favicon);
+      }
+    }
+  }
+};
+
 export function SEOForm() {
   const [ogImagePreview, setOgImagePreview] = useState<string | null>(null);
   const [faviconPreview, setFaviconPreview] = useState<string | null>(null);
@@ -86,6 +110,9 @@ export function SEOForm() {
       }
       
       if (successCount > 0) {
+        // Update meta tags immediately after successful save
+        updateMetaTags(data.ogImage, data.favicon);
+        
         toast({
           title: "Settings updated",
           description: "Your SEO settings have been updated successfully.",

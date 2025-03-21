@@ -14,9 +14,11 @@
       window.updateMetaTags = function(ogImageUrl, faviconUrl) {
         if (ogImageUrl) {
           document.getElementById('og-image').setAttribute('content', ogImageUrl);
+          console.log("Updated OG image meta tag:", ogImageUrl);
         }
         if (faviconUrl) {
           document.getElementById('favicon').setAttribute('href', faviconUrl);
+          console.log("Updated favicon:", faviconUrl);
         }
       }
     </script>
