@@ -10,6 +10,11 @@ export * from './useGuideNameInfo';
 export * from './useGuideAssignmentForm';
 export * from './types';
 
+// Newly refactored hooks
+export * from './useTourGroupState';
+export * from './useParticipantRefresh';
+export * from './useParticipantOperations';
+
 // Explicitly re-export from utils to avoid ambiguity with similarly named functions
 export { processGuideIdForAssignment } from './utils/guideAssignmentUtils';
 
@@ -21,4 +26,3 @@ export * from './services/utils/optimisticUpdateService';
 export * from './services/utils/persistenceService';
 export * from './services/utils/notificationService';
 export * from './services/utils/guideMappingService';
-
