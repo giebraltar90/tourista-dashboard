@@ -7,9 +7,12 @@ import { ErrorState } from "@/components/tour-details/ErrorState";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { useState, useEffect } from "react";
 import { GuideInfo, GuideType } from "@/types/ventrata";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
   
   // Always ensure id has a value for the query
   const tourId = id || "";
@@ -28,6 +31,24 @@ const TourDetails = () => {
     handleTabChange,
     handleRefetch
   } = useTourDetailsData(tourId);
+  
+  // Force data refresh when component mounts
+  useEffect(() => {
+    if (tourId) {
+      console.log("PARTICIPANTS DEBUG: Initial tour data load for:", tourId);
+      
+      // Invalidate tour query to force fresh data
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      
+      // Trigger a refresh after a short delay to ensure data is loaded
+      const timer = setTimeout(() => {
+        handleRefetch();
+        console.log("PARTICIPANTS DEBUG: Auto-refreshing tour data");
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [tourId, queryClient, handleRefetch]);
   
   // Fetch guide information when tour data changes
   useEffect(() => {
@@ -81,8 +102,16 @@ const TourDetails = () => {
     fetchGuideInfo();
   }, [tour]);
   
-  console.log("Tour data loaded:", tour);
-  console.log("Guide info:", { guide1Info, guide2Info, guide3Info });
+  console.log("PARTICIPANTS DEBUG: Tour data loaded:", 
+    tour ? {
+      id: tour.id,
+      name: tour.tourName,
+      groups: tour.tourGroups?.length || 0,
+      hasParticipants: tour.tourGroups?.some(g => 
+        Array.isArray(g.participants) && g.participants.length > 0
+      )
+    } : 'No tour data'
+  );
 
   return (
     <DashboardLayout>

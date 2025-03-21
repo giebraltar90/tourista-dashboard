@@ -21,19 +21,36 @@ export const useParticipantRefresh = (
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
-    return loadParticipantsInner(tourId, (groups) => {
-      console.log(`PARTICIPANTS DEBUG: Participants loaded, processing ${groups.length} groups`);
+    return loadParticipantsInner(tourId, (loadedGroups) => {
+      console.log(`PARTICIPANTS DEBUG: Participants loaded, processing groups:`, loadedGroups);
       
-      if (!Array.isArray(groups)) {
-        console.error("PARTICIPANTS DEBUG: Invalid groups data received:", groups);
+      // Ensure we received an array of groups
+      if (!Array.isArray(loadedGroups)) {
+        console.error("PARTICIPANTS DEBUG: Invalid groups data received:", loadedGroups);
         return;
       }
       
       // Ensure each group has a participants array
-      const processedGroups = groups.map(group => ({
+      const processedGroups = loadedGroups.map(group => ({
         ...group,
         participants: Array.isArray(group.participants) ? group.participants : []
       }));
+
+      console.log(`PARTICIPANTS DEBUG: Processed groups:`, 
+        processedGroups.map(g => ({
+          id: g.id,
+          name: g.name || 'Unnamed',
+          size: g.size,
+          childCount: g.childCount,
+          participantsCount: g.participants?.length || 0,
+          participants: g.participants?.map(p => ({
+            id: p.id,
+            name: p.name,
+            count: p.count || 1,
+            childCount: p.childCount || 0
+          }))
+        }))
+      );
       
       // Set the groups and trigger size recalculation
       setLocalTourGroups(processedGroups);
@@ -54,7 +71,13 @@ export const useParticipantRefresh = (
               name: g.name || 'Unnamed',
               size: g.size,
               childCount: g.childCount,
-              participantsCount: g.participants?.length || 0
+              participantsCount: g.participants?.length || 0,
+              participants: g.participants?.map(p => ({
+                id: p.id,
+                name: p.name,
+                count: p.count || 1,
+                childCount: p.childCount || 0
+              }))
             }))
           );
         }
