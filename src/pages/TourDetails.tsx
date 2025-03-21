@@ -8,6 +8,7 @@ import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourC
 import { useState, useEffect } from "react";
 import { GuideInfo, GuideType } from "@/types/ventrata";
 import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -31,7 +32,7 @@ const TourDetails = () => {
     handleRefetch
   } = useTourDetailsData(tourId);
   
-  // Force data refresh when component mounts and periodically check for participants
+  // Force data refresh when component mounts and load participants
   useEffect(() => {
     if (tourId) {
       console.log("PARTICIPANTS DEBUG: Initial tour data load for:", tourId);
@@ -39,16 +40,61 @@ const TourDetails = () => {
       // Invalidate tour query to force fresh data
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       
-      // Trigger a refresh after a short delay to ensure data is loaded
-      const timer = setTimeout(() => {
-        handleRefetch();
-        console.log("PARTICIPANTS DEBUG: Auto-refreshing tour data");
-      }, 1000);
+      // Trigger a refresh to ensure data is loaded
+      handleRefetch();
       
-      return () => {
-        clearTimeout(timer);
+      // Load participants directly if possible
+      const loadParticipants = async () => {
+        try {
+          // Get group IDs
+          const { data: groups } = await supabase
+            .from('tour_groups')
+            .select('id')
+            .eq('tour_id', tourId);
+            
+          if (groups && groups.length > 0) {
+            const groupIds = groups.map(g => g.id);
+            
+            // Load participants for these groups
+            const { data: participants } = await supabase
+              .from('participants')
+              .select('*')
+              .in('group_id', groupIds);
+              
+            console.log(`Direct participant load found ${participants ? participants.length : 0} participants`);
+            
+            // Force refresh of tour data to reflect these participants
+            setTimeout(() => {
+              queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+              
+              // Set a custom event that components can listen for
+              window.dispatchEvent(new CustomEvent('participants-loaded'));
+            }, 500);
+          }
+        } catch (error) {
+          console.error("Error in direct participant load:", error);
+        }
       };
+      
+      loadParticipants();
     }
+  }, [tourId, queryClient, handleRefetch]);
+  
+  // Listen for refresh-participants event
+  useEffect(() => {
+    const handleRefreshParticipants = () => {
+      if (tourId) {
+        console.log("Received refresh-participants event");
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        handleRefetch();
+      }
+    };
+    
+    window.addEventListener('refresh-participants', handleRefreshParticipants);
+    
+    return () => {
+      window.removeEventListener('refresh-participants', handleRefreshParticipants);
+    };
   }, [tourId, queryClient, handleRefetch]);
   
   // Fetch guide information when tour data changes
@@ -101,57 +147,6 @@ const TourDetails = () => {
     };
     
     fetchGuideInfo();
-  }, [tour]);
-  
-  // Log detailed information about participants to help debugging
-  useEffect(() => {
-    if (tour && tour.tourGroups) {
-      console.log("PARTICIPANTS DEBUG: Tour groups loaded:", tour.tourGroups.length);
-      
-      // Count total participants
-      let totalParticipantCount = 0;
-      let totalParticipantCountFromSize = 0;
-      
-      tour.tourGroups.forEach(group => {
-        // Count from participants array
-        if (Array.isArray(group.participants)) {
-          totalParticipantCount += group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
-        }
-        
-        // Count from size property
-        totalParticipantCountFromSize += group.size || 0;
-      });
-      
-      console.log("PARTICIPANTS DEBUG: Total participant counts:", {
-        fromParticipantsArray: totalParticipantCount,
-        fromSizeProperty: totalParticipantCountFromSize
-      });
-      
-      // Log detailed group information
-      tour.tourGroups.forEach((group, index) => {
-        const participantCount = Array.isArray(group.participants) 
-          ? group.participants.reduce((sum, p) => sum + (p.count || 1), 0) 
-          : 0;
-          
-        const childCount = Array.isArray(group.participants)
-          ? group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
-          : 0;
-          
-        console.log(`PARTICIPANTS DEBUG: Group ${index + 1} (${group.name || 'Unnamed'}) details:`, {
-          id: group.id,
-          size: group.size,
-          childCount: group.childCount,
-          hasParticipantsArray: Array.isArray(group.participants),
-          participantCountFromArray: participantCount,
-          childCountFromArray: childCount,
-          participants: Array.isArray(group.participants) ? group.participants.map(p => ({
-            name: p.name,
-            count: p.count || 1,
-            childCount: p.childCount || 0
-          })) : 'No participants array'
-        });
-      });
-    }
   }, [tour]);
 
   return (

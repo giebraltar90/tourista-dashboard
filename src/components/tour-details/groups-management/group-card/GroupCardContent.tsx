@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { VentrataParticipant } from "@/types/ventrata";
 import { ParticipantItem } from "../ParticipantItem";
-import { AlertCircle, Users } from "lucide-react";
+import { AlertCircle, Users, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface GroupCardContentProps {
@@ -38,18 +38,6 @@ export const GroupCardContent = ({
   onAssignGuide,
   guideName
 }: GroupCardContentProps) => {
-  // Check if we're looking at placeholder data
-  const hasPlaceholders = localParticipants.some(p => 
-    String(p.id).startsWith('placeholder-') || String(p.id).startsWith('fallback-')
-  );
-  
-  console.log(`GROUP CONTENT: Rendering participants for group ${groupIndex}:`, {
-    totalParticipants,
-    participantsCount: localParticipants.length,
-    hasPlaceholders,
-    participants: localParticipants
-  });
-  
   const isDropTargetActive = selectedParticipant && selectedParticipant.fromGroupIndex !== groupIndex;
   const shouldShowMoveHere = isDropTargetActive && !isMovePending;
   
@@ -58,6 +46,12 @@ export const GroupCardContent = ({
       handleMoveParticipant(groupIndex);
     }
   };
+  
+  console.log(`GROUP CONTENT: Rendering participants for group ${groupIndex}:`, {
+    totalParticipants,
+    participantsCount: localParticipants.length,
+    participants: localParticipants
+  });
   
   return (
     <div 
@@ -68,15 +62,6 @@ export const GroupCardContent = ({
       onDragLeave={onDragLeave}
       onDrop={(e) => onDrop(e, groupIndex)}
     >
-      {hasPlaceholders && (
-        <Alert variant="warning" className="mb-3 py-2">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertDescription className="text-xs">
-            This group has placeholder data. Refresh to try loading actual participants.
-          </AlertDescription>
-        </Alert>
-      )}
-      
       {shouldShowMoveHere && (
         <div className="absolute inset-0 bg-primary/10 rounded flex items-center justify-center z-10">
           <Button 
@@ -113,9 +98,21 @@ export const GroupCardContent = ({
         <h4 className="text-sm font-medium">Participants ({localParticipants.length})</h4>
         
         {localParticipants.length === 0 ? (
-          <div className="text-sm text-muted-foreground py-2 text-center border rounded-md">
-            No participants in this group
-          </div>
+          <Alert className="bg-amber-50 border-amber-200">
+            <AlertCircle className="h-4 w-4 text-amber-600" />
+            <AlertDescription className="flex flex-col space-y-2">
+              <span className="text-amber-800">No participants data available. Please load participants to see them.</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="w-full mt-2 border-amber-300 hover:bg-amber-100"
+                onClick={() => window.dispatchEvent(new CustomEvent('refresh-participants'))}
+              >
+                <RefreshCw className="h-3 w-3 mr-2" /> 
+                Refresh Participants
+              </Button>
+            </AlertDescription>
+          </Alert>
         ) : (
           <div className="space-y-2">
             {localParticipants.map((participant) => (

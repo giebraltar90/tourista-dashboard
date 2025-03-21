@@ -9,6 +9,7 @@ import { VentrataTourGroup } from "@/types/ventrata";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -16,6 +17,7 @@ interface GroupsManagementProps {
 
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   
   // Get guide information safely with null checks
   const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
@@ -46,9 +48,60 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   // Load participants data when component mounts
   useEffect(() => {
     if (tour.id) {
+      console.log("GroupsManagement: Initial loading of participants for tour:", tour.id);
       loadParticipants(tour.id);
+      
+      // Also try to directly load participants
+      const directLoadParticipants = async () => {
+        try {
+          // Get tour groups
+          const { data: groups } = await supabase
+            .from('tour_groups')
+            .select('id')
+            .eq('tour_id', tour.id);
+            
+          if (groups && groups.length > 0) {
+            const groupIds = groups.map(g => g.id);
+            
+            // Get participants for these groups
+            const { data: participants } = await supabase
+              .from('participants')
+              .select('*')
+              .in('group_id', groupIds);
+              
+            console.log(`GroupsManagement: Direct load found ${participants ? participants.length : 0} participants`);
+          }
+        } catch (error) {
+          console.error("Direct load participants error:", error);
+        }
+      };
+      
+      directLoadParticipants();
     }
   }, [tour.id, loadParticipants]);
+  
+  // Listen for participants-loaded event
+  useEffect(() => {
+    const handleParticipantsLoaded = () => {
+      console.log("GroupsManagement: Received participants-loaded event");
+      if (tour.id) {
+        refreshParticipants();
+      }
+    };
+    
+    window.addEventListener('participants-loaded', handleParticipantsLoaded);
+    
+    return () => {
+      window.removeEventListener('participants-loaded', handleParticipantsLoaded);
+    };
+  }, [tour.id, refreshParticipants]);
+  
+  // Handle manual refresh
+  const handleManualRefresh = () => {
+    setIsManualRefreshing(true);
+    refreshParticipants();
+    setTimeout(() => setIsManualRefreshing(false), 1500);
+  };
   
   // Get dialog management - pass the tour object
   const dialogUtils = GroupDialogsContainer({
@@ -99,11 +152,11 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => refreshParticipants()} 
-          disabled={isMovePending}
+          onClick={handleManualRefresh} 
+          disabled={isMovePending || isManualRefreshing}
           className="flex items-center"
         >
-          <RefreshCw className={`h-4 w-4 mr-1 ${isMovePending ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 mr-1 ${isManualRefreshing ? 'animate-spin' : ''}`} />
           Refresh Participants
         </Button>
       </CardHeader>
@@ -124,7 +177,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             selectedParticipant={selectedParticipant}
             handleMoveParticipant={handleMoveParticipant}
             isMovePending={isMovePending}
-            onRefreshParticipants={() => refreshParticipants()} 
+            onRefreshParticipants={refreshParticipants} 
           />
         </div>
       </CardContent>

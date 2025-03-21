@@ -28,64 +28,21 @@ export const ParticipantsCard = ({
   } = useMemo(() => {
     console.log("PARTICIPANTS DEBUG: ParticipantsCard calculating counts");
     
-    // Use provided values if they exist and are greater than 0
-    if (
-      providedTotalParticipants !== undefined && 
-      providedTotalParticipants > 0 &&
-      providedTotalChildCount !== undefined &&
-      providedTotalChildCount >= 0
-    ) {
-      console.log("PARTICIPANTS DEBUG: Using provided values:", providedTotalParticipants, providedTotalChildCount);
-      const adult = providedTotalParticipants - providedTotalChildCount;
-      return {
-        totalParticipants: providedTotalParticipants,
-        totalChildCount: providedTotalChildCount,
-        adultCount: adult,
-        formattedParticipantCount: formatParticipantCount(providedTotalParticipants, providedTotalChildCount)
-      };
-    }
-    
-    // Calculate from scratch if no valid provided values
+    // Calculate from actual participants in the database
     let calculatedTotal = 0;
     let calculatedChildren = 0;
     
     // Only count from participants arrays if they exist
     if (Array.isArray(tourGroups)) {
-      console.log("PARTICIPANTS DEBUG: Manually calculating from tour groups");
+      console.log("PARTICIPANTS DEBUG: Calculating from tour groups");
       for (const group of tourGroups) {
-        console.log(`PARTICIPANTS DEBUG: Processing group ${group.name || 'Unnamed'}:`, {
-          id: group.id,
-          hasParticipants: Array.isArray(group.participants),
-          participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
-          size: group.size,
-          childCount: group.childCount
-        });
-        
         if (Array.isArray(group.participants) && group.participants.length > 0) {
           for (const participant of group.participants) {
             const count = participant.count || 1;
             const childCount = participant.childCount || 0;
             calculatedTotal += count;
             calculatedChildren += childCount;
-            
-            console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}":`, {
-              count,
-              childCount,
-              runningTotal: calculatedTotal,
-              runningChildren: calculatedChildren
-            });
           }
-        } else if (group.size > 0) {
-          // If no participants but group.size exists, use that as fallback
-          calculatedTotal += group.size;
-          calculatedChildren += group.childCount || 0;
-          
-          console.log(`PARTICIPANTS DEBUG: Using group.size fallback:`, {
-            size: group.size,
-            childCount: group.childCount || 0,
-            runningTotal: calculatedTotal,
-            runningChildren: calculatedChildren
-          });
         }
       }
     }
@@ -106,7 +63,7 @@ export const ParticipantsCard = ({
       adultCount: calculatedTotal - calculatedChildren,
       formattedParticipantCount: formatParticipantCount(calculatedTotal, calculatedChildren)
     };
-  }, [tourGroups, providedTotalParticipants, providedTotalChildCount]);
+  }, [tourGroups]);
   
   const totalGroups = Array.isArray(tourGroups) ? tourGroups.length : 0;
   
@@ -125,16 +82,6 @@ export const ParticipantsCard = ({
     if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception";
     return "Standard";
   };
-  
-  // Log final values once after calculation
-  console.log("PARTICIPANTS DEBUG: ParticipantsCard final values:", { 
-    totalParticipants,
-    totalChildCount,
-    adultCount,
-    formattedParticipantCount,
-    capacity,
-    isHighSeason
-  });
   
   return (
     <Card>
