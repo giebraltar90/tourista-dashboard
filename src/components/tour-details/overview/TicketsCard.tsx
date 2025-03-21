@@ -70,6 +70,10 @@ export const TicketsCard = ({
     hasEnoughTickets
   });
 
+  // Calculate missing adult and child tickets separately
+  const missingAdultTickets = Math.max(0, totalRequiredAdultTickets - validAdultTickets);
+  const missingChildTickets = Math.max(0, totalRequiredChildTickets - validChildTickets);
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -112,15 +116,13 @@ export const TicketsCard = ({
             <span className="text-muted-foreground">Total:</span>
             <Badge 
               variant="outline" 
-              className={hasEnoughTickets 
-                ? "bg-green-100 text-green-800 border-green-300" 
-                : "bg-red-100 text-red-800 border-red-300"}
+              className={`font-medium ${
+                hasEnoughTickets 
+                  ? "bg-green-100 text-green-800 border-green-300" 
+                  : "bg-amber-100 text-amber-800 border-amber-300"
+              }`}
             >
-              {hasEnoughTickets 
-                ? <Check className="h-3 w-3 mr-1" /> 
-                : <AlertTriangle className="h-3 w-3 mr-1" />}
-              {displayTotal} tickets
-              {!hasEnoughTickets && ` (need ${totalRequiredTickets})`}
+              {validAdultTickets} + {validChildTickets}
             </Badge>
           </div>
           
@@ -129,7 +131,11 @@ export const TicketsCard = ({
               <span className="text-muted-foreground">Missing:</span>
               <Badge variant="destructive" className="text-xs font-medium">
                 <AlertTriangle className="h-3 w-3 mr-1" />
-                {missingTickets} tickets needed
+                {missingAdultTickets > 0 && missingChildTickets > 0 
+                  ? `${missingAdultTickets} + ${missingChildTickets}` 
+                  : missingAdultTickets > 0 
+                    ? missingAdultTickets 
+                    : missingChildTickets}
               </Badge>
             </div>
           )}
