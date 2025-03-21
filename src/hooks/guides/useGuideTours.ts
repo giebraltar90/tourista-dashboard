@@ -60,8 +60,7 @@ export function useGuideTours() {
               guideId: group.guide_id
             })),
             tourType: tour.tour_type || "default",
-            isBelowMinimum: totalParticipants < 8,
-            startTime: tour.start_time || "00:00" // Adding required field from type
+            startTime: tour.start_time || "00:00"
           };
         }) : [];
       } catch (error) {
