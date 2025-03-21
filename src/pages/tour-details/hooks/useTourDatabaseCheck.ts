@@ -16,7 +16,8 @@ export const useTourDatabaseCheck = (tourId: string) => {
       console.log("DATABASE DEBUG: Initial tour data load for:", tourId);
       initialCheckCompleted.current = true;
       
-      // Invalidate tour query to force fresh data
+      // Invalidate tour query to force fresh data, but don't explicitly call refetch
+      // This prevents duplicate toast messages
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       
       // Check database tables directly first - just log results, don't show UI messages

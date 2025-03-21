@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -17,6 +17,8 @@ import {
 export const useParticipantLoading = () => {
   const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(false);
+  const lastToastTime = useRef(0);
+  const toastIdRef = useRef<string | number | null>(null);
   
   // Load participants data from Supabase
   const loadParticipants = useCallback(async (
@@ -25,6 +27,13 @@ export const useParticipantLoading = () => {
     showSuccessToast = false // Add parameter to control success toast
   ) => {
     console.log("DATABASE DEBUG: loadParticipants called for tourId:", tourId);
+    
+    // Prevent loading if already in progress
+    if (isLoading) {
+      console.log("DATABASE DEBUG: Skipping loadParticipants, already in progress");
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
@@ -53,14 +62,22 @@ export const useParticipantLoading = () => {
       // Call the callback with the groups data
       onParticipantsLoaded(groupsWithParticipants);
       
-      // Invalidate queries to force UI updates
+      // Invalidate queries to force UI updates, but manage toast notifications carefully
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
         window.dispatchEvent(new CustomEvent('participants-loaded'));
         
-        // Only show success toast if requested
-        if (showSuccessToast) {
-          toast.success("Participant data refreshed");
+        // Only show success toast if requested AND enough time has passed since last toast
+        const now = Date.now();
+        if (showSuccessToast && now - lastToastTime.current > 3000) {
+          // Dismiss any existing toasts first
+          if (toastIdRef.current) {
+            toast.dismiss(toastIdRef.current);
+          }
+          
+          // Show new toast and store its ID
+          toastIdRef.current = toast.success("Participant data refreshed");
+          lastToastTime.current = now;
         }
       }, 500);
     } catch (error) {
@@ -69,7 +86,7 @@ export const useParticipantLoading = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [queryClient]);
+  }, [queryClient, isLoading]);
   
   return { loadParticipants, isLoading };
 };

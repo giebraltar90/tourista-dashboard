@@ -20,6 +20,8 @@ export const useParticipantRefresh = (
   const refreshTimeoutRef = useRef<number | null>(null);
   const lastRefreshTimeRef = useRef<number>(0);
   const isInitialLoadRef = useRef<boolean>(true);
+  const toastIdRef = useRef<string | number | null>(null);
+  const refreshInProgressRef = useRef<boolean>(false);
   
   // Auto-refresh when tourId changes, but only once
   useEffect(() => {
@@ -32,9 +34,11 @@ export const useParticipantRefresh = (
       // Set a short delay to allow other operations to complete
       const timer = window.setTimeout(() => {
         console.log(`PARTICIPANTS DEBUG: Executing delayed initial load for tour ${tourId}`);
-        loadParticipants(tourId, false); // Don't show toast for auto-load
-        // Update last refresh time
-        lastRefreshTimeRef.current = Date.now();
+        if (!refreshInProgressRef.current) {
+          loadParticipants(tourId, false); // Don't show toast for auto-load
+          // Update last refresh time
+          lastRefreshTimeRef.current = Date.now();
+        }
       }, 500);
       
       return () => window.clearTimeout(timer);
@@ -53,12 +57,16 @@ export const useParticipantRefresh = (
       return;
     }
     
+    // Set the refresh in progress flag
+    refreshInProgressRef.current = true;
+    
     return loadParticipantsInner(tourId, (loadedGroups) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing groups:`, loadedGroups);
       
       // Ensure we received an array of groups
       if (!Array.isArray(loadedGroups)) {
         console.error("PARTICIPANTS DEBUG: Invalid groups data received:", loadedGroups);
+        refreshInProgressRef.current = false;
         return;
       }
       
@@ -111,6 +119,7 @@ export const useParticipantRefresh = (
         }
         
         refreshTimeoutRef.current = null;
+        refreshInProgressRef.current = false;
       }, 200);
     }, showToast); // Pass the showToast parameter
   }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes]);
@@ -118,6 +127,18 @@ export const useParticipantRefresh = (
   // Add a refresh function with improved debounce to manually trigger participant loading
   const refreshParticipants = useCallback(() => {
     if (!tourId) return;
+    
+    // Clear any existing toast first
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+      toastIdRef.current = null;
+    }
+    
+    // Prevent manual refresh if already refreshing
+    if (refreshInProgressRef.current) {
+      console.log(`PARTICIPANTS DEBUG: Skipping manual refresh, already in progress`);
+      return;
+    }
     
     // Prevent rapid consecutive refreshes with a minimum time between calls
     const now = Date.now();
@@ -134,7 +155,11 @@ export const useParticipantRefresh = (
     }
     
     console.log(`PARTICIPANTS DEBUG: Manually refreshing participants for tour ${tourId}`);
-    toast.info("Refreshing participants...");
+    // Show only one toast at the beginning
+    toastIdRef.current = toast.info("Refreshing participants...");
+    
+    // Set refreshing flag
+    refreshInProgressRef.current = true;
     
     // Set a short timeout to debounce multiple clicks
     refreshTimeoutRef.current = window.setTimeout(() => {

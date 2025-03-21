@@ -9,6 +9,8 @@ export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void
   const [databaseError, setDatabaseError] = useState<string | null>(null);
   const [isFixingDatabase, setIsFixingDatabase] = useState(false);
   const hasCheckedRef = useRef(false);
+  const fixingInProgressRef = useRef(false);
+  const toastIdRef = useRef<string | number | null>(null);
   
   // Check database table existence
   useEffect(() => {
@@ -45,11 +47,30 @@ export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void
   
   // Handle database fix
   const handleFixDatabase = async () => {
-    if (isFixingDatabase) return; // Prevent multiple simultaneous fixes
+    // Prevent multiple simultaneous fixes
+    if (isFixingDatabase || fixingInProgressRef.current) {
+      console.log("DATABASE DEBUG: Fix already in progress, ignoring duplicate request");
+      return;
+    }
+    
+    // Clear any existing toast
+    if (toastIdRef.current) {
+      toast.dismiss(toastIdRef.current);
+    }
     
     setIsFixingDatabase(true);
+    fixingInProgressRef.current = true;
+    // Show a loading toast
+    toastIdRef.current = toast.loading("Fixing database issues...");
+    
     try {
       const success = await autoFixDatabaseIssues();
+      // Dismiss the loading toast
+      if (toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toastIdRef.current = null;
+      }
+      
       if (success) {
         toast.success("Database issues have been fixed");
         setDatabaseError(null);
@@ -61,15 +82,19 @@ export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void
         }
         
         // Refresh participants after fixing the database
+        // Use setTimeout to ensure we don't have overlapping operations
         setTimeout(() => {
           refreshParticipants();
-        }, 1000);
+          fixingInProgressRef.current = false;
+        }, 1500);
       } else {
         toast.error("Could not fix database issues");
+        fixingInProgressRef.current = false;
       }
     } catch (error) {
       console.error("Error fixing database:", error);
       toast.error("Error while fixing database");
+      fixingInProgressRef.current = false;
     } finally {
       setIsFixingDatabase(false);
     }
