@@ -13,7 +13,7 @@ export const checkParticipantsTable = async () => {
     const { data: tableExists, error: definitionError } = await supabase
       .rpc('check_table_exists', { 
         table_name: 'participants' 
-      } as unknown as Record<string, never>);
+      });
     
     if (definitionError) {
       console.error("DATABASE DEBUG: Error checking table definition:", definitionError);

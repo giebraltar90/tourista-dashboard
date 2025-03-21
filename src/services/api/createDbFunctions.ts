@@ -23,17 +23,16 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     const { error: sqlFunctionError } = await supabase.rpc(
       'execute_sql', 
-      { sql_query: createExecuteSqlFunction } as unknown as Record<string, never>
+      { sql_query: createExecuteSqlFunction }
     );
     
     if (sqlFunctionError) {
       // Function might not exist yet, try direct SQL
-      const { error: directSqlError } = await supabase.auth.admin.executeRaw(createExecuteSqlFunction);
+      console.error("DATABASE DEBUG: Failed to create execute_sql function:", sqlFunctionError);
+      console.log("DATABASE DEBUG: Function might not exist yet. Please create it manually in the Supabase SQL editor");
       
-      if (directSqlError) {
-        console.error("DATABASE DEBUG: Failed to create execute_sql function:", directSqlError);
-        return false;
-      }
+      // We can't use direct SQL execution in the client, so we'll just log an error
+      return false;
     }
     
     // Create check_table_exists function
@@ -58,7 +57,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     const { error: tableCheckFunctionError } = await supabase.rpc(
       'execute_sql',
-      { sql_query: createCheckTableExistsFunction } as unknown as Record<string, never>
+      { sql_query: createCheckTableExistsFunction }
     );
     
     if (tableCheckFunctionError) {
@@ -92,7 +91,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     const { error: debugFunctionError } = await supabase.rpc(
       'execute_sql',
-      { sql_query: createDebugCheckParticipantsFunction } as unknown as Record<string, never>
+      { sql_query: createDebugCheckParticipantsFunction }
     );
     
     if (debugFunctionError) {
