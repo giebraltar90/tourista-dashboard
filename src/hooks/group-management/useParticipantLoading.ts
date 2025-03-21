@@ -89,9 +89,10 @@ export const useParticipantLoading = () => {
       console.log("DATABASE DEBUG: Group IDs for participant lookup:", groupIds);
       
       // Try direct SQL query to check participants table
-      const { data: directCheck, error: directError } = await supabase.rpc('debug_check_participants', {
-        group_ids: groupIds
-      } as any).single();
+      const { data: directCheck, error: directError } = await supabase.rpc(
+        'debug_check_participants',
+        { group_ids: groupIds } as unknown as Record<string, never>
+      ).single();
       
       if (directError) {
         console.error("DATABASE DEBUG: Error in debug_check_participants:", directError);

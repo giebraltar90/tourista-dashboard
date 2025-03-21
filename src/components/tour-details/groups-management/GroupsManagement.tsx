@@ -8,8 +8,11 @@ import { useGuideInfo } from "@/hooks/guides";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { Button } from "@/components/ui/button";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, DatabaseIcon, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { autoFixDatabaseIssues } from "@/services/api/checkDatabaseTables";
+import { toast } from "sonner";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -18,6 +21,8 @@ interface GroupsManagementProps {
 export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [databaseError, setDatabaseError] = useState<string | null>(null);
+  const [isFixingDatabase, setIsFixingDatabase] = useState(false);
   
   // Get guide information safely with null checks
   const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
@@ -64,12 +69,20 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
             const groupIds = groups.map(g => g.id);
             
             // Get participants for these groups
-            const { data: participants } = await supabase
+            const { data: participants, error: participantsError } = await supabase
               .from('participants')
               .select('*')
               .in('group_id', groupIds);
               
-            console.log(`GroupsManagement: Direct load found ${participants ? participants.length : 0} participants`);
+            if (participantsError) {
+              console.error("DATABASE DEBUG: Error loading participants:", participantsError);
+              setDatabaseError("Could not load participants: " + participantsError.message);
+            } else {
+              console.log(`GroupsManagement: Direct load found ${participants ? participants.length : 0} participants`);
+              if (participants && participants.length > 0) {
+                setDatabaseError(null);
+              }
+            }
           }
         } catch (error) {
           console.error("Direct load participants error:", error);
@@ -101,6 +114,29 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
     setIsManualRefreshing(true);
     refreshParticipants();
     setTimeout(() => setIsManualRefreshing(false), 1500);
+  };
+  
+  // Handle database fix
+  const handleFixDatabase = async () => {
+    setIsFixingDatabase(true);
+    try {
+      const success = await autoFixDatabaseIssues();
+      if (success) {
+        toast.success("Database issues have been fixed");
+        setDatabaseError(null);
+        // Refresh participants after fixing the database
+        setTimeout(() => {
+          refreshParticipants();
+        }, 1000);
+      } else {
+        toast.error("Could not fix database issues");
+      }
+    } catch (error) {
+      console.error("Error fixing database:", error);
+      toast.error("Error while fixing database");
+    } finally {
+      setIsFixingDatabase(false);
+    }
   };
   
   // Get dialog management - pass the tour object
@@ -149,19 +185,42 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
           <CardTitle>Participant Management</CardTitle>
           <CardDescription>Drag and drop participants between groups</CardDescription>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleManualRefresh} 
-          disabled={isMovePending || isManualRefreshing}
-          className="flex items-center"
-        >
-          <RefreshCw className={`h-4 w-4 mr-1 ${isManualRefreshing ? 'animate-spin' : ''}`} />
-          Refresh Participants
-        </Button>
+        <div className="flex gap-2">
+          {databaseError && (
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleFixDatabase}
+              disabled={isFixingDatabase}
+              className="flex items-center text-amber-600 border-amber-300 bg-amber-50 hover:bg-amber-100"
+            >
+              <DatabaseIcon className={`h-4 w-4 mr-1 ${isFixingDatabase ? 'animate-spin' : ''}`} />
+              {isFixingDatabase ? 'Fixing...' : 'Fix Database'}
+            </Button>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleManualRefresh} 
+            disabled={isMovePending || isManualRefreshing}
+            className="flex items-center"
+          >
+            <RefreshCw className={`h-4 w-4 mr-1 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+            Refresh Participants
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
+          {databaseError && (
+            <Alert variant="warning" className="mb-4 bg-amber-50 border-amber-200">
+              <AlertTriangle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-800">
+                {databaseError} Click "Fix Database" to attempt to resolve this issue.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <GroupsGrid
             tourGroups={localTourGroups}
             tour={tour}
