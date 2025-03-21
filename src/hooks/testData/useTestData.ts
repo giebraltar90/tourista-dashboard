@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { clearAllTestData } from "./helpers";
 import { supabase } from "@/integrations/supabase/client";
 import { createTestGuides } from "./createGuides";
-import { createTestTours } from "./createTours";
+import { createTestTours as createTestToursFunc } from "./createTours";
 import { createTestTourGroups } from "./createTourGroups";
 import { createTestModifications } from "./createModifications";
 import { createTestTickets } from "./createTickets";
@@ -38,7 +38,7 @@ export const useTestData = () => {
       }, {});
       
       // Step 2: Create test tours
-      const tours = await createTestTours(guideMap);
+      const tours = await createTestToursFunc(guideMap);
       
       if (!tours || tours.length === 0) {
         toast.error("Failed to create test tours");
@@ -71,7 +71,7 @@ export const useTestData = () => {
       queryClient.invalidateQueries({ queryKey: ['tours'] });
       queryClient.invalidateQueries({ queryKey: ['guides'] });
       
-      toast.success(`Test data created successfully: ${tours.length} tours, ${groups.length} groups, ${participants.length} participants`);
+      toast.success(`Test data created successfully: ${tours.length} tours, ${groups.length} groups, ${participants?.length || 0} participants`);
       return true;
     } catch (error) {
       console.error("Error creating test data:", error);

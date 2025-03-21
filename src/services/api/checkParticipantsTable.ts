@@ -14,9 +14,9 @@ export const checkParticipantsTable = async () => {
   try {
     // Try to get the definition of the participants table
     const { data: tableExists, error: definitionError } = await supabase
-      .rpc<boolean, CheckTableExistsParams>('check_table_exists', { 
+      .rpc('check_table_exists', { 
         table_name: 'participants' 
-      });
+      }) as { data: boolean, error: any };
     
     if (definitionError) {
       console.error("DATABASE DEBUG: Error checking table definition:", definitionError);
