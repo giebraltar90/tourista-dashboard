@@ -23,7 +23,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     const { error: sqlFunctionError } = await supabase.rpc(
       'execute_sql', 
-      { sql_query: createExecuteSqlFunction }
+      { sql_query: createExecuteSqlFunction } as { sql_query: string }
     );
     
     if (sqlFunctionError) {
@@ -47,7 +47,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public'
-          AND table_name = table_name
+          AND table_name = $1
         ) INTO table_exists;
         
         RETURN table_exists;
@@ -57,7 +57,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     const { error: tableCheckFunctionError } = await supabase.rpc(
       'execute_sql',
-      { sql_query: createCheckTableExistsFunction }
+      { sql_query: createCheckTableExistsFunction } as { sql_query: string }
     );
     
     if (tableCheckFunctionError) {
@@ -91,7 +91,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
     
     const { error: debugFunctionError } = await supabase.rpc(
       'execute_sql',
-      { sql_query: createDebugCheckParticipantsFunction }
+      { sql_query: createDebugCheckParticipantsFunction } as { sql_query: string }
     );
     
     if (debugFunctionError) {
