@@ -42,6 +42,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     handleDrop,
     setSelectedParticipant,
     isMovePending,
+    refreshParticipants,
     loadParticipants
   } = useGroupManagement(tour);
   
@@ -49,7 +50,12 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   useEffect(() => {
     if (tour.id) {
       console.log("Loading participants for tour:", tour.id);
-      loadParticipants(tour.id);
+      // Force an initial load when the component mounts
+      const timer = setTimeout(() => {
+        loadParticipants(tour.id);
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
   }, [tour.id, loadParticipants]);
   
@@ -86,7 +92,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     setIsRefreshing(true);
     try {
       console.log("Manually refreshing participants for tour:", tour.id);
-      await loadParticipants(tour.id);
+      await refreshParticipants();
       toast.success("Participant data refreshed");
     } catch (error) {
       console.error("Error refreshing participants:", error);
@@ -178,7 +184,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
           tourId={tour.id}
           groupIndex={selectedGroupIndex}
           guides={availableGuides}
-          currentGuideId={tour.tourGroups && tour.tourGroups[selectedGroupIndex]?.guideId}
+          currentGuideId={stableTourGroups[selectedGroupIndex]?.guideId}
         />
       )}
 

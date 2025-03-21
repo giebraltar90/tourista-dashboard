@@ -21,20 +21,11 @@ export const useGroupCardState = (
   
   // Initialize local participants state
   useEffect(() => {
+    console.log(`GROUP CARD STATE: Setting participants for ${groupName}:`, participants);
+    
     if (Array.isArray(participants)) {
-      // Filter out placeholder participants for display, but include in calculations
-      const displayParticipants = participants.filter(p => 
-        !String(p.id).startsWith('placeholder-') && !String(p.id).startsWith('fallback-')
-      );
-      
-      console.log(`GROUP CARD STATE: Setting local participants for ${groupName}:`, {
-        groupId,
-        rawParticipantsCount: participants.length,
-        displayParticipantsCount: displayParticipants.length,
-        hasPlaceholders: participants.length !== displayParticipants.length
-      });
-      
-      setLocalParticipants(displayParticipants);
+      // Don't filter out placeholder participants - display all of them
+      setLocalParticipants(participants);
     } else {
       setLocalParticipants([]);
     }

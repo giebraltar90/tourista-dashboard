@@ -78,7 +78,7 @@ export const useParticipantLoading = () => {
         );
         
         // Attempt to generate placeholder participants for these groups if there's a size but no participants
-        let modifiedParticipants = [...(participantsData || [])];
+        const modifiedParticipants = [...(participantsData || [])];
         
         for (const group of groupsWithMissingParticipants) {
           const existingParticipants = modifiedParticipants.filter(p => p.group_id === group.id);
@@ -104,24 +104,19 @@ export const useParticipantLoading = () => {
           }
         }
         
-        // Use the modified participants list with placeholders
-        const finalParticipantsData = modifiedParticipants;
-      
         // Create an array of groups with their participants
         const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
           // Get participants for this group
-          const groupParticipants = finalParticipantsData
-            ? finalParticipantsData
-                .filter(p => p.group_id === group.id)
-                .map(p => ({
-                  id: p.id,
-                  name: p.name,
-                  count: p.count || 1,
-                  bookingRef: p.booking_ref,
-                  childCount: p.child_count || 0,
-                  group_id: p.group_id
-                }))
-            : [];
+          const groupParticipants = modifiedParticipants
+            .filter(p => p.group_id === group.id)
+            .map(p => ({
+              id: p.id,
+              name: p.name,
+              count: p.count || 1,
+              bookingRef: p.booking_ref,
+              childCount: p.child_count || 0,
+              group_id: p.group_id
+            }));
             
           // Calculate size and childCount from participants
           const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
@@ -139,6 +134,7 @@ export const useParticipantLoading = () => {
           // If we still have missing participants but there's a size
           if (groupParticipants.length === 0 && group.size > 0) {
             console.log(`PARTICIPANT LOADING: Adding fallback group member for ${group.id} with size ${group.size}`);
+            const currentDate = new Date().toISOString();
             groupParticipants.push({
               id: `fallback-${group.id}`,
               name: "Group Members",
