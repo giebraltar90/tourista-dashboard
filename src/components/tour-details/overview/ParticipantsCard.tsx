@@ -5,6 +5,7 @@ import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { Badge } from "@/components/ui/badge";
 import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 import { useMemo } from "react";
+import { AlertTriangle } from "lucide-react";
 
 interface ParticipantsCardProps {
   tourGroups: VentrataTourGroup[];
@@ -33,42 +34,39 @@ export const ParticipantsCard = ({
       ).length
     });
     
-    // Log the raw group data for debugging
-    tourGroups.forEach((group, index) => {
-      console.log(`DATABASE DEBUG: Group ${index + 1} (${group.name || 'Unnamed'}) data:`, {
-        id: group.id,
-        size: group.size,
-        childCount: group.childCount,
-        hasParticipantsArray: Array.isArray(group.participants),
-        participantsCount: Array.isArray(group.participants) ? group.participants.length : 0,
-        firstParticipant: Array.isArray(group.participants) && group.participants.length > 0 
-          ? group.participants[0] 
-          : null
-      });
-    });
-    
     // Calculate from actual participants in the database
     let calculatedTotal = 0;
     let calculatedChildren = 0;
     
-    // Only count from participants arrays if they exist
+    // First try to calculate from participants arrays if they exist
     if (Array.isArray(tourGroups)) {
-      console.log("DATABASE DEBUG: Calculating from tour groups participants");
+      let hasParticipantsData = false;
+      
       for (const group of tourGroups) {
         if (Array.isArray(group.participants) && group.participants.length > 0) {
-          console.log(`DATABASE DEBUG: Processing participants for group ${group.name || 'Unnamed'}`);
+          hasParticipantsData = true;
           for (const participant of group.participants) {
             const count = participant.count || 1;
             const childCount = participant.childCount || 0;
             calculatedTotal += count;
             calculatedChildren += childCount;
-            
-            console.log(`DATABASE DEBUG: Counted participant ${participant.name}: count=${count}, childCount=${childCount}`);
           }
-        } else {
-          console.log(`DATABASE DEBUG: No participants array for group ${group.name || 'Unnamed'}`);
         }
       }
+      
+      // If no participants data found, fall back to group sizes
+      if (!hasParticipantsData) {
+        for (const group of tourGroups) {
+          calculatedTotal += group.size || 0;
+          calculatedChildren += group.childCount || 0;
+        }
+      }
+    }
+    
+    // If we still have zero, use the provided values as final fallback
+    if (calculatedTotal === 0 && providedTotalParticipants) {
+      calculatedTotal = providedTotalParticipants;
+      calculatedChildren = providedTotalChildCount || 0;
     }
     
     // Calculate adult count
@@ -87,7 +85,7 @@ export const ParticipantsCard = ({
       adultCount: calculatedTotal - calculatedChildren,
       formattedParticipantCount: formatParticipantCount(calculatedTotal, calculatedChildren)
     };
-  }, [tourGroups]);
+  }, [tourGroups, providedTotalParticipants, providedTotalChildCount]);
   
   const totalGroups = Array.isArray(tourGroups) ? tourGroups.length : 0;
   
@@ -100,11 +98,25 @@ export const ParticipantsCard = ({
     ? DEFAULT_CAPACITY_SETTINGS.highSeasonGroups 
     : DEFAULT_CAPACITY_SETTINGS.standardGroups;
 
+  // Determine if groups are below required minimum
+  const isBelowMinimumGroups = totalGroups < requiredGroups;
+  
+  // Check if we're near capacity (>80%)
+  const capacityPercentage = Math.round((totalParticipants / capacity) * 100);
+  const isNearCapacity = capacityPercentage > 80;
+  
   // Determine mode text based on season and participant count
   const getModeText = () => {
     if (isHighSeason) return "High Season";
     if (totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard) return "Exception";
     return "Standard";
+  };
+  
+  // Determine badge color based on capacity percentage
+  const getCapacityBadgeClass = () => {
+    if (capacityPercentage > 95) return "bg-red-100 text-red-800 border-red-300";
+    if (capacityPercentage > 80) return "bg-amber-100 text-amber-800 border-amber-300";
+    return "bg-green-100 text-green-800 border-green-300";
   };
   
   return (
@@ -114,32 +126,43 @@ export const ParticipantsCard = ({
       </CardHeader>
       <CardContent>
         <div className="grid gap-2">
-          <div className="flex justify-between">
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Total:</span>
-            <span className="font-medium">
+            <Badge variant="outline" className={`font-medium ${getCapacityBadgeClass()}`}>
               {formattedParticipantCount} participants
-            </span>
+            </Badge>
           </div>
-          <div className="flex justify-between">
+          
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Groups:</span>
-            <span className="font-medium">{totalGroups} / {requiredGroups} groups</span>
+            <Badge variant="outline" 
+              className={`font-medium ${isBelowMinimumGroups 
+                ? "bg-yellow-100 text-yellow-800 border-yellow-300" 
+                : "bg-green-100 text-green-800 border-green-300"}`}
+            >
+              {isBelowMinimumGroups && <AlertTriangle className="h-3 w-3 mr-1" />}
+              {totalGroups} / {requiredGroups} groups
+            </Badge>
           </div>
-          <div className="flex justify-between">
+          
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Capacity:</span>
-            <span className="font-medium">
+            <Badge variant="outline" className={`font-medium ${getCapacityBadgeClass()}`}>
               {totalParticipants} / {capacity}
-            </span>
+              {isNearCapacity && <span className="ml-1">({capacityPercentage}%)</span>}
+            </Badge>
           </div>
-          <div className="flex justify-between">
+          
+          <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Mode:</span>
             <Badge 
               variant="outline" 
               className={`font-medium ${
                 isHighSeason
-                  ? "bg-blue-100 text-blue-800" 
+                  ? "bg-blue-100 text-blue-800 border-blue-300" 
                   : totalParticipants > DEFAULT_CAPACITY_SETTINGS.standard
-                    ? "bg-amber-100 text-amber-800"
-                    : "bg-green-100 text-green-800"
+                    ? "bg-amber-100 text-amber-800 border-amber-300"
+                    : "bg-green-100 text-green-800 border-green-300"
               }`}
             >
               {getModeText()} Mode

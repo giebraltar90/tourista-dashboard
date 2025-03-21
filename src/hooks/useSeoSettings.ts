@@ -51,11 +51,29 @@ export function useSeoSettings() {
     try {
       // Update OG image
       if (ogImageUrl) {
-        const ogImageElement = document.getElementById('og-image') as HTMLMetaElement;
-        if (ogImageElement) {
-          ogImageElement.setAttribute('content', ogImageUrl);
-          console.log("Updated OG image meta tag to:", ogImageUrl);
-        }
+        // Update multiple OG meta tags for better compatibility with messaging apps
+        const metaTags = [
+          { id: 'og-image', property: 'og:image' },
+          { id: 'og-image-url', property: 'og:image:url' },
+          { id: 'og-image-secure', property: 'og:image:secure_url' },
+          { id: 'twitter-image', property: 'twitter:image' }
+        ];
+        
+        metaTags.forEach(tag => {
+          let element = document.querySelector(`meta[property="${tag.property}"]`) as HTMLMetaElement;
+          
+          if (!element) {
+            // Create the meta tag if it doesn't exist
+            element = document.createElement('meta');
+            element.setAttribute('property', tag.property);
+            element.setAttribute('id', tag.id);
+            document.head.appendChild(element);
+          }
+          
+          element.setAttribute('content', ogImageUrl);
+        });
+        
+        console.log("Updated OG image meta tags to:", ogImageUrl);
       }
       
       // Update favicon

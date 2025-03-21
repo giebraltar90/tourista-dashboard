@@ -1,7 +1,7 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info } from "lucide-react";
+import { Info, AlertTriangle, Check } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TicketsCardProps {
@@ -56,6 +56,9 @@ export const TicketsCard = ({
   // Check if it's a Versailles tour
   const isVersaillesTour = location.toLowerCase().includes('versailles');
   
+  // Determine if we have enough tickets
+  const hasEnoughTickets = totalRequiredTickets <= validTotalTickets;
+  
   console.log("PARTICIPANTS DEBUG: TicketsCard final values:", {
     originalValues: { adultTickets, childTickets, totalTickets, requiredTickets },
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
@@ -63,7 +66,8 @@ export const TicketsCard = ({
     displayTotal,
     missingTickets,
     guideTickets: { guideAdultTickets, guideChildTickets },
-    totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets }
+    totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets },
+    hasEnoughTickets
   });
 
   return (
@@ -106,18 +110,36 @@ export const TicketsCard = ({
           
           <div className="flex justify-between pt-2 border-t">
             <span className="text-muted-foreground">Total:</span>
-            <span className="font-medium">
-              {totalRequiredTickets > displayTotal 
-                ? `${displayTotal} (need ${totalRequiredAdultTickets}+${totalRequiredChildTickets})`
-                : `${displayTotal} tickets`}
-            </span>
+            <Badge 
+              variant="outline" 
+              className={hasEnoughTickets 
+                ? "bg-green-100 text-green-800 border-green-300" 
+                : "bg-red-100 text-red-800 border-red-300"}
+            >
+              {hasEnoughTickets 
+                ? <Check className="h-3 w-3 mr-1" /> 
+                : <AlertTriangle className="h-3 w-3 mr-1" />}
+              {displayTotal} tickets
+              {!hasEnoughTickets && ` (need ${totalRequiredTickets})`}
+            </Badge>
           </div>
           
           {missingTickets > 0 && (
             <div className="flex justify-between items-center mt-2 pt-2 border-t">
               <span className="text-muted-foreground">Missing:</span>
               <Badge variant="destructive" className="text-xs font-medium">
+                <AlertTriangle className="h-3 w-3 mr-1" />
                 {missingTickets} tickets needed
+              </Badge>
+            </div>
+          )}
+          
+          {hasEnoughTickets && (
+            <div className="flex justify-between items-center mt-2 pt-2 border-t">
+              <span className="text-muted-foreground">Status:</span>
+              <Badge className="bg-green-100 text-green-800 border-green-300">
+                <Check className="h-3 w-3 mr-1" />
+                Tickets sufficient
               </Badge>
             </div>
           )}

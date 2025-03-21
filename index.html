@@ -7,14 +7,39 @@
     <title>Boutique Tours Dashboard</title>
     <meta name="description" content="Boutique Tours Operations Dashboard" />
     <meta name="author" content="Lovable" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://boutiquetours-test.netlify.app/" />
+    <meta property="og:title" content="Boutique Tours Dashboard" />
+    <meta property="og:description" content="Boutique Tours Operations Dashboard" />
     <meta property="og:image" content="/og-image.png" id="og-image" />
+    <meta property="og:image:url" content="/og-image.png" id="og-image-url" />
+    <meta property="og:image:secure_url" content="/og-image.png" id="og-image-secure" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://boutiquetours-test.netlify.app/" />
+    <meta property="twitter:title" content="Boutique Tours Dashboard" />
+    <meta property="twitter:description" content="Boutique Tours Operations Dashboard" />
+    <meta property="twitter:image" content="/og-image.png" id="twitter-image" />
+    
     <link rel="icon" href="/favicon.ico" id="favicon" />
     <script>
       // This script will update the meta tags when settings are loaded
       window.updateMetaTags = function(ogImageUrl, faviconUrl) {
         if (ogImageUrl) {
-          document.getElementById('og-image').setAttribute('content', ogImageUrl);
-          console.log("Updated OG image meta tag:", ogImageUrl);
+          // Update all OG image meta tags
+          const ogTags = ['og-image', 'og-image-url', 'og-image-secure', 'twitter-image'];
+          ogTags.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+              element.setAttribute('content', ogImageUrl);
+            }
+          });
+          console.log("Updated OG image meta tags:", ogImageUrl);
         }
         if (faviconUrl) {
           document.getElementById('favicon').setAttribute('href', faviconUrl);
