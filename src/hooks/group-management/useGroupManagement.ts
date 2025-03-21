@@ -241,9 +241,9 @@ export const useGroupManagement = (tour: TourCardProps) => {
       // Force recalculation of all group sizes
       setTimeout(() => {
         // Create a deep copy to avoid mutation issues
-        const updatedGroups: VentrataTourGroup[] = JSON.parse(JSON.stringify(localTourGroups));
+        const updatedGroups = JSON.parse(JSON.stringify(localTourGroups));
         
-        // Recalculate all group sizes from participants
+        // FIX: Explicitly create a new array with the recalculated groups
         const recalculatedGroups = updatedGroups.map((group: VentrataTourGroup) => {
           // Calculate directly from participants array if it exists
           if (Array.isArray(group.participants) && group.participants.length > 0) {
@@ -278,6 +278,7 @@ export const useGroupManagement = (tour: TourCardProps) => {
           }
         });
         
+        // Set the state with the new array directly
         setLocalTourGroups(recalculatedGroups);
       }, 500);
     }
