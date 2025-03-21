@@ -77,11 +77,11 @@ export const useParticipantLoading = () => {
           }))
         );
         
-        // Attempt to generate placeholder participants for these groups if there's a size but no participants
-        const modifiedParticipants = [...(participantsData || [])];
+        // Use a new modifiedParticipants array to avoid mutating the original
+        const modifiedParticipantsData = [...(participantsData || [])];
         
         for (const group of groupsWithMissingParticipants) {
-          const existingParticipants = modifiedParticipants.filter(p => p.group_id === group.id);
+          const existingParticipants = modifiedParticipantsData.filter(p => p.group_id === group.id);
           const existingCount = existingParticipants.reduce((total, p) => total + (p.count || 1), 0);
           
           if (existingCount < group.size) {
@@ -91,8 +91,8 @@ export const useParticipantLoading = () => {
             
             const currentDate = new Date().toISOString();
             
-            modifiedParticipants.push({
-              id: `placeholder-${group.id}`,
+            modifiedParticipantsData.push({
+              id: `placeholder-${group.id}-${Date.now()}`,
               name: "Group Members",
               count: missingCount,
               booking_ref: "AUTO",
@@ -107,7 +107,7 @@ export const useParticipantLoading = () => {
         // Create an array of groups with their participants
         const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
           // Get participants for this group
-          const groupParticipants = modifiedParticipants
+          const groupParticipants = modifiedParticipantsData
             .filter(p => p.group_id === group.id)
             .map(p => ({
               id: p.id,
@@ -115,7 +115,9 @@ export const useParticipantLoading = () => {
               count: p.count || 1,
               bookingRef: p.booking_ref,
               childCount: p.child_count || 0,
-              group_id: p.group_id
+              group_id: p.group_id,
+              created_at: p.created_at,
+              updated_at: p.updated_at
             }));
             
           // Calculate size and childCount from participants
@@ -136,12 +138,14 @@ export const useParticipantLoading = () => {
             console.log(`PARTICIPANT LOADING: Adding fallback group member for ${group.id} with size ${group.size}`);
             const currentDate = new Date().toISOString();
             groupParticipants.push({
-              id: `fallback-${group.id}`,
+              id: `fallback-${group.id}-${Date.now()}`,
               name: "Group Members",
               count: group.size,
               bookingRef: "AUTO",
               childCount: group.child_count || 0,
-              group_id: group.id
+              group_id: group.id,
+              created_at: currentDate,
+              updated_at: currentDate
             });
           }
           
@@ -187,13 +191,31 @@ export const useParticipantLoading = () => {
                   count: p.count || 1,
                   bookingRef: p.booking_ref,
                   childCount: p.child_count || 0,
-                  group_id: p.group_id
+                  group_id: p.group_id,
+                  created_at: p.created_at,
+                  updated_at: p.updated_at
                 }))
             : [];
             
           // Calculate size and childCount from participants
           const size = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
           const childCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
+          
+          // If no participants but there's a size, create a placeholder
+          if (groupParticipants.length === 0 && group.size > 0) {
+            console.log(`PARTICIPANT LOADING: Adding placeholder for group ${group.id} with size ${group.size}`);
+            const currentDate = new Date().toISOString();
+            groupParticipants.push({
+              id: `placeholder-${group.id}-${Date.now()}`,
+              name: "Group Members",
+              count: group.size,
+              bookingRef: "AUTO",
+              childCount: group.child_count || 0,
+              group_id: group.id,
+              created_at: currentDate,
+              updated_at: currentDate
+            });
+          }
           
           return {
             id: group.id,
@@ -205,6 +227,16 @@ export const useParticipantLoading = () => {
             participants: groupParticipants
           };
         });
+        
+        console.log("PARTICIPANT LOADING: Final processed groups:", 
+          groupsWithParticipants.map(g => ({
+            id: g.id,
+            name: g.name || 'Unnamed',
+            size: g.size,
+            childCount: g.childCount,
+            participantsCount: g.participants?.length || 0
+          }))
+        );
         
         // Call the callback with the groups data
         onParticipantsLoaded(groupsWithParticipants);

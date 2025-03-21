@@ -21,15 +21,41 @@ export const useGroupCardState = (
   
   // Initialize local participants state
   useEffect(() => {
-    console.log(`GROUP CARD STATE: Setting participants for ${groupName}:`, participants);
+    console.log(`GROUP CARD STATE: Setting participants for ${groupName}:`, {
+      rawParticipants: participants,
+      hasParticipantsArray: Array.isArray(participants),
+      participantsLength: Array.isArray(participants) ? participants.length : 0,
+      size,
+      childCount
+    });
     
     if (Array.isArray(participants)) {
       // Don't filter out placeholder participants - display all of them
       setLocalParticipants(participants);
     } else {
-      setLocalParticipants([]);
+      // If participants is undefined but there's a size, create a placeholder
+      if (typeof size === 'number' && size > 0) {
+        console.log(`GROUP CARD STATE: Creating placeholder for ${groupName} with size ${size}`);
+        const currentDate = new Date().toISOString();
+        
+        // Create a single placeholder participant to represent the group
+        const placeholderParticipant: VentrataParticipant = {
+          id: `placeholder-${groupId}-${Date.now()}`,
+          name: "Group Members",
+          count: size,
+          bookingRef: "AUTO",
+          childCount: childCount || 0,
+          group_id: groupId,
+          created_at: currentDate,
+          updated_at: currentDate
+        };
+        
+        setLocalParticipants([placeholderParticipant]);
+      } else {
+        setLocalParticipants([]);
+      }
     }
-  }, [participants, groupId, groupName]);
+  }, [participants, groupId, groupName, size, childCount]);
   
   // Handle refreshing participants
   const handleRefreshParticipants = useCallback(() => {
@@ -51,16 +77,27 @@ export const useGroupCardState = (
   let totalParticipants = 0;
   let childCount1 = 0;
   
-  if (Array.isArray(participants) && participants.length > 0) {
+  if (Array.isArray(localParticipants) && localParticipants.length > 0) {
     // Count directly from participants array
-    for (const participant of participants) {
+    for (const participant of localParticipants) {
       totalParticipants += participant.count || 1;
       childCount1 += participant.childCount || 0;
     }
+    
+    console.log(`GROUP CARD STATE: Calculated from participants for ${groupName}:`, {
+      totalParticipants,
+      childCount: childCount1,
+      participantsCount: localParticipants.length
+    });
   } else if (typeof size === 'number' && size > 0) {
     // Fallback to size property if provided
     totalParticipants = size;
     childCount1 = typeof childCount === 'number' ? childCount : 0;
+    
+    console.log(`GROUP CARD STATE: Using size property for ${groupName}:`, {
+      totalParticipants,
+      childCount: childCount1
+    });
   }
   
   // Calculate adult count
