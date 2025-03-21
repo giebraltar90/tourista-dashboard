@@ -102,6 +102,34 @@ const TourDetails = () => {
     fetchGuideInfo();
   }, [tour]);
   
+  // Log detailed information about participants to help debugging
+  useEffect(() => {
+    if (tour && tour.tourGroups) {
+      console.log("PARTICIPANTS DEBUG: Tour groups loaded:", tour.tourGroups.length);
+      
+      // Count total participants
+      const totalParticipants = tour.tourGroups.reduce((sum, group) => {
+        return sum + (Array.isArray(group.participants) ? group.participants.length : 0);
+      }, 0);
+      
+      console.log("PARTICIPANTS DEBUG: Total participants:", totalParticipants);
+      
+      // Log detailed group information
+      tour.tourGroups.forEach((group, index) => {
+        const participantCount = Array.isArray(group.participants) ? group.participants.length : 0;
+        console.log(`PARTICIPANTS DEBUG: Group ${index + 1} (${group.name}): 
+          - Size: ${group.size}
+          - Child count: ${group.childCount}
+          - Participant count: ${participantCount}
+          - Has participants array: ${Array.isArray(group.participants)}
+          - Participants: ${participantCount > 0 ? 
+            group.participants.map(p => p.name).join(', ') : 
+            'None'}`
+        );
+      });
+    }
+  }, [tour]);
+  
   console.log("PARTICIPANTS DEBUG: Tour data loaded:", 
     tour ? {
       id: tour.id,

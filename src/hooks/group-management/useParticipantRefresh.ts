@@ -1,5 +1,5 @@
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useEffect } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
 import { useParticipantLoading } from "./useParticipantLoading";
@@ -18,9 +18,23 @@ export const useParticipantRefresh = (
   // Add a debounce ref to prevent too frequent refreshes
   const refreshTimeoutRef = useRef<number | null>(null);
   
+  // Auto-refresh when tourId changes
+  useEffect(() => {
+    if (tourId) {
+      console.log(`PARTICIPANTS DEBUG: Auto refreshing participants for tour ${tourId}`);
+      // Set a short delay to allow other operations to complete
+      const timer = window.setTimeout(() => {
+        loadParticipants(tourId);
+      }, 300);
+      
+      return () => window.clearTimeout(timer);
+    }
+  }, [tourId]);
+  
   // Wrapper for loadParticipants to include setLocalTourGroups
   const loadParticipants = useCallback((tourId: string) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
+    
     return loadParticipantsInner(tourId, (loadedGroups) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing groups:`, loadedGroups);
       
@@ -30,9 +44,10 @@ export const useParticipantRefresh = (
         return;
       }
       
-      // Ensure each group has a participants array
+      // Ensure each group has a participants array and entryTime
       const processedGroups = loadedGroups.map(group => ({
         ...group,
+        entryTime: group.entryTime || "9:00", // Ensure entryTime exists
         participants: Array.isArray(group.participants) ? group.participants : []
       }));
 
@@ -40,6 +55,7 @@ export const useParticipantRefresh = (
         processedGroups.map(g => ({
           id: g.id,
           name: g.name || 'Unnamed',
+          entryTime: g.entryTime,
           size: g.size,
           childCount: g.childCount,
           participantsCount: g.participants?.length || 0,
@@ -69,6 +85,7 @@ export const useParticipantRefresh = (
             updatedGroups.map(g => ({
               id: g.id,
               name: g.name || 'Unnamed',
+              entryTime: g.entryTime,
               size: g.size,
               childCount: g.childCount,
               participantsCount: g.participants?.length || 0,

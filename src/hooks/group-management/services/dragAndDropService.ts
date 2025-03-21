@@ -1,7 +1,7 @@
 
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
-import { updateParticipant } from "@/services/api/tourApi";
+import { updateParticipantGroup } from "@/services/api/tourApi";
 
 /**
  * Handles the drag start event for a participant
@@ -91,7 +91,7 @@ export const processDrop = async (
     console.log(`Updating participant ${participant.id} to group ${destinationGroupId}`);
     
     // Persist the change to the database
-    const success = await updateParticipant(participant.id, destinationGroupId);
+    const success = await updateParticipantGroup(participant.id, destinationGroupId);
     
     if (!success) {
       toast.error("Failed to move participant");

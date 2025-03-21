@@ -79,7 +79,7 @@ export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] 
 
   // Function to add a new group
   const addGroup = async (data: { name?: string; entryTime?: string; guideId?: string }) => {
-    const name = generateGroupName();
+    const name = data.name || generateGroupName();
     
     // Create a new group with a generated UUID for the id
     const newGroup: VentrataTourGroup = {

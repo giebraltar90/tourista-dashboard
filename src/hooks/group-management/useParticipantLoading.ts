@@ -25,7 +25,7 @@ export const useParticipantLoading = () => {
       // Fetch tour groups to get their IDs
       const { data: groups, error: groupsError } = await supabase
         .from('tour_groups')
-        .select('id, guide_id, name')
+        .select('id, guide_id, name, entry_time')
         .eq('tour_id', tourId);
         
       if (groupsError) {
@@ -49,6 +49,7 @@ export const useParticipantLoading = () => {
             const dummyGroup: VentrataTourGroup = {
               id: "default-group",
               name: "Default Group",
+              entryTime: "9:00", // Default entry time
               size: participants.reduce((sum, p) => sum + (p.count || 1), 0),
               childCount: participants.reduce((sum, p) => sum + (p.childCount || 0), 0),
               participants: participants.map(p => ({
@@ -119,6 +120,7 @@ export const useParticipantLoading = () => {
           id: group.id,
           name: group.name,
           guideId: group.guide_id,
+          entryTime: group.entry_time || "9:00", // Default entry time if not provided
           size: size,
           childCount: childCount,
           participants: groupParticipants
@@ -129,6 +131,7 @@ export const useParticipantLoading = () => {
         groupsWithParticipants.map(g => ({
           id: g.id,
           name: g.name || 'Unnamed',
+          entryTime: g.entryTime,
           size: g.size,
           childCount: g.childCount,
           participantsCount: g.participants?.length || 0,
@@ -176,6 +179,7 @@ export const createDemoParticipants = (
     {
       id: "demo-group-1",
       name: "Group 1",
+      entryTime: "9:00", // Add default entry time
       size: 6,
       childCount: 2,
       participants: [
@@ -208,6 +212,7 @@ export const createDemoParticipants = (
     {
       id: "demo-group-2",
       name: "Group 2",
+      entryTime: "10:00", // Add different entry time for second group
       size: 6,
       childCount: 2,
       participants: [
