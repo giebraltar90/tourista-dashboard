@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 // Default logo path that's used as a fallback
 export const DEFAULT_LOGO = "/lovable-uploads/8b1b9ca2-3a0a-4744-9b6a-a65bc97e8958.png";
+export const DEFAULT_OG_IMAGE = "/og-image.png";
+export const DEFAULT_FAVICON = "/favicon.ico";
 
 /**
  * Get a setting from the database
@@ -33,6 +35,22 @@ export const getSetting = async (key: string): Promise<string | null> => {
 export const getAppLogo = async (): Promise<string> => {
   const logo = await getSetting('appLogo');
   return logo || DEFAULT_LOGO;
+};
+
+/**
+ * Get the OG image from settings
+ */
+export const getOgImage = async (): Promise<string> => {
+  const ogImage = await getSetting('ogImage');
+  return ogImage || DEFAULT_OG_IMAGE;
+};
+
+/**
+ * Get the favicon from settings
+ */
+export const getFavicon = async (): Promise<string> => {
+  const favicon = await getSetting('favicon');
+  return favicon || DEFAULT_FAVICON;
 };
 
 /**
@@ -67,4 +85,18 @@ export const updateSetting = async (key: string, value: string): Promise<boolean
  */
 export const updateAppLogo = async (logoUrl: string): Promise<boolean> => {
   return await updateSetting('appLogo', logoUrl);
+};
+
+/**
+ * Update the OG image in settings
+ */
+export const updateOgImage = async (imageUrl: string): Promise<boolean> => {
+  return await updateSetting('ogImage', imageUrl);
+};
+
+/**
+ * Update the favicon in settings
+ */
+export const updateFavicon = async (faviconUrl: string): Promise<boolean> => {
+  return await updateSetting('favicon', faviconUrl);
 };

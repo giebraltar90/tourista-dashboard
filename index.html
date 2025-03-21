@@ -7,7 +7,19 @@
     <title>Boutique Tours Dashboard</title>
     <meta name="description" content="Boutique Tours Operations Dashboard" />
     <meta name="author" content="Lovable" />
-    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:image" content="/og-image.png" id="og-image" />
+    <link rel="icon" href="/favicon.ico" id="favicon" />
+    <script>
+      // This script will update the meta tags when settings are loaded
+      window.updateMetaTags = function(ogImageUrl, faviconUrl) {
+        if (ogImageUrl) {
+          document.getElementById('og-image').setAttribute('content', ogImageUrl);
+        }
+        if (faviconUrl) {
+          document.getElementById('favicon').setAttribute('href', faviconUrl);
+        }
+      }
+    </script>
   </head>
 
   <body>
