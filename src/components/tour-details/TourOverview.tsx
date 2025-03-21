@@ -8,7 +8,6 @@ import {
   TourGroupsSection
 } from "./overview";
 import { useState, useEffect } from "react";
-import { calculateTotalParticipants, calculateTotalChildCount } from "@/hooks/group-management/services/participantService";
 import { GroupAssignment } from "./groups-management/GroupAssignment";
 import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
@@ -50,7 +49,7 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     ? localTourGroups 
     : (Array.isArray(tour.tourGroups) ? tour.tourGroups : []);
   
-  // CRUCIAL DEBUG: Log complete tour groups data
+  // Detailed logging of tourGroups data
   console.log("PARTICIPANTS DEBUG: TourOverview detailed tourGroups data:", 
     tourGroups.map(g => ({
       id: g.id,
@@ -59,37 +58,25 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       childCount: g.childCount,
       guideId: g.guideId,
       hasParticipantsArray: Array.isArray(g.participants),
-      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0,
-      participants: Array.isArray(g.participants) ? g.participants.map(p => ({
-        id: p.id,
-        name: p.name,
-        count: p.count || 1,
-        childCount: p.childCount || 0
-      })) : []
+      participantsLength: Array.isArray(g.participants) ? g.participants.length : 0
     }))
   );
   
-  // ULTRA BUGFIX: Detail each participant explicitly for accurate counting
+  // Fresh participant count from actual data
   console.log("PARTICIPANTS DEBUG: TourOverview starting fresh participant count");
   let totalParticipants = 0;
   let totalChildCount = 0;
   
-  // CRITICAL FIX: Only count from participants arrays, never use size
   for (const group of tourGroups) {
     console.log(`PARTICIPANTS DEBUG: Processing group "${group.name || 'Unnamed'}"`);
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       let groupTotal = 0;
       let groupChildCount = 0;
       
-      // Log each participant individually
+      // Count each participant
       for (const participant of group.participants) {
         const count = participant.count || 1;
         const childCount = participant.childCount || 0;
-        
-        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}":`, {
-          count,
-          childCount
-        });
         
         groupTotal += count;
         groupChildCount += childCount;
@@ -102,20 +89,16 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       totalParticipants += groupTotal;
       totalChildCount += groupChildCount;
-    } else {
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
-      
+    } else if (group.size > 0) {
       // Fall back to size for the UI display if we need to
-      if (group.size && group.size > 0) {
-        totalParticipants += group.size;
-        totalChildCount += group.childCount || 0;
-        
-        console.log(`PARTICIPANTS DEBUG: Falling back to group size: ${group.size}, childCount: ${group.childCount || 0}`);
-      }
+      totalParticipants += group.size;
+      totalChildCount += group.childCount || 0;
+      
+      console.log(`PARTICIPANTS DEBUG: Falling back to group size: ${group.size}, childCount: ${group.childCount || 0}`);
     }
   }
   
-  // CRITICAL FIX: Explicitly convert to boolean to ensure consistent behavior
+  // Convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
   console.log('PARTICIPANTS DEBUG: TourOverview final calculations:', {

@@ -49,20 +49,13 @@ export const TourCardDetails = ({
         if (Array.isArray(group.participants) && group.participants.length > 0) {
           console.log(`PARTICIPANTS DEBUG: Processing ${group.participants.length} participants in group ${group.name || 'Unnamed'}`);
           
-          // Count directly from participants array - one by one
+          // Count directly from participants array
           for (const participant of group.participants) {
             const count = participant.count || 1;
             const childCount = participant.childCount || 0;
             
             calculatedTotalParticipants += count;
             calculatedTotalChildCount += childCount;
-            
-            console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}":`, {
-              count, 
-              childCount,
-              runningTotal: calculatedTotalParticipants,
-              runningChildCount: calculatedTotalChildCount
-            });
           }
         } else if (group.size > 0) {
           // Use size value as fallback if no participants array

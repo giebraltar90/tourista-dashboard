@@ -28,27 +28,6 @@ export const ParticipantsCard = ({
   } = useMemo(() => {
     console.log("PARTICIPANTS DEBUG: ParticipantsCard calculating counts");
     
-    // Extra detailed logging of input data
-    console.log("PARTICIPANTS DEBUG: ParticipantsCard input data:", {
-      providedTotalParticipants,
-      providedTotalChildCount,
-      isHighSeason,
-      tourGroupsCount: tourGroups?.length || 0,
-      tourGroupsDetails: Array.isArray(tourGroups) ? tourGroups.map(g => ({
-        id: g.id,
-        name: g.name || 'Unnamed',
-        size: g.size,
-        childCount: g.childCount,
-        hasParticipantsArray: Array.isArray(g.participants),
-        participantsCount: Array.isArray(g.participants) ? g.participants.length : 0,
-        participants: Array.isArray(g.participants) ? g.participants.map(p => ({
-          name: p.name,
-          count: p.count || 1,
-          childCount: p.childCount || 0
-        })) : []
-      })) : 'No tour groups'
-    });
-    
     // Use provided values if they exist and are greater than 0
     if (
       providedTotalParticipants !== undefined && 
@@ -114,13 +93,6 @@ export const ParticipantsCard = ({
     // Calculate adult count
     const adultCount = calculatedTotal - calculatedChildren;
     
-    // If after calculation we still have 0, try to use group.size as fallback
-    if (calculatedTotal === 0 && Array.isArray(tourGroups)) {
-      console.log("PARTICIPANTS DEBUG: No participants found, using group.size as final fallback");
-      calculatedTotal = tourGroups.reduce((sum, g) => sum + (g.size || 0), 0);
-      calculatedChildren = tourGroups.reduce((sum, g) => sum + (g.childCount || 0), 0);
-    }
-    
     console.log("PARTICIPANTS DEBUG: Final calculated values:", {
       calculatedTotal,
       calculatedChildren,
@@ -136,7 +108,7 @@ export const ParticipantsCard = ({
     };
   }, [tourGroups, providedTotalParticipants, providedTotalChildCount]);
   
-  const totalGroups = tourGroups.length;
+  const totalGroups = Array.isArray(tourGroups) ? tourGroups.length : 0;
   
   // Get capacity and required groups based on season
   const capacity = isHighSeason

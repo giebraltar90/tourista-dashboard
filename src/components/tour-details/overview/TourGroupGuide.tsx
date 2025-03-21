@@ -27,12 +27,12 @@ export const TourGroupGuide = ({
 }: TourGroupGuideProps) => {
   const { assignGuide } = useAssignGuide(tour.id);
   
-  // CRITICAL FIX: Calculate participant count directly from participants array if available
+  // Calculate participant count directly from participants array if available
   const participantCount = Array.isArray(group.participants) && group.participants.length > 0
     ? group.participants.reduce((sum, p) => sum + (p.count || 1), 0)
     : group.size || 0;
     
-  // CRITICAL FIX: Calculate child count from participants array if available  
+  // Calculate child count from participants array if available  
   const childCount = Array.isArray(group.participants) && group.participants.length > 0
     ? group.participants.reduce((sum, p) => sum + (p.childCount || 0), 0)
     : group.childCount || 0;
@@ -42,20 +42,6 @@ export const TourGroupGuide = ({
   
   // Format participant count to show adults + children if there are children
   const displayParticipants = formatParticipantCount(participantCount, childCount);
-  
-  console.log(`PARTICIPANTS DEBUG: TourGroupGuide for ${group.name || `Group ${groupIndex + 1}`} calculations:`, {
-    participantCount,
-    childCount,
-    adultCount,
-    displayParticipants,
-    hasParticipantsArray: Array.isArray(group.participants),
-    participantsLength: Array.isArray(group.participants) ? group.participants.length : 'N/A',
-    participantsDetails: Array.isArray(group.participants) ? group.participants.map(p => ({
-      name: p.name,
-      count: p.count || 1,
-      childCount: p.childCount || 0
-    })) : 'N/A'
-  });
   
   return (
     <Card>

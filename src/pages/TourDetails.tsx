@@ -7,9 +7,7 @@ import { ErrorState } from "@/components/tour-details/ErrorState";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { useState, useEffect } from "react";
 import { GuideInfo, GuideType } from "@/types/ventrata";
-import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { createDemoParticipants } from "@/hooks/group-management/useParticipantLoading";
 
 const TourDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -47,44 +45,11 @@ const TourDetails = () => {
         console.log("PARTICIPANTS DEBUG: Auto-refreshing tour data");
       }, 1000);
       
-      // Check for participants after data is loaded and create demo data if needed
-      const checkParticipantsTimer = setTimeout(() => {
-        // Check if tour has participants data
-        if (tour && tour.tourGroups) {
-          const hasParticipants = tour.tourGroups.some(g => 
-            Array.isArray(g.participants) && g.participants.length > 0
-          );
-          
-          if (!hasParticipants) {
-            console.log("PARTICIPANTS DEBUG: No participants found after loading, injecting demo data");
-            // Simulate a callback that would normally update state
-            const onParticipantsLoaded = (demoGroups: any) => {
-              // Directly update the tour data in the cache with demo groups
-              queryClient.setQueryData(['tour', tourId], (oldTour: any) => {
-                if (!oldTour) return null;
-                return {
-                  ...oldTour,
-                  tourGroups: demoGroups
-                };
-              });
-              
-              toast.info("Added example participants for demonstration");
-            };
-            
-            // Create and inject demo participants
-            createDemoParticipants(tourId, onParticipantsLoaded);
-          } else {
-            console.log("PARTICIPANTS DEBUG: Participants found, no need for demo data");
-          }
-        }
-      }, 2000);
-      
       return () => {
         clearTimeout(timer);
-        clearTimeout(checkParticipantsTimer);
       };
     }
-  }, [tourId, queryClient, handleRefetch, tour]);
+  }, [tourId, queryClient, handleRefetch]);
   
   // Fetch guide information when tour data changes
   useEffect(() => {
@@ -188,17 +153,6 @@ const TourDetails = () => {
       });
     }
   }, [tour]);
-  
-  console.log("PARTICIPANTS DEBUG: Tour data loaded:", 
-    tour ? {
-      id: tour.id,
-      name: tour.tourName,
-      groups: tour.tourGroups?.length || 0,
-      hasParticipants: tour.tourGroups?.some(g => 
-        Array.isArray(g.participants) && g.participants.length > 0
-      )
-    } : 'No tour data'
-  );
 
   return (
     <DashboardLayout>

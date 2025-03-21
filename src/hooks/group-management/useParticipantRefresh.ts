@@ -62,16 +62,6 @@ export const useParticipantRefresh = (
         return;
       }
       
-      // If we got zero groups or participants, don't update
-      const totalParticipants = loadedGroups.reduce((sum, group) => {
-        return sum + (Array.isArray(group.participants) ? group.participants.length : 0);
-      }, 0);
-      
-      if (loadedGroups.length === 0 || totalParticipants === 0) {
-        console.log("PARTICIPANTS DEBUG: No groups or participants received, skipping update");
-        return;
-      }
-      
       // Ensure each group has a participants array and entryTime
       const processedGroups = loadedGroups.map(group => ({
         ...group,
@@ -118,14 +108,6 @@ export const useParticipantRefresh = (
               participantsCount: g.participants?.length || 0
             }))
           );
-          
-          // Log a final count for easier debugging
-          const totalParticipants = updatedGroups.reduce((sum, group) => 
-            sum + (Array.isArray(group.participants) 
-              ? group.participants.reduce((s, p) => s + (p.count || 1), 0)
-              : 0), 0);
-              
-          console.log(`PARTICIPANTS DEBUG: Final total participant count: ${totalParticipants}`);
         }
         
         refreshTimeoutRef.current = null;
