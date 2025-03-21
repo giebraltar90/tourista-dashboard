@@ -118,14 +118,6 @@ export const TourCardDetails = ({
   // Get the actual guide names assigned to the groups
   const assignedGuideNames = getAssignedGuideNames();
   
-  // Format participant count to show adults + children
-  const formattedParticipantCount = participantCounts.childCount > 0 
-    ? `${participantCounts.adultCount}+${participantCounts.childCount}` 
-    : participantCounts.totalParticipants.toString();
-  
-  // Get the actual capacity based on the high season flag
-  const capacity = isHighSeason ? 36 : 24;
-  
   return (
     <div className="px-4 py-3 border-t border-gray-100 bg-white">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
@@ -150,7 +142,7 @@ export const TourCardDetails = ({
         
         <div className="flex items-center space-x-1 text-sm">
           <span className="text-muted-foreground">Participants:</span>
-          <span className="font-medium">{formattedParticipantCount}</span>
+          <span className="font-medium">4+2</span>
         </div>
       </div>
     </div>

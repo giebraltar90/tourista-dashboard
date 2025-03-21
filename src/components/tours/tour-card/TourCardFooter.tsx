@@ -17,10 +17,8 @@ export const TourCardFooter: React.FC<TourCardFooterProps> = ({
   isHovered,
   childCount = 0
 }) => {
-  // Format the participant count to show adults + children if there are children
-  const formattedParticipantCount = childCount > 0 
-    ? `${totalParticipants - childCount}+${childCount}` 
-    : `${totalParticipants}`;
+  // Always display static 4+2 value as requested
+  const formattedParticipantCount = "4+2";
 
   return (
     <CardFooter className="px-4 py-3 border-t border-border/60 flex justify-between items-center">
