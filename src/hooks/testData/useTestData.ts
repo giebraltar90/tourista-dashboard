@@ -54,11 +54,9 @@ export const useTestData = () => {
       }
       
       // Step 4: Create test participants for the groups
-      // Log the groups we're passing to createTestParticipants
-      console.log("Creating participants for groups:", groups.map(g => ({ id: g.id, name: g.name })));
       const participants = await createTestParticipants(groups);
       
-      if (!participants) {
+      if (!participants || participants.length === 0) {
         toast.warning("Failed to create test participants");
         // Continue anyway, this is not critical
       } else {

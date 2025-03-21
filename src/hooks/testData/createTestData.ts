@@ -60,11 +60,10 @@ export const createTestDataForTour = async (tourId: string) => {
     }
     
     // Create test participants for all groups
-    // Use our createTestParticipants function with the tour ID
-    const result = await createTestParticipants(tourGroups);
+    const participants = await createTestParticipants(tourGroups);
     
-    if (result && result.length > 0) {
-      toast.success(`Created ${result.length} test participants`);
+    if (participants && participants.length > 0) {
+      toast.success(`Created ${participants.length} test participants`);
       
       // Refresh the UI
       window.dispatchEvent(new Event('refresh-participants'));

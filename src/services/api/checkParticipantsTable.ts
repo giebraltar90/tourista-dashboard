@@ -1,10 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-interface CheckTableExistsParams {
-  table_name: string;
-}
-
 /**
  * Utility to check if the participants table exists and contains data
  */
