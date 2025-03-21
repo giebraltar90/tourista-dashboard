@@ -27,11 +27,11 @@ export const GuidesAssignedSection = ({
     { id: 'guide1', name: tour.guide1 || 'Primary Guide', info: guide1Info },
     { id: 'guide2', name: tour.guide2 || 'Secondary Guide', info: guide2Info },
     { id: 'guide3', name: tour.guide3 || 'Assistant Guide', info: guide3Info },
-    ...guides.map(guide => ({
+    ...(Array.isArray(guides) ? guides.map(guide => ({
       id: guide.id,
       name: guide.name,
       info: guide
-    }))
+    })) : [])
   ].filter(guide => guide.name && guide.id);
 
   return (

@@ -11,7 +11,7 @@ import { useGuideTours } from "@/hooks/useGuideData";
 
 const GuideDashboard = () => {
   const { role, guideView } = useRole();
-  const { data: guideTours, isLoading, error, guideName } = useGuideTours();
+  const { data: guideTours = [], isLoading, error, guideName } = useGuideTours();
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
   if (role === "operator" && !guideView) {

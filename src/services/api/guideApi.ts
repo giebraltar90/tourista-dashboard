@@ -1,9 +1,35 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { isUuid } from "@/types/ventrata";
-import { VentrataTourGroup } from "@/types/ventrata";
+import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { updateTourModification } from "./modificationApi";
 import { Json } from "@/integrations/supabase/types";
+
+/**
+ * Fetch all guides from the database
+ */
+export const fetchGuides = async (): Promise<GuideInfo[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('guides')
+      .select('*')
+      .order('name');
+      
+    if (error) {
+      console.error("Error fetching guides:", error);
+      return [];
+    }
+    
+    return data ? data.map(guide => ({
+      id: guide.id,
+      name: guide.name,
+      birthday: guide.birthday ? new Date(guide.birthday) : new Date(),
+      guideType: guide.guide_type
+    })) : [];
+  } catch (error) {
+    console.error("Error in fetchGuides:", error);
+    return [];
+  }
+};
 
 /**
  * Assign a guide to a specific tour group

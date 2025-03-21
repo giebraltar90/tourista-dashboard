@@ -36,7 +36,7 @@ const mockMessages = [
 
 const GuideMessages = () => {
   const { role, guideView } = useRole();
-  const { guideName } = useGuideTours();
+  const { guideName = "" } = useGuideTours();
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
   if (role === "operator" && !guideView) {

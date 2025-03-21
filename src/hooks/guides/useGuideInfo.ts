@@ -1,41 +1,42 @@
 
-import { useGuideData } from "./useGuideData";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { GuideInfo } from "@/types/ventrata";
 
-/**
- * Returns information about a guide based on the guide name
- * Improved with better error handling and fallbacks
- */
-export const useGuideInfo = (guideName: string): GuideInfo => {
-  // Safely access the guides data with proper error handling
-  const guideDataResult = useGuideData();
+export function useGuideInfo(guideName: string) {
+  const { data } = useQuery({
+    queryKey: ['guide-info', guideName],
+    queryFn: async (): Promise<GuideInfo | null> => {
+      if (!guideName) return null;
+      
+      try {
+        const { data, error } = await supabase
+          .from('guides')
+          .select('*')
+          .eq('name', guideName)
+          .single();
+        
+        if (error) {
+          console.error(`Error fetching guide info for ${guideName}:`, error);
+          return null;
+        }
+        
+        if (!data) return null;
+        
+        return {
+          id: data.id,
+          name: data.name,
+          birthday: data.birthday ? new Date(data.birthday) : new Date(),
+          guideType: data.guide_type
+        };
+      } catch (error) {
+        console.error(`Error in useGuideInfo for ${guideName}:`, error);
+        return null;
+      }
+    },
+    enabled: !!guideName,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
   
-  // Early return fallback if no guide name provided
-  if (!guideName) {
-    return {
-      name: "Unknown Guide",
-      birthday: new Date(),
-      guideType: "GA Ticket"
-    };
-  }
-  
-  const guides = guideDataResult?.guides || [];
-  
-  // Find the guide by name
-  const guide = guides.find(g => g?.name === guideName);
-  
-  if (!guide) {
-    // Return a fallback object with just the name if guide not found
-    return {
-      name: guideName,
-      birthday: new Date(),
-      guideType: "GA Ticket" // Default type
-    };
-  }
-
-  return {
-    name: guide.name,
-    birthday: guide.birthday || new Date(),
-    guideType: guide.guideType || "GA Ticket"
-  };
-};
+  return data;
+}

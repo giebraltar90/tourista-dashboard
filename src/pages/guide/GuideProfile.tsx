@@ -15,7 +15,7 @@ import { Calendar as CalendarIcon, IdCard } from "lucide-react";
 
 const GuideProfile = () => {
   const { role, guideView } = useRole();
-  const { guideName } = useGuideTours();
+  const { guideName = "" } = useGuideTours();
   const guideInfo = useGuideInfo(guideName);
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
@@ -108,7 +108,7 @@ const GuideProfile = () => {
                     <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
                     <Input 
                       id="birthday" 
-                      value={guideInfo ? format(guideInfo.birthday, 'MMMM d, yyyy') : 'N/A'} 
+                      value={guideInfo?.birthday ? format(guideInfo.birthday, 'MMMM d, yyyy') : 'N/A'} 
                       readOnly 
                     />
                   </div>

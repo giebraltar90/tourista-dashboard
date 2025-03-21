@@ -34,7 +34,7 @@ export function UpcomingTours({ tours: propTours }: UpcomingToursProps) {
   const error = guideView ? guideToursError : allToursError;
   
   // Use provided tours from props if available, otherwise use tours from API
-  const tours = propTours || useApiTours || [];
+  const tours: TourCardProps[] = propTours || useApiTours || [];
   
   // Filter tours based on search query and location filter
   const filteredTours = tours.filter((tour) => {

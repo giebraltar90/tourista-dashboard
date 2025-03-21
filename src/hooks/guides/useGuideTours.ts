@@ -1,37 +1,56 @@
 
-import { useMemo } from "react";
-import { toast } from "sonner";
-import { useTours } from "../tourData/useTours";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useRole } from "@/contexts/RoleContext";
-import { useGuideInfo } from "./useGuideInfo";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 
 export function useGuideTours() {
-  const { data: allTours, isLoading, error } = useTours();
   const { guideView } = useRole();
-  
   const guideName = guideView?.guideName || "";
   
-  const guideTours = useMemo(() => {
-    if (!allTours) return [];
-    
-    // Filter tours where the guide is either guide1 or guide2
-    return allTours.filter(tour => 
-      tour.guide1 === guideName || tour.guide2 === guideName || tour.guide3 === guideName
-    );
-  }, [allTours, guideName]);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['guide-tours', guideName],
+    queryFn: async () => {
+      if (!guideName) return [];
+      
+      try {
+        // In a real app, you would fetch from your backend API
+        // Here we're simulating by filtering all tours
+        const { data: toursData, error } = await supabase
+          .from('tours')
+          .select('*')
+          .or(`guide1.eq.${guideName},guide2.eq.${guideName},guide3.eq.${guideName}`);
+        
+        if (error) {
+          console.error("Error fetching guide tours:", error);
+          return [];
+        }
+        
+        return toursData ? toursData.map((tour): TourCardProps => ({
+          id: tour.id,
+          date: new Date(tour.date),
+          tourName: tour.tour_name || "Unnamed Tour",
+          location: tour.location || "Unknown Location",
+          guide1: tour.guide1 || "",
+          guide2: tour.guide2 || "",
+          guide3: tour.guide3 || "",
+          totalParticipants: tour.total_participants || 0,
+          childCount: tour.child_count || 0,
+          referenceCode: tour.reference_code || "",
+          numTickets: tour.num_tickets || 0,
+          isHighSeason: tour.is_high_season || false,
+          tourGroups: tour.tour_groups || [],
+          tourType: tour.tour_type || "Regular",
+          isBelowMinimum: (tour.total_participants || 0) < 8
+        })) : [];
+      } catch (error) {
+        console.error("Error in useGuideTours:", error);
+        return [];
+      }
+    },
+    enabled: !!guideName,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
   
-  // If we're in guide view but there are no tours, show a notification
-  useMemo(() => {
-    if (guideView && allTours && !isLoading && guideTours.length === 0) {
-      toast.info(`No tours found for guide: ${guideName}`);
-    }
-  }, [guideView, allTours, isLoading, guideTours.length, guideName]);
-  
-  return {
-    data: guideTours,
-    isLoading,
-    error,
-    guideName,
-    guideInfo: useGuideInfo(guideName)
-  };
+  return { data: data || [], isLoading, error, guideName };
 }

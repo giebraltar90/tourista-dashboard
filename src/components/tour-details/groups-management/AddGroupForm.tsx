@@ -25,6 +25,7 @@ import { useGuideData } from "@/hooks/useGuideData";
 import { useAddGroup } from "@/hooks/group-management";
 import { toast } from "sonner";
 import { VentrataTourGroup } from "@/types/ventrata";
+import { GuideInfo } from "@/types/ventrata";
 
 const formSchema = z.object({
   entryTime: z.string().min(1, "Entry time is required"),
@@ -79,7 +80,9 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   };
   
   // Filter guides to only include those with valid IDs to prevent SelectItem errors
-  const validGuides = guides ? guides.filter(guide => guide && guide.id && guide.id.trim() !== "") : [];
+  const validGuides = Array.isArray(guides) 
+    ? guides.filter((guide: GuideInfo) => guide && guide.id && guide.id.trim() !== "") 
+    : [];
   
   return (
     <Form {...form}>
@@ -115,7 +118,7 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="">None (Unassigned)</SelectItem>
-                  {validGuides.map((guide) => (
+                  {validGuides.map((guide: GuideInfo) => (
                     <SelectItem key={guide.id} value={guide.id}>
                       {guide.name} ({guide.guideType})
                     </SelectItem>

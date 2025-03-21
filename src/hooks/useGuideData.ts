@@ -21,3 +21,7 @@ export function useGuideData() {
 
 // Re-export guide tickets functions for backward compatibility
 export { doesGuideNeedTicket, getGuideTicketType } from "./guides/useGuideTickets";
+
+// Re-export other guide hooks
+export { useGuideTours } from "./guides/useGuideTours";
+export { useGuideInfo } from "./guides/useGuideInfo";
