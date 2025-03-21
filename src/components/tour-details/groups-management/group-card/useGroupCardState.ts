@@ -1,107 +1,92 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { VentrataParticipant } from "@/types/ventrata";
 import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
+/**
+ * Custom hook to manage group card state
+ */
 export const useGroupCardState = (
-  rawParticipants: VentrataParticipant[] | undefined, 
+  participants: VentrataParticipant[] | undefined,
   groupId: string,
   groupName: string,
   groupIndex: number,
-  groupSize: number,
-  groupChildCount: number,
+  size?: number,
+  childCount?: number,
   onRefreshParticipants?: () => void
 ) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const refreshTimeoutRef = useRef<number | null>(null);
-
-  // Update local participants when the group's participants change
+  
+  // Initialize local participants state
   useEffect(() => {
-    console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] updating participants:`, {
-      groupId,
-      groupName: groupName || `Group ${groupIndex + 1}`,
-      hasParticipantsArray: Array.isArray(rawParticipants),
-      participantsLength: Array.isArray(rawParticipants) ? rawParticipants.length : 0,
-      rawParticipants: Array.isArray(rawParticipants) 
-        ? rawParticipants.map(p => ({
-            id: p.id,
-            name: p.name, 
-            count: p.count || 1, 
-            childCount: p.childCount || 0
-          })) 
-        : []
-    });
-    
-    if (Array.isArray(rawParticipants)) {
-      setLocalParticipants(rawParticipants);
+    if (Array.isArray(participants)) {
+      // Filter out placeholder participants for display, but include in calculations
+      const displayParticipants = participants.filter(p => 
+        !String(p.id).startsWith('placeholder-') && !String(p.id).startsWith('fallback-')
+      );
+      
+      console.log(`GROUP CARD STATE: Setting local participants for ${groupName}:`, {
+        groupId,
+        rawParticipantsCount: participants.length,
+        displayParticipantsCount: displayParticipants.length,
+        hasPlaceholders: participants.length !== displayParticipants.length
+      });
+      
+      setLocalParticipants(displayParticipants);
     } else {
-      // Ensure we always have an array, even if empty
       setLocalParticipants([]);
     }
-  }, [rawParticipants, groupIndex, groupId, groupName]);
-
-  // Force refresh when needed to repopulate the participants list - but with debounce
-  useEffect(() => {
-    // Only trigger a refresh if we have a mismatch - group has size but no participants
-    const shouldRefresh = localParticipants.length === 0 && groupSize > 0 && onRefreshParticipants;
-    
-    if (shouldRefresh) {
-      console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] has participants mismatch, triggering refresh.`);
-      
-      // Clear any existing timeout
-      if (refreshTimeoutRef.current) {
-        window.clearTimeout(refreshTimeoutRef.current);
-      }
-      
-      // Debounce the refresh to avoid multiple calls
-      refreshTimeoutRef.current = window.setTimeout(() => {
-        if (onRefreshParticipants) {
-          onRefreshParticipants();
-        }
-        refreshTimeoutRef.current = null;
-      }, 5000); // Only refresh after 5 seconds of no changes
-      
-      return () => {
-        if (refreshTimeoutRef.current) {
-          window.clearTimeout(refreshTimeoutRef.current);
-        }
-      };
-    }
-  }, [localParticipants.length, groupSize, groupIndex, onRefreshParticipants]);
-
-  const handleRefreshParticipants = () => {
-    if (onRefreshParticipants) {
-      // Prevent multiple refreshes
-      if (isRefreshing) return;
-      
-      setIsRefreshing(true);
-      onRefreshParticipants();
-      
-      // Reset refresh state after a delay
-      window.setTimeout(() => setIsRefreshing(false), 2000);
-    }
-  };
-
-  // Calculate counts directly from localParticipants array
-  let totalParticipants = 0;
-  let childCount = 0;
+  }, [participants, groupId, groupName]);
   
-  if (Array.isArray(localParticipants) && localParticipants.length > 0) {
-    for (const participant of localParticipants) {
+  // Handle refreshing participants
+  const handleRefreshParticipants = useCallback(() => {
+    if (!onRefreshParticipants) return;
+    
+    console.log(`GROUP CARD STATE: Refreshing participants for ${groupName} (${groupId})`);
+    setIsRefreshing(true);
+    
+    // Call the refresh function
+    onRefreshParticipants();
+    
+    // Set a timeout to remove the refreshing state
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1500);
+  }, [onRefreshParticipants, groupId, groupName]);
+  
+  // Calculate totals from all participants, including placeholders
+  let totalParticipants = 0;
+  let childCount1 = 0;
+  
+  if (Array.isArray(participants) && participants.length > 0) {
+    // Count directly from participants array
+    for (const participant of participants) {
       totalParticipants += participant.count || 1;
-      childCount += participant.childCount || 0;
+      childCount1 += participant.childCount || 0;
     }
-  } else {
-    // Fall back to group.size if no participants
-    totalParticipants = groupSize || 0;
-    childCount = groupChildCount || 0;
+  } else if (typeof size === 'number' && size > 0) {
+    // Fallback to size property if provided
+    totalParticipants = size;
+    childCount1 = typeof childCount === 'number' ? childCount : 0;
   }
   
-  const adultCount = totalParticipants - childCount;
-  const displayParticipants = formatParticipantCount(totalParticipants, childCount);
-
+  // Calculate adult count
+  const adultCount = Math.max(0, totalParticipants - childCount1);
+  
+  // Format the participant count for display
+  const displayParticipants = formatParticipantCount(totalParticipants, childCount1);
+  
+  console.log(`GROUP CARD STATE: Final calculations for ${groupName}:`, {
+    totalParticipants,
+    childCount: childCount1,
+    adultCount,
+    displayParticipants,
+    rawParticipants: Array.isArray(participants) ? participants.length : 0,
+    visibleParticipants: localParticipants.length
+  });
+  
   return {
     isExpanded,
     setIsExpanded,
@@ -109,7 +94,7 @@ export const useGroupCardState = (
     isRefreshing,
     handleRefreshParticipants,
     totalParticipants,
-    childCount,
+    childCount: childCount1,
     adultCount,
     displayParticipants
   };

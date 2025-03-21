@@ -44,7 +44,7 @@ export const useParticipantLoading = () => {
       const groupIds = groups.map(group => group.id);
       console.log("PARTICIPANT LOADING: Found group IDs:", groupIds);
       
-      // Fetch participants for these groups
+      // Fetch ALL participants for the groups in a single query, even if some groups have no participants
       const { data: participants, error: participantsError } = await supabase
         .from('participants')
         .select('*')
@@ -57,6 +57,52 @@ export const useParticipantLoading = () => {
       }
       
       console.log("PARTICIPANT LOADING: Fetched participants from Supabase:", participants);
+      
+      // Check if there might be missing participants for groups with size > 0
+      const groupsWithMissingParticipants = groups.filter(group => {
+        const groupParticipants = participants ? participants.filter(p => p.group_id === group.id) : [];
+        // Calculate size from participants
+        const participantSize = groupParticipants.reduce((total, p) => total + (p.count || 1), 0);
+        // If the group has a size but no or too few participants, it's missing data
+        return (group.size > 0 && (groupParticipants.length === 0 || participantSize < group.size));
+      });
+      
+      if (groupsWithMissingParticipants.length > 0) {
+        console.log("PARTICIPANT LOADING: Groups possibly missing participants:", 
+          groupsWithMissingParticipants.map(g => ({
+            id: g.id,
+            name: g.name,
+            size: g.size,
+            participantsCount: participants ? participants.filter(p => p.group_id === g.id).length : 0
+          }))
+        );
+        
+        // Attempt to generate placeholder participants for these groups if there's a size but no participants
+        let modifiedParticipants = [...(participants || [])];
+        
+        for (const group of groupsWithMissingParticipants) {
+          const existingParticipants = modifiedParticipants.filter(p => p.group_id === group.id);
+          const existingCount = existingParticipants.reduce((total, p) => total + (p.count || 1), 0);
+          
+          if (existingCount < group.size) {
+            const missingCount = group.size - existingCount;
+            // Add a placeholder participant to represent the missing participants
+            console.log(`PARTICIPANT LOADING: Adding placeholder for ${missingCount} participants in group ${group.id}`);
+            
+            modifiedParticipants.push({
+              id: `placeholder-${group.id}`,
+              name: "Group Members",
+              count: missingCount,
+              booking_ref: "AUTO",
+              child_count: group.child_count || 0,
+              group_id: group.id
+            });
+          }
+        }
+        
+        // Use the modified participants list with placeholders
+        participants = modifiedParticipants;
+      }
       
       // Create an array of groups with their participants
       const groupsWithParticipants: VentrataTourGroup[] = groups.map(group => {
@@ -87,13 +133,26 @@ export const useParticipantLoading = () => {
           participantsSample: groupParticipants.slice(0, 2)
         });
         
+        // If we still have missing participants but there's a size
+        if (groupParticipants.length === 0 && group.size > 0) {
+          console.log(`PARTICIPANT LOADING: Adding fallback group member for ${group.id} with size ${group.size}`);
+          groupParticipants.push({
+            id: `fallback-${group.id}`,
+            name: "Group Members",
+            count: group.size,
+            bookingRef: "AUTO",
+            childCount: group.child_count || 0,
+            group_id: group.id
+          });
+        }
+        
         return {
           id: group.id,
           name: group.name,
           guideId: group.guide_id,
           entryTime: group.entry_time || "9:00", // Default entry time if not provided
-          size: groupParticipants.length > 0 ? size : (group.size || 0),
-          childCount: groupParticipants.length > 0 ? childCount : (group.child_count || 0),
+          size: size > 0 ? size : (group.size || 0),
+          childCount: childCount > 0 ? childCount : (group.child_count || 0),
           participants: groupParticipants
         };
       });
