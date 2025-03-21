@@ -60,18 +60,37 @@ export const updateSetting = async (key: string, value: string): Promise<boolean
   try {
     console.log(`Updating setting ${key} with value ${value.substring(0, 50)}...`);
     
-    const { error } = await supabase
+    // First check if the setting already exists
+    const { data: existingSetting } = await supabase
       .from('app_settings')
-      .upsert({ 
-        setting_key: key, 
-        setting_value: value,
-        updated_at: new Date().toISOString()
-      }, {
-        onConflict: 'setting_key'
-      });
+      .select('id')
+      .eq('setting_key', key)
+      .maybeSingle();
+    
+    let result;
+    
+    if (existingSetting) {
+      // Update existing setting
+      result = await supabase
+        .from('app_settings')
+        .update({ 
+          setting_value: value,
+          updated_at: new Date().toISOString()
+        })
+        .eq('setting_key', key);
+    } else {
+      // Insert new setting
+      result = await supabase
+        .from('app_settings')
+        .insert({ 
+          setting_key: key, 
+          setting_value: value,
+          updated_at: new Date().toISOString()
+        });
+    }
 
-    if (error) {
-      console.error(`Error updating setting ${key}:`, error);
+    if (result.error) {
+      console.error(`Error updating setting ${key}:`, result.error);
       return false;
     }
 
