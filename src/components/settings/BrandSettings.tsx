@@ -6,13 +6,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { LogoForm } from "./LogoForm";
+import { LogoForm } from "./brand/LogoForm";
+import { LoadingSpinner } from "./LoadingSpinner";
+import { useQuery } from "@tanstack/react-query";
+import { getAppLogo } from "@/services/settingsService";
 
-interface BrandSettingsProps {
-  logoUrl: string;
-}
+export function BrandSettings() {
+  const { data: logo, isLoading } = useQuery({
+    queryKey: ['logo-settings'],
+    queryFn: async () => {
+      const logoUrl = await getAppLogo();
+      return logoUrl;
+    }
+  });
 
-export function BrandSettings({ logoUrl }: BrandSettingsProps) {
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -22,7 +33,7 @@ export function BrandSettings({ logoUrl }: BrandSettingsProps) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <LogoForm initialLogo={logoUrl} />
+        <LogoForm initialLogo={logo || ""} />
       </CardContent>
     </Card>
   );
