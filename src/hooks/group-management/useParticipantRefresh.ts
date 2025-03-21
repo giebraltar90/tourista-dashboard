@@ -24,6 +24,11 @@ export const useParticipantRefresh = (
     return loadParticipantsInner(tourId, (groups) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing ${groups.length} groups`);
       
+      if (!Array.isArray(groups)) {
+        console.error("PARTICIPANTS DEBUG: Invalid groups data received:", groups);
+        return;
+      }
+      
       // Ensure each group has a participants array
       const processedGroups = groups.map(group => ({
         ...group,

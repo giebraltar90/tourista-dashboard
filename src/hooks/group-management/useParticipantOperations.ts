@@ -114,7 +114,7 @@ export const useParticipantOperations = (
     if (toGroupIndex >= 0 && toGroupIndex < localTourGroups.length) {
       console.log(`PARTICIPANTS DEBUG: Dropping participant into group ${toGroupIndex}`);
       
-      // Pass the actual groups array instead of the state setter function
+      // Pass the actual groups array to dropParticipant
       dropParticipant(e, toGroupIndex, localTourGroups, (updatedGroups) => {
         if (updatedGroups) {
           console.log(`PARTICIPANTS DEBUG: After drop into group ${toGroupIndex}, updating groups:`, 
