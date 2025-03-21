@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { 
@@ -8,7 +7,7 @@ import {
   TourGroupsSection
 } from "./overview";
 import { useState, useEffect } from "react";
-import { GroupAssignment } from "./groups-management/GroupAssignment";
+import { GroupAssignment } from "./groups-management/group-assignment";
 import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGroupManagement } from "@/hooks/group-management";
@@ -23,15 +22,12 @@ interface TourOverviewProps {
 export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourOverviewProps) => {
   const queryClient = useQueryClient();
   
-  // Use useGroupManagement to get the accurate participant data
   const { localTourGroups, refreshParticipants } = useGroupManagement(tour);
   
-  // Force a data refresh to ensure UI is consistent
   useEffect(() => {
     if (tour && tour.id) {
       queryClient.invalidateQueries({ queryKey: ['tour', tour.id] });
       
-      // Initial load of participants
       refreshParticipants();
     }
   }, [tour?.id, queryClient, refreshParticipants]);
@@ -44,12 +40,10 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     localTourGroupsCount: Array.isArray(localTourGroups) ? localTourGroups.length : 0
   });
   
-  // We prioritize localTourGroups for accurate data from the participant management
   const tourGroups = Array.isArray(localTourGroups) && localTourGroups.length > 0 
     ? localTourGroups 
     : (Array.isArray(tour.tourGroups) ? tour.tourGroups : []);
   
-  // Detailed logging of tourGroups data
   console.log("PARTICIPANTS DEBUG: TourOverview detailed tourGroups data:", 
     tourGroups.map(g => ({
       id: g.id,
@@ -62,8 +56,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     }))
   );
   
-  // Fresh participant count from actual data
-  console.log("PARTICIPANTS DEBUG: TourOverview starting fresh participant count");
   let totalParticipants = 0;
   let totalChildCount = 0;
   
@@ -73,7 +65,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       let groupTotal = 0;
       let groupChildCount = 0;
       
-      // Count each participant
       for (const participant of group.participants) {
         const count = participant.count || 1;
         const childCount = participant.childCount || 0;
@@ -90,7 +81,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       totalParticipants += groupTotal;
       totalChildCount += groupChildCount;
     } else if (group.size > 0) {
-      // Fall back to size for the UI display if we need to
       totalParticipants += group.size;
       totalChildCount += group.childCount || 0;
       
@@ -98,7 +88,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     }
   }
   
-  // Convert to boolean to ensure consistent behavior
   const isHighSeason = Boolean(tour.isHighSeason);
   
   console.log('PARTICIPANTS DEBUG: TourOverview final calculations:', {
@@ -109,14 +98,11 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
     tourGroups: tourGroups.length
   });
   
-  // Calculate tickets based on actual participant counts
   const adultTickets = totalParticipants - totalChildCount;
   const childTickets = totalChildCount;
   
-  // Use the actual calculated values for the total tickets
   const totalTickets = totalParticipants;
   
-  // Pass the required tickets to show missing tickets if any
   const requiredTickets = tour.numTickets || 0;
 
   return (
@@ -153,7 +139,6 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       
       <Separator className="my-6" />
       
-      {/* Integrated Group Assignment with correct participant data */}
       <GroupAssignment
         tour={{...tour, isHighSeason}}
       />

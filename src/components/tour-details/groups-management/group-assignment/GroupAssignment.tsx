@@ -1,17 +1,16 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { useGuideInfo, useGuideData } from "@/hooks/guides";
-import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
-import { useState, useEffect, useMemo } from "react";
-import { GroupCard } from "./GroupCard";
-import { AssignGuideDialog } from "./dialogs/AssignGuideDialog";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
-import { useGroupManagement } from "@/hooks/group-management";
-import { MoveParticipantSheet } from "./MoveParticipantSheet";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { RefreshCw, AlertCircle, PlusCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useGroupManagement } from "@/hooks/group-management";
+import { GroupGrid } from "./GroupGrid";
+import { RefreshControls } from "./RefreshControls";
+import { DatabaseStatus } from "./DatabaseStatus";
+import { AssignGuideDialog } from "../dialogs/AssignGuideDialog";
+import { MoveParticipantSheet } from "../MoveParticipantSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { addTestParticipants } from "@/hooks/testData/createTestData";
 
@@ -22,12 +21,6 @@ interface GroupAssignmentProps {
 export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   console.log("DATABASE DEBUG: GroupAssignment rendering with tour:", tour);
   
-  const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
-  const { guides = [] } = useGuideData() || { guides: [] };
-  
-  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [availableGuides, setAvailableGuides] = useState<any[]>([]);
@@ -117,36 +110,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     }
   }, [tour.id, loadParticipants]);
   
-  const stableTourGroups = useMemo(() => {
-    console.log("DATABASE DEBUG: Creating stable tour groups from:", {
-      localTourGroupsLength: localTourGroups?.length || 0,
-      tourGroupsLength: tour.tourGroups?.length || 0
-    });
-    
-    if (!localTourGroups || localTourGroups.length === 0) {
-      console.log("DATABASE DEBUG: Using tour.tourGroups as fallback");
-      if (!tour.tourGroups) return [];
-      
-      return tour.tourGroups.map((group, index) => ({
-        ...group,
-        originalIndex: index,
-        displayName: group.name || `Group ${index + 1}`
-      }));
-    }
-    
-    return localTourGroups.map((group, index) => ({
-      ...group,
-      originalIndex: index,
-      displayName: group.name || `Group ${index + 1}`
-    }));
-  }, [localTourGroups, tour.tourGroups]);
-  
-  console.log("DATABASE DEBUG: Stable tour groups:", stableTourGroups.map(g => ({
-    id: g.id,
-    name: g.displayName,
-    participantsCount: g.participants?.length || 0
-  })));
-  
   const handleRefreshParticipants = async () => {
     if (!tour.id) return;
     
@@ -188,18 +151,6 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     }, 500);
   };
   
-  useEffect(() => {
-    const validGuides = guides
-      .filter(guide => guide.id && isValidUuid(guide.id) && guide.name)
-      .map(guide => ({
-        id: guide.id,
-        name: guide.name,
-        info: guide
-      }));
-    
-    setAvailableGuides(validGuides);
-  }, [guides]);
-  
   const handleOpenAssignGuide = (groupIndex: number) => {
     setSelectedGroupIndex(groupIndex);
     setIsAssignGuideOpen(true);
@@ -210,83 +161,32 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Group & Participant Management</CardTitle>
-          <div className="flex gap-2">
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleAddTestParticipants}
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add Test Participants
-            </Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={handleRefreshParticipants}
-              disabled={isRefreshing}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh Participants'}
-            </Button>
-          </div>
+          <RefreshControls 
+            isRefreshing={isRefreshing}
+            onRefresh={handleRefreshParticipants}
+            onAddTestParticipants={handleAddTestParticipants}
+          />
         </div>
       </CardHeader>
       
       <CardContent>
         <div className="space-y-6">
-          {dbCheckResult && !dbCheckResult.hasTable && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Participants table not found in database. Please check your database setup.
-              </AlertDescription>
-            </Alert>
-          )}
+          <DatabaseStatus dbCheckResult={dbCheckResult} />
           
-          {dbCheckResult && dbCheckResult.hasTable && dbCheckResult.participantCount === 0 && (
-            <Alert className="bg-amber-50 border-amber-200">
-              <AlertCircle className="h-4 w-4 text-amber-600" />
-              <AlertDescription className="text-amber-800">
-                Participants table exists but contains no records. You need to add participants to the database.
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {stableTourGroups.map((group) => {
-                const index = group.originalIndex !== undefined ? group.originalIndex : 0;
-                
-                console.log(`DATABASE DEBUG: Rendering group ${index} (${group.displayName}):`, {
-                  id: group.id,
-                  participantsCount: Array.isArray(group.participants) ? group.participants.length : 0
-                });
-                
-                return (
-                  <GroupCard
-                    key={group.id || index}
-                    group={group}
-                    groupIndex={index}
-                    tour={tour}
-                    guide1Info={guide1Info}
-                    guide2Info={guide2Info}
-                    guide3Info={guide3Info}
-                    onAssignGuide={handleOpenAssignGuide}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDragStart={handleDragStart}
-                    onDragEnd={() => {}} // Empty function to satisfy prop
-                    onMoveClick={setSelectedParticipant}
-                    selectedParticipant={selectedParticipant}
-                    handleMoveParticipant={handleMoveParticipant}
-                    isMovePending={isMovePending}
-                    onRefreshParticipants={handleRefreshParticipants}
-                  />
-                );
-              })}
-            </div>
-          </div>
+          <GroupGrid
+            tour={tour}
+            localTourGroups={localTourGroups}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDragLeave={handleDragLeave}
+            handleDrop={handleDrop}
+            onOpenAssignGuide={handleOpenAssignGuide}
+            selectedParticipant={selectedParticipant}
+            setSelectedParticipant={setSelectedParticipant}
+            handleMoveParticipant={handleMoveParticipant}
+            isMovePending={isMovePending}
+            onRefreshParticipants={handleRefreshParticipants}
+          />
         </div>
       </CardContent>
 
@@ -297,7 +197,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
           tourId={tour.id}
           groupIndex={selectedGroupIndex}
           guides={availableGuides}
-          currentGuideId={stableTourGroups[selectedGroupIndex]?.guideId}
+          currentGuideId={localTourGroups[selectedGroupIndex]?.guideId}
         />
       )}
 
