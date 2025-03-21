@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,7 +79,15 @@ export function CreateTicketBucketForm({ onSuccess, onCancel }: CreateTicketBuck
     setIsSubmitting(true);
     
     try {
-      const bucketData: TicketBucketFormValues = values;
+      // Explicitly cast the values to TicketBucketFormValues to ensure type safety
+      const bucketData: TicketBucketFormValues = {
+        reference_number: values.reference_number,
+        bucket_type: values.bucket_type,
+        tickets_range: values.tickets_range,
+        max_tickets: values.max_tickets,
+        date: values.date,
+        access_time: values.access_time
+      };
       
       await createTicketBucket(bucketData);
       toast.success("Ticket bucket created successfully");
