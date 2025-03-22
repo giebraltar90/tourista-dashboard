@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format, addDays, isAfter } from "date-fns";
-import { Calendar as CalendarIcon, Plus, Search, Upload, Download, Trash2 } from "lucide-react";
+import { Calendar as CalendarIcon, Plus, Search, Upload, Download, Trash2, PencilIcon } from "lucide-react";
 import { CSVUploader } from "./CSVUploader";
 import { CreateTicketBucketForm } from "./CreateTicketBucketForm";
 import { TicketBucket } from "@/types/ticketBuckets";
@@ -33,6 +33,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { EditTicketBucketDialog } from "@/components/tour-details/ticket-management/ticket-bucket/EditTicketBucketDialog";
 
 export function TicketBucketsManagement() {
   const [activeTab, setActiveTab] = useState("list");
@@ -42,6 +43,7 @@ export function TicketBucketsManagement() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [bucketToDelete, setBucketToDelete] = useState<string | null>(null);
+  const [bucketToEdit, setBucketToEdit] = useState<TicketBucket | null>(null);
   
   useEffect(() => {
     loadTicketBuckets();
@@ -77,6 +79,11 @@ export function TicketBucketsManagement() {
     setIsCreateModalOpen(false);
     loadTicketBuckets();
     toast.success("Ticket bucket created successfully");
+  };
+
+  const handleBucketUpdated = () => {
+    loadTicketBuckets();
+    setBucketToEdit(null);
   };
   
   const filteredBuckets = buckets.filter(bucket => {
@@ -259,39 +266,50 @@ export function TicketBucketsManagement() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                <AlertDialog open={bucketToDelete === bucket.id} onOpenChange={(open) => {
-                                  if (!open) setBucketToDelete(null);
-                                }}>
-                                  <AlertDialogTrigger asChild>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="sm"
-                                      className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                                      onClick={() => setBucketToDelete(bucket.id)}
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete the ticket bucket with reference number 
-                                        <span className="font-medium"> {bucket.reference_number}</span>.
-                                        This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction 
-                                        onClick={() => handleDeleteBucket(bucket.id)}
-                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                <div className="flex justify-end space-x-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="text-primary hover:text-primary/90 hover:bg-primary/10"
+                                    onClick={() => setBucketToEdit(bucket)}
+                                  >
+                                    <PencilIcon className="h-4 w-4" />
+                                  </Button>
+                                
+                                  <AlertDialog open={bucketToDelete === bucket.id} onOpenChange={(open) => {
+                                    if (!open) setBucketToDelete(null);
+                                  }}>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm"
+                                        className="text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                                        onClick={() => setBucketToDelete(bucket.id)}
                                       >
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          This will permanently delete the ticket bucket with reference number 
+                                          <span className="font-medium"> {bucket.reference_number}</span>.
+                                          This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction 
+                                          onClick={() => handleDeleteBucket(bucket.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -309,6 +327,14 @@ export function TicketBucketsManagement() {
           </Tabs>
         </CardContent>
       </Card>
+
+      {bucketToEdit && (
+        <EditTicketBucketDialog
+          isOpen={true}
+          onClose={handleBucketUpdated}
+          bucket={bucketToEdit}
+        />
+      )}
     </div>
   );
 }
