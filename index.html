@@ -31,6 +31,13 @@
       // This script will update the meta tags when settings are loaded
       window.updateMetaTags = function(ogImageUrl, faviconUrl) {
         if (ogImageUrl) {
+          // Ensure we have an absolute URL
+          const absoluteOgUrl = ogImageUrl.startsWith('http') 
+            ? ogImageUrl 
+            : `${window.location.origin}${ogImageUrl.startsWith('/') ? '' : '/'}${ogImageUrl}`;
+            
+          console.log("Using absolute OG image URL:", absoluteOgUrl);
+            
           // Update all OG image meta tags
           const ogTags = [
             { id: 'og-image', property: 'og:image' },
@@ -42,8 +49,8 @@
           ogTags.forEach(tag => {
             const element = document.querySelector(`meta[property="${tag.property}"]`);
             if (element) {
-              element.setAttribute('content', ogImageUrl);
-              console.log(`Updated ${tag.property} meta tag to:`, ogImageUrl);
+              element.setAttribute('content', absoluteOgUrl);
+              console.log(`Updated ${tag.property} meta tag to:`, absoluteOgUrl);
             } else {
               console.warn(`Meta tag ${tag.property} not found`);
             }

@@ -21,9 +21,11 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
   const [isAssigning, setIsAssigning] = useState(false);
   const { handleAssignBucket } = useTicketAssignmentService();
   
-  // Format the date for display
-  const formattedDate = format(tourDate, 'yyyy-MM-dd');
-  console.log("Fetching buckets for date:", formattedDate, tourDate);
+  // Ensure the date is displayed correctly without timezone shifts
+  const displayDate = new Date(tourDate);
+  // Format the date for display and API query
+  const formattedDate = format(displayDate, 'yyyy-MM-dd');
+  console.log("AssignBucketDialog - Tour date:", tourDate, "Formatted date:", formattedDate);
 
   // Fetch buckets for the tour date
   const { data: availableBuckets = [], isLoading } = useQuery({
@@ -70,7 +72,7 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="bucket">Select a ticket bucket for {format(tourDate, 'MMM d, yyyy')}</Label>
+            <Label htmlFor="bucket">Select a ticket bucket for {format(displayDate, 'MMM d, yyyy')}</Label>
             <Select
               value={selectedBucketId}
               onValueChange={setSelectedBucketId}

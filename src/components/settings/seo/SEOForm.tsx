@@ -98,9 +98,13 @@ export function SEOForm() {
       }
       
       if (successCount > 0) {
-        // Update meta tags immediately after successful save
+        // Force an immediate update of meta tags after successful save
         console.log("Updating meta tags after successful save");
         updateMetaTags(data.ogImage, data.favicon);
+        
+        // Trigger a refresh to make sure social media previews will pick up the changes
+        const currentUrl = window.location.href;
+        window.history.replaceState(null, '', currentUrl);
         
         toast({
           title: "Settings updated",

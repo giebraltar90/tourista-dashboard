@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CSVTicketBucket, TicketBucket, TicketBucketFormValues } from "@/types/ticketBuckets";
 import { toast } from "sonner";
@@ -22,8 +23,11 @@ export const fetchTicketBuckets = async () => {
 
 export const fetchTicketBucketsByDate = async (date: Date) => {
   // Format date to YYYY-MM-DD format to ensure proper comparison
-  const formattedDate = date.toISOString().split('T')[0];
-  console.log("Fetching buckets for formatted date:", formattedDate);
+  // Add timezone offset fix by setting the time to noon to avoid timezone issues
+  const localDate = new Date(date);
+  localDate.setHours(12, 0, 0, 0);
+  const formattedDate = localDate.toISOString().split('T')[0];
+  console.log("Fetching buckets for formatted date:", formattedDate, "Original date:", date);
   
   const { data, error } = await supabase
     .from('ticket_buckets')

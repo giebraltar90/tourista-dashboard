@@ -28,8 +28,10 @@ export function useSeoSettings() {
         setOgImage(ogImageUrl);
         setFavicon(faviconUrl);
         
-        // Update meta tags in the document
-        updateMetaTagsDirectly(ogImageUrl, faviconUrl);
+        // Update meta tags in the document immediately after loading
+        if (ogImageUrl || faviconUrl) {
+          updateMetaTagsDirectly(ogImageUrl, faviconUrl);
+        }
       } catch (err) {
         console.error("Failed to load SEO settings:", err);
         setError(err instanceof Error ? err : new Error("Failed to load SEO settings"));
@@ -39,9 +41,20 @@ export function useSeoSettings() {
     }
 
     loadSeoSettings();
+
+    // Run meta tag update once at startup and whenever URL changes
+    window.addEventListener('load', () => {
+      loadSeoSettings();
+    });
+    
+    return () => {
+      window.removeEventListener('load', () => {
+        loadSeoSettings();
+      });
+    };
   }, []);
 
-  // Function to update meta tags directly
+  // Enhanced function to update meta tags directly with better debugging
   const updateMetaTagsDirectly = (ogImageUrl: string, faviconUrl: string) => {
     try {
       console.log("Updating meta tags directly with:", { ogImageUrl, faviconUrl });
@@ -58,6 +71,13 @@ export function useSeoSettings() {
       
       // Update OG image
       if (ogImageUrl) {
+        // Make sure the URL is absolute
+        const absoluteOgUrl = ogImageUrl.startsWith('http') 
+          ? ogImageUrl 
+          : `${window.location.origin}${ogImageUrl.startsWith('/') ? '' : '/'}${ogImageUrl}`;
+          
+        console.log("Using absolute OG image URL:", absoluteOgUrl);
+        
         // Update multiple OG meta tags for better compatibility with messaging apps
         const metaTags = [
           { property: 'og:image', id: 'og-image' },
@@ -77,8 +97,8 @@ export function useSeoSettings() {
             document.head.appendChild(element);
           }
           
-          element.setAttribute('content', ogImageUrl);
-          console.log(`Updated ${tag.property} to:`, ogImageUrl);
+          element.setAttribute('content', absoluteOgUrl);
+          console.log(`Updated ${tag.property} to:`, absoluteOgUrl);
         });
       }
       
@@ -92,10 +112,26 @@ export function useSeoSettings() {
           console.warn("Favicon element not found in the document");
         }
       }
+      
+      // Force a refresh of meta tags
+      const metaRefresh = document.createElement('meta');
+      metaRefresh.httpEquiv = 'refresh';
+      metaRefresh.content = '0';
+      document.head.appendChild(metaRefresh);
+      setTimeout(() => {
+        document.head.removeChild(metaRefresh);
+      }, 100);
+      
     } catch (error) {
       console.error("Error updating meta tags directly:", error);
     }
   };
 
-  return { ogImage, favicon, isLoading, error, updateMetaTags: updateMetaTagsDirectly };
+  return { 
+    ogImage, 
+    favicon, 
+    isLoading, 
+    error, 
+    updateMetaTags: updateMetaTagsDirectly 
+  };
 }
