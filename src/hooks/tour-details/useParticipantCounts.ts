@@ -74,7 +74,6 @@ export const useParticipantCounts = (
   // Calculate ticket counts
   const adultTickets = totalParticipants - totalChildCount;
   const childTickets = totalChildCount;
-  const totalTickets = totalParticipants;
   
   // Calculate guide tickets if it's a location requiring guide tickets
   let guideAdultTickets = 0;
@@ -88,50 +87,65 @@ export const useParticipantCounts = (
   console.log(`GUIDE TICKET DEBUG: Tour location "${location}" requires guide tickets: ${isTourRequiringGuideTickets}`);
   
   if (isTourRequiringGuideTickets) {
-    // Check guide 1
-    if (guide1Info && doesGuideNeedTicket(guide1Info, location)) {
-      const ticketType = getGuideTicketType(guide1Info);
-      if (ticketType === 'adult') {
-        guideAdultTickets++;
-        console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
-      } else if (ticketType === 'child') {
-        guideChildTickets++;
-        console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
+    // Check guide 1 - only if we have valid guide info and a valid ID
+    if (guide1Info && guide1) {
+      if (doesGuideNeedTicket(guide1Info, location)) {
+        const ticketType = getGuideTicketType(guide1Info);
+        if (ticketType === 'adult') {
+          guideAdultTickets++;
+          console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
+        } else if (ticketType === 'child') {
+          guideChildTickets++;
+          console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
+        }
+      } else {
+        console.log(`GUIDE TICKET DEBUG: Guide 1 ${guide1Info.name} does not need a ticket at ${location}`);
       }
     } else {
-      console.log(`GUIDE TICKET DEBUG: Guide 1 ${guide1} does not need a ticket or is missing info`);
+      console.log(`GUIDE TICKET DEBUG: Guide 1 ${guide1} has no valid info`);
     }
     
-    // Check guide 2
-    if (guide2Info && doesGuideNeedTicket(guide2Info, location)) {
-      const ticketType = getGuideTicketType(guide2Info);
-      if (ticketType === 'adult') {
-        guideAdultTickets++;
-        console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
-      } else if (ticketType === 'child') {
-        guideChildTickets++;
-        console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
+    // Check guide 2 - only if we have valid guide info and a valid ID
+    if (guide2Info && guide2) {
+      if (doesGuideNeedTicket(guide2Info, location)) {
+        const ticketType = getGuideTicketType(guide2Info);
+        if (ticketType === 'adult') {
+          guideAdultTickets++;
+          console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
+        } else if (ticketType === 'child') {
+          guideChildTickets++;
+          console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
+        }
+      } else {
+        console.log(`GUIDE TICKET DEBUG: Guide 2 ${guide2Info.name} does not need a ticket at ${location}`);
       }
-    } else {
-      console.log(`GUIDE TICKET DEBUG: Guide 2 ${guide2} does not need a ticket or is missing info`);
+    } else if (guide2) {
+      console.log(`GUIDE TICKET DEBUG: Guide 2 ${guide2} has no valid info`);
     }
     
-    // Check guide 3
-    if (guide3Info && doesGuideNeedTicket(guide3Info, location)) {
-      const ticketType = getGuideTicketType(guide3Info);
-      if (ticketType === 'adult') {
-        guideAdultTickets++;
-        console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
-      } else if (ticketType === 'child') {
-        guideChildTickets++;
-        console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
+    // Check guide 3 - only if we have valid guide info and a valid ID
+    if (guide3Info && guide3) {
+      if (doesGuideNeedTicket(guide3Info, location)) {
+        const ticketType = getGuideTicketType(guide3Info);
+        if (ticketType === 'adult') {
+          guideAdultTickets++;
+          console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
+        } else if (ticketType === 'child') {
+          guideChildTickets++;
+          console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
+        }
+      } else {
+        console.log(`GUIDE TICKET DEBUG: Guide 3 ${guide3Info.name} does not need a ticket at ${location}`);
       }
-    } else {
-      console.log(`GUIDE TICKET DEBUG: Guide 3 ${guide3} does not need a ticket or is missing info`);
+    } else if (guide3) {
+      console.log(`GUIDE TICKET DEBUG: Guide 3 ${guide3} has no valid info`);
     }
     
     console.log(`GUIDE TICKET DEBUG: Final count for tour at ${location}: ${guideAdultTickets} adult tickets, ${guideChildTickets} child tickets required for guides`);
   }
+  
+  // Calculate the total tickets needed including participant and guide tickets
+  const totalTickets = adultTickets + childTickets + guideAdultTickets + guideChildTickets;
   
   return {
     totalParticipants,

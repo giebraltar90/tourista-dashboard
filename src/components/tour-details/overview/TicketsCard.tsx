@@ -1,17 +1,17 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, AlertTriangle, Check } from "lucide-react";
+import { Info, Check } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface TicketsCardProps {
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
-  requiredTickets?: number; // Added to show missing tickets
-  guideAdultTickets?: number; // For guides who need adult tickets
-  guideChildTickets?: number; // For guides who need child tickets
-  location?: string; // To check if it's a Versailles tour
+  requiredTickets?: number;
+  guideAdultTickets?: number;
+  guideChildTickets?: number;
+  location?: string;
 }
 
 export const TicketsCard = ({ 
@@ -43,11 +43,6 @@ export const TicketsCard = ({
   
   // Always use the calculated total for consistency
   const displayTotal = calculatedTotal;
-
-  // Calculate missing tickets if required tickets is provided
-  const missingTickets = requiredTickets && requiredTickets > displayTotal 
-    ? requiredTickets - displayTotal 
-    : 0;
     
   // Total required tickets, including guides
   const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
@@ -67,16 +62,11 @@ export const TicketsCard = ({
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,
     displayTotal,
-    missingTickets,
     guideTickets: { guideAdultTickets, guideChildTickets },
     totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets },
     hasEnoughTickets,
     isLocationRequiringTickets
   });
-
-  // Calculate missing adult and child tickets separately
-  const missingAdultTickets = Math.max(0, totalRequiredAdultTickets - validAdultTickets);
-  const missingChildTickets = Math.max(0, totalRequiredChildTickets - validChildTickets);
 
   // Consider guide tickets in the total display
   const displayAdultTickets = totalRequiredAdultTickets;
@@ -129,20 +119,6 @@ export const TicketsCard = ({
               {displayAdultTickets} + {displayChildTickets}
             </Badge>
           </div>
-          
-          {!hasEnoughTickets && (missingAdultTickets > 0 || missingChildTickets > 0) && (
-            <div className="flex justify-between items-center mt-2 pt-2 border-t">
-              <span className="text-muted-foreground">Missing:</span>
-              <Badge variant="destructive" className="text-xs font-medium">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                {missingAdultTickets > 0 && missingChildTickets > 0 
-                  ? `${missingAdultTickets} + ${missingChildTickets}` 
-                  : missingAdultTickets > 0 
-                    ? missingAdultTickets 
-                    : missingChildTickets}
-              </Badge>
-            </div>
-          )}
           
           {hasEnoughTickets && (
             <div className="flex justify-between items-center mt-2 pt-2 border-t">

@@ -41,8 +41,7 @@ export const TicketBucketInfo = ({
   // Calculate the total available tickets across all buckets for this tour
   const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
     if (bucket.tour_id === tourId) {
-      // For buckets assigned to this tour, we count the total capacity
-      // since the required tickets are already accounted for in the UI display
+      // For buckets assigned to this tour, we count the total max tickets
       return sum + bucket.max_tickets;
     } else {
       // For unassigned buckets, count all available tickets

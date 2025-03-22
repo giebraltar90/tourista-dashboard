@@ -20,16 +20,13 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   // Check if this bucket is assigned to the current tour
   const isBucketAssignedToThisTour = bucket.tour_id === tourId;
   
-  // Calculate available tickets, accounting for current tour requirements if assigned
-  let availableTickets = 0;
+  // Calculate available tickets, accounting for current tour requirements
+  let availableTickets = bucket.max_tickets - bucket.allocated_tickets;
   
+  // If this bucket is assigned to the current tour, we need to show the available tickets
+  // after accounting for the tickets needed for this tour
   if (isBucketAssignedToThisTour) {
-    // If bucket is assigned to this tour, we need to deduct the current tour's requirements
-    // from the displayed available tickets and the allocated_tickets already includes the 
-    // requirements for other tours
-    availableTickets = bucket.max_tickets - bucket.allocated_tickets;
-  } else {
-    // If not assigned to this tour, just show the regular availability
+    // The available tickets are the max tickets minus all allocated tickets (including this tour)
     availableTickets = bucket.max_tickets - bucket.allocated_tickets;
   }
   
@@ -37,8 +34,6 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   availableTickets = Math.max(0, availableTickets);
   
   // Split required tickets into participants and guides
-  // This assumes that if the total required is 8 and we know 2 are for guides,
-  // then 6 must be for participants
   const participantTickets = requiredTickets - (bucket.guide_tickets || 0);
   const guideTickets = bucket.guide_tickets || 0;
   
@@ -57,7 +52,6 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
-      effectiveAllocated: isBucketAssignedToThisTour ? bucket.allocated_tickets : bucket.allocated_tickets,
       availableTickets,
       isBucketAssignedToThisTour,
       tourId,
