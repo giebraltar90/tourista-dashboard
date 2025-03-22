@@ -5,11 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { fetchTicketBucketsByDate } from "@/services/api/ticketBucketService";
-import { assignBucketToTour } from "@/services/api/tourTicketService";
-import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { useTicketAssignmentService } from "./services/ticketAssignmentService";
 
 interface AssignBucketDialogProps {
   isOpen: boolean;
@@ -21,7 +19,7 @@ interface AssignBucketDialogProps {
 export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: AssignBucketDialogProps) => {
   const [selectedBucketId, setSelectedBucketId] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
-  const queryClient = useQueryClient();
+  const { handleAssignBucket } = useTicketAssignmentService();
 
   // Fetch buckets for the tour date
   const { data: availableBuckets = [], isLoading } = useQuery({
@@ -33,25 +31,17 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
   // Filter out buckets that are already assigned to any tour
   const unassignedBuckets = availableBuckets.filter(bucket => !bucket.tour_id);
 
-  const handleAssignBucket = async () => {
+  const handleAssignBucketClick = async () => {
     if (!selectedBucketId) {
-      toast.error("Please select a ticket bucket to assign");
       return;
     }
 
     setIsAssigning(true);
     try {
-      await assignBucketToTour(selectedBucketId, tourId);
-      
-      // Invalidate relevant queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['ticketBuckets', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['availableBuckets'] });
-      
-      toast.success("Ticket bucket assigned successfully");
-      onClose();
-    } catch (error) {
-      console.error("Error assigning bucket:", error);
-      toast.error("Failed to assign ticket bucket");
+      const success = await handleAssignBucket(selectedBucketId, tourId);
+      if (success) {
+        onClose();
+      }
     } finally {
       setIsAssigning(false);
     }
@@ -96,7 +86,7 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button 
-            onClick={handleAssignBucket} 
+            onClick={handleAssignBucketClick} 
             disabled={!selectedBucketId || isAssigning}
           >
             {isAssigning ? "Assigning..." : "Assign Bucket"}
