@@ -43,13 +43,18 @@ export const TicketBucketInfo = ({
   // Calculate the total available tickets in the bucket
   const bucketMaxTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
   
+  // Find the allocation for this specific tour
+  const tourAllocation = bucketAssignedToTour?.tour_allocations?.find(
+    allocation => allocation.tour_id === tourId
+  );
+  const ticketsAllocatedToThisTour = tourAllocation?.tickets_required || 0;
+  
   // Calculate allocated tickets to other tours from this bucket
   const allocatedToOtherTours = bucketAssignedToTour ? 
-    bucketAssignedToTour.tour_allocations.reduce((total, allocation) => 
-      allocation.tour_id !== tourId ? total + allocation.tickets_required : total, 0) || 0 : 0;
+    (bucketAssignedToTour.allocated_tickets || 0) - ticketsAllocatedToThisTour : 0;
   
   // Calculate the total available tickets for this tour
-  const totalBucketTickets = bucketMaxTickets > allocatedToOtherTours ? 
+  const totalBucketTickets = bucketMaxTickets > 0 ? 
     bucketMaxTickets - allocatedToOtherTours : 0;
 
   // Log calculations for debugging
@@ -57,6 +62,7 @@ export const TicketBucketInfo = ({
     console.log(`🎫 [TicketBucketInfo] Calculated tickets for tour ${tourId}:`, {
       tourId,
       bucketMaxTickets,
+      ticketsAllocatedToThisTour,
       allocatedToOtherTours,
       totalBucketTickets,
       requiredTickets,
@@ -73,7 +79,7 @@ export const TicketBucketInfo = ({
         tourAllocations: bucketAssignedToTour.tour_allocations
       } : null
     });
-  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets, bucketMaxTickets, allocatedToOtherTours]);
+  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets, bucketMaxTickets, allocatedToOtherTours, ticketsAllocatedToThisTour]);
 
   // We have enough tickets if a bucket is assigned to this tour and has enough available tickets
   const hasEnoughBucketTickets = !!bucketAssignedToTour && totalBucketTickets >= requiredTickets;

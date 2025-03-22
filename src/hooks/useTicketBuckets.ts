@@ -24,12 +24,12 @@ function parseTourAllocations(allocationsData: Json | null): TourAllocation[] {
     // Handle array format
     if (Array.isArray(allocationsData)) {
       return allocationsData.map(item => {
-        // Ensure each item has the required properties
         if (typeof item === 'object' && item !== null) {
+          const itemObj = item as any;
           return {
-            tour_id: String(item.tour_id || ''),
-            tickets_required: Number(item.tickets_required || 0),
-            assigned_at: String(item.assigned_at || new Date().toISOString())
+            tour_id: String(itemObj.tour_id || ''),
+            tickets_required: Number(itemObj.tickets_required || 0),
+            assigned_at: String(itemObj.assigned_at || new Date().toISOString())
           };
         }
         return {
@@ -42,10 +42,11 @@ function parseTourAllocations(allocationsData: Json | null): TourAllocation[] {
     
     // Handle single object format
     if (typeof allocationsData === 'object' && allocationsData !== null) {
+      const dataObj = allocationsData as any;
       return [{
-        tour_id: String((allocationsData as any).tour_id || ''),
-        tickets_required: Number((allocationsData as any).tickets_required || 0),
-        assigned_at: String((allocationsData as any).assigned_at || new Date().toISOString())
+        tour_id: String(dataObj.tour_id || ''),
+        tickets_required: Number(dataObj.tickets_required || 0),
+        assigned_at: String(dataObj.assigned_at || new Date().toISOString())
       }];
     }
   } catch (e) {

@@ -53,7 +53,7 @@ export const useParticipantCounts = (
   });
   
   useEffect(() => {
-    // Calculate baseline counts
+    // Calculate baseline counts from participant data
     const totalParticipants = calculateTotalParticipants(groups);
     const totalChildCount = calculateTotalChildCount(groups);
     
@@ -130,10 +130,10 @@ export const useParticipantCounts = (
       guideCount: [guide1Name, guide2Name, guide3Name].filter(Boolean).length
     });
     
-    // Calculate adult participants - child participants
+    // Calculate adult participants (total - children)
     const adultParticipants = totalParticipants - totalChildCount;
     
-    // Calculate total tickets needed:
+    // Calculate total tickets needed (participants + guides)
     const totalTicketsNeeded = adultParticipants + totalChildCount + guideAdultTickets + guideChildTickets;
     
     setCounts({

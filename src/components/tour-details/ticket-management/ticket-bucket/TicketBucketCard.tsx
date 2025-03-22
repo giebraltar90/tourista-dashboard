@@ -18,21 +18,25 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   // Check if this bucket is assigned to the current tour
-  const isBucketAssignedToThisTour = bucket.tour_id === tourId;
+  const isBucketAssignedToThisTour = bucket.assigned_tours?.includes(tourId) || false;
   
-  // Calculate available tickets that would be shown to other tours
-  const ticketsAllocatedToOtherTours = isBucketAssignedToThisTour 
-    ? bucket.allocated_tickets - requiredTickets 
-    : bucket.allocated_tickets;
+  // Find the allocation for this specific tour
+  const tourAllocation = bucket.tour_allocations?.find(
+    allocation => allocation.tour_id === tourId
+  );
+  const ticketsAllocatedToThisTour = tourAllocation?.tickets_required || 0;
   
-  const availableTicketsForOtherTours = bucket.max_tickets - ticketsAllocatedToOtherTours;
+  // Calculate tickets allocated to other tours
+  const ticketsAllocatedToOtherTours = 
+    (bucket.allocated_tickets || 0) - (isBucketAssignedToThisTour ? ticketsAllocatedToThisTour : 0);
   
-  // When assigned to this tour, we show remaining tickets after allocation to other tours
-  // (this excludes tickets allocated to this tour since they're already accounted for)
-  // When not assigned, we show the total available tickets
+  // Available tickets after accounting for allocations to other tours
+  const availableTicketsForOtherTours = (bucket.max_tickets || 0) - ticketsAllocatedToOtherTours;
+  
+  // For display purposes
   const displayAvailableTickets = isBucketAssignedToThisTour 
     ? availableTicketsForOtherTours 
-    : (bucket.max_tickets - bucket.allocated_tickets);
+    : ((bucket.max_tickets || 0) - (bucket.allocated_tickets || 0));
   
   // Split required tickets into participants and guides
   const guideTickets = bucket.guide_tickets || 0;
@@ -53,20 +57,17 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
+      isBucketAssignedToThisTour,
+      ticketsAllocatedToThisTour,
       ticketsAllocatedToOtherTours,
       availableTicketsForOtherTours,
       displayAvailableTickets,
-      isBucketAssignedToThisTour,
       tourId,
-      bucketTourId: bucket.tour_id,
       requiredTickets,
       participantTickets,
-      guideTickets,
-      allocatedTicketsForOtherTours: isBucketAssignedToThisTour ? 
-        bucket.allocated_tickets - requiredTickets : 
-        bucket.allocated_tickets
+      guideTickets
     });
-  }, [bucket, isBucketAssignedToThisTour, tourId, requiredTickets, ticketsAllocatedToOtherTours, availableTicketsForOtherTours, displayAvailableTickets]);
+  }, [bucket, isBucketAssignedToThisTour, tourId, requiredTickets, ticketsAllocatedToThisTour, ticketsAllocatedToOtherTours, availableTicketsForOtherTours, displayAvailableTickets]);
   
   // Safely format date for display
   let dateToUse;

@@ -45,13 +45,18 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     bucket.assigned_tours && bucket.assigned_tours.includes(tour.id)
   );
   
-  // Calculate available tickets based on bucket allocation
+  // Find the allocation specifically for this tour
+  const tourAllocation = bucketAssignedToTour?.tour_allocations?.find(
+    allocation => allocation.tour_id === tour.id
+  );
+  const ticketsAllocatedToThisTour = tourAllocation?.tickets_required || 0;
+  
+  // Calculate bucket metrics
   const bucketMaxTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
   
   // Calculate allocated tickets to other tours from this bucket
   const allocatedToOtherTours = bucketAssignedToTour ? 
-    bucketAssignedToTour.tour_allocations.reduce((total, allocation) => 
-      allocation.tour_id !== tour.id ? total + allocation.tickets_required : total, 0) || 0 : 0;
+    (bucketAssignedToTour.allocated_tickets || 0) - ticketsAllocatedToThisTour : 0;
   
   // Available tickets is the max tickets minus allocations to other tours
   const availableTickets = bucketAssignedToTour ? bucketMaxTickets - allocatedToOtherTours : 0;
@@ -71,6 +76,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       guideAdultTickets,
       guideChildTickets,
       guideTicketsNeeded,
+      // Allocation details
+      ticketsAllocatedToThisTour,
       // Totals and allocation
       requiredTickets,
       bucketCount: ticketBuckets.length,
@@ -111,7 +118,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     guide2Info,
     guide3Info,
     bucketMaxTickets,
-    allocatedToOtherTours
+    allocatedToOtherTours,
+    ticketsAllocatedToThisTour
   ]);
 
   return (
