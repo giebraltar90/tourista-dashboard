@@ -36,6 +36,8 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
 
 // Helper function to get the type of ticket needed for a guide
 export function getGuideTicketType(guide: GuideInfo): 'adult' | 'child' | null {
+  if (!guide || !guide.guideType) return null;
+  
   console.log("GUIDE TICKET DEBUG: Getting ticket type for guide:", {
     guideName: guide.name,
     guideType: guide.guideType

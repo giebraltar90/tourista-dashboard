@@ -2,7 +2,6 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { 
   TourInformationCard,
-  ParticipantsCard,
   TicketsCard
 } from "./";
 import { VentrataTourGroup } from "@/types/ventrata";
@@ -34,17 +33,10 @@ export const InformationCardsSection = ({
   const requiredTickets = tour.numTickets || 0;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <TourInformationCard 
         referenceCode={tour.referenceCode} 
         tourType={tour.tourType} 
-      />
-      
-      <ParticipantsCard 
-        tourGroups={tourGroups}
-        totalParticipants={totalParticipants}
-        totalChildCount={totalChildCount}
-        isHighSeason={isHighSeason}
       />
       
       <TicketsCard

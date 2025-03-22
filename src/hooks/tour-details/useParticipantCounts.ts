@@ -5,7 +5,7 @@ import { GuideInfo } from "@/types/ventrata";
 import { 
   calculateTotalParticipants, 
   calculateTotalChildCount,
-  calculateGuideTickets,
+  calculateGuideAdultTickets,
   calculateGuideChildTickets
 } from "@/hooks/group-management/services/participantService";
 
@@ -98,15 +98,13 @@ export const useParticipantCounts = (
     console.log(`GUIDE TICKET DEBUG: Tour location "${location}" requires guide tickets: ${isTourRequiringGuideTickets}`);
     
     // Calculate adult guide tickets (GA Ticket guides)
-    const guideTicketsNeeded = isTourRequiringGuideTickets ? calculateGuideTickets(
+    const guideAdultTickets = isTourRequiringGuideTickets ? calculateGuideAdultTickets(
       location,
-      guide1Name,
-      guide2Name,
-      guide3Name
+      enrichedGuides
     ) : 0;
     
     // Calculate child guide tickets (GA Free guides)
-    const guideChildTicketsNeeded = isTourRequiringGuideTickets ? calculateGuideChildTickets(
+    const guideChildTickets = isTourRequiringGuideTickets ? calculateGuideChildTickets(
       location,
       enrichedGuides
     ) : 0;
@@ -116,8 +114,8 @@ export const useParticipantCounts = (
         name: g.name,
         type: g.info?.guideType
       })),
-      guideTicketsNeeded,
-      guideChildTicketsNeeded,
+      guideAdultTickets,
+      guideChildTickets,
       location,
       requiresTickets: isTourRequiringGuideTickets,
       guideCount: enrichedGuides.length
@@ -128,18 +126,18 @@ export const useParticipantCounts = (
     
     // Calculate total tickets needed:
     // Adult participants + guide adult tickets needed
-    const totalTicketsNeeded = adultParticipants + guideTicketsNeeded;
+    const totalTicketsNeeded = adultParticipants + totalChildCount + guideAdultTickets + guideChildTickets;
     
     setCounts({
       totalParticipants,
       totalChildCount,
       totalTicketsNeeded,
-      guideTicketsNeeded,
-      guideChildTicketsNeeded,
+      guideTicketsNeeded: guideAdultTickets,
+      guideChildTicketsNeeded: guideChildTickets,
       adultTickets: adultParticipants,
       childTickets: totalChildCount,
-      guideAdultTickets: guideTicketsNeeded,
-      guideChildTickets: guideChildTicketsNeeded,
+      guideAdultTickets,
+      guideChildTickets,
       totalTickets: totalParticipants
     });
   }, [

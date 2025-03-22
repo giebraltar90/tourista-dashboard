@@ -68,10 +68,6 @@ export const TicketsCard = ({
     isLocationRequiringTickets
   });
 
-  // Consider guide tickets in the total display
-  const displayAdultTickets = totalRequiredAdultTickets;
-  const displayChildTickets = totalRequiredChildTickets;
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -88,7 +84,7 @@ export const TicketsCard = ({
             <span className="font-medium">{validChildTickets} tickets</span>
           </div>
           
-          {(guideAdultTickets > 0 || guideChildTickets > 0) && isLocationRequiringTickets && (
+          {isLocationRequiringTickets && (
             <>
               <div className="pt-2 pb-1 border-t">
                 <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
@@ -107,6 +103,13 @@ export const TicketsCard = ({
                   <span className="font-medium">{guideChildTickets} tickets</span>
                 </div>
               )}
+              
+              {guideAdultTickets === 0 && guideChildTickets === 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GC Guide:</span>
+                  <span className="font-medium">No tickets needed</span>
+                </div>
+              )}
             </>
           )}
           
@@ -116,7 +119,7 @@ export const TicketsCard = ({
               variant="outline" 
               className="font-medium bg-green-100 text-green-800 border-green-300"
             >
-              {displayAdultTickets} + {displayChildTickets}
+              {totalRequiredAdultTickets + totalRequiredChildTickets}
             </Badge>
           </div>
           

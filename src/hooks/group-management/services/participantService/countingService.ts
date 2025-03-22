@@ -60,16 +60,58 @@ export const calculateGuideTickets = (
   
   console.log(`GUIDE TICKET DEBUG: Found ${guideCount} guides for location ${location}`);
   
-  // Each guide needs 1 adult ticket, but we need to check their type
-  // This function only counts GA Ticket guides now
-  // GA Free guides are counted in calculateGuideChildTickets
-  return guideCount;
+  // This function only counts guide presence, not their ticket requirements
+  // The actual ticket calculation will be done based on guide types
+  return 0;
+};
+
+/**
+ * Calculate guide adult tickets needed based on the tour location and guide list with guide types
+ */
+export const calculateGuideAdultTickets = (
+  location: string = "",
+  guides: Array<{
+    id: string;
+    name: string;
+    info: any;
+  }> = []
+): number => {
+  // If no location or no guides, no guide adult tickets needed
+  if (!location || !guides.length) return 0;
+  
+  // Normalize location to lowercase for comparison
+  const locationLower = location.toLowerCase();
+  
+  // Check if this location requires guide tickets
+  const requiresGuideTickets = 
+    locationLower.includes('versailles') || 
+    locationLower.includes('montmartre');
+  
+  if (!requiresGuideTickets) {
+    return 0;
+  }
+  
+  // Count how many GA Ticket guides we have (they need adult tickets)
+  let gaTicketGuideCount = 0;
+  
+  guides.forEach(guide => {
+    // Check guide type
+    const guideType = guide?.info?.guideType;
+    
+    if (guideType === 'GA Ticket') {
+      gaTicketGuideCount++;
+    }
+  });
+  
+  console.log(`GUIDE TICKET DEBUG: For location ${location}, found ${gaTicketGuideCount} GA Ticket guides needing adult tickets`);
+  
+  // Return GA Ticket guide count, as they need adult tickets
+  return gaTicketGuideCount;
 };
 
 /**
  * Calculate guide child tickets based on the tour location and guide list
  * Each guide needs one child ticket if GA Free
- * This is separate from guide tickets (adult tickets)
  */
 export const calculateGuideChildTickets = (
   location: string = "",
@@ -96,8 +138,6 @@ export const calculateGuideChildTickets = (
   
   // Count how many GA Free guides we have (they need child tickets)
   let gaFreeGuideCount = 0;
-  let gaTicketGuideCount = 0;
-  let gcGuideCount = 0;
   
   guides.forEach(guide => {
     // Check guide type
@@ -105,15 +145,11 @@ export const calculateGuideChildTickets = (
     
     if (guideType === 'GA Free') {
       gaFreeGuideCount++;
-    } else if (guideType === 'GA Ticket') {
-      gaTicketGuideCount++;  
-    } else if (guideType === 'GC') {
-      gcGuideCount++;
     }
   });
   
-  console.log(`GUIDE TICKET DEBUG: For location ${location}, found ${gaFreeGuideCount} GA Free, ${gaTicketGuideCount} GA Ticket, and ${gcGuideCount} GC guides`);
+  console.log(`GUIDE TICKET DEBUG: For location ${location}, found ${gaFreeGuideCount} GA Free guides needing child tickets`);
   
-  // Return only GA Free guide count, as they need child tickets
+  // Return GA Free guide count, as they need child tickets
   return gaFreeGuideCount;
 };
