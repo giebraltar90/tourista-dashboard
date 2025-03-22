@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CSVTicketBucket, TicketBucket, TicketBucketFormValues } from "@/types/ticketBuckets";
 import { toast } from "sonner";
@@ -22,7 +21,9 @@ export const fetchTicketBuckets = async () => {
 };
 
 export const fetchTicketBucketsByDate = async (date: Date) => {
+  // Format date to YYYY-MM-DD format to ensure proper comparison
   const formattedDate = date.toISOString().split('T')[0];
+  console.log("Fetching buckets for formatted date:", formattedDate);
   
   const { data, error } = await supabase
     .from('ticket_buckets')
@@ -34,6 +35,8 @@ export const fetchTicketBucketsByDate = async (date: Date) => {
     console.error("Error fetching ticket buckets by date:", error);
     throw error;
   }
+  
+  console.log("API response for buckets:", data);
   
   return data.map(bucket => ({
     ...bucket,

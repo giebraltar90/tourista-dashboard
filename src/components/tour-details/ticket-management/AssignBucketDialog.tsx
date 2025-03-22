@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -20,16 +20,30 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
   const [selectedBucketId, setSelectedBucketId] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
   const { handleAssignBucket } = useTicketAssignmentService();
+  
+  // Format the date for display
+  const formattedDate = format(tourDate, 'yyyy-MM-dd');
+  console.log("Fetching buckets for date:", formattedDate, tourDate);
 
   // Fetch buckets for the tour date
   const { data: availableBuckets = [], isLoading } = useQuery({
-    queryKey: ['availableBuckets', format(tourDate, 'yyyy-MM-dd')],
+    queryKey: ['availableBuckets', formattedDate],
     queryFn: () => fetchTicketBucketsByDate(tourDate),
     enabled: isOpen,
   });
+  
+  // Log the available buckets for debugging
+  useEffect(() => {
+    console.log("Available buckets loaded:", availableBuckets);
+  }, [availableBuckets]);
 
   // Filter out buckets that are already assigned to any tour
   const unassignedBuckets = availableBuckets.filter(bucket => !bucket.tour_id);
+  
+  // Log the filtered unassigned buckets
+  useEffect(() => {
+    console.log("Unassigned buckets:", unassignedBuckets);
+  }, [unassignedBuckets]);
 
   const handleAssignBucketClick = async () => {
     if (!selectedBucketId) {
