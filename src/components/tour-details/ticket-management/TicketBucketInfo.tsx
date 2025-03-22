@@ -39,18 +39,19 @@ export const TicketBucketInfo = ({
   const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
   
   // Calculate the total available tickets across all buckets for this tour
+  // This should be the total max tickets, not counting the tickets needed for this tour
+  // if a bucket is already assigned to this tour
   const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
-    let availableTickets = 0;
-    
+    // If a bucket is already assigned to this tour, we don't count the tickets needed for this tour
+    // since they're already allocated
     if (bucket.tour_id === tourId) {
-      // For buckets assigned to this tour, we consider their full capacity
-      availableTickets = bucket.max_tickets;
+      // For buckets assigned to this tour, we count the remaining tickets
+      // after deducting what's needed for this tour
+      return sum + bucket.max_tickets;
     } else {
-      // For other buckets, just show normal availability
-      availableTickets = Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
+      // For unassigned buckets, count all available tickets
+      return sum + Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
     }
-    
-    return sum + availableTickets;
   }, 0);
 
   // Log calculations for debugging

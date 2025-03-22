@@ -24,9 +24,9 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   let availableTickets = 0;
   
   if (isBucketAssignedToThisTour) {
-    // If bucket is assigned to this tour, the tickets are already accounted for
-    // We should display the tickets that are available AFTER this tour's allocation
-    availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+    // If bucket is assigned to this tour, we need to deduct the current tour's requirements
+    // from the displayed available tickets
+    availableTickets = bucket.max_tickets - bucket.allocated_tickets - requiredTickets;
   } else {
     // If not assigned to this tour, just show the regular availability
     availableTickets = bucket.max_tickets - bucket.allocated_tickets;
@@ -56,7 +56,7 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
-      effectiveAllocated: isBucketAssignedToThisTour ? bucket.allocated_tickets : bucket.allocated_tickets,
+      effectiveAllocated: isBucketAssignedToThisTour ? bucket.allocated_tickets + requiredTickets : bucket.allocated_tickets,
       availableTickets,
       isBucketAssignedToThisTour,
       tourId,
