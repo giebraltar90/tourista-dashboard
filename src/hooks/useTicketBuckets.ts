@@ -34,21 +34,18 @@ export function useTicketBuckets(tourId: string) {
         const buckets = data.map(bucket => {
           try {
             // Create Date with noon time to avoid timezone issues
-            let bucketDate: Date;
+            let bucketDate = new Date();
             
             if (typeof bucket.date === 'string') {
               bucketDate = new Date(bucket.date);
-              bucketDate.setHours(12, 0, 0, 0);
-            } else if (bucket.date && typeof bucket.date === 'object') {
-              // Fix for TypeScript error - safely convert any object to string
+            } else if (bucket.date) {
+              // Safely convert any date value to string first
               const dateStr = String(bucket.date);
               bucketDate = new Date(dateStr);
-              bucketDate.setHours(12, 0, 0, 0);
-            } else {
-              console.warn("Unknown date format:", bucket.date);
-              bucketDate = new Date(); // Fallback
-              bucketDate.setHours(12, 0, 0, 0);
             }
+            
+            // Set to noon to avoid timezone issues
+            bucketDate.setHours(12, 0, 0, 0);
             
             // Calculate available tickets
             const availableTickets = bucket.max_tickets - bucket.allocated_tickets;

@@ -45,11 +45,7 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
       allocatedTickets: bucket.allocated_tickets,
       availableTickets,
       date: bucket.date instanceof Date ? bucket.date.toISOString() : String(bucket.date),
-      dateComponents: bucket.date instanceof Date ? {
-        year: bucket.date.getFullYear(),
-        month: bucket.date.getMonth() + 1,
-        day: bucket.date.getDate()
-      } : "Not a Date object"
+      dateString: bucket.date ? String(bucket.date) : "undefined"
     });
   }, [bucket, availableTickets]);
   
@@ -72,9 +68,13 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
     
     if (isValid(dateToUse)) {
       formattedDate = format(dateToUse, "MMM d, yyyy");
+    } else {
+      console.warn("Invalid date after conversion:", dateToUse);
+      formattedDate = "Date unavailable";
     }
   } catch (e) {
     console.error("Error formatting date:", e);
+    formattedDate = "Error with date";
   }
 
   return (

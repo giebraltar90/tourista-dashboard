@@ -22,8 +22,11 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const { handleRemoveBucket } = useTicketAssignmentService();
 
+  // Safely ensure buckets array is valid
+  const validBuckets = Array.isArray(buckets) ? buckets : [];
+
   // Safely calculate total tickets available in buckets
-  const totalBucketTickets = buckets.reduce((sum, bucket) => {
+  const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
     // Handle both cases: when available_tickets is provided or needs to be calculated
     let availableTickets = 0;
     
@@ -52,13 +55,14 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
   console.log("🔍 [TicketBucketInfo] Calculated total bucket tickets:", {
     totalBucketTickets,
     requiredTickets,
-    bucketCount: buckets.length,
-    bucketsDetail: buckets.map(b => ({
+    bucketCount: validBuckets.length,
+    bucketsDetail: validBuckets.map(b => ({
       id: b.id,
       reference: b.reference_number,
       max: b.max_tickets,
       allocated: b.allocated_tickets,
-      available: b.available_tickets ?? (b.max_tickets - b.allocated_tickets)
+      available: b.available_tickets ?? (b.max_tickets - b.allocated_tickets),
+      date: b.date instanceof Date ? b.date.toISOString() : String(b.date)
     }))
   });
 
@@ -77,7 +81,7 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
     );
   }
 
-  if (buckets.length === 0) {
+  if (validBuckets.length === 0) {
     return (
       <TicketBucketEmpty 
         onAssignBucket={() => setIsAssignDialogOpen(true)} 
@@ -96,7 +100,7 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
       />
 
       <TicketBucketList 
-        buckets={buckets} 
+        buckets={validBuckets} 
         onRemoveBucket={(bucketId) => handleRemoveBucket(bucketId, tourId)} 
       />
 
