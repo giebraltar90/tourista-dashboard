@@ -10,6 +10,7 @@ export interface UpdateBucketParams {
   max_tickets: number;
   tickets_range: string;
   access_time: string | null;
+  date?: Date;
 }
 
 export function useTicketBucketService() {
