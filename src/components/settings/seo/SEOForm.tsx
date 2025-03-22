@@ -2,13 +2,12 @@
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { updateSetting, DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
+import { DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
 import { toast } from "@/components/ui/use-toast";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import { seoFormSchema, SEOFormValues } from "./types";
 import { ImageUploadField } from "./ImageUploadField";
-import { useQuery } from "@tanstack/react-query";
 import { useSeoSettings } from "@/hooks/useSeoSettings";
 
 export function SEOForm() {
@@ -21,7 +20,7 @@ export function SEOForm() {
     ogImage: initialOgImage, 
     favicon: initialFavicon, 
     isLoading,
-    updateMetaTags 
+    saveSeoSettings
   } = useSeoSettings();
 
   // Initialize form with default values
@@ -75,37 +74,11 @@ export function SEOForm() {
     try {
       console.log("Submitting SEO form with data:", data);
       setIsSaving(true);
-      let successCount = 0;
 
-      // Save OG image to database
-      if (data.ogImage) {
-        console.log("Saving OG image:", data.ogImage.substring(0, 50) + "...");
-        const success = await updateSetting('ogImage', data.ogImage);
-        if (success) {
-          console.log("Successfully saved OG image to database");
-          successCount++;
-        }
-      }
-
-      // Save favicon to database
-      if (data.favicon) {
-        console.log("Saving favicon:", data.favicon.substring(0, 50) + "...");
-        const success = await updateSetting('favicon', data.favicon);
-        if (success) {
-          console.log("Successfully saved favicon to database");
-          successCount++;
-        }
-      }
+      // Save both settings at once
+      const success = await saveSeoSettings(data.ogImage, data.favicon);
       
-      if (successCount > 0) {
-        // Force an immediate update of meta tags after successful save
-        console.log("Updating meta tags after successful save");
-        updateMetaTags(data.ogImage, data.favicon);
-        
-        // Trigger a refresh to make sure social media previews will pick up the changes
-        const currentUrl = window.location.href;
-        window.history.replaceState(null, '', currentUrl);
-        
+      if (success) {
         toast({
           title: "Settings updated",
           description: "Your SEO settings have been updated successfully.",

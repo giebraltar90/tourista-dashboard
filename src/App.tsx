@@ -3,9 +3,11 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { RoleProvider } from "./contexts/RoleContext";
 import { DebugProvider } from "./contexts/DebugContext";
+import { useEffect } from "react";
+import { useSeoSettings } from "./hooks/useSeoSettings";
 import Index from "./pages/Index";
 import ToursPage from "./pages/ToursPage";
 import TourDetails from "./pages/TourDetails";
@@ -18,6 +20,21 @@ import GuideMessages from "./pages/guide/GuideMessages";
 
 const queryClient = new QueryClient();
 
+// SEO handler component to update meta tags on route changes
+function SEOHandler() {
+  const location = useLocation();
+  const { updateMetaTags, ogImage, favicon } = useSeoSettings();
+  
+  useEffect(() => {
+    console.log("Route changed, updating SEO settings");
+    if (ogImage && favicon) {
+      updateMetaTags(ogImage, favicon);
+    }
+  }, [location.pathname, ogImage, favicon, updateMetaTags]);
+  
+  return null;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -26,6 +43,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <SEOHandler />
             <Routes>
               <Route path="/" element={<Index />} />
               {/* Tours routes */}

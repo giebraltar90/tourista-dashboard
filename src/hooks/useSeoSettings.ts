@@ -1,11 +1,12 @@
 
 import { useState, useEffect } from "react";
-import { getOgImage, getFavicon, DEFAULT_OG_IMAGE, DEFAULT_FAVICON } from "@/services/settingsService";
+import { getOgImage, getFavicon, DEFAULT_OG_IMAGE, DEFAULT_FAVICON, updateOgImage, updateFavicon } from "@/services/settingsService";
 
 // Add TypeScript declaration for the window.updateMetaTags function
 declare global {
   interface Window {
     updateMetaTags?: (ogImageUrl: string, faviconUrl: string) => void;
+    debugSeoSettings?: () => { ogImage: string, favicon: string };
   }
 }
 
@@ -15,6 +16,7 @@ export function useSeoSettings() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  // Load SEO settings
   useEffect(() => {
     async function loadSeoSettings() {
       try {
@@ -28,7 +30,7 @@ export function useSeoSettings() {
         setOgImage(ogImageUrl);
         setFavicon(faviconUrl);
         
-        // Update meta tags in the document immediately after loading
+        // Apply meta tags immediately after loading
         if (ogImageUrl || faviconUrl) {
           updateMetaTagsDirectly(ogImageUrl, faviconUrl);
         }
@@ -42,43 +44,57 @@ export function useSeoSettings() {
 
     loadSeoSettings();
 
-    // Run meta tag update once at startup and whenever URL changes
-    window.addEventListener('load', () => {
+    // Run once at startup and when the route changes
+    const handleRouteChange = () => {
+      console.log("Route changed, updating meta tags");
       loadSeoSettings();
-    });
+    };
+    
+    window.addEventListener('popstate', handleRouteChange);
+    
+    // Debug helper
+    if (window.debugSeoSettings) {
+      const currentSettings = window.debugSeoSettings();
+      console.log("Current SEO settings from DOM:", currentSettings);
+    }
     
     return () => {
-      window.removeEventListener('load', () => {
-        loadSeoSettings();
-      });
+      window.removeEventListener('popstate', handleRouteChange);
     };
   }, []);
 
-  // Enhanced function to update meta tags directly with better debugging
+  // Function to update meta tags directly with improved debugging
   const updateMetaTagsDirectly = (ogImageUrl: string, faviconUrl: string) => {
     try {
       console.log("Updating meta tags directly with:", { ogImageUrl, faviconUrl });
       
+      // Try to make absolute URLs
+      const makeAbsoluteUrl = (url: string) => {
+        if (!url) return url;
+        if (url.startsWith('http')) return url;
+        if (url.startsWith('data:')) return url; // data URLs are already absolute
+        
+        const baseDomain = window.location.origin;
+        return `${baseDomain}${url.startsWith('/') ? '' : '/'}${url}`;
+      };
+      
+      const absoluteOgUrl = makeAbsoluteUrl(ogImageUrl || DEFAULT_OG_IMAGE);
+      const absoluteFaviconUrl = makeAbsoluteUrl(faviconUrl || DEFAULT_FAVICON);
+      
+      console.log("Using absolute URLs:", { og: absoluteOgUrl, favicon: absoluteFaviconUrl });
+      
       // First try using the window function if available
       if (window.updateMetaTags) {
         console.log("Using window.updateMetaTags function");
-        window.updateMetaTags(ogImageUrl || DEFAULT_OG_IMAGE, faviconUrl || DEFAULT_FAVICON);
+        window.updateMetaTags(absoluteOgUrl, absoluteFaviconUrl);
         return;
       }
       
       // If window function isn't available, update manually
       console.log("Falling back to manual meta tag updates");
       
-      // Update OG image
-      if (ogImageUrl) {
-        // Make sure the URL is absolute
-        const absoluteOgUrl = ogImageUrl.startsWith('http') 
-          ? ogImageUrl 
-          : `${window.location.origin}${ogImageUrl.startsWith('/') ? '' : '/'}${ogImageUrl}`;
-          
-        console.log("Using absolute OG image URL:", absoluteOgUrl);
-        
-        // Update multiple OG meta tags for better compatibility with messaging apps
+      // Update OG image tags
+      if (absoluteOgUrl) {
         const metaTags = [
           { property: 'og:image', id: 'og-image' },
           { property: 'og:image:url', id: 'og-image-url' },
@@ -103,11 +119,11 @@ export function useSeoSettings() {
       }
       
       // Update favicon
-      if (faviconUrl) {
+      if (absoluteFaviconUrl) {
         const faviconElement = document.getElementById('favicon') as HTMLLinkElement;
         if (faviconElement) {
-          faviconElement.setAttribute('href', faviconUrl);
-          console.log("Updated favicon link to:", faviconUrl);
+          faviconElement.setAttribute('href', absoluteFaviconUrl);
+          console.log("Updated favicon link to:", absoluteFaviconUrl);
         } else {
           console.warn("Favicon element not found in the document");
         }
@@ -127,11 +143,47 @@ export function useSeoSettings() {
     }
   };
 
+  // Save and update SEO settings
+  const saveSeoSettings = async (newOgImage: string, newFavicon: string): Promise<boolean> => {
+    try {
+      console.log("Saving SEO settings:", { og: newOgImage, favicon: newFavicon });
+      
+      let success = true;
+      
+      if (newOgImage && newOgImage !== ogImage) {
+        const ogSuccess = await updateOgImage(newOgImage);
+        if (ogSuccess) {
+          setOgImage(newOgImage);
+        }
+        success = success && ogSuccess;
+      }
+      
+      if (newFavicon && newFavicon !== favicon) {
+        const faviconSuccess = await updateFavicon(newFavicon);
+        if (faviconSuccess) {
+          setFavicon(newFavicon);
+        }
+        success = success && faviconSuccess;
+      }
+      
+      if (success) {
+        // Update meta tags immediately
+        updateMetaTagsDirectly(newOgImage, newFavicon);
+      }
+      
+      return success;
+    } catch (error) {
+      console.error("Error saving SEO settings:", error);
+      return false;
+    }
+  };
+
   return { 
     ogImage, 
     favicon, 
     isLoading, 
     error, 
-    updateMetaTags: updateMetaTagsDirectly 
+    updateMetaTags: updateMetaTagsDirectly,
+    saveSeoSettings
   };
 }

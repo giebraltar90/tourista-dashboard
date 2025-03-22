@@ -30,49 +30,78 @@
     <script>
       // This script will update the meta tags when settings are loaded
       window.updateMetaTags = function(ogImageUrl, faviconUrl) {
-        if (ogImageUrl) {
-          // Ensure we have an absolute URL
-          const absoluteOgUrl = ogImageUrl.startsWith('http') 
-            ? ogImageUrl 
-            : `${window.location.origin}${ogImageUrl.startsWith('/') ? '' : '/'}${ogImageUrl}`;
-            
-          console.log("Using absolute OG image URL:", absoluteOgUrl);
-            
-          // Update all OG image meta tags
-          const ogTags = [
-            { id: 'og-image', property: 'og:image' },
-            { id: 'og-image-url', property: 'og:image:url' },
-            { id: 'og-image-secure', property: 'og:image:secure_url' },
-            { id: 'twitter-image', property: 'twitter:image' }
-          ];
+        try {
+          console.log("Window updateMetaTags called with:", { ogImageUrl, faviconUrl });
           
-          ogTags.forEach(tag => {
-            const element = document.querySelector(`meta[property="${tag.property}"]`);
-            if (element) {
-              element.setAttribute('content', absoluteOgUrl);
-              console.log(`Updated ${tag.property} meta tag to:`, absoluteOgUrl);
-            } else {
-              console.warn(`Meta tag ${tag.property} not found`);
-            }
-          });
-        }
-        
-        if (faviconUrl) {
-          const faviconElement = document.getElementById('favicon');
-          if (faviconElement) {
-            faviconElement.setAttribute('href', faviconUrl);
-            console.log("Updated favicon to:", faviconUrl);
+          if (ogImageUrl) {
+            // Ensure we have an absolute URL
+            const absoluteOgUrl = ogImageUrl.startsWith('http') || ogImageUrl.startsWith('data:')
+              ? ogImageUrl 
+              : `${window.location.origin}${ogImageUrl.startsWith('/') ? '' : '/'}${ogImageUrl}`;
+              
+            console.log("Using absolute OG image URL:", absoluteOgUrl);
+              
+            // Update all OG image meta tags
+            const ogTags = [
+              { id: 'og-image', property: 'og:image' },
+              { id: 'og-image-url', property: 'og:image:url' },
+              { id: 'og-image-secure', property: 'og:image:secure_url' },
+              { id: 'twitter-image', property: 'twitter:image' }
+            ];
+            
+            ogTags.forEach(tag => {
+              const element = document.querySelector(`meta[property="${tag.property}"]`);
+              if (element) {
+                element.setAttribute('content', absoluteOgUrl);
+                console.log(`Updated ${tag.property} meta tag to:`, absoluteOgUrl);
+              } else {
+                console.warn(`Meta tag ${tag.property} not found`);
+                // Create the tag if it doesn't exist
+                const newTag = document.createElement('meta');
+                newTag.setAttribute('property', tag.property);
+                newTag.setAttribute('content', absoluteOgUrl);
+                if (tag.id) newTag.setAttribute('id', tag.id);
+                document.head.appendChild(newTag);
+                console.log(`Created new ${tag.property} meta tag with:`, absoluteOgUrl);
+              }
+            });
           }
+          
+          if (faviconUrl) {
+            const absoluteFaviconUrl = faviconUrl.startsWith('http') || faviconUrl.startsWith('data:')
+              ? faviconUrl
+              : `${window.location.origin}${faviconUrl.startsWith('/') ? '' : '/'}${faviconUrl}`;
+              
+            const faviconElement = document.getElementById('favicon');
+            if (faviconElement) {
+              faviconElement.setAttribute('href', absoluteFaviconUrl);
+              console.log("Updated favicon to:", absoluteFaviconUrl);
+            } else {
+              console.warn("Favicon element not found");
+              // Create it if it doesn't exist
+              const newFavicon = document.createElement('link');
+              newFavicon.setAttribute('rel', 'icon');
+              newFavicon.setAttribute('href', absoluteFaviconUrl);
+              newFavicon.setAttribute('id', 'favicon');
+              document.head.appendChild(newFavicon);
+              console.log("Created new favicon with:", absoluteFaviconUrl);
+            }
+          }
+          
+          // Force browsers to refresh cached meta tags
+          document.title = document.title;
+          
+          // Add canonical URL if not present
+          if (!document.querySelector('link[rel="canonical"]')) {
+            const canonical = document.createElement('link');
+            canonical.rel = 'canonical';
+            canonical.href = window.location.href.split('#')[0].split('?')[0];
+            document.head.appendChild(canonical);
+            console.log("Added canonical URL:", canonical.href);
+          }
+        } catch (error) {
+          console.error("Error in updateMetaTags:", error);
         }
-        
-        // Force browser to refresh cached meta tags (important for link previews)
-        const metaRefresh = document.createElement('meta');
-        metaRefresh.httpEquiv = 'refresh';
-        metaRefresh.content = '0';
-        document.head.appendChild(metaRefresh);
-        setTimeout(() => {
-          document.head.removeChild(metaRefresh);
-        }, 100);
       };
       
       // Expose a global debug function
@@ -85,6 +114,12 @@
         });
         return { ogImage, favicon };
       };
+      
+      // Initialize with a small delay to ensure the page is fully loaded
+      setTimeout(() => {
+        console.log("Running initial SEO settings check");
+        window.debugSeoSettings();
+      }, 1000);
     </script>
   </head>
 
