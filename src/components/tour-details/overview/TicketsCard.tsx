@@ -89,35 +89,33 @@ export const TicketsCard = ({
             <span className="font-medium">{validChildTickets} tickets</span>
           </div>
           
-          {isLocationRequiringTickets && (
+          {isLocationRequiringTickets && totalGuideTickets > 0 && (
             <>
               <div className="pt-2 pb-1 border-t">
                 <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
               </div>
               
-              {totalGuideTickets > 0 ? (
-                <>
-                  {validGuideAdultTickets > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">GA Ticket (Adult):</span>
-                      <span className="font-medium">{validGuideAdultTickets} tickets</span>
-                    </div>
-                  )}
-                  
-                  {validGuideChildTickets > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">GA Free (Child):</span>
-                      <span className="font-medium">{validGuideChildTickets} tickets</span>
-                    </div>
-                  )}
-                </>
-              ) : (
+              {validGuideAdultTickets > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Guide Tickets:</span>
-                  <span className="font-medium text-green-600">No tickets needed</span>
+                  <span className="text-muted-foreground">GA Ticket (Adult):</span>
+                  <span className="font-medium">{validGuideAdultTickets} tickets</span>
+                </div>
+              )}
+              
+              {validGuideChildTickets > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">GA Free (Child):</span>
+                  <span className="font-medium">{validGuideChildTickets} tickets</span>
                 </div>
               )}
             </>
+          )}
+          
+          {isLocationRequiringTickets && totalGuideTickets === 0 && (
+            <div className="flex justify-between pt-2 border-t">
+              <span className="text-muted-foreground">Guide Tickets:</span>
+              <span className="font-medium text-green-600">No tickets needed</span>
+            </div>
           )}
           
           <div className="flex justify-between pt-2 border-t">

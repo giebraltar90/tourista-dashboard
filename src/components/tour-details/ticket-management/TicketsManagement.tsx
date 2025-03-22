@@ -9,7 +9,6 @@ import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
-import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuideTickets";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   // Use the participant counts hook to get ticket requirements
@@ -89,17 +88,23 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       guide1Info: guide1Info ? {
         name: guide1Info.name,
         type: guide1Info.guideType,
-        needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, tour.location) : false
+        needsTicket: guide1Info ? tour.location && guide1Info.guideType ? 
+          (tour.location.toLowerCase().includes('versailles') || tour.location.toLowerCase().includes('montmartre')) && 
+          (guide1Info.guideType === 'GA Ticket' || guide1Info.guideType === 'GA Free') : false : false
       } : null,
       guide2Info: guide2Info ? {
         name: guide2Info.name,
         type: guide2Info.guideType,
-        needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, tour.location) : false
+        needsTicket: guide2Info ? tour.location && guide2Info.guideType ? 
+          (tour.location.toLowerCase().includes('versailles') || tour.location.toLowerCase().includes('montmartre')) && 
+          (guide2Info.guideType === 'GA Ticket' || guide2Info.guideType === 'GA Free') : false : false
       } : null,
       guide3Info: guide3Info ? {
         name: guide3Info.name,
         type: guide3Info.guideType,
-        needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, tour.location) : false
+        needsTicket: guide3Info ? tour.location && guide3Info.guideType ? 
+          (tour.location.toLowerCase().includes('versailles') || tour.location.toLowerCase().includes('montmartre')) && 
+          (guide3Info.guideType === 'GA Ticket' || guide3Info.guideType === 'GA Free') : false : false
       } : null
     });
   }, [
