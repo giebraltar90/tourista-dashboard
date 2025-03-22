@@ -2,7 +2,7 @@
 import { GuideInfo } from "@/types/ventrata";
 
 // Helper function to determine if a guide needs a ticket based on tour location and guide type
-export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boolean {
+export function doesGuideNeedTicket(guide: GuideInfo | null, tourLocation: string): boolean {
   if (!guide || !guide.guideType || !tourLocation) {
     console.log(`GUIDE TICKET DEBUG: Guide or location info missing, defaulting to no ticket`);
     return false;
@@ -41,7 +41,7 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
 }
 
 // Helper function to get the type of ticket needed for a guide
-export function getGuideTicketType(guide: GuideInfo): 'adult' | 'child' | null {
+export function getGuideTicketType(guide: GuideInfo | null): 'adult' | 'child' | null {
   if (!guide || !guide.guideType) {
     console.log("GUIDE TICKET DEBUG: Guide info is invalid, returning null ticket type");
     return null;

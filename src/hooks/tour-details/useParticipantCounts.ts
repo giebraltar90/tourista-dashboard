@@ -69,7 +69,7 @@ export const useParticipantCounts = (
     let guideAdultTickets = 0;
     let guideChildTickets = 0;
     
-    // Check guide 1
+    // Only check guide1 if both name and info exist
     if (guide1Info && guide1Name) {
       const needsTicket = doesGuideNeedTicket(guide1Info, location);
       const ticketType = getGuideTicketType(guide1Info);
@@ -87,7 +87,7 @@ export const useParticipantCounts = (
       }
     }
     
-    // Check guide 2
+    // Only check guide2 if both name and info exist
     if (guide2Info && guide2Name) {
       const needsTicket = doesGuideNeedTicket(guide2Info, location);
       const ticketType = getGuideTicketType(guide2Info);
@@ -105,7 +105,7 @@ export const useParticipantCounts = (
       }
     }
     
-    // Check guide 3
+    // Only check guide3 if both name and info exist
     if (guide3Info && guide3Name) {
       const needsTicket = doesGuideNeedTicket(guide3Info, location);
       const ticketType = getGuideTicketType(guide3Info);

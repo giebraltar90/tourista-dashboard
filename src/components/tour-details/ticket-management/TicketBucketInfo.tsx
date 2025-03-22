@@ -37,7 +37,7 @@ export const TicketBucketInfo = ({
 
   // Find bucket that is assigned to this specific tour
   const bucketAssignedToTour = validBuckets.find(bucket => 
-    bucket.assigned_tours && bucket.assigned_tours.includes(tourId)
+    bucket.assigned_tours?.includes(tourId)
   );
   
   // Calculate the total available tickets in the bucket
@@ -45,7 +45,7 @@ export const TicketBucketInfo = ({
   
   // Calculate allocated tickets to other tours from this bucket
   const allocatedToOtherTours = bucketAssignedToTour ? 
-    bucketAssignedToTour.tour_allocations?.reduce((total, allocation) => 
+    bucketAssignedToTour.tour_allocations.reduce((total, allocation) => 
       allocation.tour_id !== tourId ? total + allocation.tickets_required : total, 0) || 0 : 0;
   
   // Calculate the total available tickets for this tour

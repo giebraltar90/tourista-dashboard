@@ -14,14 +14,14 @@ import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuide
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   // Use the participant counts hook to get ticket requirements
   const participantCounts = useParticipantCounts(
-    tour.tourGroups,
+    tour.tourGroups || [],
     guide1Info,
     guide2Info, 
     guide3Info,
-    tour.guide1,
-    tour.guide2,
-    tour.guide3,
-    tour.location,
+    tour.guide1 || '',
+    tour.guide2 || '', 
+    tour.guide3 || '',
+    tour.location || '',
     []
   );
   
@@ -50,7 +50,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   
   // Calculate allocated tickets to other tours from this bucket
   const allocatedToOtherTours = bucketAssignedToTour ? 
-    bucketAssignedToTour.tour_allocations?.reduce((total, allocation) => 
+    bucketAssignedToTour.tour_allocations.reduce((total, allocation) => 
       allocation.tour_id !== tour.id ? total + allocation.tickets_required : total, 0) || 0 : 0;
   
   // Available tickets is the max tickets minus allocations to other tours
@@ -64,6 +64,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     console.log(`🎫 [TicketsManagement] Ticket requirements for tour ${tour.id} at ${tour.location}:`, {
       tourId: tour.id,
       tourLocation: tour.location,
+      tourGroups: tour.tourGroups?.length || 0,
       totalParticipants,
       totalChildCount,
       // Guide tickets
@@ -97,6 +98,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   }, [
     tour.id,
     tour.location,
+    tour.tourGroups,
     ticketBuckets, 
     totalParticipants, 
     totalChildCount,

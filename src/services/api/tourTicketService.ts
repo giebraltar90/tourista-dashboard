@@ -2,6 +2,84 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TourAllocation } from "@/types/ticketBuckets";
 import { toast } from "sonner";
+import { Json } from "@/integrations/supabase/types";
+
+/**
+ * Helper function to safely parse tour allocations from database
+ */
+function parseTourAllocations(allocationsData: Json | null): TourAllocation[] {
+  if (!allocationsData) return [];
+  
+  try {
+    // Handle string format (JSON string)
+    if (typeof allocationsData === 'string') {
+      try {
+        return JSON.parse(allocationsData) as TourAllocation[];
+      } catch (e) {
+        console.error("Error parsing tour_allocations string:", e);
+        return [];
+      }
+    }
+    
+    // Handle array format
+    if (Array.isArray(allocationsData)) {
+      return allocationsData.map(item => {
+        // Ensure each item has the required properties
+        if (typeof item === 'object' && item !== null) {
+          return {
+            tour_id: String(item.tour_id || ''),
+            tickets_required: Number(item.tickets_required || 0),
+            assigned_at: String(item.assigned_at || new Date().toISOString())
+          };
+        }
+        return {
+          tour_id: '',
+          tickets_required: 0,
+          assigned_at: new Date().toISOString()
+        };
+      });
+    }
+    
+    // Handle single object format
+    if (typeof allocationsData === 'object' && allocationsData !== null) {
+      return [{
+        tour_id: String(allocationsData.tour_id || ''),
+        tickets_required: Number(allocationsData.tickets_required || 0),
+        assigned_at: String(allocationsData.assigned_at || new Date().toISOString())
+      }];
+    }
+  } catch (e) {
+    console.error("Error processing tour allocations:", e);
+  }
+  
+  return [];
+}
+
+/**
+ * Helper function to safely parse assigned tours from database
+ */
+function parseAssignedTours(assignedToursData: Json | null): string[] {
+  if (!assignedToursData) return [];
+  
+  // If it's already an array, make sure it contains only strings
+  if (Array.isArray(assignedToursData)) {
+    return assignedToursData.map(item => String(item || ''));
+  }
+  
+  // If it's a string, try to parse it as JSON
+  if (typeof assignedToursData === 'string') {
+    try {
+      const parsed = JSON.parse(assignedToursData);
+      if (Array.isArray(parsed)) {
+        return parsed.map(item => String(item || ''));
+      }
+    } catch (e) {
+      console.error("Error parsing assigned_tours string:", e);
+    }
+  }
+  
+  return [];
+}
 
 /**
  * Assigns a ticket bucket to a specific tour
@@ -20,27 +98,11 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
       throw fetchError;
     }
     
-    // Initialize or update arrays with proper type safety
-    const assignedTours = Array.isArray(bucketData.assigned_tours) ? [...bucketData.assigned_tours] : [];
+    // Parse assigned_tours to ensure it's in the correct format
+    const assignedTours = parseAssignedTours(bucketData.assigned_tours);
     
     // Parse tour_allocations to ensure it's in the correct format
-    let tourAllocations: TourAllocation[] = [];
-    if (bucketData.tour_allocations) {
-      // Handle both array and JSON string formats
-      if (typeof bucketData.tour_allocations === 'string') {
-        try {
-          tourAllocations = JSON.parse(bucketData.tour_allocations);
-        } catch (e) {
-          console.error("Error parsing tour_allocations string:", e);
-          tourAllocations = [];
-        }
-      } else if (Array.isArray(bucketData.tour_allocations)) {
-        tourAllocations = bucketData.tour_allocations as TourAllocation[];
-      } else if (typeof bucketData.tour_allocations === 'object') {
-        // If it's already an object but not an array, wrap it
-        tourAllocations = [bucketData.tour_allocations as unknown as TourAllocation];
-      }
-    }
+    const tourAllocations = parseTourAllocations(bucketData.tour_allocations);
     
     // Check if tour is already assigned
     if (!assignedTours.includes(tourId)) {
@@ -66,10 +128,7 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
     
     // Calculate total allocated tickets
     const totalAllocated = tourAllocations.reduce(
-      (sum, allocation) => sum + (typeof allocation.tickets_required === 'number' 
-        ? allocation.tickets_required 
-        : parseInt(String(allocation.tickets_required)) || 0), 
-      0
+      (sum, allocation) => sum + allocation.tickets_required, 0
     );
     
     // Update the bucket
@@ -77,7 +136,7 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
       .from('ticket_buckets')
       .update({ 
         assigned_tours: assignedTours,
-        tour_allocations: tourAllocations,
+        tour_allocations: tourAllocations as unknown as Json,
         allocated_tickets: totalAllocated
       })
       .eq('id', bucketId)
@@ -121,27 +180,11 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
       throw fetchError;
     }
     
-    // Initialize or get arrays with proper type safety
-    const assignedTours = Array.isArray(bucketData.assigned_tours) ? [...bucketData.assigned_tours] : [];
+    // Parse assigned_tours to ensure it's in the correct format
+    const assignedTours = parseAssignedTours(bucketData.assigned_tours);
     
     // Parse tour_allocations to ensure it's in the correct format
-    let tourAllocations: TourAllocation[] = [];
-    if (bucketData.tour_allocations) {
-      // Handle both array and JSON string formats
-      if (typeof bucketData.tour_allocations === 'string') {
-        try {
-          tourAllocations = JSON.parse(bucketData.tour_allocations);
-        } catch (e) {
-          console.error("Error parsing tour_allocations string:", e);
-          tourAllocations = [];
-        }
-      } else if (Array.isArray(bucketData.tour_allocations)) {
-        tourAllocations = bucketData.tour_allocations as TourAllocation[];
-      } else if (typeof bucketData.tour_allocations === 'object') {
-        // If it's already an object but not an array, wrap it
-        tourAllocations = [bucketData.tour_allocations as unknown as TourAllocation];
-      }
-    }
+    const tourAllocations = parseTourAllocations(bucketData.tour_allocations);
     
     // Remove the tour from assigned_tours
     const updatedAssignedTours = assignedTours.filter((id) => id !== tourId);
@@ -153,10 +196,7 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
     
     // Calculate total allocated tickets
     const totalAllocated = updatedTourAllocations.reduce(
-      (sum, allocation) => sum + (typeof allocation.tickets_required === 'number' 
-        ? allocation.tickets_required 
-        : parseInt(String(allocation.tickets_required)) || 0), 
-      0
+      (sum, allocation) => sum + allocation.tickets_required, 0
     );
     
     // Update the bucket
@@ -164,7 +204,7 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
       .from('ticket_buckets')
       .update({ 
         assigned_tours: updatedAssignedTours,
-        tour_allocations: updatedTourAllocations,
+        tour_allocations: updatedTourAllocations as unknown as Json,
         allocated_tickets: totalAllocated
       })
       .eq('id', bucketId)

@@ -16,7 +16,7 @@ export const TicketBucketFooter = ({
   guideTicketsNeeded = 0
 }: TicketBucketFooterProps) => {
   // Calculate participant tickets (total required minus guides)
-  const participantTicketsNeeded = requiredTickets - guideTicketsNeeded;
+  const participantTicketsNeeded = Math.max(0, requiredTickets - guideTicketsNeeded);
   
   // Format the ticket requirements differently based on whether guide tickets are needed
   const formattedTicketRequirements = guideTicketsNeeded > 0 

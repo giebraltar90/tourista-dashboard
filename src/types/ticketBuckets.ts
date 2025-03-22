@@ -1,4 +1,6 @@
 
+import { Json } from "@/integrations/supabase/types";
+
 export interface TourAllocation {
   tour_id: string;
   tickets_required: number;
