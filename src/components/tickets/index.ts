@@ -6,3 +6,4 @@ export * from './CSVUploader';
 export * from './CreateTicketForm';
 export * from './CreateTicketBucketForm';
 export * from './EditTicketDialog';
+export * from './bucket-management';
