@@ -2,17 +2,19 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { XCircleIcon } from "lucide-react";
+import { XCircleIcon, PencilIcon } from "lucide-react";
 import { TicketBucket } from "@/types/ticketBuckets";
 import { format } from "date-fns";
+import { EditTicketBucketDialog } from "./EditTicketBucketDialog";
 
 interface TicketBucketCardProps {
   bucket: TicketBucket;
-  onRemove: (bucketId: string) => void;
+  onRemove: (bucketId: string) => Promise<boolean>;
 }
 
 export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) => {
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const handleRemoveBucket = async () => {
     if (confirm("Are you sure you want to remove this ticket bucket from the tour?")) {
@@ -53,6 +55,14 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
           <Button 
             variant="ghost" 
             size="icon" 
+            className="text-primary h-8 w-8"
+            onClick={() => setIsEditDialogOpen(true)}
+          >
+            <PencilIcon className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
             className="text-destructive h-8 w-8"
             onClick={handleRemoveBucket}
             disabled={isRemoving}
@@ -61,6 +71,14 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
           </Button>
         </div>
       </div>
+      
+      {isEditDialogOpen && (
+        <EditTicketBucketDialog 
+          isOpen={isEditDialogOpen}
+          onClose={() => setIsEditDialogOpen(false)}
+          bucket={bucket}
+        />
+      )}
     </div>
   );
 };

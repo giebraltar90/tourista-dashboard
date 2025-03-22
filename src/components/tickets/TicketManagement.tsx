@@ -44,22 +44,19 @@ import {
 } from "lucide-react";
 import { mockTours } from "@/data/mockData";
 import { CreateTicketForm } from "./CreateTicketForm";
+import { EditTicketDialog } from "./EditTicketDialog";
 
-// Create mock ticket data based on tours
 const mockTickets = mockTours.map(tour => {
-  // Calculate adult and child tickets based on tourGroups size
   const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
   const adultTickets = Math.round(totalParticipants * 0.7);
   const childTickets = totalParticipants - adultTickets;
   
-  // Determine tour type and reference code formatting
   let tourType = "paris";
   let entryTime = null;
   
   if (tour.location.toLowerCase().includes("versailles")) {
     tourType = "versailles";
     
-    // Assign entry times based on starting times for Versailles
     if (tour.startTime === "08:00 AM") {
       entryTime = "09:10 AM";
     } else if (tour.startTime === "09:00 AM") {
@@ -87,7 +84,7 @@ const mockTickets = mockTours.map(tour => {
     guide2: tour.guide2,
     guideType1: ["GA Ticket", "GA Free", "GC"][Math.floor(Math.random() * 3)],
     guideType2: tour.guide2 ? ["GA Ticket", "GA Free", "GC"][Math.floor(Math.random() * 3)] : null,
-    checkInLead: tour.guide1, // Default to guide1
+    checkInLead: tour.guide1,
     paymentCollection: Math.random() > 0.7 ? {
       type: "AirBnB",
       name: "John Doe",
@@ -104,8 +101,8 @@ export function TicketManagement({ filterType }: TicketManagementProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<typeof mockTickets[0] | null>(null);
   
-  // Filter tickets based on search, date, and filter type
   const filteredTickets = mockTickets.filter(ticket => {
     const matchesSearch = 
       ticket.tourName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -123,7 +120,6 @@ export function TicketManagement({ filterType }: TicketManagementProps) {
     return matchesSearch && matchesDate && matchesType;
   });
   
-  // Sort tickets by date (most recent first)
   const sortedTickets = [...filteredTickets].sort((a, b) => 
     a.date.getTime() - b.date.getTime()
   );
@@ -291,7 +287,11 @@ export function TicketManagement({ filterType }: TicketManagementProps) {
                   
                   <TableCell className="text-right">
                     <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => setSelectedTicket(ticket)}
+                      >
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
@@ -309,6 +309,14 @@ export function TicketManagement({ filterType }: TicketManagementProps) {
           </TableBody>
         </Table>
       </div>
+      
+      {selectedTicket && (
+        <EditTicketDialog
+          isOpen={!!selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          ticket={selectedTicket}
+        />
+      )}
     </div>
   );
 }
