@@ -34,10 +34,27 @@ export const GuideSelectField = ({
   guides, 
   defaultValue 
 }: GuideSelectFieldProps) => {
+  // Process guides to ensure all have readable names
+  const processedGuides = guides.map(guide => {
+    // If guide has a UUID as name or name with "..." in it, try to give it a better name
+    if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
+      return {
+        ...guide,
+        name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
+      };
+    }
+    return guide;
+  });
+  
   // Filter out any guides with empty ids to avoid the Select.Item error
-  const validGuides = guides ? guides.filter(guide => 
+  const validGuides = processedGuides.filter(guide => 
     guide && guide.id && guide.id.trim() !== "" && guide.name
-  ) : [];
+  );
+  
+  // Log the guides for debugging
+  console.log("GUIDE SELECTION DEBUG: Available guides for selection:", 
+    validGuides.map(g => ({id: g.id, name: g.name, infoName: g.info?.name}))
+  );
   
   return (
     <FormField

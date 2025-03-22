@@ -67,43 +67,48 @@ export const useParticipantCounts = (
     const isSophieMillerGuide2 = validGuide2 && guide2Name.toLowerCase().includes('sophie miller');
     const isSophieMillerGuide3 = validGuide3 && guide3Name.toLowerCase().includes('sophie miller');
     
+    // Make deep copies of guide info to avoid mutating the original objects
+    const guide1InfoCopy = guide1Info ? {...guide1Info} : null;
+    const guide2InfoCopy = guide2Info ? {...guide2Info} : null;
+    const guide3InfoCopy = guide3Info ? {...guide3Info} : null;
+    
     // If any guide is Sophie Miller, ensure they're set to GC type
-    if (isSophieMillerGuide1 && guide1Info && guide1Info.guideType !== 'GC') {
+    if (isSophieMillerGuide1 && guide1InfoCopy) {
       console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Forcing Sophie Miller (guide1) to GC type`);
-      guide1Info.guideType = 'GC';
+      guide1InfoCopy.guideType = 'GC';
     }
     
-    if (isSophieMillerGuide2 && guide2Info && guide2Info.guideType !== 'GC') {
+    if (isSophieMillerGuide2 && guide2InfoCopy) {
       console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Forcing Sophie Miller (guide2) to GC type`);
-      guide2Info.guideType = 'GC';
+      guide2InfoCopy.guideType = 'GC';
     }
     
-    if (isSophieMillerGuide3 && guide3Info && guide3Info.guideType !== 'GC') {
+    if (isSophieMillerGuide3 && guide3InfoCopy) {
       console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Forcing Sophie Miller (guide3) to GC type`);
-      guide3Info.guideType = 'GC';
+      guide3InfoCopy.guideType = 'GC';
     }
     
     // Log all guide information for debugging
     console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] FULL GUIDE INFO for location "${location}":`, {
       guide1: validGuide1 ? {
         name: guide1Name,
-        info: guide1Info,
-        type: guide1Info?.guideType || 'unknown',
-        needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, location) : false,
+        info: guide1InfoCopy,
+        type: guide1InfoCopy?.guideType || 'unknown',
+        needsTicket: guide1InfoCopy ? doesGuideNeedTicket(guide1InfoCopy, location) : false,
         isSophieMiller: isSophieMillerGuide1
       } : null,
       guide2: validGuide2 ? {
         name: guide2Name,
-        info: guide2Info,
-        type: guide2Info?.guideType || 'unknown',
-        needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, location) : false,
+        info: guide2InfoCopy,
+        type: guide2InfoCopy?.guideType || 'unknown',
+        needsTicket: guide2InfoCopy ? doesGuideNeedTicket(guide2InfoCopy, location) : false,
         isSophieMiller: isSophieMillerGuide2
       } : null,
       guide3: validGuide3 ? {
         name: guide3Name,
-        info: guide3Info,
-        type: guide3Info?.guideType || 'unknown',
-        needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, location) : false,
+        info: guide3InfoCopy,
+        type: guide3InfoCopy?.guideType || 'unknown',
+        needsTicket: guide3InfoCopy ? doesGuideNeedTicket(guide3InfoCopy, location) : false,
         isSophieMiller: isSophieMillerGuide3
       } : null,
       location,
@@ -120,7 +125,7 @@ export const useParticipantCounts = (
     const processedGuides = new Set<string>();
     
     // Explicitly check each guide for ticket requirements
-    if (guide1Info && validGuide1) {
+    if (guide1InfoCopy && validGuide1) {
       const guideName = guide1Name.trim();
       
       // Skip if already processed this guide
@@ -131,15 +136,15 @@ export const useParticipantCounts = (
         if (guideName.toLowerCase().includes('sophie miller')) {
           console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Sophie Miller detected as guide1, setting as GC (no ticket needed)`);
           // Ensure Sophie Miller is always GC type
-          guide1Info.guideType = 'GC';
+          guide1InfoCopy.guideType = 'GC';
         }
         
-        const needsTicket = doesGuideNeedTicket(guide1Info, location);
-        const ticketType = getGuideTicketType(guide1Info);
+        const needsTicket = doesGuideNeedTicket(guide1InfoCopy, location);
+        const ticketType = getGuideTicketType(guide1InfoCopy);
         
         console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide1 ticket check for ${guideName}:`, {
           guideName,
-          guideType: guide1Info.guideType,
+          guideType: guide1InfoCopy.guideType,
           needsTicket,
           ticketType,
           location,
@@ -163,7 +168,7 @@ export const useParticipantCounts = (
     }
     
     // Only check guide2 if both name and info exist
-    if (guide2Info && validGuide2) {
+    if (guide2InfoCopy && validGuide2) {
       const guideName = guide2Name.trim();
       
       // Skip if already processed this guide (e.g., if guide2 has same name as guide1)
@@ -174,15 +179,15 @@ export const useParticipantCounts = (
         if (guideName.toLowerCase().includes('sophie miller')) {
           console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Sophie Miller detected as guide2, setting as GC (no ticket needed)`);
           // Ensure Sophie Miller is always GC type
-          guide2Info.guideType = 'GC';
+          guide2InfoCopy.guideType = 'GC';
         }
         
-        const needsTicket = doesGuideNeedTicket(guide2Info, location);
-        const ticketType = getGuideTicketType(guide2Info);
+        const needsTicket = doesGuideNeedTicket(guide2InfoCopy, location);
+        const ticketType = getGuideTicketType(guide2InfoCopy);
         
         console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide2 ticket check for ${guideName}:`, {
           guideName,
-          guideType: guide2Info.guideType,
+          guideType: guide2InfoCopy.guideType,
           needsTicket,
           ticketType,
           location,
@@ -206,7 +211,7 @@ export const useParticipantCounts = (
     }
     
     // Only check guide3 if both name and info exist
-    if (guide3Info && validGuide3) {
+    if (guide3InfoCopy && validGuide3) {
       const guideName = guide3Name.trim();
       
       // Skip if already processed this guide
@@ -217,15 +222,15 @@ export const useParticipantCounts = (
         if (guideName.toLowerCase().includes('sophie miller')) {
           console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Sophie Miller detected as guide3, setting as GC (no ticket needed)`);
           // Ensure Sophie Miller is always GC type
-          guide3Info.guideType = 'GC';
+          guide3InfoCopy.guideType = 'GC';
         }
         
-        const needsTicket = doesGuideNeedTicket(guide3Info, location);
-        const ticketType = getGuideTicketType(guide3Info);
+        const needsTicket = doesGuideNeedTicket(guide3InfoCopy, location);
+        const ticketType = getGuideTicketType(guide3InfoCopy);
         
         console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide3 ticket check for ${guideName}:`, {
           guideName,
-          guideType: guide3Info.guideType,
+          guideType: guide3InfoCopy.guideType,
           needsTicket,
           ticketType,
           location,
@@ -264,9 +269,9 @@ export const useParticipantCounts = (
         isGuide1: isSophieMillerGuide1,
         isGuide2: isSophieMillerGuide2,
         isGuide3: isSophieMillerGuide3,
-        guide1Type: guide1Info?.guideType,
-        guide2Type: guide2Info?.guideType,
-        guide3Type: guide3Info?.guideType
+        guide1Type: guide1InfoCopy?.guideType,
+        guide2Type: guide2InfoCopy?.guideType,
+        guide3Type: guide3InfoCopy?.guideType
       }
     });
     

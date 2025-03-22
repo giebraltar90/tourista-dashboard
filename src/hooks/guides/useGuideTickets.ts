@@ -14,8 +14,7 @@ export function doesGuideNeedTicket(guide: GuideInfo | null, tourLocation: strin
   
   // Special case for Sophie Miller - always GC guide, never needs a ticket
   if (guide.name && guide.name.toLowerCase().includes('sophie miller')) {
-    console.log(`GUIDE TICKET DEBUG: [doesGuideNeedTicket] Sophie Miller detected, overriding to GC guide (no ticket)`);
-    guide.guideType = 'GC';
+    console.log(`GUIDE TICKET DEBUG: [doesGuideNeedTicket] Sophie Miller detected, always a GC guide (no ticket)`);
     return false;
   }
   
@@ -64,8 +63,7 @@ export function getGuideTicketType(guide: GuideInfo | null): 'adult' | 'child' |
   
   // Special case for Sophie Miller - always GC guide, never needs a ticket
   if (guide.name && guide.name.toLowerCase().includes('sophie miller')) {
-    console.log(`GUIDE TICKET DEBUG: [getGuideTicketType] Sophie Miller detected, overriding to GC guide (no ticket)`);
-    guide.guideType = 'GC';
+    console.log(`GUIDE TICKET DEBUG: [getGuideTicketType] Sophie Miller detected, always a GC guide (no ticket)`);
     return null;
   }
   

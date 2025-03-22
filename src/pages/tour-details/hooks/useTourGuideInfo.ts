@@ -38,8 +38,8 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
         });
         
         // Create fallback guide info for when data can't be loaded
-        const createFallbackGuide = (name: string, fakeType?: GuideType): GuideInfo => {
-          // For Sophie Miller specifically, always use GC type (for testing)
+        const createFallbackGuide = (name: string, defaultType?: GuideType): GuideInfo => {
+          // For Sophie Miller specifically, always use GC type
           if (name.toLowerCase().includes('sophie miller')) {
             console.log(`GUIDE TICKET DEBUG: [useTourGuideInfo] Setting Sophie Miller as GC guide`);
             return {
@@ -49,10 +49,12 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
             };
           }
           
+          // For other guides, use the provided type or generate random
+          const guideType: GuideType = defaultType || getRandomGuideType();
           return {
             name,
             birthday: new Date(),
-            guideType: fakeType || getRandomGuideType() // Randomly assign a guide type for testing
+            guideType
           };
         };
         
@@ -75,10 +77,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
             
             // For testing/development, we'll randomize guide types
             // In production, this would make a call to get the real guide type
+            const guideType: GuideType = defaultType || getRandomGuideType();
             return {
               name,
               birthday: new Date(),
-              guideType: defaultType || getRandomGuideType()
+              guideType
             };
           } catch (error) {
             console.error(`Error fetching guide info for ${guideName}:`, error);

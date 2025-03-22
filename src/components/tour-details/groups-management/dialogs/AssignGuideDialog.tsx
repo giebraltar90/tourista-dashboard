@@ -1,4 +1,3 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
 import { GuideInfo } from "@/types/ventrata";
@@ -34,7 +33,7 @@ export const AssignGuideDialog = ({
     // Ensure all guides have readable names
     const processedGuidesList = inputGuides.map(guide => {
       // If guide has a UUID as name or name with "..." in it, give it a better name
-      if (!guide.name || guide.name.includes('...')) {
+      if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
         return {
           ...guide,
           name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
@@ -43,14 +42,19 @@ export const AssignGuideDialog = ({
       return guide;
     });
     
-    setProcessedGuides(processedGuidesList);
+    // Filter out duplicates by ID (keep the first occurrence)
+    const uniqueGuides = processedGuidesList.filter((guide, index, self) => 
+      index === self.findIndex(g => g.id === guide.id)
+    );
+    
+    setProcessedGuides(uniqueGuides);
     
     console.log('AssignGuideDialog processing guides:', {
       tourId,
       groupIndex,
-      guidesCount: processedGuidesList.length,
+      guidesCount: uniqueGuides.length,
       currentGuideId,
-      guides: processedGuidesList.map(g => ({ id: g.id, name: g.name }))
+      guides: uniqueGuides.map(g => ({ id: g.id, name: g.name }))
     });
   }, [inputGuides, tourId, groupIndex, currentGuideId]);
 
