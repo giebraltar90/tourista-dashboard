@@ -23,6 +23,6 @@ export * from './services/guideAssignmentService';
 export * from './services/utils/validationService';
 export * from './services/utils/namingService';
 export * from './services/utils/optimisticUpdateService';
-export * from './services/utils/persistenceService';
+export * from './services/utils/persistenceUtils';
 export * from './services/utils/notificationService';
 export * from './services/utils/guideMappingService';
