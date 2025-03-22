@@ -39,14 +39,11 @@ export const TicketBucketInfo = ({
   const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
   
   // Calculate the total available tickets across all buckets
-  // Important: When calculating available tickets for assigned buckets, 
-  // we need to include the current tour's required tickets in the calculation
   const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
     let availableTickets = 0;
     
     if (bucket.tour_id === tourId) {
       // For buckets assigned to this tour, we consider their full capacity
-      // since the allocated_tickets already includes this tour's tickets
       availableTickets = bucket.max_tickets;
     } else {
       // For other buckets, just show normal availability
@@ -63,24 +60,14 @@ export const TicketBucketInfo = ({
       requiredTickets,
       totalParticipants,
       guideTicketsNeeded,
+      totalTicketsNeeded: totalParticipants + guideTicketsNeeded,
       bucketCount: validBuckets.length,
       bucketAssignedToTour: bucketAssignedToTour ? {
         id: bucketAssignedToTour.id,
         ref: bucketAssignedToTour.reference_number,
         maxTickets: bucketAssignedToTour.max_tickets,
-        allocatedTickets: bucketAssignedToTour.allocated_tickets,
-        totalTicketsNeeded: totalParticipants + guideTicketsNeeded,
-        availableAfterAllocation: bucketAssignedToTour.max_tickets - 
-          (bucketAssignedToTour.allocated_tickets)
-      } : null,
-      bucketDetails: validBuckets.map(b => ({
-        id: b.id,
-        ref: b.reference_number,
-        max: b.max_tickets,
-        allocated: b.allocated_tickets,
-        tourId: b.tour_id,
-        isAssignedToThisTour: b.tour_id === tourId
-      }))
+        allocatedTickets: bucketAssignedToTour.allocated_tickets
+      } : null
     });
   }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded]);
 

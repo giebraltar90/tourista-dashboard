@@ -9,7 +9,6 @@ import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
 import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuideTickets";
-import { GuideTicketRequirements } from "./GuideTicketRequirements";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
@@ -89,32 +88,6 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {(tour.location.toLowerCase().includes('versailles') || 
-             tour.location.toLowerCase().includes('montmartre')) && (
-            <GuideTicketRequirements
-              tour={{
-                guide1: guide1Info?.name || tour.guide1 || "Unknown",
-                guide2: guide2Info?.name || tour.guide2 || "",
-                guide3: guide3Info?.name || tour.guide3 || "",
-                location: tour.location
-              }}
-              guide1Info={guide1Info}
-              guide2Info={guide2Info}
-              guide3Info={guide3Info}
-              guide1NeedsTicket={guide1Info ? doesGuideNeedTicket(guide1Info, tour.location) : false}
-              guide2NeedsTicket={guide2Info ? doesGuideNeedTicket(guide2Info, tour.location) : false}
-              guide3NeedsTicket={guide3Info ? doesGuideNeedTicket(guide3Info, tour.location) : false}
-              guide1TicketType={guide1Info ? getGuideTicketType(guide1Info) : null}
-              guide2TicketType={guide2Info ? getGuideTicketType(guide2Info) : null}
-              guide3TicketType={guide3Info ? getGuideTicketType(guide3Info) : null}
-              hasEnoughTickets={hasEnoughTickets}
-              availableTickets={availableTickets}
-              requiredTickets={requiredTickets}
-              requiredAdultTickets={adultTickets + guideAdultTickets}
-              requiredChildTickets={childTickets + guideChildTickets}
-            />
-          )}
-
           {/* Ticket buckets section */}
           <TicketBucketInfo 
             buckets={ticketBuckets} 
