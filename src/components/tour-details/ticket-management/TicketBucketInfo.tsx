@@ -24,8 +24,23 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
 
   // Calculate total tickets available in buckets
   const totalBucketTickets = buckets.reduce((sum, bucket) => {
-    return sum + (bucket.max_tickets - bucket.allocated_tickets);
+    // Calculate available tickets for each bucket
+    const availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+    return sum + availableTickets;
   }, 0);
+
+  console.log("🔍 [TicketBucketInfo] Calculated total bucket tickets:", {
+    totalBucketTickets,
+    requiredTickets,
+    bucketCount: buckets.length,
+    bucketsDetail: buckets.map(b => ({
+      id: b.id,
+      reference: b.reference_number,
+      max: b.max_tickets,
+      allocated: b.allocated_tickets,
+      available: b.max_tickets - b.allocated_tickets
+    }))
+  });
 
   // Check if we have enough tickets in buckets
   const hasEnoughBucketTickets = totalBucketTickets >= requiredTickets;

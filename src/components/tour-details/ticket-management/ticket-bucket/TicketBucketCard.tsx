@@ -3,9 +3,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Ticket, Trash2 } from "lucide-react";
 import { TicketBucket } from "@/types/ticketBuckets";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { EditTicketBucketDialog } from "@/components/tickets/edit-ticket-bucket";
+import { EditTicketBucketDialog } from "./EditTicketBucketDialog";
 
 interface TicketBucketCardProps {
   bucket: TicketBucket;
@@ -15,10 +15,28 @@ interface TicketBucketCardProps {
 export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
+  // Calculate available tickets
   const availableTickets = bucket.max_tickets - bucket.allocated_tickets;
   
+  // Log bucket information for debugging
+  useEffect(() => {
+    console.log("🔍 [TicketBucketCard] Rendering bucket:", {
+      id: bucket.id,
+      reference: bucket.reference_number,
+      maxTickets: bucket.max_tickets,
+      allocatedTickets: bucket.allocated_tickets,
+      availableTickets,
+      date: bucket.date.toISOString(),
+      dateComponents: {
+        year: bucket.date.getFullYear(),
+        month: bucket.date.getMonth() + 1,
+        day: bucket.date.getDate()
+      }
+    });
+  }, [bucket]);
+  
   // Format date for display
-  const formattedDate = format(new Date(bucket.date), "MMM d, yyyy");
+  const formattedDate = format(bucket.date, "MMM d, yyyy");
 
   return (
     <>

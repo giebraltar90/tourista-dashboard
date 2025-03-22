@@ -10,6 +10,7 @@ import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useTicketCountLogic } from "./useTicketCountLogic";
 import { GuideTicketRequirements } from "./GuideTicketRequirements";
+import { useEffect } from "react";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   // Use the custom hook to handle all ticket count calculations
@@ -35,6 +36,31 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
 
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
   const tourDate = new Date(tour.date);
+  
+  // Log ticket bucket information and calculations for debugging
+  useEffect(() => {
+    console.log("🔍 [TicketsManagement] Ticket buckets loaded:", {
+      bucketCount: ticketBuckets.length,
+      totalMaxTickets: ticketBuckets.reduce((sum, b) => sum + b.max_tickets, 0),
+      totalAllocatedTickets: ticketBuckets.reduce((sum, b) => sum + b.allocated_tickets, 0),
+      totalAvailableTickets: ticketBuckets.reduce((sum, b) => sum + (b.max_tickets - b.allocated_tickets), 0),
+      requiredTickets,
+      hasEnoughBucketsForRequiredTickets: ticketBuckets.reduce((sum, b) => 
+        sum + (b.max_tickets - b.allocated_tickets), 0) >= requiredTickets
+    });
+  }, [ticketBuckets, requiredTickets]);
+
+  // Calculate total tickets from buckets
+  const totalBucketTickets = ticketBuckets.reduce((sum, bucket) => 
+    sum + (bucket.max_tickets - bucket.allocated_tickets), 0);
+  
+  // Update the availableTickets calculation to use bucket tickets when available
+  const effectiveAvailableTickets = ticketBuckets.length > 0 
+    ? totalBucketTickets 
+    : availableTickets;
+  
+  // Recalculate if there are enough tickets
+  const effectiveHasEnoughTickets = effectiveAvailableTickets >= requiredTickets;
 
   return (
     <Card>
@@ -86,8 +112,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
               guide1TicketType={guide1TicketType}
               guide2TicketType={guide2TicketType}
               guide3TicketType={guide3TicketType}
-              hasEnoughTickets={hasEnoughTickets}
-              availableTickets={availableTickets}
+              hasEnoughTickets={effectiveHasEnoughTickets}
+              availableTickets={effectiveAvailableTickets}
               requiredTickets={requiredTickets}
               requiredAdultTickets={requiredAdultTickets}
               requiredChildTickets={requiredChildTickets}
@@ -95,7 +121,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
           )}
           
           <TicketStatus
-            purchasedCount={tour.numTickets || totalParticipants}
+            purchasedCount={effectiveAvailableTickets || totalParticipants}
             pendingCount={0}
             distributedCount={tour.numTickets || totalParticipants}
           />
