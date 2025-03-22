@@ -7,7 +7,6 @@ export * from './TicketSufficiencyAlert';
 export * from './TicketBucketInfo';
 export * from './AssignBucketDialog';
 export * from './GuideTicketRequirements';
-export * from './useTicketCountLogic';
 export * from './services/ticketAssignmentService';
 export * from './services/ticketBucketService';
 export type { TicketStatusProps } from './types';
