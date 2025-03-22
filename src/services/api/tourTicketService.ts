@@ -19,9 +19,9 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
       throw fetchError;
     }
     
-    // Initialize or update arrays
-    const assignedTours = bucketData.assigned_tours || [];
-    const tourAllocations = bucketData.tour_allocations || [];
+    // Initialize or update arrays with proper type safety
+    const assignedTours = Array.isArray(bucketData.assigned_tours) ? [...bucketData.assigned_tours] : [];
+    const tourAllocations = Array.isArray(bucketData.tour_allocations) ? [...bucketData.tour_allocations] : [];
     
     // Check if tour is already assigned
     if (!assignedTours.includes(tourId)) {
@@ -99,9 +99,9 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
       throw fetchError;
     }
     
-    // Initialize or get arrays
-    const assignedTours = bucketData.assigned_tours || [];
-    const tourAllocations = bucketData.tour_allocations || [];
+    // Initialize or get arrays with proper type safety
+    const assignedTours = Array.isArray(bucketData.assigned_tours) ? [...bucketData.assigned_tours] : [];
+    const tourAllocations = Array.isArray(bucketData.tour_allocations) ? [...bucketData.tour_allocations] : [];
     
     // Remove the tour from assigned_tours
     const updatedAssignedTours = assignedTours.filter((id: string) => id !== tourId);
