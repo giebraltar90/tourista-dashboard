@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { CSVTicketBucket, TicketBucket, TicketBucketFormValues } from "@/types/ticketBuckets";
+import { CSVTicketBucket, TicketBucket, TicketBucketFormValues, TourAllocation } from "@/types/ticketBuckets";
 import { toast } from "sonner";
 
 export const fetchTicketBuckets = async () => {
@@ -16,11 +16,34 @@ export const fetchTicketBuckets = async () => {
   
   console.log("🔍 [fetchTicketBuckets] Raw buckets from DB:", data);
   
-  // Convert date strings to Date objects
-  const buckets = data.map(bucket => ({
-    ...bucket,
-    date: new Date(bucket.date)
-  })) as TicketBucket[];
+  // Convert date strings to Date objects and parse JSON fields
+  const buckets = data.map(bucket => {
+    // Parse tour_allocations from JSON
+    let tourAllocations: TourAllocation[] = [];
+    if (bucket.tour_allocations) {
+      if (typeof bucket.tour_allocations === 'string') {
+        try {
+          tourAllocations = JSON.parse(bucket.tour_allocations);
+        } catch (e) {
+          console.error("Error parsing tour_allocations string:", e);
+        }
+      } else if (Array.isArray(bucket.tour_allocations)) {
+        tourAllocations = bucket.tour_allocations as TourAllocation[];
+      } else if (typeof bucket.tour_allocations === 'object') {
+        tourAllocations = [bucket.tour_allocations as unknown as TourAllocation];
+      }
+    }
+    
+    // Ensure assigned_tours is an array
+    const assignedTours = Array.isArray(bucket.assigned_tours) ? bucket.assigned_tours : [];
+    
+    return {
+      ...bucket,
+      date: new Date(bucket.date),
+      assigned_tours: assignedTours,
+      tour_allocations: tourAllocations
+    } as TicketBucket;
+  });
   
   console.log("🔍 [fetchTicketBuckets] Processed buckets with Date objects:", 
     buckets.map(b => ({
@@ -71,16 +94,38 @@ export const fetchTicketBucketsByDate = async (date: Date) => {
   
   console.log("🔍 [fetchTicketBucketsByDate] Raw response from DB:", data);
   
-  // IMPORTANT FIX: When creating Date objects, set the time to noon to avoid timezone issues
+  // Process the buckets data
   const buckets = data.map(bucket => {
+    // Create Date with noon time to avoid timezone issues
     const bucketDate = new Date(bucket.date);
     bucketDate.setHours(12, 0, 0, 0);
     
+    // Parse tour_allocations from JSON
+    let tourAllocations: TourAllocation[] = [];
+    if (bucket.tour_allocations) {
+      if (typeof bucket.tour_allocations === 'string') {
+        try {
+          tourAllocations = JSON.parse(bucket.tour_allocations);
+        } catch (e) {
+          console.error("Error parsing tour_allocations string:", e);
+        }
+      } else if (Array.isArray(bucket.tour_allocations)) {
+        tourAllocations = bucket.tour_allocations as TourAllocation[];
+      } else if (typeof bucket.tour_allocations === 'object') {
+        tourAllocations = [bucket.tour_allocations as unknown as TourAllocation];
+      }
+    }
+    
+    // Ensure assigned_tours is an array
+    const assignedTours = Array.isArray(bucket.assigned_tours) ? bucket.assigned_tours : [];
+    
     return {
       ...bucket,
-      date: bucketDate
-    };
-  }) as TicketBucket[];
+      date: bucketDate,
+      assigned_tours: assignedTours,
+      tour_allocations: tourAllocations
+    } as TicketBucket;
+  });
   
   console.log("🔍 [fetchTicketBucketsByDate] Processed buckets:", 
     buckets.map(b => ({
@@ -116,6 +161,8 @@ export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
       {
         ...bucket,
         date: formattedDate,
+        assigned_tours: [],
+        tour_allocations: []
       }
     ])
     .select();
@@ -128,6 +175,25 @@ export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
   // Create returned Date with noon time
   const returnDate = new Date(data[0].date);
   returnDate.setHours(12, 0, 0, 0);
+  
+  // Parse tour_allocations to ensure correct type
+  let tourAllocations: TourAllocation[] = [];
+  if (data[0].tour_allocations) {
+    if (typeof data[0].tour_allocations === 'string') {
+      try {
+        tourAllocations = JSON.parse(data[0].tour_allocations);
+      } catch (e) {
+        console.error("Error parsing tour_allocations string:", e);
+      }
+    } else if (Array.isArray(data[0].tour_allocations)) {
+      tourAllocations = data[0].tour_allocations as TourAllocation[];
+    } else if (typeof data[0].tour_allocations === 'object') {
+      tourAllocations = [data[0].tour_allocations as unknown as TourAllocation];
+    }
+  }
+  
+  // Ensure assigned_tours is an array
+  const assignedTours = Array.isArray(data[0].assigned_tours) ? data[0].assigned_tours : [];
   
   console.log("🔍 [createTicketBucket] Created bucket:", {
     ...data[0],
@@ -143,7 +209,9 @@ export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
   
   return {
     ...data[0],
-    date: returnDate
+    date: returnDate,
+    assigned_tours: assignedTours,
+    tour_allocations: tourAllocations
   } as TicketBucket;
 };
 
@@ -183,6 +251,25 @@ export const updateTicketBucket = async (id: string, updates: Partial<TicketBuck
   const returnDate = new Date(data[0].date);
   returnDate.setHours(12, 0, 0, 0);
   
+  // Parse tour_allocations to ensure correct type
+  let tourAllocations: TourAllocation[] = [];
+  if (data[0].tour_allocations) {
+    if (typeof data[0].tour_allocations === 'string') {
+      try {
+        tourAllocations = JSON.parse(data[0].tour_allocations);
+      } catch (e) {
+        console.error("Error parsing tour_allocations string:", e);
+      }
+    } else if (Array.isArray(data[0].tour_allocations)) {
+      tourAllocations = data[0].tour_allocations as TourAllocation[];
+    } else if (typeof data[0].tour_allocations === 'object') {
+      tourAllocations = [data[0].tour_allocations as unknown as TourAllocation];
+    }
+  }
+  
+  // Ensure assigned_tours is an array
+  const assignedTours = Array.isArray(data[0].assigned_tours) ? data[0].assigned_tours : [];
+  
   console.log("🔍 [updateTicketBucket] Updated bucket:", {
     ...data[0],
     dateCheck: {
@@ -197,7 +284,9 @@ export const updateTicketBucket = async (id: string, updates: Partial<TicketBuck
   
   return {
     ...data[0],
-    date: returnDate
+    date: returnDate,
+    assigned_tours: assignedTours,
+    tour_allocations: tourAllocations
   } as TicketBucket;
 };
 
@@ -230,6 +319,8 @@ export const uploadCSVBuckets = async (buckets: CSVTicketBucket[]) => {
       allocated_tickets: 0,
       date: bucket.date,
       access_time: bucket.access_time,
+      assigned_tours: [],
+      tour_allocations: []
     };
   });
   
@@ -244,10 +335,36 @@ export const uploadCSVBuckets = async (buckets: CSVTicketBucket[]) => {
     throw error;
   }
   
-  return data.map(bucket => ({
-    ...bucket,
-    date: new Date(bucket.date)
-  })) as TicketBucket[];
+  // Process returned data
+  const processedBuckets = data.map(bucket => {
+    // Parse tour_allocations to ensure correct type
+    let tourAllocations: TourAllocation[] = [];
+    if (bucket.tour_allocations) {
+      if (typeof bucket.tour_allocations === 'string') {
+        try {
+          tourAllocations = JSON.parse(bucket.tour_allocations);
+        } catch (e) {
+          console.error("Error parsing tour_allocations string:", e);
+        }
+      } else if (Array.isArray(bucket.tour_allocations)) {
+        tourAllocations = bucket.tour_allocations as TourAllocation[];
+      } else if (typeof bucket.tour_allocations === 'object') {
+        tourAllocations = [bucket.tour_allocations as unknown as TourAllocation];
+      }
+    }
+    
+    // Ensure assigned_tours is an array
+    const assignedTours = Array.isArray(bucket.assigned_tours) ? bucket.assigned_tours : [];
+    
+    return {
+      ...bucket,
+      date: new Date(bucket.date),
+      assigned_tours: assignedTours,
+      tour_allocations: tourAllocations
+    };
+  }) as TicketBucket[];
+  
+  return processedBuckets;
 };
 
 // Helper function to determine bucket type based on reference number

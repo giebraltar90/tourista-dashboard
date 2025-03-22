@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { TicketBucket } from "@/types/ticketBuckets";
+import { TicketBucket, TourAllocation } from "@/types/ticketBuckets";
 
 /**
  * Hook to fetch ticket buckets for a specific tour
@@ -50,11 +50,35 @@ export function useTicketBuckets(tourId: string) {
             
             // Create empty arrays if needed for assigned_tours and tour_allocations
             const assignedTours = Array.isArray(bucket.assigned_tours) ? bucket.assigned_tours : [];
-            const tourAllocations = Array.isArray(bucket.tour_allocations) ? bucket.tour_allocations : [];
+            
+            // Parse tour_allocations to ensure it's in the correct format
+            let tourAllocations: TourAllocation[] = [];
+            if (bucket.tour_allocations) {
+              // Handle both array and JSON string formats
+              if (typeof bucket.tour_allocations === 'string') {
+                try {
+                  tourAllocations = JSON.parse(bucket.tour_allocations);
+                } catch (e) {
+                  console.error("Error parsing tour_allocations string:", e);
+                  tourAllocations = [];
+                }
+              } else if (Array.isArray(bucket.tour_allocations)) {
+                tourAllocations = bucket.tour_allocations as TourAllocation[];
+              } else if (typeof bucket.tour_allocations === 'object') {
+                // If it's already an object but not an array, wrap it
+                tourAllocations = [bucket.tour_allocations as unknown as TourAllocation];
+              }
+            }
             
             // Calculate total allocated tickets
             const totalAllocated = tourAllocations.reduce(
-              (sum, allocation) => sum + allocation.tickets_required, 0
+              (sum, allocation) => {
+                // Ensure tickets_required is a number
+                const ticketsRequired = typeof allocation.tickets_required === 'number' 
+                  ? allocation.tickets_required 
+                  : parseInt(allocation.tickets_required as unknown as string) || 0;
+                return sum + ticketsRequired;
+              }, 0
             );
             
             // Calculate available tickets
@@ -68,7 +92,7 @@ export function useTicketBuckets(tourId: string) {
               tour_allocations: tourAllocations,
               allocated_tickets: totalAllocated,
               available_tickets: availableTickets
-            };
+            } as TicketBucket;
           } catch (e) {
             console.error("Error processing bucket data:", e, bucket);
             // Return original bucket data with a current date as fallback
@@ -78,9 +102,9 @@ export function useTicketBuckets(tourId: string) {
               assigned_tours: [],
               tour_allocations: [],
               available_tickets: 0
-            };
+            } as TicketBucket;
           }
-        }) as TicketBucket[];
+        });
         
         // Calculate total available tickets across all buckets
         const totalAvailableTickets = buckets.reduce((sum, bucket) => {

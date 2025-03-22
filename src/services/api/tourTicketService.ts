@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { TourAllocation } from "@/types/ticketBuckets";
 import { toast } from "sonner";
 
 /**
@@ -21,7 +22,25 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
     
     // Initialize or update arrays with proper type safety
     const assignedTours = Array.isArray(bucketData.assigned_tours) ? [...bucketData.assigned_tours] : [];
-    const tourAllocations = Array.isArray(bucketData.tour_allocations) ? [...bucketData.tour_allocations] : [];
+    
+    // Parse tour_allocations to ensure it's in the correct format
+    let tourAllocations: TourAllocation[] = [];
+    if (bucketData.tour_allocations) {
+      // Handle both array and JSON string formats
+      if (typeof bucketData.tour_allocations === 'string') {
+        try {
+          tourAllocations = JSON.parse(bucketData.tour_allocations);
+        } catch (e) {
+          console.error("Error parsing tour_allocations string:", e);
+          tourAllocations = [];
+        }
+      } else if (Array.isArray(bucketData.tour_allocations)) {
+        tourAllocations = bucketData.tour_allocations as TourAllocation[];
+      } else if (typeof bucketData.tour_allocations === 'object') {
+        // If it's already an object but not an array, wrap it
+        tourAllocations = [bucketData.tour_allocations as unknown as TourAllocation];
+      }
+    }
     
     // Check if tour is already assigned
     if (!assignedTours.includes(tourId)) {
@@ -30,7 +49,7 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
     
     // Update or add the tour allocation
     const existingAllocationIndex = tourAllocations.findIndex(
-      (allocation: any) => allocation.tour_id === tourId
+      (allocation) => allocation.tour_id === tourId
     );
     
     if (existingAllocationIndex >= 0) {
@@ -47,7 +66,10 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
     
     // Calculate total allocated tickets
     const totalAllocated = tourAllocations.reduce(
-      (sum: number, allocation: any) => sum + allocation.tickets_required, 0
+      (sum, allocation) => sum + (typeof allocation.tickets_required === 'number' 
+        ? allocation.tickets_required 
+        : parseInt(String(allocation.tickets_required)) || 0), 
+      0
     );
     
     // Update the bucket
@@ -101,19 +123,40 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
     
     // Initialize or get arrays with proper type safety
     const assignedTours = Array.isArray(bucketData.assigned_tours) ? [...bucketData.assigned_tours] : [];
-    const tourAllocations = Array.isArray(bucketData.tour_allocations) ? [...bucketData.tour_allocations] : [];
+    
+    // Parse tour_allocations to ensure it's in the correct format
+    let tourAllocations: TourAllocation[] = [];
+    if (bucketData.tour_allocations) {
+      // Handle both array and JSON string formats
+      if (typeof bucketData.tour_allocations === 'string') {
+        try {
+          tourAllocations = JSON.parse(bucketData.tour_allocations);
+        } catch (e) {
+          console.error("Error parsing tour_allocations string:", e);
+          tourAllocations = [];
+        }
+      } else if (Array.isArray(bucketData.tour_allocations)) {
+        tourAllocations = bucketData.tour_allocations as TourAllocation[];
+      } else if (typeof bucketData.tour_allocations === 'object') {
+        // If it's already an object but not an array, wrap it
+        tourAllocations = [bucketData.tour_allocations as unknown as TourAllocation];
+      }
+    }
     
     // Remove the tour from assigned_tours
-    const updatedAssignedTours = assignedTours.filter((id: string) => id !== tourId);
+    const updatedAssignedTours = assignedTours.filter((id) => id !== tourId);
     
     // Remove the tour from tour_allocations
     const updatedTourAllocations = tourAllocations.filter(
-      (allocation: any) => allocation.tour_id !== tourId
+      (allocation) => allocation.tour_id !== tourId
     );
     
     // Calculate total allocated tickets
     const totalAllocated = updatedTourAllocations.reduce(
-      (sum: number, allocation: any) => sum + allocation.tickets_required, 0
+      (sum, allocation) => sum + (typeof allocation.tickets_required === 'number' 
+        ? allocation.tickets_required 
+        : parseInt(String(allocation.tickets_required)) || 0), 
+      0
     );
     
     // Update the bucket
