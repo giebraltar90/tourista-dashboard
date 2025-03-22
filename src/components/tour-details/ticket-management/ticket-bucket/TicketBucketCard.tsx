@@ -44,7 +44,7 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
       availableTickets,
-      date: bucket.date instanceof Date ? bucket.date.toISOString() : bucket.date,
+      date: bucket.date instanceof Date ? bucket.date.toISOString() : String(bucket.date),
       dateComponents: bucket.date instanceof Date ? {
         year: bucket.date.getFullYear(),
         month: bucket.date.getMonth() + 1,
@@ -62,8 +62,11 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
       dateToUse = bucket.date;
     } else if (typeof bucket.date === 'string') {
       dateToUse = new Date(bucket.date);
+    } else if (bucket.date) {
+      // Handle any other type by converting to string first
+      dateToUse = new Date(String(bucket.date));
     } else {
-      console.warn("Unexpected date format:", bucket.date);
+      console.warn("Undefined date:", bucket.date);
       dateToUse = new Date(); // Fallback
     }
     

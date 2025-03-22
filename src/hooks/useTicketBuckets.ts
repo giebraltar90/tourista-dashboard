@@ -40,8 +40,9 @@ export function useTicketBuckets(tourId: string) {
               bucketDate = new Date(bucket.date);
               bucketDate.setHours(12, 0, 0, 0);
             } else if (bucket.date && typeof bucket.date === 'object') {
-              // Use typeof to check if it's an object before assuming it's a Date
-              bucketDate = new Date(bucket.date.toString());
+              // Fix for TypeScript error - safely convert any object to string
+              const dateStr = String(bucket.date);
+              bucketDate = new Date(dateStr);
               bucketDate.setHours(12, 0, 0, 0);
             } else {
               console.warn("Unknown date format:", bucket.date);
