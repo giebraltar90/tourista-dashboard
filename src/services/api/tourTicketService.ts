@@ -27,9 +27,9 @@ function parseTourAllocations(allocationsData: Json | null): TourAllocation[] {
         // Ensure each item has the required properties
         if (typeof item === 'object' && item !== null) {
           return {
-            tour_id: String(item.tour_id || ''),
-            tickets_required: Number(item.tickets_required || 0),
-            assigned_at: String(item.assigned_at || new Date().toISOString())
+            tour_id: String((item as any).tour_id || ''),
+            tickets_required: Number((item as any).tickets_required || 0),
+            assigned_at: String((item as any).assigned_at || new Date().toISOString())
           };
         }
         return {
@@ -43,9 +43,9 @@ function parseTourAllocations(allocationsData: Json | null): TourAllocation[] {
     // Handle single object format
     if (typeof allocationsData === 'object' && allocationsData !== null) {
       return [{
-        tour_id: String(allocationsData.tour_id || ''),
-        tickets_required: Number(allocationsData.tickets_required || 0),
-        assigned_at: String(allocationsData.assigned_at || new Date().toISOString())
+        tour_id: String((allocationsData as any).tour_id || ''),
+        tickets_required: Number((allocationsData as any).tickets_required || 0),
+        assigned_at: String((allocationsData as any).assigned_at || new Date().toISOString())
       }];
     }
   } catch (e) {
