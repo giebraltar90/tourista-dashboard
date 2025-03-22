@@ -20,8 +20,8 @@ export const assignBucketToTour = async (bucketId: string, tourId: string, requi
     }
     
     // Initialize or update arrays
-    let assignedTours = bucketData.assigned_tours || [];
-    let tourAllocations = bucketData.tour_allocations || [];
+    const assignedTours = bucketData.assigned_tours || [];
+    const tourAllocations = bucketData.tour_allocations || [];
     
     // Check if tour is already assigned
     if (!assignedTours.includes(tourId)) {
@@ -100,19 +100,19 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
     }
     
     // Initialize or get arrays
-    let assignedTours = bucketData.assigned_tours || [];
-    let tourAllocations = bucketData.tour_allocations || [];
+    const assignedTours = bucketData.assigned_tours || [];
+    const tourAllocations = bucketData.tour_allocations || [];
     
     // Remove the tour from assigned_tours
-    assignedTours = assignedTours.filter((id: string) => id !== tourId);
+    const updatedAssignedTours = assignedTours.filter((id: string) => id !== tourId);
     
     // Remove the tour from tour_allocations
-    tourAllocations = tourAllocations.filter(
+    const updatedTourAllocations = tourAllocations.filter(
       (allocation: any) => allocation.tour_id !== tourId
     );
     
     // Calculate total allocated tickets
-    const totalAllocated = tourAllocations.reduce(
+    const totalAllocated = updatedTourAllocations.reduce(
       (sum: number, allocation: any) => sum + allocation.tickets_required, 0
     );
     
@@ -120,8 +120,8 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
     const { data, error } = await supabase
       .from('ticket_buckets')
       .update({ 
-        assigned_tours: assignedTours,
-        tour_allocations: tourAllocations,
+        assigned_tours: updatedAssignedTours,
+        tour_allocations: updatedTourAllocations,
         allocated_tickets: totalAllocated
       })
       .eq('id', bucketId)
@@ -136,8 +136,8 @@ export const removeBucketFromTour = async (bucketId: string, tourId: string) => 
       bucketId,
       tourId,
       totalAllocated,
-      assignedTours,
-      tourAllocations
+      assignedTours: updatedAssignedTours,
+      tourAllocations: updatedTourAllocations
     });
     
     return data;

@@ -16,8 +16,8 @@ export interface TicketBucket {
   date: Date;
   access_time: string | null;
   tour_id: string | null;
-  assigned_tours?: string[];
-  tour_allocations?: TourAllocation[];
+  assigned_tours: string[];
+  tour_allocations: TourAllocation[];
   created_at: string;
   updated_at: string;
   guide_tickets?: number; // Added for UI display purposes

@@ -48,7 +48,8 @@ export function useTicketBuckets(tourId: string) {
             // Set to noon to avoid timezone issues
             bucketDate.setHours(12, 0, 0, 0);
             
-            // Ensure tour_allocations is at least an empty array
+            // Ensure assigned_tours and tour_allocations are at least empty arrays
+            const assignedTours = bucket.assigned_tours || [];
             const tourAllocations = bucket.tour_allocations || [];
             
             // Calculate total allocated tickets
@@ -63,6 +64,7 @@ export function useTicketBuckets(tourId: string) {
             return {
               ...bucket,
               date: bucketDate,
+              assigned_tours: assignedTours,
               tour_allocations: tourAllocations,
               allocated_tickets: totalAllocated,
               available_tickets: availableTickets
@@ -73,6 +75,7 @@ export function useTicketBuckets(tourId: string) {
             return {
               ...bucket,
               date: new Date(),
+              assigned_tours: [],
               tour_allocations: [],
               available_tickets: 0
             };
