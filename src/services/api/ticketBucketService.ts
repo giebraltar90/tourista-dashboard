@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CSVTicketBucket, TicketBucket, TicketBucketFormValues } from "@/types/ticketBuckets";
 import { toast } from "sonner";
@@ -14,20 +13,49 @@ export const fetchTicketBuckets = async () => {
     throw error;
   }
   
+  console.log("🔍 [fetchTicketBuckets] Raw buckets from DB:", data);
+  
   // Convert date strings to Date objects
-  return data.map(bucket => ({
+  const buckets = data.map(bucket => ({
     ...bucket,
     date: new Date(bucket.date)
   })) as TicketBucket[];
+  
+  console.log("🔍 [fetchTicketBuckets] Processed buckets with Date objects:", 
+    buckets.map(b => ({
+      ...b,
+      date: b.date.toISOString(),
+      dateObj: {
+        year: b.date.getFullYear(),
+        month: b.date.getMonth() + 1,
+        day: b.date.getDate(),
+        fullDate: b.date.toDateString()
+      }
+    }))
+  );
+  
+  return buckets;
 };
 
 export const fetchTicketBucketsByDate = async (date: Date) => {
-  // Format date to YYYY-MM-DD format to ensure proper comparison
-  // Add timezone offset fix by setting the time to noon to avoid timezone issues
+  // IMPORTANT FIX: Set time to noon to avoid timezone issues
+  // Create a new date object to avoid modifying the original
   const localDate = new Date(date);
   localDate.setHours(12, 0, 0, 0);
+  
+  // Format date to YYYY-MM-DD format to ensure proper comparison
   const formattedDate = localDate.toISOString().split('T')[0];
-  console.log("Fetching buckets for formatted date:", formattedDate, "Original date:", date);
+  
+  console.log("🔍 [fetchTicketBucketsByDate] Input date:", date);
+  console.log("🔍 [fetchTicketBucketsByDate] Local date with noon time:", localDate);
+  console.log("🔍 [fetchTicketBucketsByDate] Formatted date for query:", formattedDate);
+  console.log("🔍 [fetchTicketBucketsByDate] Date components:", {
+    year: localDate.getFullYear(),
+    month: localDate.getMonth() + 1,
+    day: localDate.getDate(),
+    ISOString: localDate.toISOString(),
+    toDateString: localDate.toDateString()
+  });
   
   const { data, error } = await supabase
     .from('ticket_buckets')
@@ -36,21 +64,50 @@ export const fetchTicketBucketsByDate = async (date: Date) => {
     .order('access_time', { ascending: true });
   
   if (error) {
-    console.error("Error fetching ticket buckets by date:", error);
+    console.error("🔴 [fetchTicketBucketsByDate] Error:", error);
     throw error;
   }
   
-  console.log("API response for buckets:", data);
+  console.log("🔍 [fetchTicketBucketsByDate] Raw response from DB:", data);
   
-  return data.map(bucket => ({
-    ...bucket,
-    date: new Date(bucket.date)
-  })) as TicketBucket[];
+  // IMPORTANT FIX: When creating Date objects, set the time to noon to avoid timezone issues
+  const buckets = data.map(bucket => {
+    const bucketDate = new Date(bucket.date);
+    bucketDate.setHours(12, 0, 0, 0);
+    
+    return {
+      ...bucket,
+      date: bucketDate
+    };
+  }) as TicketBucket[];
+  
+  console.log("🔍 [fetchTicketBucketsByDate] Processed buckets:", 
+    buckets.map(b => ({
+      id: b.id,
+      reference_number: b.reference_number,
+      date: b.date.toISOString(),
+      dateComponents: {
+        year: b.date.getFullYear(),
+        month: b.date.getMonth() + 1,
+        day: b.date.getDate(),
+        fullDate: b.date.toDateString()
+      }
+    }))
+  );
+  
+  return buckets;
 };
 
 export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
+  // IMPORTANT FIX: Set time to noon to avoid timezone issues
+  const localDate = new Date(bucket.date);
+  localDate.setHours(12, 0, 0, 0);
+  
   // Format date for database
-  const formattedDate = bucket.date.toISOString().split('T')[0];
+  const formattedDate = localDate.toISOString().split('T')[0];
+  
+  console.log("🔍 [createTicketBucket] Input date:", bucket.date);
+  console.log("🔍 [createTicketBucket] Formatted date for DB:", formattedDate);
   
   const { data, error } = await supabase
     .from('ticket_buckets')
@@ -63,22 +120,51 @@ export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
     .select();
   
   if (error) {
-    console.error("Error creating ticket bucket:", error);
+    console.error("🔴 [createTicketBucket] Error:", error);
     throw error;
   }
   
+  // Create returned Date with noon time
+  const returnDate = new Date(data[0].date);
+  returnDate.setHours(12, 0, 0, 0);
+  
+  console.log("🔍 [createTicketBucket] Created bucket:", {
+    ...data[0],
+    dateCheck: {
+      originalDate: returnDate.toISOString(),
+      components: {
+        year: returnDate.getFullYear(),
+        month: returnDate.getMonth() + 1,
+        day: returnDate.getDate()
+      }
+    }
+  });
+  
   return {
     ...data[0],
-    date: new Date(data[0].date)
+    date: returnDate
   } as TicketBucket;
 };
 
 export const updateTicketBucket = async (id: string, updates: Partial<TicketBucketFormValues>) => {
-  // Format date for database if it's present
-  const formattedUpdates = {
-    ...updates,
-    date: updates.date ? updates.date.toISOString().split('T')[0] : undefined,
-  };
+  // IMPORTANT FIX: Set time to noon for the date to avoid timezone issues
+  let formattedUpdates = { ...updates };
+  
+  if (updates.date) {
+    const localDate = new Date(updates.date);
+    localDate.setHours(12, 0, 0, 0);
+    
+    formattedUpdates = {
+      ...updates,
+      date: localDate.toISOString().split('T')[0],
+    };
+    
+    console.log("🔍 [updateTicketBucket] Original date:", updates.date);
+    console.log("🔍 [updateTicketBucket] Fixed date with noon time:", localDate);
+    console.log("🔍 [updateTicketBucket] Formatted date for DB:", formattedUpdates.date);
+  }
+  
+  console.log("🔍 [updateTicketBucket] Updates to be applied:", formattedUpdates);
   
   const { data, error } = await supabase
     .from('ticket_buckets')
@@ -87,13 +173,29 @@ export const updateTicketBucket = async (id: string, updates: Partial<TicketBuck
     .select();
   
   if (error) {
-    console.error("Error updating ticket bucket:", error);
+    console.error("🔴 [updateTicketBucket] Error:", error);
     throw error;
   }
   
+  // Create returned Date with noon time
+  const returnDate = new Date(data[0].date);
+  returnDate.setHours(12, 0, 0, 0);
+  
+  console.log("🔍 [updateTicketBucket] Updated bucket:", {
+    ...data[0],
+    dateCheck: {
+      originalDate: returnDate.toISOString(),
+      components: {
+        year: returnDate.getFullYear(),
+        month: returnDate.getMonth() + 1,
+        day: returnDate.getDate()
+      }
+    }
+  });
+  
   return {
     ...data[0],
-    date: new Date(data[0].date)
+    date: returnDate
   } as TicketBucket;
 };
 

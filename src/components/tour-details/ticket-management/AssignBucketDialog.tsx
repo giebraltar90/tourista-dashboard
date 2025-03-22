@@ -21,22 +21,50 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
   const [isAssigning, setIsAssigning] = useState(false);
   const { handleAssignBucket } = useTicketAssignmentService();
   
-  // Ensure the date is displayed correctly without timezone shifts
+  // Ensure the date has the correct time (noon) to avoid timezone issues
   const displayDate = new Date(tourDate);
+  displayDate.setHours(12, 0, 0, 0);
+  
   // Format the date for display and API query
   const formattedDate = format(displayDate, 'yyyy-MM-dd');
-  console.log("AssignBucketDialog - Tour date:", tourDate, "Formatted date:", formattedDate);
+  
+  console.log("🔍 [AssignBucketDialog] Dialog opened with date:", {
+    originalTourDate: tourDate.toISOString(),
+    displayDate: displayDate.toISOString(),
+    formattedDate,
+    dateComponents: {
+      year: displayDate.getFullYear(),
+      month: displayDate.getMonth() + 1,
+      day: displayDate.getDate(),
+      fullDate: displayDate.toDateString()
+    }
+  });
 
   // Fetch buckets for the tour date
   const { data: availableBuckets = [], isLoading } = useQuery({
     queryKey: ['availableBuckets', formattedDate],
-    queryFn: () => fetchTicketBucketsByDate(tourDate),
+    queryFn: () => {
+      console.log("🔍 [AssignBucketDialog] Fetching buckets for date:", displayDate.toISOString());
+      return fetchTicketBucketsByDate(displayDate);
+    },
     enabled: isOpen,
   });
   
   // Log the available buckets for debugging
   useEffect(() => {
-    console.log("Available buckets loaded:", availableBuckets);
+    console.log("🔍 [AssignBucketDialog] Available buckets loaded:", 
+      availableBuckets.map(b => ({
+        id: b.id,
+        reference: b.reference_number,
+        date: b.date.toISOString(),
+        dateComponents: {
+          year: b.date.getFullYear(),
+          month: b.date.getMonth() + 1,
+          day: b.date.getDate(),
+          fullDate: b.date.toDateString()
+        }
+      }))
+    );
   }, [availableBuckets]);
 
   // Filter out buckets that are already assigned to any tour
@@ -44,7 +72,13 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
   
   // Log the filtered unassigned buckets
   useEffect(() => {
-    console.log("Unassigned buckets:", unassignedBuckets);
+    console.log("🔍 [AssignBucketDialog] Unassigned buckets:", 
+      unassignedBuckets.map(b => ({
+        id: b.id,
+        reference: b.reference_number,
+        date: b.date.toISOString()
+      }))
+    );
   }, [unassignedBuckets]);
 
   const handleAssignBucketClick = async () => {
@@ -52,12 +86,21 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
       return;
     }
 
+    console.log("🔍 [AssignBucketDialog] Assigning bucket:", {
+      bucketId: selectedBucketId,
+      tourId,
+      selectedBucket: unassignedBuckets.find(b => b.id === selectedBucketId)
+    });
+
     setIsAssigning(true);
     try {
       const success = await handleAssignBucket(selectedBucketId, tourId);
+      console.log("🔍 [AssignBucketDialog] Assignment result:", success);
       if (success) {
         onClose();
       }
+    } catch (error) {
+      console.error("🔴 [AssignBucketDialog] Assignment error:", error);
     } finally {
       setIsAssigning(false);
     }

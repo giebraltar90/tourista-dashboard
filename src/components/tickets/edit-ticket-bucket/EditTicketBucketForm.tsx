@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,34 @@ export function EditTicketBucketForm({ bucket, onSave, onCancel, isSaving }: Edi
   const [accessTime, setAccessTime] = useState(bucket.access_time || "");
   const [date, setDate] = useState<Date>(bucket.date);
 
+  // Log initial bucket values
+  useEffect(() => {
+    console.log("🔍 [EditTicketBucketForm] Initial bucket:", {
+      id: bucket.id,
+      reference_number: bucket.reference_number,
+      date: bucket.date.toISOString(),
+      dateComponents: {
+        year: bucket.date.getFullYear(),
+        month: bucket.date.getMonth() + 1,
+        day: bucket.date.getDate(),
+        fullDate: bucket.date.toDateString()
+      }
+    });
+  }, [bucket]);
+
+  // Log when date changes
+  useEffect(() => {
+    console.log("🔍 [EditTicketBucketForm] Date state changed:", {
+      date: date.toISOString(),
+      dateComponents: {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        fullDate: date.toDateString()
+      }
+    });
+  }, [date]);
+
   const handleBucketTypeChange = (value: 'petit' | 'grande') => {
     setBucketType(value);
     // Update max tickets based on the bucket type
@@ -43,12 +71,27 @@ export function EditTicketBucketForm({ bucket, onSave, onCancel, isSaving }: Edi
       return;
     }
 
+    // Ensure date has noon time to avoid timezone issues
+    const saveDate = new Date(date);
+    saveDate.setHours(12, 0, 0, 0);
+
+    console.log("🔍 [EditTicketBucketForm] Saving with date:", {
+      dateBeforeSave: date.toISOString(),
+      saveDate: saveDate.toISOString(),
+      dateComponents: {
+        year: saveDate.getFullYear(),
+        month: saveDate.getMonth() + 1,
+        day: saveDate.getDate(),
+        fullDate: saveDate.toDateString()
+      }
+    });
+
     await onSave({
       reference_number: referenceNumber,
       bucket_type: bucketType,
       max_tickets: parseInt(maxTickets),
       access_time: accessTime || "",
-      date: date,
+      date: saveDate,
     });
   };
 
@@ -64,7 +107,26 @@ export function EditTicketBucketForm({ bucket, onSave, onCancel, isSaving }: Edi
         />
       </div>
       
-      <BucketDateField date={date} onDateChange={setDate} />
+      <BucketDateField 
+        date={date} 
+        onDateChange={(newDate) => {
+          console.log("🔍 [EditTicketBucketForm] Date changed from picker:", {
+            newDate: newDate.toISOString(),
+            components: {
+              year: newDate.getFullYear(),
+              month: newDate.getMonth() + 1, 
+              day: newDate.getDate()
+            }
+          });
+          
+          // Ensure time is set to noon
+          const updatedDate = new Date(newDate);
+          updatedDate.setHours(12, 0, 0, 0);
+          
+          console.log("🔍 [EditTicketBucketForm] Setting date with noon time:", updatedDate.toISOString());
+          setDate(updatedDate);
+        }} 
+      />
       
       <BucketTypeField 
         selectedType={bucketType} 

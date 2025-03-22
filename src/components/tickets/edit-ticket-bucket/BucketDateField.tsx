@@ -6,6 +6,7 @@ import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
+import { useEffect } from "react";
 
 interface BucketDateFieldProps {
   date: Date;
@@ -13,6 +14,38 @@ interface BucketDateFieldProps {
 }
 
 export function BucketDateField({ date, onDateChange }: BucketDateFieldProps) {
+  // Log initial date
+  useEffect(() => {
+    console.log("🔍 [BucketDateField] Initial date:", {
+      date: date.toISOString(),
+      components: {
+        year: date.getFullYear(),
+        month: date.getMonth() + 1,
+        day: date.getDate(),
+        dayOfWeek: date.getDay(),
+        timezoneOffset: date.getTimezoneOffset()
+      }
+    });
+  }, []);
+
+  const handleDateSelect = (newDate: Date | undefined) => {
+    if (!newDate) return;
+    
+    console.log("🔍 [BucketDateField] Selected date from calendar:", {
+      newDate: newDate.toISOString(),
+      components: {
+        year: newDate.getFullYear(),
+        month: newDate.getMonth() + 1,
+        day: newDate.getDate(),
+        dayOfWeek: newDate.getDay(),
+        formatted: format(newDate, 'PPP')
+      }
+    });
+    
+    // Apply the selection to parent component
+    onDateChange(newDate);
+  };
+
   return (
     <div className="space-y-2">
       <Label htmlFor="date">Date</Label>
@@ -34,7 +67,7 @@ export function BucketDateField({ date, onDateChange }: BucketDateFieldProps) {
           <Calendar
             mode="single"
             selected={date}
-            onSelect={(newDate) => newDate && onDateChange(newDate)}
+            onSelect={handleDateSelect}
             initialFocus
             className="p-3 pointer-events-auto"
           />
