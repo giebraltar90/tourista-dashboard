@@ -8,9 +8,10 @@ import { TicketStatus } from "./TicketStatus";
 import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
+import { doesGuideNeedTicket } from "@/hooks/guides/useGuideTickets";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Calculate total participants for ticket requirements
+  // Calculate total participants from tour groups
   const totalParticipants = tour.tourGroups.reduce((sum, group) => {
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       return sum + group.participants.reduce((groupSum, p) => groupSum + (p.count || 1), 0);
@@ -18,38 +19,55 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     return sum + group.size;
   }, 0);
   
-  // Add guides who need tickets
+  // Calculate guide tickets based on guide info and location
   const isVersaillesTour = tour.location.toLowerCase().includes('versailles');
-  const guideTicketsNeeded = isVersaillesTour ? 
-    (guide1Info ? 1 : 0) + (guide2Info ? 1 : 0) + (guide3Info ? 1 : 0) : 0;
   
-  // Total required tickets
+  // Check if guides need tickets
+  const guide1NeedsTicket = guide1Info && isVersaillesTour ? 
+    doesGuideNeedTicket(guide1Info, tour.location) : false;
+  
+  const guide2NeedsTicket = guide2Info && isVersaillesTour ? 
+    doesGuideNeedTicket(guide2Info, tour.location) : false;
+  
+  const guide3NeedsTicket = guide3Info && isVersaillesTour ? 
+    doesGuideNeedTicket(guide3Info, tour.location) : false;
+  
+  // Count total guide tickets needed
+  const guideTicketsNeeded = (guide1NeedsTicket ? 1 : 0) + 
+                            (guide2NeedsTicket ? 1 : 0) + 
+                            (guide3NeedsTicket ? 1 : 0);
+  
+  // Total required tickets including guides
   const requiredTickets = totalParticipants + guideTicketsNeeded;
 
   // Fetch ticket buckets for this tour
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
   const tourDate = new Date(tour.date);
   
-  // Update allocated tickets in buckets to reflect participant count
+  // Log ticket calculations for debugging
   useEffect(() => {
-    if (ticketBuckets.length > 0) {
-      // Log information about the ticket calculations
-      console.log("🎫 Ticket allocation calculation:", {
-        totalParticipants,
-        guideTicketsNeeded,
-        requiredTickets,
-        buckets: ticketBuckets.map(b => ({
-          id: b.id,
-          reference: b.reference_number,
-          maxTickets: b.max_tickets,
-          allocatedTickets: b.allocated_tickets,
-          // For display purposes, we'll show allocated tickets including our tour participants
-          effectiveAllocatedTickets: b.allocated_tickets + (b.tour_id === tour.id ? requiredTickets : 0),
-          availableTickets: b.available_tickets
-        }))
-      });
-    }
-  }, [ticketBuckets, requiredTickets, tour.id]);
+    console.log("🎫 [TicketsManagement] Ticket requirements:", {
+      totalParticipants,
+      isVersaillesTour,
+      guide1: guide1Info?.name,
+      guide2: guide2Info?.name,
+      guide3: guide3Info?.name,
+      guide1NeedsTicket,
+      guide2NeedsTicket,
+      guide3NeedsTicket,
+      guideTicketsNeeded,
+      requiredTickets,
+      bucketCount: ticketBuckets.length
+    });
+  }, [
+    ticketBuckets, 
+    totalParticipants, 
+    guideTicketsNeeded, 
+    requiredTickets, 
+    guide1Info, 
+    guide2Info, 
+    guide3Info
+  ]);
 
   return (
     <Card>

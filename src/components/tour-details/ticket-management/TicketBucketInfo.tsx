@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TicketBucket } from "@/types/ticketBuckets";
@@ -33,42 +33,53 @@ export const TicketBucketInfo = ({
   // Safely ensure buckets array is valid
   const validBuckets = Array.isArray(buckets) ? buckets : [];
 
-  // Safely calculate total tickets available in buckets, accounting for allocated tickets
-  // We need to first find if any buckets are assigned to this tour
+  // Find if any bucket is assigned to this tour
   const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
   
   // Calculate the total available tickets across all buckets
+  // Important: When calculating available tickets for assigned buckets, 
+  // we need to include the current tour's required tickets in the calculation
   const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
-    // For buckets assigned to this tour, we need to account for the participants
-    const effectiveAllocatedTickets = bucket.allocated_tickets + 
-      (bucket.tour_id === tourId ? requiredTickets : 0);
+    let availableTickets = 0;
     
-    // Calculate available tickets
-    const availableTickets = Math.max(0, bucket.max_tickets - effectiveAllocatedTickets);
+    if (bucket.tour_id === tourId) {
+      // For buckets assigned to this tour, subtract the required tickets from available
+      availableTickets = Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
+    } else {
+      // For other buckets, just show normal availability
+      availableTickets = Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
+    }
     
     return sum + availableTickets;
   }, 0);
 
-  console.log("🔍 [TicketBucketInfo] Calculated tickets:", {
-    totalBucketTickets,
-    requiredTickets,
-    totalParticipants,
-    bucketCount: validBuckets.length,
-    bucketAssignedToTour: bucketAssignedToTour ? {
-      id: bucketAssignedToTour.id,
-      ref: bucketAssignedToTour.reference_number,
-    } : null,
-    bucketDetails: validBuckets.map(b => ({
-      id: b.id,
-      ref: b.reference_number,
-      max: b.max_tickets,
-      allocated: b.allocated_tickets,
-      tourId: b.tour_id,
-      isAssignedToThisTour: b.tour_id === tourId
-    }))
-  });
+  // Log calculations for debugging
+  useEffect(() => {
+    console.log("🎫 [TicketBucketInfo] Calculated tickets:", {
+      totalBucketTickets,
+      requiredTickets,
+      totalParticipants,
+      bucketCount: validBuckets.length,
+      bucketAssignedToTour: bucketAssignedToTour ? {
+        id: bucketAssignedToTour.id,
+        ref: bucketAssignedToTour.reference_number,
+        maxTickets: bucketAssignedToTour.max_tickets,
+        allocatedTickets: bucketAssignedToTour.allocated_tickets,
+        availableAfterThisTour: bucketAssignedToTour.max_tickets - 
+          (bucketAssignedToTour.allocated_tickets + requiredTickets)
+      } : null,
+      bucketDetails: validBuckets.map(b => ({
+        id: b.id,
+        ref: b.reference_number,
+        max: b.max_tickets,
+        allocated: b.allocated_tickets,
+        tourId: b.tour_id,
+        isAssignedToThisTour: b.tour_id === tourId
+      }))
+    });
+  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId]);
 
-  // If we have a bucket assigned to this tour, we have enough tickets
+  // We have enough tickets if a bucket is assigned to this tour
   const hasEnoughBucketTickets = !!bucketAssignedToTour;
 
   if (isLoading) {

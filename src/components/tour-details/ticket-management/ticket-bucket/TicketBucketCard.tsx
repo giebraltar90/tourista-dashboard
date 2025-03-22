@@ -9,7 +9,7 @@ import { EditTicketBucketDialog } from "./EditTicketBucketDialog";
 
 interface TicketBucketCardProps {
   bucket: TicketBucket;
-  onRemove: (bucketId: string) => void;
+  onRemove: (bucketId: string) => Promise<boolean>;
   tourId: string;
   requiredTickets: number;
 }
@@ -17,30 +17,39 @@ interface TicketBucketCardProps {
 export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: TicketBucketCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  // Safely calculate available tickets, accounting for this tour's requirement
+  // Check if this bucket is assigned to the current tour
   const isBucketAssignedToThisTour = bucket.tour_id === tourId;
   
-  // Calculate the effective allocated tickets including this tour's participants if the bucket is assigned to this tour
-  const effectiveAllocatedTickets = bucket.allocated_tickets + (isBucketAssignedToThisTour ? requiredTickets : 0);
+  // Calculate available tickets, accounting for current tour requirements if assigned
+  let availableTickets = 0;
   
-  // Calculate available tickets (the number shown to users)
-  let availableTickets = Math.max(0, bucket.max_tickets - effectiveAllocatedTickets);
+  if (isBucketAssignedToThisTour) {
+    // If bucket is assigned to this tour, the tickets are already accounted for
+    // We should display the tickets that are available AFTER this tour's allocation
+    availableTickets = bucket.max_tickets - (bucket.allocated_tickets + requiredTickets);
+  } else {
+    // If not assigned to this tour, just show the regular availability
+    availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+  }
+  
+  // Ensure we don't show negative available tickets
+  availableTickets = Math.max(0, availableTickets);
   
   // Log bucket information for debugging
   useEffect(() => {
-    console.log("🔍 [TicketBucketCard] Rendering bucket with calculations:", {
+    console.log("🎫 [TicketBucketCard] Rendering bucket:", {
       id: bucket.id,
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
-      baseAllocatedTickets: bucket.allocated_tickets,
-      effectiveAllocatedTickets,
+      allocatedTickets: bucket.allocated_tickets,
+      effectiveAllocated: isBucketAssignedToThisTour ? bucket.allocated_tickets + requiredTickets : bucket.allocated_tickets,
       availableTickets,
       isBucketAssignedToThisTour,
       tourId,
       bucketTourId: bucket.tour_id,
       requiredTickets
     });
-  }, [bucket, availableTickets, effectiveAllocatedTickets, isBucketAssignedToThisTour, tourId, requiredTickets]);
+  }, [bucket, availableTickets, isBucketAssignedToThisTour, tourId, requiredTickets]);
   
   // Safely format date for display
   let dateToUse;
