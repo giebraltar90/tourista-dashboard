@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Clock, Ticket, Trash2 } from "lucide-react";
 import { TicketBucket } from "@/types/ticketBuckets";
 import { useState, useEffect } from "react";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { EditTicketBucketDialog } from "./EditTicketBucketDialog";
 
 interface TicketBucketCardProps {
@@ -15,10 +15,26 @@ interface TicketBucketCardProps {
 export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  // Calculate available tickets
-  const availableTickets = bucket.available_tickets !== undefined ? 
-    bucket.available_tickets : 
-    (bucket.max_tickets - bucket.allocated_tickets);
+  // Safely calculate available tickets
+  let availableTickets = 0;
+  try {
+    if (bucket.available_tickets !== undefined) {
+      availableTickets = typeof bucket.available_tickets === 'number' 
+        ? bucket.available_tickets 
+        : parseInt(bucket.available_tickets.toString(), 10);
+    } else {
+      availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+    }
+    
+    // Ensure it's a valid number
+    if (isNaN(availableTickets)) {
+      console.warn("Invalid available tickets for bucket:", bucket);
+      availableTickets = 0;
+    }
+  } catch (e) {
+    console.error("Error calculating available tickets:", e);
+    availableTickets = 0;
+  }
   
   // Log bucket information for debugging
   useEffect(() => {
@@ -37,10 +53,26 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
     });
   }, [bucket, availableTickets]);
   
-  // Format date for display
-  const formattedDate = bucket.date instanceof Date ? 
-    format(bucket.date, "MMM d, yyyy") : 
-    "Invalid Date";
+  // Safely format date for display
+  let dateToUse;
+  let formattedDate = "Invalid Date";
+  
+  try {
+    if (bucket.date instanceof Date) {
+      dateToUse = bucket.date;
+    } else if (typeof bucket.date === 'string') {
+      dateToUse = new Date(bucket.date);
+    } else {
+      console.warn("Unexpected date format:", bucket.date);
+      dateToUse = new Date(); // Fallback
+    }
+    
+    if (isValid(dateToUse)) {
+      formattedDate = format(dateToUse, "MMM d, yyyy");
+    }
+  } catch (e) {
+    console.error("Error formatting date:", e);
+  }
 
   return (
     <>

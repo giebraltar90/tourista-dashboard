@@ -22,12 +22,29 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const { handleRemoveBucket } = useTicketAssignmentService();
 
-  // Calculate total tickets available in buckets
+  // Safely calculate total tickets available in buckets
   const totalBucketTickets = buckets.reduce((sum, bucket) => {
-    // Use the available_tickets property if it exists, otherwise calculate it
-    const availableTickets = bucket.available_tickets !== undefined ? 
-      bucket.available_tickets : 
-      (bucket.max_tickets - bucket.allocated_tickets);
+    // Handle both cases: when available_tickets is provided or needs to be calculated
+    let availableTickets = 0;
+    
+    try {
+      if (bucket.available_tickets !== undefined) {
+        availableTickets = typeof bucket.available_tickets === 'number' 
+          ? bucket.available_tickets 
+          : parseInt(bucket.available_tickets.toString(), 10);
+      } else {
+        availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+      }
+      
+      // Ensure it's a valid number
+      if (isNaN(availableTickets)) {
+        console.warn("Invalid available tickets for bucket:", bucket);
+        availableTickets = 0;
+      }
+    } catch (e) {
+      console.error("Error calculating available tickets:", e);
+      availableTickets = 0;
+    }
     
     return sum + availableTickets;
   }, 0);
@@ -41,7 +58,7 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
       reference: b.reference_number,
       max: b.max_tickets,
       allocated: b.allocated_tickets,
-      available: b.available_tickets || (b.max_tickets - b.allocated_tickets)
+      available: b.available_tickets ?? (b.max_tickets - b.allocated_tickets)
     }))
   });
 
