@@ -10,60 +10,34 @@ import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
 import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuideTickets";
 import { GuideTicketRequirements } from "./GuideTicketRequirements";
-import { useTicketCountLogic } from "@/hooks/tour-details/useParticipantCounts";
+import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Calculate total participants from tour groups
-  const totalParticipants = tour.tourGroups.reduce((sum, group) => {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      return sum + group.participants.reduce((groupSum, p) => groupSum + (p.count || 1), 0);
-    }
-    return sum + group.size;
-  }, 0);
+  // Use the correct hook to calculate participant counts
+  const participantCounts = useParticipantCounts(
+    tour.tourGroups,
+    guide1Info,
+    guide2Info, 
+    guide3Info,
+    tour.guide1,
+    tour.guide2,
+    tour.guide3,
+    tour.location,
+    []
+  );
   
-  // Calculate child count
-  const totalChildCount = tour.tourGroups.reduce((sum, group) => {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      return sum + group.participants.reduce((groupSum, p) => groupSum + (p.childCount || 0), 0);
-    }
-    return sum + (group.childCount || 0);
-  }, 0);
+  const { 
+    totalParticipants, 
+    totalChildCount,
+    adultTickets,
+    childTickets,
+    guideAdultTickets,
+    guideChildTickets,
+    totalTickets
+  } = participantCounts;
   
-  // Calculate guide tickets based on guide info and location
-  const isTourRequiringGuideTickets = 
-    tour.location.toLowerCase().includes('versailles') || 
-    tour.location.toLowerCase().includes('montmartre');
-  
-  // Check if guides need tickets
-  const guide1NeedsTicket = guide1Info && isTourRequiringGuideTickets ? 
-    doesGuideNeedTicket(guide1Info, tour.location) : false;
-  
-  const guide2NeedsTicket = guide2Info && isTourRequiringGuideTickets ? 
-    doesGuideNeedTicket(guide2Info, tour.location) : false;
-  
-  const guide3NeedsTicket = guide3Info && isTourRequiringGuideTickets ? 
-    doesGuideNeedTicket(guide3Info, tour.location) : false;
-  
-  // Get ticket types for guides
-  const guide1TicketType = guide1Info ? getGuideTicketType(guide1Info) : null;
-  const guide2TicketType = guide2Info ? getGuideTicketType(guide2Info) : null;
-  const guide3TicketType = guide3Info ? getGuideTicketType(guide3Info) : null;
-  
-  // Count required tickets by type
-  const requiredAdultTickets = (totalParticipants - totalChildCount) + 
-    (guide1TicketType === 'adult' ? 1 : 0) + 
-    (guide2TicketType === 'adult' ? 1 : 0) + 
-    (guide3TicketType === 'adult' ? 1 : 0);
-    
-  const requiredChildTickets = totalChildCount + 
-    (guide1TicketType === 'child' ? 1 : 0) + 
-    (guide2TicketType === 'child' ? 1 : 0) + 
-    (guide3TicketType === 'child' ? 1 : 0);
-  
-  // Count total guide tickets needed
-  const guideTicketsNeeded = (guide1NeedsTicket ? 1 : 0) + 
-                            (guide2NeedsTicket ? 1 : 0) + 
-                            (guide3NeedsTicket ? 1 : 0);
+  // Calculate total guide tickets needed
+  const guideTicketsNeeded = guideAdultTickets + guideChildTickets;
   
   // Total required tickets including guides
   const requiredTickets = totalParticipants + guideTicketsNeeded;
@@ -84,18 +58,10 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     console.log("🎫 [TicketsManagement] Ticket requirements:", {
       totalParticipants,
       totalChildCount,
-      isTourRequiringGuideTickets,
-      guide1: guide1Info?.name,
-      guide2: guide2Info?.name,
-      guide3: guide3Info?.name,
-      guide1NeedsTicket,
-      guide2NeedsTicket,
-      guide3NeedsTicket,
-      guide1TicketType,
-      guide2TicketType,
-      guide3TicketType,
-      requiredAdultTickets,
-      requiredChildTickets,
+      adultTickets,
+      childTickets,
+      guideAdultTickets,
+      guideChildTickets,
       guideTicketsNeeded,
       requiredTickets,
       bucketCount: ticketBuckets.length,
@@ -108,9 +74,10 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     totalChildCount,
     guideTicketsNeeded, 
     requiredTickets, 
-    guide1Info, 
-    guide2Info, 
-    guide3Info,
+    adultTickets,
+    childTickets,
+    guideAdultTickets,
+    guideChildTickets,
     availableTickets
   ]);
 
@@ -122,7 +89,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          {isTourRequiringGuideTickets && (
+          {(tour.location.toLowerCase().includes('versailles') || 
+             tour.location.toLowerCase().includes('montmartre')) && (
             <GuideTicketRequirements
               tour={{
                 guide1: guide1Info?.name || tour.guide1 || "Unknown",
@@ -133,17 +101,17 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
               guide1Info={guide1Info}
               guide2Info={guide2Info}
               guide3Info={guide3Info}
-              guide1NeedsTicket={guide1NeedsTicket}
-              guide2NeedsTicket={guide2NeedsTicket}
-              guide3NeedsTicket={guide3NeedsTicket}
-              guide1TicketType={guide1TicketType}
-              guide2TicketType={guide2TicketType}
-              guide3TicketType={guide3TicketType}
+              guide1NeedsTicket={guide1Info ? doesGuideNeedTicket(guide1Info, tour.location) : false}
+              guide2NeedsTicket={guide2Info ? doesGuideNeedTicket(guide2Info, tour.location) : false}
+              guide3NeedsTicket={guide3Info ? doesGuideNeedTicket(guide3Info, tour.location) : false}
+              guide1TicketType={guide1Info ? getGuideTicketType(guide1Info) : null}
+              guide2TicketType={guide2Info ? getGuideTicketType(guide2Info) : null}
+              guide3TicketType={guide3Info ? getGuideTicketType(guide3Info) : null}
               hasEnoughTickets={hasEnoughTickets}
               availableTickets={availableTickets}
               requiredTickets={requiredTickets}
-              requiredAdultTickets={requiredAdultTickets}
-              requiredChildTickets={requiredChildTickets}
+              requiredAdultTickets={adultTickets + guideAdultTickets}
+              requiredChildTickets={childTickets + guideChildTickets}
             />
           )}
 
