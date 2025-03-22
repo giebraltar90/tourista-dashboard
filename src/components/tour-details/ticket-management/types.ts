@@ -48,4 +48,5 @@ export interface TicketBucketInfoProps {
   isLoading: boolean;
   tourId: string;
   requiredTickets: number;
+  tourDate: Date;
 }

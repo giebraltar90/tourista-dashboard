@@ -5,4 +5,5 @@ export * from './TicketStatus';
 export * from './GuideTicketInfo';
 export * from './TicketSufficiencyAlert';
 export * from './TicketBucketInfo';
+export * from './AssignBucketDialog';
 export * from './types';

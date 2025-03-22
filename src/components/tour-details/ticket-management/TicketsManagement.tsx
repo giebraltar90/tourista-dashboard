@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -14,40 +13,32 @@ import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   const totalParticipants = tour.tourGroups.reduce((sum, group) => {
-    // Calculate total from participants if available
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       return sum + group.participants.reduce((groupSum, p) => groupSum + (p.count || 1), 0);
     }
-    // Fall back to size field
     return sum + group.size;
   }, 0);
   
   const totalChildCount = tour.tourGroups.reduce((sum, group) => {
-    // Calculate from participants if available
     if (Array.isArray(group.participants) && group.participants.length > 0) {
       return sum + group.participants.reduce((groupSum, p) => groupSum + (p.childCount || 0), 0);
     }
-    // Fall back to childCount field
     return sum + (group.childCount || 0);
   }, 0);
   
   const adultTickets = totalParticipants - totalChildCount;
   const childTickets = totalChildCount;
   
-  // Determine if this is a Versailles tour
   const isVersaillesTour = tour.location.toLowerCase().includes('versailles');
   
-  // Calculate guide ticket requirements
   const guide1NeedsTicket = guide1Info ? doesGuideNeedTicket(guide1Info, tour.location) : false;
   const guide2NeedsTicket = guide2Info ? doesGuideNeedTicket(guide2Info, tour.location) : false;
   const guide3NeedsTicket = guide3Info ? doesGuideNeedTicket(guide3Info, tour.location) : false;
   
-  // Get ticket types required for guides
   const guide1TicketType = guide1Info ? getGuideTicketType(guide1Info) : null;
   const guide2TicketType = guide2Info ? getGuideTicketType(guide2Info) : null;
   const guide3TicketType = guide3Info ? getGuideTicketType(guide3Info) : null;
   
-  // Calculate total required tickets
   const requiredAdultTickets = adultTickets + 
     (guide1TicketType === 'adult' ? 1 : 0) + 
     (guide2TicketType === 'adult' ? 1 : 0) +
@@ -58,12 +49,10 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     (guide2TicketType === 'child' ? 1 : 0) +
     (guide3TicketType === 'child' ? 1 : 0);
   
-  // Determine if we have enough tickets
   const availableTickets = tour.numTickets || totalParticipants;
   const requiredTickets = requiredAdultTickets + requiredChildTickets;
   const hasEnoughTickets = availableTickets >= requiredTickets;
 
-  // Prepare guide adult tickets data
   const adultGuideTickets = [];
   if (guide1Info && guide1TicketType === 'adult') {
     adultGuideTickets.push({
@@ -87,7 +76,6 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     });
   }
 
-  // Prepare guide child tickets data
   const childGuideTickets = [];
   if (guide1Info && guide1TicketType === 'child') {
     childGuideTickets.push({
@@ -111,8 +99,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     });
   }
 
-  // Get ticket buckets for this tour
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
+  const tourDate = new Date(tour.date);
 
   return (
     <Card>
@@ -142,12 +130,12 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
           
           <Separator />
           
-          {/* Ticket Buckets Section */}
           <TicketBucketInfo 
             buckets={ticketBuckets} 
             isLoading={isLoadingBuckets} 
             tourId={tour.id}
             requiredTickets={requiredTickets}
+            tourDate={tourDate}
           />
           
           <Separator />

@@ -1,21 +1,31 @@
 
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InfoIcon, TicketIcon } from "lucide-react";
+import { InfoIcon, TicketIcon, PlusCircleIcon, XCircleIcon } from "lucide-react";
 import { TicketBucket } from "@/types/ticketBuckets";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { AssignBucketDialog } from "./AssignBucketDialog";
+import { removeBucketFromTour } from "@/services/api/tourTicketService";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface TicketBucketInfoProps {
   buckets: TicketBucket[];
   isLoading: boolean;
   tourId: string;
   requiredTickets: number;
+  tourDate: Date;
 }
 
-export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }: TicketBucketInfoProps) => {
+export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, tourDate }: TicketBucketInfoProps) => {
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isRemoving, setIsRemoving] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+
   // Calculate total tickets available in buckets
   const totalBucketTickets = buckets.reduce((sum, bucket) => {
     return sum + (bucket.max_tickets - bucket.allocated_tickets);
@@ -23,6 +33,22 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }
 
   // Check if we have enough tickets in buckets
   const hasEnoughBucketTickets = totalBucketTickets >= requiredTickets;
+
+  const handleRemoveBucket = async (bucketId: string) => {
+    if (confirm("Are you sure you want to remove this ticket bucket from the tour?")) {
+      setIsRemoving(bucketId);
+      try {
+        await removeBucketFromTour(bucketId);
+        queryClient.invalidateQueries({ queryKey: ['ticketBuckets', tourId] });
+        toast.success("Ticket bucket removed from tour");
+      } catch (error) {
+        console.error("Error removing bucket:", error);
+        toast.error("Failed to remove ticket bucket");
+      } finally {
+        setIsRemoving(null);
+      }
+    }
+  };
 
   if (isLoading) {
     return (
@@ -44,9 +70,26 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }
           <div className="flex flex-col items-center justify-center space-y-2 py-6">
             <TicketIcon className="h-10 w-10 text-muted-foreground" />
             <p className="text-muted-foreground text-center">No ticket buckets allocated to this tour yet</p>
-            <Button variant="outline" size="sm" className="mt-2">Assign Ticket Bucket</Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2"
+              onClick={() => setIsAssignDialogOpen(true)}
+            >
+              <PlusCircleIcon className="h-4 w-4 mr-2" />
+              Assign Ticket Bucket
+            </Button>
           </div>
         </Card>
+        
+        {isAssignDialogOpen && (
+          <AssignBucketDialog 
+            isOpen={isAssignDialogOpen} 
+            onClose={() => setIsAssignDialogOpen(false)} 
+            tourId={tourId}
+            tourDate={tourDate}
+          />
+        )}
       </div>
     );
   }
@@ -55,18 +98,29 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="font-medium">Ticket Buckets</h3>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center space-x-1 cursor-help">
-                <InfoIcon className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="w-80">
-              <p>Ticket buckets show reference numbers and available tickets for this tour</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center space-x-1 cursor-help">
+                  <InfoIcon className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="w-80">
+                <p>Ticket buckets show reference numbers and available tickets for this tour</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsAssignDialogOpen(true)}
+          >
+            <PlusCircleIcon className="h-4 w-4 mr-1" />
+            Add Bucket
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -87,12 +141,23 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }
                   )}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="flex items-center justify-end">
-                  <span className="font-medium">{bucket.max_tickets - bucket.allocated_tickets}</span>
-                  <span className="text-muted-foreground ml-1">/ {bucket.max_tickets}</span>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="flex items-center justify-end">
+                    <span className="font-medium">{bucket.max_tickets - bucket.allocated_tickets}</span>
+                    <span className="text-muted-foreground ml-1">/ {bucket.max_tickets}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">available tickets</span>
                 </div>
-                <span className="text-xs text-muted-foreground">available tickets</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-destructive h-8 w-8"
+                  onClick={() => handleRemoveBucket(bucket.id)}
+                  disabled={isRemoving === bucket.id}
+                >
+                  <XCircleIcon className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>
@@ -113,6 +178,15 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets }
           </Badge>
         </div>
       </div>
+      
+      {isAssignDialogOpen && (
+        <AssignBucketDialog 
+          isOpen={isAssignDialogOpen} 
+          onClose={() => setIsAssignDialogOpen(false)} 
+          tourId={tourId}
+          tourDate={tourDate}
+        />
+      )}
     </div>
   );
 };
