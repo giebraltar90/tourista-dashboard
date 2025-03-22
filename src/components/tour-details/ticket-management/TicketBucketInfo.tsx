@@ -66,7 +66,7 @@ export const TicketBucketInfo = ({
         allocatedTickets: bucketAssignedToTour.allocated_tickets
       } : null
     });
-  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded]);
+  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets]);
 
   // We have enough tickets if a bucket is assigned to this tour
   const hasEnoughBucketTickets = !!bucketAssignedToTour;

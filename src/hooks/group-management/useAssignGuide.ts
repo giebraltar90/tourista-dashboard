@@ -1,3 +1,4 @@
+
 import { useTourById } from "../tourData/useTourById";
 import { useGuideData } from "../guides/useGuideData";
 import { useModifications } from "../useModifications";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 
 // Import refactored utilities with updated names
 import { mapGuideIdToUuid } from "./utils/guideAssignmentMapping";
-import { validateGuideAssignment } from "./utils/guideAssignmentValidation";
+import { validateGuideAssignment, checkGuideAvailability } from "./utils/guideAssignmentValidation";
 import { preserveParticipants, createUpdatedGroupWithPreservedParticipants } from "./utils/participantPreservation";
 import { findGuideName, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
 import { persistGuideAssignmentChanges } from "./utils/databaseOperations";
@@ -51,6 +52,25 @@ export const useAssignGuide = (tourId: string) => {
         console.error(`Failed to map guide ID "${guideId}" to a valid UUID`);
         toast.error("Cannot assign guide: Invalid guide ID format or mapping failed");
         return false;
+      }
+      
+      // Check guide availability if we're assigning a guide (not removing)
+      if (actualGuideId && tour) {
+        const availabilityResult = await checkGuideAvailability(
+          tourId,
+          tour.date,
+          tour.startTime || tour.start_time || "",
+          actualGuideId
+        );
+        
+        if (!availabilityResult.available) {
+          const conflictingTourName = availabilityResult.conflictingTour?.tour_name || 
+                                     availabilityResult.conflictingTour?.reference_code || 
+                                     "another tour";
+          
+          toast.error(`Guide already assigned to ${conflictingTourName} at the same time`);
+          return false;
+        }
       }
       
       // Get the target group

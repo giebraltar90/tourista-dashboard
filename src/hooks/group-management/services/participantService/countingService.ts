@@ -2,85 +2,103 @@
 import { VentrataTourGroup } from "@/types/ventrata";
 
 /**
- * Calculates the total number of participants across all groups
+ * Calculate the total number of participants in tour groups
  */
-export const calculateTotalParticipants = (tourGroups: VentrataTourGroup[]): number => {
-  console.log("PARTICIPANTS DEBUG: calculateTotalParticipants called with", {
-    tourGroupsCount: tourGroups.length,
-    tourGroupsWithParticipants: tourGroups.filter(g => Array.isArray(g.participants) && g.participants.length > 0).length
-  });
+export const calculateTotalParticipants = (groups: VentrataTourGroup[]): number => {
+  if (!groups || !Array.isArray(groups)) return 0;
   
-  // CRITICAL FIX: Only count from participants arrays, NEVER use size property
-  let totalParticipants = 0;
-  
-  if (!Array.isArray(tourGroups)) {
-    console.log("PARTICIPANTS DEBUG: tourGroups is not an array, returning 0");
-    return 0;
-  }
-  
-  // Process each group one by one
-  for (const group of tourGroups) {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      let groupTotal = 0;
-      
-      // Count directly from participants array for accurate totals
-      for (const participant of group.participants) {
-        const count = participant.count || 1;
-        groupTotal += count;
-        
-        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" count ${count} to total`);
-      }
-      
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" total participants: ${groupTotal}`);
-      totalParticipants += groupTotal;
-    } else {
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
-    }
-    // CRITICAL FIX: Completely remove fallback to group.size
-  }
-  
-  console.log("PARTICIPANTS DEBUG: calculateTotalParticipants final result:", totalParticipants);
-  return totalParticipants;
+  return groups.reduce((sum, group) => {
+    return sum + (group.size || 0);
+  }, 0);
 };
 
 /**
- * Calculates the total number of children across all groups
+ * Calculate the total number of child participants in tour groups
  */
-export const calculateTotalChildCount = (tourGroups: VentrataTourGroup[]): number => {
-  console.log("PARTICIPANTS DEBUG: calculateTotalChildCount called with", {
-    tourGroupsCount: tourGroups.length,
-    tourGroupsWithParticipants: tourGroups.filter(g => Array.isArray(g.participants) && g.participants.length > 0).length
-  });
+export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number => {
+  if (!groups || !Array.isArray(groups)) return 0;
   
-  // CRITICAL FIX: Only count from participants arrays, NEVER use childCount property
-  let totalChildCount = 0;
+  return groups.reduce((sum, group) => {
+    return sum + (group.childCount || 0);
+  }, 0);
+};
+
+/**
+ * Calculate guide tickets needed based on the tour location and guide list
+ * 
+ * Rules:
+ * - GA Free = 1 Child Ticket
+ * - GA Ticket = 1 Adult Ticket
+ * - GC = No Ticket
+ */
+export const calculateGuideTickets = (
+  location: string = "",
+  guide1: string = "",
+  guide2: string = "",
+  guide3: string = ""
+): number => {
+  // If no location, no guide tickets needed
+  if (!location) return 0;
   
-  if (!Array.isArray(tourGroups)) {
-    console.log("PARTICIPANTS DEBUG: tourGroups is not an array, returning 0");
+  // Normalize location to lowercase for comparison
+  const locationLower = location.toLowerCase();
+  
+  // Check if this location requires guide tickets
+  const requiresGuideTickets = 
+    locationLower.includes('versailles') || 
+    locationLower.includes('montmartre');
+  
+  if (!requiresGuideTickets) {
     return 0;
   }
   
-  // Process each group one by one
-  for (const group of tourGroups) {
-    if (Array.isArray(group.participants) && group.participants.length > 0) {
-      let groupChildCount = 0;
-      
-      // Count directly from participants array
-      for (const participant of group.participants) {
-        const childCount = participant.childCount || 0;
-        groupChildCount += childCount;
-        
-        console.log(`PARTICIPANTS DEBUG: Adding participant "${participant.name}" childCount ${childCount} to total`);
-      }
-      
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" total children: ${groupChildCount}`);
-      totalChildCount += groupChildCount;
-    } else {
-      console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants array or it's empty`);
-    }
-    // CRITICAL FIX: Completely remove fallback to group.childCount
+  // Count how many guides are assigned (non-empty strings)
+  let guideCount = 0;
+  if (guide1) guideCount++;
+  if (guide2) guideCount++;
+  if (guide3) guideCount++;
+  
+  // Each guide needs 1 adult ticket
+  return guideCount;
+};
+
+/**
+ * Calculate guide child tickets based on the tour location and guide list
+ * Each guide needs one child ticket if GA Free
+ * This is separate from guide tickets (adult tickets)
+ */
+export const calculateGuideChildTickets = (
+  location: string = "",
+  guides: Array<{
+    id: string;
+    name: string;
+    info: any;
+  }> = []
+): number => {
+  // If no location or no guides, no guide child tickets needed
+  if (!location || !guides.length) return 0;
+  
+  // Normalize location to lowercase for comparison
+  const locationLower = location.toLowerCase();
+  
+  // Check if this location requires guide tickets
+  const requiresGuideTickets = 
+    locationLower.includes('versailles') || 
+    locationLower.includes('montmartre');
+  
+  if (!requiresGuideTickets) {
+    return 0;
   }
   
-  console.log("PARTICIPANTS DEBUG: calculateTotalChildCount final result:", totalChildCount);
-  return totalChildCount;
+  // Count how many GA Free guides we have (they need child tickets)
+  let gaFreeGuideCount = 0;
+  
+  guides.forEach(guide => {
+    // Check if guide has info and is GA Free type
+    if (guide?.info?.guideType === 'GA Free') {
+      gaFreeGuideCount++;
+    }
+  });
+  
+  return gaFreeGuideCount;
 };
