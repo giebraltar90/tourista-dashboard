@@ -30,13 +30,16 @@ export const TicketsCard = ({
     totalTickets,
     requiredTickets,
     guideAdultTickets,
-    guideChildTickets
+    guideChildTickets,
+    totalGuideTickets: guideAdultTickets + guideChildTickets
   });
   
   // Extra validation to ensure counts are non-negative numbers
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
   const validTotalTickets = Math.max(0, totalTickets || 0);
+  const validGuideAdultTickets = Math.max(0, guideAdultTickets || 0);
+  const validGuideChildTickets = Math.max(0, guideChildTickets || 0);
   
   // Double-check that our total matches the sum of adult + child tickets
   const calculatedTotal = validAdultTickets + validChildTickets;
@@ -45,9 +48,11 @@ export const TicketsCard = ({
   const displayTotal = calculatedTotal;
     
   // Total required tickets, including guides
-  const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
-  const totalRequiredChildTickets = validChildTickets + guideChildTickets;
+  const totalRequiredAdultTickets = validAdultTickets + validGuideAdultTickets;
+  const totalRequiredChildTickets = validChildTickets + validGuideChildTickets;
   const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
+  
+  const totalGuideTickets = validGuideAdultTickets + validGuideChildTickets;
   
   // Check if it's a location requiring special guide tickets
   const isLocationRequiringTickets = 
@@ -62,7 +67,7 @@ export const TicketsCard = ({
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,
     displayTotal,
-    guideTickets: { guideAdultTickets, guideChildTickets },
+    guideTickets: { validGuideAdultTickets, validGuideChildTickets, totalGuideTickets },
     totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets },
     hasEnoughTickets,
     isLocationRequiringTickets
@@ -90,24 +95,26 @@ export const TicketsCard = ({
                 <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
               </div>
               
-              {guideAdultTickets > 0 && (
+              {totalGuideTickets > 0 ? (
+                <>
+                  {validGuideAdultTickets > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">GA Ticket (Adult):</span>
+                      <span className="font-medium">{validGuideAdultTickets} tickets</span>
+                    </div>
+                  )}
+                  
+                  {validGuideChildTickets > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">GA Free (Child):</span>
+                      <span className="font-medium">{validGuideChildTickets} tickets</span>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">GA Ticket (Adult):</span>
-                  <span className="font-medium">{guideAdultTickets} tickets</span>
-                </div>
-              )}
-              
-              {guideChildTickets > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">GA Free (Child):</span>
-                  <span className="font-medium">{guideChildTickets} tickets</span>
-                </div>
-              )}
-              
-              {guideAdultTickets === 0 && guideChildTickets === 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">GC Guide:</span>
-                  <span className="font-medium">No tickets needed</span>
+                  <span className="text-muted-foreground">Guide Tickets:</span>
+                  <span className="font-medium text-green-600">No tickets needed</span>
                 </div>
               )}
             </>
@@ -119,7 +126,7 @@ export const TicketsCard = ({
               variant="outline" 
               className="font-medium bg-green-100 text-green-800 border-green-300"
             >
-              {totalRequiredAdultTickets + totalRequiredChildTickets}
+              {totalRequiredTickets}
             </Badge>
           </div>
           

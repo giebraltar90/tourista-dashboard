@@ -25,17 +25,17 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   
   // If this bucket is assigned to the current tour, we need to adjust available tickets differently
   if (isBucketAssignedToThisTour) {
-    // For an assigned bucket, the "available" tickets is what remains after all allocations 
-    // (including the current tour)
-    availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+    // For an assigned bucket, the available tickets is what remains after all allocations
+    // We need to subtract the current tour's allocated tickets from the total
+    availableTickets = bucket.max_tickets - (bucket.allocated_tickets - requiredTickets);
   }
   
   // Ensure we don't show negative available tickets
   availableTickets = Math.max(0, availableTickets);
   
   // Split required tickets into participants and guides
-  const participantTickets = requiredTickets - (bucket.guide_tickets || 0);
   const guideTickets = bucket.guide_tickets || 0;
+  const participantTickets = requiredTickets - guideTickets;
   
   // Format the requirements for display
   let formattedRequirements = '';
@@ -58,7 +58,10 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
       bucketTourId: bucket.tour_id,
       requiredTickets,
       participantTickets,
-      guideTickets
+      guideTickets,
+      allocatedTicketsForOtherTours: isBucketAssignedToThisTour ? 
+        bucket.allocated_tickets - requiredTickets : 
+        bucket.allocated_tickets
     });
   }, [bucket, availableTickets, isBucketAssignedToThisTour, tourId, requiredTickets]);
   
@@ -103,7 +106,7 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
               <Ticket className="h-4 w-4 text-indigo-500" />
               <span>
                 <span className={availableTickets === 0 ? "text-destructive" : "text-primary"}>
-                  {availableTickets}
+                  {isBucketAssignedToThisTour ? bucket.max_tickets - bucket.allocated_tickets + requiredTickets : availableTickets}
                 </span>
                 /{bucket.max_tickets}
               </span>

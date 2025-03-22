@@ -17,9 +17,20 @@ export const TicketBucketFooter = ({
 }: TicketBucketFooterProps) => {
   // Calculate participant tickets (total required minus guides)
   const participantTicketsNeeded = requiredTickets - guideTicketsNeeded;
+  
+  // Format the ticket requirements differently based on whether guide tickets are needed
   const formattedTicketRequirements = guideTicketsNeeded > 0 
     ? `${participantTicketsNeeded} + ${guideTicketsNeeded}`
     : requiredTickets.toString();
+  
+  console.log("🎫 [TicketBucketFooter] Rendering requirements:", {
+    totalBucketTickets,
+    requiredTickets,
+    hasEnoughBucketTickets,
+    guideTicketsNeeded,
+    participantTicketsNeeded,
+    formattedTicketRequirements
+  });
 
   return (
     <div className="mt-4 pt-4 border-t space-y-2">

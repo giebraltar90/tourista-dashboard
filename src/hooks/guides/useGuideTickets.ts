@@ -6,7 +6,8 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
   console.log("GUIDE TICKET DEBUG: Checking if guide needs ticket:", {
     guideName: guide.name,
     guideType: guide.guideType,
-    tourLocation
+    tourLocation,
+    isGuideInfoValid: !!guide && !!guide.guideType
   });
   
   // Check if this is a location requiring guide tickets
@@ -14,6 +15,12 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
   const isMontmartreLocationMatched = tourLocation?.toLowerCase().includes('montmartre');
   
   if (!isVersionLocationMatched && !isMontmartreLocationMatched) {
+    console.log(`GUIDE TICKET DEBUG: Location ${tourLocation} does not require guide tickets`);
+    return false;
+  }
+  
+  if (!guide || !guide.guideType) {
+    console.log(`GUIDE TICKET DEBUG: Guide or guide type is missing, defaulting to no ticket`);
     return false;
   }
   
@@ -36,7 +43,10 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
 
 // Helper function to get the type of ticket needed for a guide
 export function getGuideTicketType(guide: GuideInfo): 'adult' | 'child' | null {
-  if (!guide || !guide.guideType) return null;
+  if (!guide || !guide.guideType) {
+    console.log("GUIDE TICKET DEBUG: Guide info is invalid, returning null ticket type");
+    return null;
+  }
   
   console.log("GUIDE TICKET DEBUG: Getting ticket type for guide:", {
     guideName: guide.name,
@@ -51,8 +61,10 @@ export function getGuideTicketType(guide: GuideInfo): 'adult' | 'child' | null {
       console.log(`GUIDE TICKET DEBUG: Guide ${guide.name} needs child ticket`);
       return 'child'; // Needs a child ticket
     case 'GC':
+      console.log(`GUIDE TICKET DEBUG: Guide ${guide.name} needs no ticket (GC guide)`);
+      return null; // No ticket needed
     default:
-      console.log(`GUIDE TICKET DEBUG: Guide ${guide.name} needs no ticket`);
+      console.log(`GUIDE TICKET DEBUG: Guide ${guide.name} (${guide.guideType}) needs no ticket (unknown type)`);
       return null; // No ticket needed
   }
 }
