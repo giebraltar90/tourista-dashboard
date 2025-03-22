@@ -1,179 +1,94 @@
 
-import { useTourById } from "../tourData/useTourById";
-import { useGuideData } from "../guides/useGuideData";
-import { useModifications } from "../useModifications";
-import { useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { checkGuideAvailability } from "./utils/guideAssignmentValidation";
 
-// Import refactored utilities with updated names
-import { mapGuideIdToUuid } from "./utils/guideAssignmentMapping";
-import { validateGuideAssignment, checkGuideAvailability } from "./utils/guideAssignmentValidation";
-import { preserveParticipants, createUpdatedGroupWithPreservedParticipants } from "./utils/participantPreservation";
-import { findGuideName, generateGroupNameWithGuide, createModificationDescription } from "./utils/groupNaming";
-import { persistGuideAssignmentChanges } from "./utils/databaseOperations";
-import { performOptimisticUpdate, handleUIUpdates } from "./utils/optimisticUpdates";
+export const useAssignGuide = (tour: TourCardProps, onSuccess?: () => void) => {
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
-/**
- * Hook to assign or unassign guides to tour groups
- */
-export const useAssignGuide = (tourId: string) => {
-  const { data: tour, refetch } = useTourById(tourId);
-  const { guides = [] } = useGuideData() || { guides: [] };
-  const { addModification } = useModifications(tourId);
-  const queryClient = useQueryClient();
-  
-  /**
-   * Assign a guide to a specific group
-   */
-  const assignGuide = useCallback(async (groupIndex: number, guideId?: string | null) => {
-    try {
-      console.log("Starting guide assignment:", { groupIndex, guideId, tourId });
-      
-      // Validate parameters
-      const validationResult = validateGuideAssignment(tour, groupIndex, guideId);
-      if (!validationResult.valid) {
-        console.error(validationResult.errorMessage);
-        toast.error(validationResult.errorMessage || "Cannot assign guide");
-        return false;
-      }
-      
-      // Special handling for "_none" which means "remove guide"
-      const actualGuideId = guideId === "_none" ? null : 
-                           (guideId ? mapGuideIdToUuid(guideId, tour, guides) : null);
-      
-      console.log("Guide ID mapping result:", {
-        originalId: guideId,
-        mappedId: actualGuideId
-      });
-      
-      // Validate that if a guide ID is provided, it should be mapped to a valid UUID
-      if (guideId && guideId !== "_none" && !actualGuideId) {
-        console.error(`Failed to map guide ID "${guideId}" to a valid UUID`);
-        toast.error("Cannot assign guide: Invalid guide ID format or mapping failed");
-        return false;
-      }
-      
-      // Check guide availability if we're assigning a guide (not removing)
-      if (actualGuideId && tour) {
-        const availabilityResult = await checkGuideAvailability(
-          tourId,
-          tour.date,
-          tour.startTime || tour.start_time || "",
-          actualGuideId
-        );
-        
-        if (!availabilityResult.available) {
-          const conflictingTourName = availabilityResult.conflictingTour?.tour_name || 
-                                     availabilityResult.conflictingTour?.reference_code || 
-                                     "another tour";
-          
-          toast.error(`Guide already assigned to ${conflictingTourName} at the same time`);
-          return false;
-        }
-      }
-      
-      // Get the target group
-      const targetGroup = tour!.tourGroups![groupIndex];
-      const groupId = targetGroup.id;
-      
-      // Preserve participants to avoid losing them during update
-      const existingParticipants = preserveParticipants(targetGroup);
-      
-      // Log existing participants for debugging
-      console.log("PARTICIPANTS PRESERVATION: Existing participants before guide change:", {
-        groupId,
-        participantsCount: existingParticipants.length
-      });
-      
-      // Get group number for name generation
-      const groupNumber = groupIndex + 1;
-      
-      // Find guide name for display
-      const guideName = findGuideName(actualGuideId, guides, tour);
-      
-      // Generate a new group name with the guide name
-      const groupName = generateGroupNameWithGuide(groupNumber, guideName);
-      
-      // Prepare for optimistic UI update
-      const updatedGroups = [...tour!.tourGroups!];
-      updatedGroups[groupIndex] = createUpdatedGroupWithPreservedParticipants(
-        updatedGroups[groupIndex],
-        actualGuideId,
-        groupName,
-        existingParticipants
-      );
-      
-      // Apply optimistic update to UI
-      performOptimisticUpdate(queryClient, tourId, updatedGroups);
-      
-      // Save to database
-      const updateSuccess = await persistGuideAssignmentChanges(
-        tourId,
-        groupId,
-        actualGuideId,
-        groupName,
-        updatedGroups
-      );
-      
-      // Update UI based on result
-      await handleUIUpdates(tourId, queryClient, actualGuideId, guideName, updateSuccess);
-      
-      if (updateSuccess) {
-        // Record the modification
-        const modificationDescription = createModificationDescription(
-          actualGuideId,
-          guideName,
-          groupNumber
-        );
-          
-        await addModification(modificationDescription, {
-          groupIndex,
-          groupId,
-          guideId: actualGuideId,
-          guideName,
-          participantCount: existingParticipants.length
-        });
-        
-        // Force a refresh to ensure data consistency, but don't lose participants
-        setTimeout(() => {
-          // Use a custom invalidation that preserves participants
-          queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-            if (!oldData) return null;
-            
-            // Deep clone the data to avoid reference issues
-            const newData = JSON.parse(JSON.stringify(oldData));
-            
-            // Update the specific group data while preserving participants
-            if (newData.tourGroups && newData.tourGroups[groupIndex]) {
-              newData.tourGroups[groupIndex].guideId = actualGuideId;
-              newData.tourGroups[groupIndex].name = groupName;
-              
-              // Preserve participants if they exist
-              if (!Array.isArray(newData.tourGroups[groupIndex].participants) || 
-                  newData.tourGroups[groupIndex].participants.length === 0) {
-                newData.tourGroups[groupIndex].participants = existingParticipants;
-              }
-            }
-            
-            return newData;
-          });
-        }, 1000);
-        
-        return true;
-      } else {
-        // Revert optimistic update
-        await refetch();
-        return false;
-      }
-    } catch (error) {
-      console.error("Error assigning guide:", error);
-      toast.error("Failed to assign guide due to an error");
-      // Revert optimistic update
-      await refetch();
+  const assignGuide = async (groupId: string, guideId: string) => {
+    if (!tour || !tour.id || !groupId) {
+      setAssignmentError("Missing required data");
       return false;
     }
-  }, [tour, tourId, guides, addModification, queryClient, refetch]);
-  
-  return { assignGuide };
+
+    setIsAssigning(true);
+    setAssignmentError(null);
+
+    try {
+      // First, check if the guide is available for this tour's date and time
+      const { available, conflictingTour } = await checkGuideAvailability(
+        tour.id,
+        tour.date,
+        tour.startTime, // Use startTime, not start_time
+        guideId
+      );
+
+      if (!available && conflictingTour) {
+        const errorMsg = `This guide is already assigned to another tour on ${
+          new Date(tour.date).toLocaleDateString()
+        } at ${tour.startTime}`;
+        
+        setAssignmentError(errorMsg);
+        toast({
+          title: "Guide unavailable",
+          description: errorMsg,
+          variant: "destructive",
+        });
+        setIsAssigning(false);
+        return false;
+      }
+
+      // Update the group with the new guide
+      const { error } = await supabase
+        .from("tour_groups")
+        .update({ guide_id: guideId === "_none" ? null : guideId })
+        .eq("id", groupId);
+
+      if (error) {
+        console.error("Error assigning guide:", error);
+        setAssignmentError(error.message);
+        toast({
+          title: "Error assigning guide",
+          description: error.message,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      if (onSuccess) {
+        onSuccess();
+      }
+
+      toast({
+        title: "Guide assigned",
+        description: guideId === "_none" 
+          ? "Guide has been removed from this group"
+          : "Guide has been assigned to this group",
+      });
+
+      return true;
+    } catch (err) {
+      const error = err as Error;
+      console.error("Error in guide assignment:", error);
+      setAssignmentError(error.message);
+      toast({
+        title: "Error assigning guide",
+        description: error.message,
+        variant: "destructive",
+      });
+      return false;
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  return {
+    assignGuide,
+    isAssigning,
+    assignmentError,
+  };
 };

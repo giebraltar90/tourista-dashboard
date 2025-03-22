@@ -25,7 +25,7 @@ export const TourCardFooter: React.FC<TourCardFooterProps> = ({
     <CardFooter className="px-4 py-3 border-t border-border/60 flex justify-between items-center">
       <div className="flex items-center gap-2">
         <Badge variant="outline" className="bg-primary/5 text-primary hover:bg-primary/10">
-          {formattedParticipantCount} Participants
+          {formattedParticipantCount}
         </Badge>
         
         {isBelowMinimum && (

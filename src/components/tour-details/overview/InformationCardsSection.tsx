@@ -6,12 +6,12 @@ import {
   TicketsCard
 } from "./";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { ParticipantCountsResult } from "@/hooks/tour-details/useParticipantCounts";
+import { ParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
 interface InformationCardsSectionProps {
   tour: TourCardProps;
   tourGroups: VentrataTourGroup[];
-  participantCounts: ParticipantCountsResult;
+  participantCounts: ParticipantCounts;
   isHighSeason: boolean;
 }
 

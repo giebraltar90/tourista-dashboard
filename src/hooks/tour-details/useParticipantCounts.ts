@@ -9,12 +9,17 @@ import {
   calculateGuideChildTickets
 } from "@/hooks/group-management/services/participantService";
 
-interface ParticipantCounts {
+export interface ParticipantCounts {
   totalParticipants: number;
   totalChildCount: number;
   totalTicketsNeeded: number;
   guideTicketsNeeded: number;
   guideChildTicketsNeeded: number;
+  adultTickets: number;
+  childTickets: number;
+  guideAdultTickets: number;
+  guideChildTickets: number;
+  totalTickets: number;
 }
 
 /**
@@ -40,7 +45,12 @@ export const useParticipantCounts = (
     totalChildCount: 0,
     totalTicketsNeeded: 0,
     guideTicketsNeeded: 0,
-    guideChildTicketsNeeded: 0
+    guideChildTicketsNeeded: 0,
+    adultTickets: 0,
+    childTickets: 0,
+    guideAdultTickets: 0, 
+    guideChildTickets: 0,
+    totalTickets: 0
   });
   
   useEffect(() => {
@@ -88,18 +98,18 @@ export const useParticipantCounts = (
     console.log(`GUIDE TICKET DEBUG: Tour location "${location}" requires guide tickets: ${isTourRequiringGuideTickets}`);
     
     // Calculate adult guide tickets (GA Ticket guides)
-    const guideTicketsNeeded = calculateGuideTickets(
+    const guideTicketsNeeded = isTourRequiringGuideTickets ? calculateGuideTickets(
       location,
       guide1Name,
       guide2Name,
       guide3Name
-    );
+    ) : 0;
     
     // Calculate child guide tickets (GA Free guides)
-    const guideChildTicketsNeeded = calculateGuideChildTickets(
+    const guideChildTicketsNeeded = isTourRequiringGuideTickets ? calculateGuideChildTickets(
       location,
       enrichedGuides
-    );
+    ) : 0;
     
     console.log("GUIDE TICKETS DEBUG:", {
       enrichedGuides: enrichedGuides.map(g => ({
@@ -109,12 +119,15 @@ export const useParticipantCounts = (
       guideTicketsNeeded,
       guideChildTicketsNeeded,
       location,
-      requiresTickets: isTourRequiringGuideTickets
+      requiresTickets: isTourRequiringGuideTickets,
+      guideCount: enrichedGuides.length
     });
     
-    // Calculate total tickets needed:
-    // Adult participants - child participants + guide tickets
+    // Calculate adult participants - child participants
     const adultParticipants = totalParticipants - totalChildCount;
+    
+    // Calculate total tickets needed:
+    // Adult participants + guide adult tickets needed
     const totalTicketsNeeded = adultParticipants + guideTicketsNeeded;
     
     setCounts({
@@ -122,7 +135,12 @@ export const useParticipantCounts = (
       totalChildCount,
       totalTicketsNeeded,
       guideTicketsNeeded,
-      guideChildTicketsNeeded
+      guideChildTicketsNeeded,
+      adultTickets: adultParticipants,
+      childTickets: totalChildCount,
+      guideAdultTickets: guideTicketsNeeded,
+      guideChildTickets: guideChildTicketsNeeded,
+      totalTickets: totalParticipants
     });
   }, [
     groups, 
