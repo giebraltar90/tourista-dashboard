@@ -57,12 +57,17 @@ export const useParticipantCounts = (
     const totalParticipants = calculateTotalParticipants(groups);
     const totalChildCount = calculateTotalChildCount(groups);
     
+    // Ensure guide names are valid (not empty strings)
+    const validGuide1 = guide1Name && guide1Name.trim() !== '';
+    const validGuide2 = guide2Name && guide2Name.trim() !== '';
+    const validGuide3 = guide3Name && guide3Name.trim() !== '';
+    
     console.log(`GUIDE TICKET DEBUG: Initial participant counts for location "${location}":`, {
       totalParticipants,
       totalChildCount,
-      guide1: guide1Name ? { name: guide1Name, type: guide1Info?.guideType || 'unknown' } : null,
-      guide2: guide2Name ? { name: guide2Name, type: guide2Info?.guideType || 'unknown' } : null,
-      guide3: guide3Name ? { name: guide3Name, type: guide3Info?.guideType || 'unknown' } : null,
+      guide1: validGuide1 ? { name: guide1Name, type: guide1Info?.guideType || 'unknown' } : null,
+      guide2: validGuide2 ? { name: guide2Name, type: guide2Info?.guideType || 'unknown' } : null,
+      guide3: validGuide3 ? { name: guide3Name, type: guide3Info?.guideType || 'unknown' } : null,
     });
     
     // Set default guide ticket counts
@@ -70,7 +75,7 @@ export const useParticipantCounts = (
     let guideChildTickets = 0;
     
     // Only check guide1 if both name and info exist
-    if (guide1Info && guide1Name && guide1Name.trim() !== '') {
+    if (guide1Info && validGuide1) {
       const needsTicket = doesGuideNeedTicket(guide1Info, location);
       const ticketType = getGuideTicketType(guide1Info);
       
@@ -88,7 +93,7 @@ export const useParticipantCounts = (
     }
     
     // Only check guide2 if both name and info exist
-    if (guide2Info && guide2Name && guide2Name.trim() !== '') {
+    if (guide2Info && validGuide2) {
       const needsTicket = doesGuideNeedTicket(guide2Info, location);
       const ticketType = getGuideTicketType(guide2Info);
       
@@ -106,7 +111,7 @@ export const useParticipantCounts = (
     }
     
     // Only check guide3 if both name and info exist
-    if (guide3Info && guide3Name && guide3Name.trim() !== '') {
+    if (guide3Info && validGuide3) {
       const needsTicket = doesGuideNeedTicket(guide3Info, location);
       const ticketType = getGuideTicketType(guide3Info);
       
@@ -127,7 +132,12 @@ export const useParticipantCounts = (
       guideAdultTickets,
       guideChildTickets,
       location,
-      guideCount: [guide1Name, guide2Name, guide3Name].filter(Boolean).length
+      validGuideCount: [validGuide1, validGuide2, validGuide3].filter(Boolean).length,
+      guideNames: {
+        guide1: validGuide1 ? guide1Name : 'invalid',
+        guide2: validGuide2 ? guide2Name : 'invalid',
+        guide3: validGuide3 ? guide3Name : 'invalid',
+      }
     });
     
     // Calculate adult participants (total - children)

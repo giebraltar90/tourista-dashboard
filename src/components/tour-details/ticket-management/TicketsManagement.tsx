@@ -11,15 +11,20 @@ import { useEffect } from "react";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Use the participant counts hook to get ticket requirements
+  // Validate guide information to only include valid guides
+  const guide1Name = tour.guide1 ? tour.guide1.trim() : '';
+  const guide2Name = tour.guide2 ? tour.guide2.trim() : '';
+  const guide3Name = tour.guide3 ? tour.guide3.trim() : '';
+  
+  // Use the participant counts hook to get ticket requirements with validated guide names
   const participantCounts = useParticipantCounts(
     tour.tourGroups || [],
     guide1Info,
     guide2Info, 
     guide3Info,
-    tour.guide1 || '',
-    tour.guide2 || '', 
-    tour.guide3 || '',
+    guide1Name,
+    guide2Name, 
+    guide3Name,
     tour.location || '',
     []
   );
