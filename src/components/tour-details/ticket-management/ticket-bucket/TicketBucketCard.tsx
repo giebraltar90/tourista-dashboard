@@ -26,7 +26,7 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   if (isBucketAssignedToThisTour) {
     // If bucket is assigned to this tour, the tickets are already accounted for
     // We should display the tickets that are available AFTER this tour's allocation
-    availableTickets = bucket.max_tickets - (bucket.allocated_tickets + requiredTickets);
+    availableTickets = bucket.max_tickets - bucket.allocated_tickets;
   } else {
     // If not assigned to this tour, just show the regular availability
     availableTickets = bucket.max_tickets - bucket.allocated_tickets;
@@ -34,6 +34,9 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   
   // Ensure we don't show negative available tickets
   availableTickets = Math.max(0, availableTickets);
+  
+  // Get the formatted participant and guide ticket requirements
+  let formattedRequirements = '';
   
   // Log bucket information for debugging
   useEffect(() => {
