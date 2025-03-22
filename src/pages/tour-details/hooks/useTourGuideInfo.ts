@@ -57,7 +57,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
         };
         
         // Helper function to safely get guide info
-        const safeGetGuideInfo = (guideName: string | undefined, defaultType?: GuideType) => {
+        const safeGetGuideInfo = (guideName: string | undefined, defaultType?: GuideType): GuideInfo | null => {
           if (!guideName || guideName.trim() === '') return null;
           
           const name = guideName.trim();
