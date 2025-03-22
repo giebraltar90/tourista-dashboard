@@ -1,6 +1,6 @@
 
 import { Card, CardContent } from "@/components/ui/card";
-import { CreateTicketBucketForm } from "../CreateTicketBucketForm";
+import { CreateTicketBucketForm } from "../ticket-bucket-form";
 
 interface CreateBucketPanelProps {
   onSuccess: () => void;
