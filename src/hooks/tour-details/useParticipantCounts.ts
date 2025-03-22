@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
@@ -62,76 +61,114 @@ export const useParticipantCounts = (
     const validGuide2 = guide2Name && guide2Name.trim() !== '';
     const validGuide3 = guide3Name && guide3Name.trim() !== '';
     
-    console.log(`GUIDE TICKET DEBUG: Initial participant counts for location "${location}":`, {
+    console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Initial participant counts for location "${location}":`, {
       totalParticipants,
       totalChildCount,
       guide1: validGuide1 ? { name: guide1Name, type: guide1Info?.guideType || 'unknown' } : null,
       guide2: validGuide2 ? { name: guide2Name, type: guide2Info?.guideType || 'unknown' } : null,
       guide3: validGuide3 ? { name: guide3Name, type: guide3Info?.guideType || 'unknown' } : null,
+      validGuide1: validGuide1,
+      validGuide2: validGuide2,
+      validGuide3: validGuide3,
+      hasGuide1Info: !!guide1Info,
+      hasGuide2Info: !!guide2Info,
+      hasGuide3Info: !!guide3Info
     });
     
     // Set default guide ticket counts
     let guideAdultTickets = 0;
     let guideChildTickets = 0;
     
+    // Keep a record of which guides we've processed to avoid duplicates
+    const processedGuides = new Set<string>();
+    
     // Only check guide1 if both name and info exist
     if (guide1Info && validGuide1) {
-      const needsTicket = doesGuideNeedTicket(guide1Info, location);
-      const ticketType = getGuideTicketType(guide1Info);
+      const guideName = guide1Name.trim();
       
-      if (needsTicket) {
-        if (ticketType === 'adult') {
-          guideAdultTickets++;
-          console.log(`GUIDE TICKET DEBUG: Guide 1 (${guide1Name}) needs an adult ticket`);
-        } else if (ticketType === 'child') {
-          guideChildTickets++;
-          console.log(`GUIDE TICKET DEBUG: Guide 1 (${guide1Name}) needs a child ticket`);
+      // Skip if already processed this guide
+      if (!processedGuides.has(guideName)) {
+        processedGuides.add(guideName);
+        
+        const needsTicket = doesGuideNeedTicket(guide1Info, location);
+        const ticketType = getGuideTicketType(guide1Info);
+        
+        if (needsTicket) {
+          if (ticketType === 'adult') {
+            guideAdultTickets++;
+            console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 1 (${guideName}) needs an adult ticket`);
+          } else if (ticketType === 'child') {
+            guideChildTickets++;
+            console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 1 (${guideName}) needs a child ticket`);
+          }
+        } else {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 1 (${guideName}) does NOT need a ticket`);
         }
       } else {
-        console.log(`GUIDE TICKET DEBUG: Guide 1 (${guide1Name}) does NOT need a ticket`);
+        console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 1 (${guideName}) already processed, skipping`);
       }
     }
     
     // Only check guide2 if both name and info exist
     if (guide2Info && validGuide2) {
-      const needsTicket = doesGuideNeedTicket(guide2Info, location);
-      const ticketType = getGuideTicketType(guide2Info);
+      const guideName = guide2Name.trim();
       
-      if (needsTicket) {
-        if (ticketType === 'adult') {
-          guideAdultTickets++;
-          console.log(`GUIDE TICKET DEBUG: Guide 2 (${guide2Name}) needs an adult ticket`);
-        } else if (ticketType === 'child') {
-          guideChildTickets++;
-          console.log(`GUIDE TICKET DEBUG: Guide 2 (${guide2Name}) needs a child ticket`);
+      // Skip if already processed this guide (e.g., if guide2 has same name as guide1)
+      if (!processedGuides.has(guideName)) {
+        processedGuides.add(guideName);
+        
+        const needsTicket = doesGuideNeedTicket(guide2Info, location);
+        const ticketType = getGuideTicketType(guide2Info);
+        
+        if (needsTicket) {
+          if (ticketType === 'adult') {
+            guideAdultTickets++;
+            console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 2 (${guideName}) needs an adult ticket`);
+          } else if (ticketType === 'child') {
+            guideChildTickets++;
+            console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 2 (${guideName}) needs a child ticket`);
+          }
+        } else {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 2 (${guideName}) does NOT need a ticket`);
         }
       } else {
-        console.log(`GUIDE TICKET DEBUG: Guide 2 (${guide2Name}) does NOT need a ticket`);
+        console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 2 (${guideName}) already processed, skipping`);
       }
     }
     
     // Only check guide3 if both name and info exist
     if (guide3Info && validGuide3) {
-      const needsTicket = doesGuideNeedTicket(guide3Info, location);
-      const ticketType = getGuideTicketType(guide3Info);
+      const guideName = guide3Name.trim();
       
-      if (needsTicket) {
-        if (ticketType === 'adult') {
-          guideAdultTickets++;
-          console.log(`GUIDE TICKET DEBUG: Guide 3 (${guide3Name}) needs an adult ticket`);
-        } else if (ticketType === 'child') {
-          guideChildTickets++;
-          console.log(`GUIDE TICKET DEBUG: Guide 3 (${guide3Name}) needs a child ticket`);
+      // Skip if already processed this guide
+      if (!processedGuides.has(guideName)) {
+        processedGuides.add(guideName);
+        
+        const needsTicket = doesGuideNeedTicket(guide3Info, location);
+        const ticketType = getGuideTicketType(guide3Info);
+        
+        if (needsTicket) {
+          if (ticketType === 'adult') {
+            guideAdultTickets++;
+            console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 3 (${guideName}) needs an adult ticket`);
+          } else if (ticketType === 'child') {
+            guideChildTickets++;
+            console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 3 (${guideName}) needs a child ticket`);
+          }
+        } else {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 3 (${guideName}) does NOT need a ticket`);
         }
       } else {
-        console.log(`GUIDE TICKET DEBUG: Guide 3 (${guide3Name}) does NOT need a ticket`);
+        console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide 3 (${guideName}) already processed, skipping`);
       }
     }
     
-    console.log("GUIDE TICKETS DEBUG: Final ticket calculations:", {
+    console.log("GUIDE TICKETS DEBUG: [useParticipantCounts] Final ticket calculations:", {
       guideAdultTickets,
       guideChildTickets,
       location,
+      processedGuidesCount: processedGuides.size,
+      processedGuides: Array.from(processedGuides),
       validGuideCount: [validGuide1, validGuide2, validGuide3].filter(Boolean).length,
       guideNames: {
         guide1: validGuide1 ? guide1Name : 'invalid',

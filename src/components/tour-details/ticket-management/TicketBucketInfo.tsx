@@ -69,6 +69,7 @@ export const TicketBucketInfo = ({
       totalParticipants,
       guideTicketsNeeded,
       totalTicketsNeeded: totalParticipants + guideTicketsNeeded,
+      participantsOnly: totalParticipants,
       bucketCount: validBuckets.length,
       bucketAssignedToTour: bucketAssignedToTour ? {
         id: bucketAssignedToTour.id,

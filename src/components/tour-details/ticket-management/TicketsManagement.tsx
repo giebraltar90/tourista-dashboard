@@ -16,6 +16,20 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   const guide2Name = tour.guide2 ? tour.guide2.trim() : '';
   const guide3Name = tour.guide3 ? tour.guide3.trim() : '';
   
+  // Debug log of actual guide data
+  console.log("GUIDE TICKET DEBUG: [TicketsManagement] Raw guide data:", {
+    tourId: tour.id,
+    tourLocation: tour.location,
+    guide1: { name: guide1Name, info: guide1Info },
+    guide2: { name: guide2Name, info: guide2Info },
+    guide3: { name: guide3Name, info: guide3Info },
+    uniqueGuideCount: new Set([
+      guide1Name && guide1Name.trim(), 
+      guide2Name && guide2Name.trim(), 
+      guide3Name && guide3Name.trim()
+    ].filter(Boolean)).size
+  });
+  
   // Use the participant counts hook to get ticket requirements with validated guide names
   const participantCounts = useParticipantCounts(
     tour.tourGroups || [],
@@ -80,6 +94,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       guideAdultTickets,
       guideChildTickets,
       guideTicketsNeeded,
+      uniqueGuideNames: new Set([guide1Name, guide2Name, guide3Name].filter(Boolean)).size,
       // Allocation details
       ticketsAllocatedToThisTour,
       // Totals and allocation
@@ -129,7 +144,10 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     guide3Info,
     bucketMaxTickets,
     allocatedToOtherTours,
-    ticketsAllocatedToThisTour
+    ticketsAllocatedToThisTour,
+    guide1Name,
+    guide2Name,
+    guide3Name
   ]);
 
   return (

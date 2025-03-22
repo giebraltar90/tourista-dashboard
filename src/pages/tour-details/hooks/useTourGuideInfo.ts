@@ -21,6 +21,22 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
         // Import dynamically to avoid hook order issues
         const { useGuideInfo } = await import("@/hooks/guides");
         
+        // Get unique guide names
+        const uniqueGuideNames = new Set<string>();
+        if (tour.guide1 && tour.guide1.trim()) uniqueGuideNames.add(tour.guide1.trim());
+        if (tour.guide2 && tour.guide2.trim()) uniqueGuideNames.add(tour.guide2.trim());
+        if (tour.guide3 && tour.guide3.trim()) uniqueGuideNames.add(tour.guide3.trim());
+        
+        console.log("GUIDE TICKET DEBUG: [useTourGuideInfo] Fetching guide info for tour:", {
+          tourId: tour.id,
+          location: tour.location,
+          uniqueGuideCount: uniqueGuideNames.size,
+          uniqueGuides: Array.from(uniqueGuideNames),
+          guide1: tour.guide1 || 'none',
+          guide2: tour.guide2 || 'none',
+          guide3: tour.guide3 || 'none'
+        });
+        
         // Create fallback guide info for when data can't be loaded
         const createFallbackGuide = (name: string, fakeType?: GuideType): GuideInfo => ({
           name,
@@ -30,12 +46,12 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
         
         // Helper function to safely get guide info
         const safeGetGuideInfo = (guideName: string | undefined, defaultType?: GuideType) => {
-          if (!guideName) return null;
+          if (!guideName || guideName.trim() === '') return null;
           try {
             // For testing/development, we'll randomize guide types
             // In production, this would make a call to get the real guide type
             return {
-              name: guideName,
+              name: guideName.trim(),
               birthday: new Date(),
               guideType: defaultType || getRandomGuideType()
             };
@@ -52,17 +68,39 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
         }
         
         // Set guide info with randomized types for testing purposes
-        if (tour.guide1) {
+        // Use a consistent type for each guide slot for debugging
+        if (tour.guide1 && tour.guide1.trim() !== '') {
           setGuide1Info(safeGetGuideInfo(tour.guide1, 'GA Ticket'));
+        } else {
+          setGuide1Info(null);
         }
         
-        if (tour.guide2) {
+        if (tour.guide2 && tour.guide2.trim() !== '') {
           setGuide2Info(safeGetGuideInfo(tour.guide2, 'GA Free'));
+        } else {
+          setGuide2Info(null);
         }
         
-        if (tour.guide3) {
+        if (tour.guide3 && tour.guide3.trim() !== '') {
           setGuide3Info(safeGetGuideInfo(tour.guide3, 'GC'));
+        } else {
+          setGuide3Info(null);
         }
+        
+        console.log("GUIDE TICKET DEBUG: [useTourGuideInfo] Finished setting guide info:", {
+          guide1Info: guide1Info ? {
+            name: guide1Info.name,
+            type: guide1Info.guideType
+          } : null,
+          guide2Info: guide2Info ? {
+            name: guide2Info.name,
+            type: guide2Info.guideType
+          } : null,
+          guide3Info: guide3Info ? {
+            name: guide3Info.name,
+            type: guide3Info.guideType
+          } : null
+        });
       } catch (error) {
         console.error("Error loading guide information:", error);
       }
