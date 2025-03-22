@@ -5,12 +5,31 @@ import { toast } from "@/components/ui/use-toast";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { checkGuideAvailability } from "./utils/guideAssignmentValidation";
 
-export const useAssignGuide = (tour: TourCardProps, onSuccess?: () => void) => {
+export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () => void) => {
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignmentError, setAssignmentError] = useState<string | null>(null);
 
-  const assignGuide = async (groupId: string, guideId: string) => {
-    if (!tour || !tour.id || !groupId) {
+  // Function to get tour ID and data based on the input
+  const getTourData = () => {
+    if (typeof tourOrId === 'string') {
+      return { id: tourOrId, date: null, startTime: null };
+    }
+    return {
+      id: tourOrId.id,
+      date: tourOrId.date,
+      startTime: tourOrId.startTime
+    };
+  };
+
+  const assignGuide = async (groupIdOrIndex: string | number, guideId: string) => {
+    const { id: tourId, date, startTime } = getTourData();
+    
+    // Convert groupIndex to string for database operations if needed
+    const groupId = typeof groupIdOrIndex === 'number' 
+      ? String(groupIdOrIndex) // This is for backward compatibility
+      : groupIdOrIndex;
+    
+    if (!tourId || !groupId) {
       setAssignmentError("Missing required data");
       return false;
     }
@@ -19,27 +38,30 @@ export const useAssignGuide = (tour: TourCardProps, onSuccess?: () => void) => {
     setAssignmentError(null);
 
     try {
-      // First, check if the guide is available for this tour's date and time
-      const { available, conflictingTour } = await checkGuideAvailability(
-        tour.id,
-        tour.date,
-        tour.startTime, // Use startTime, not start_time
-        guideId
-      );
+      // Only check availability if we have date and time information
+      if (date && startTime && guideId !== "_none") {
+        // First, check if the guide is available for this tour's date and time
+        const { available, conflictingTour } = await checkGuideAvailability(
+          tourId,
+          date,
+          startTime,
+          guideId
+        );
 
-      if (!available && conflictingTour) {
-        const errorMsg = `This guide is already assigned to another tour on ${
-          new Date(tour.date).toLocaleDateString()
-        } at ${tour.startTime}`;
-        
-        setAssignmentError(errorMsg);
-        toast({
-          title: "Guide unavailable",
-          description: errorMsg,
-          variant: "destructive",
-        });
-        setIsAssigning(false);
-        return false;
+        if (!available && conflictingTour) {
+          const errorMsg = `This guide is already assigned to another tour on ${
+            new Date(date).toLocaleDateString()
+          } at ${startTime}`;
+          
+          setAssignmentError(errorMsg);
+          toast({
+            title: "Guide unavailable",
+            description: errorMsg,
+            variant: "destructive",
+          });
+          setIsAssigning(false);
+          return false;
+        }
       }
 
       // Update the group with the new guide

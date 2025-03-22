@@ -46,6 +46,7 @@ export const GuideAssignmentDisplay = ({
   
   // Find corresponding group index for this guide
   const groupIndex = tourGroups.findIndex(group => group.guideId === guideId);
+  const groupId = groupIndex !== -1 && tourGroups[groupIndex] ? tourGroups[groupIndex].id : "";
   
   const displayRole = isPrimary 
     ? "Primary Guide" 
@@ -57,9 +58,9 @@ export const GuideAssignmentDisplay = ({
   const handleGuideChange = async (newGuideId: string) => {
     setIsLoading(true);
     try {
-      // Default to the first group if not found
-      const targetGroupIndex = groupIndex !== -1 ? groupIndex : (isPrimary ? 0 : (guideId === "guide2" ? 1 : 2));
-      await assignGuide(targetGroupIndex, newGuideId);
+      // Use group ID if found, otherwise use group index as fallback
+      const targetId = groupId || groupIndex;
+      await assignGuide(targetId, newGuideId);
     } finally {
       setIsLoading(false);
       setIsChanging(false);

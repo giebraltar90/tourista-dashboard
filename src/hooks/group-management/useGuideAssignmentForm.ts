@@ -97,8 +97,11 @@ export const useGuideAssignmentForm = ({
         selectedGuide: guides.find(g => g.id === values.guideId)?.name
       });
       
+      // Get the actual group ID if available, otherwise fall back to index
+      const groupId = String(groupIndex); // Convert to string to ensure consistency
+      
       // Call the assign guide function
-      const success = await assignGuide(groupIndex, guideIdToAssign);
+      const success = await assignGuide(groupId, guideIdToAssign || "_none");
       
       handleAssignmentResult(success, values.guideId);
     } catch (error) {
@@ -114,8 +117,11 @@ export const useGuideAssignmentForm = ({
       setIsSubmitting(true);
       console.log("Removing guide from group:", { groupIndex });
       
+      // Convert the groupIndex to a string for consistency
+      const groupId = String(groupIndex);
+      
       // Use "_none" as special value to remove the guide
-      const success = await assignGuide(groupIndex, "_none");
+      const success = await assignGuide(groupId, "_none");
       
       handleAssignmentResult(success, "_none");
     } catch (error) {
