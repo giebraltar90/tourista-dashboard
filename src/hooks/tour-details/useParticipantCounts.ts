@@ -81,8 +81,8 @@ export const useParticipantCounts = (
   
   // Check if this specific tour requires guide tickets based on location
   const isTourRequiringGuideTickets = 
-    location.toLowerCase().includes('versailles') || 
-    location.toLowerCase().includes('montmartre');
+    location?.toLowerCase().includes('versailles') || 
+    location?.toLowerCase().includes('montmartre');
   
   console.log(`GUIDE TICKET DEBUG: Tour location "${location}" requires guide tickets: ${isTourRequiringGuideTickets}`);
   

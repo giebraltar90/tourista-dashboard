@@ -74,7 +74,7 @@ export const TicketBucketInfo = ({
   // Add guide tickets information to buckets for consistent display
   const bucketsWithGuideInfo = validBuckets.map(bucket => ({
     ...bucket,
-    guide_tickets: guideTicketsNeeded
+    guide_tickets: bucket.tour_id === tourId ? guideTicketsNeeded : 0
   }));
 
   if (isLoading) {

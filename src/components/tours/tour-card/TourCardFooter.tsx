@@ -28,12 +28,6 @@ export const TourCardFooter: React.FC<TourCardFooterProps> = ({
           {formattedParticipantCount} Participants
         </Badge>
         
-        {numTickets > 0 && (
-          <Badge variant="outline" className="bg-secondary/50">
-            {numTickets} Tickets
-          </Badge>
-        )}
-        
         {isBelowMinimum && (
           <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
             <AlertTriangle className="h-3 w-3 mr-1" />

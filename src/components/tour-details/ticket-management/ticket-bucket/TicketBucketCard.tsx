@@ -23,10 +23,10 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   // Calculate available tickets, accounting for current tour requirements
   let availableTickets = bucket.max_tickets - bucket.allocated_tickets;
   
-  // If this bucket is assigned to the current tour, we need to show the available tickets
-  // after accounting for the tickets needed for this tour
+  // If this bucket is assigned to the current tour, we need to adjust available tickets differently
   if (isBucketAssignedToThisTour) {
-    // The available tickets are the max tickets minus all allocated tickets (including this tour)
+    // For an assigned bucket, the "available" tickets is what remains after all allocations 
+    // (including the current tour)
     availableTickets = bucket.max_tickets - bucket.allocated_tickets;
   }
   
