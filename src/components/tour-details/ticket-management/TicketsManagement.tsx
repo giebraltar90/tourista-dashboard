@@ -8,7 +8,6 @@ import { TicketStatus } from "./TicketStatus";
 import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
-import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuideTickets";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {

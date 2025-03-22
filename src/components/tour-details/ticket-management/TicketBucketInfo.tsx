@@ -115,7 +115,8 @@ export const TicketBucketInfo = ({
       <TicketBucketFooter 
         totalBucketTickets={totalBucketTickets} 
         requiredTickets={requiredTickets} 
-        hasEnoughBucketTickets={hasEnoughBucketTickets} 
+        hasEnoughBucketTickets={hasEnoughBucketTickets}
+        guideTicketsNeeded={guideTicketsNeeded}
       />
       
       {isAssignDialogOpen && (

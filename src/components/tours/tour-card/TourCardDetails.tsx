@@ -3,6 +3,7 @@ import { TourCardProps } from "./types";
 import { GuideInfo } from "@/types/ventrata";
 import { findGuideName } from "@/hooks/group-management/services/utils/guideNameUtils";
 import { useGuideData } from "@/hooks/guides/useGuideData";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 interface TourCardDetailsProps {
   guide1: string;
@@ -118,6 +119,12 @@ export const TourCardDetails = ({
   // Get the actual guide names assigned to the groups
   const assignedGuideNames = getAssignedGuideNames();
   
+  // Format participant count to show adults+children
+  const formattedParticipants = formatParticipantCount(
+    participantCounts.totalParticipants, 
+    participantCounts.childCount
+  );
+  
   return (
     <div className="px-4 py-3 border-t border-gray-100 bg-white">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
@@ -142,7 +149,7 @@ export const TourCardDetails = ({
         
         <div className="flex items-center space-x-1 text-sm">
           <span className="text-muted-foreground">Participants:</span>
-          <span className="font-medium">4+2</span>
+          <span className="font-medium">{formattedParticipants}</span>
         </div>
       </div>
     </div>

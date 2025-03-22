@@ -7,6 +7,7 @@ import { CardFooter } from "@/components/ui/card";
 import { ChevronRight, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TourCardFooterProps } from "./types";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 
 export const TourCardFooter: React.FC<TourCardFooterProps> = ({
   id,
@@ -17,8 +18,8 @@ export const TourCardFooter: React.FC<TourCardFooterProps> = ({
   isHovered,
   childCount = 0
 }) => {
-  // Always display static 4+2 value as requested
-  const formattedParticipantCount = "4+2";
+  // Format the participant count as "adults+children" when applicable
+  const formattedParticipantCount = formatParticipantCount(totalParticipants, childCount);
 
   return (
     <CardFooter className="px-4 py-3 border-t border-border/60 flex justify-between items-center">

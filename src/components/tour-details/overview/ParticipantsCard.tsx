@@ -34,14 +34,47 @@ export const ParticipantsCard = ({
       ).length
     });
     
-    // Override the displayed count to 4+2 as requested
+    // Calculate actual participant counts from the data
+    let calculatedTotalParticipants = 0;
+    let calculatedTotalChildCount = 0;
+    
+    if (Array.isArray(tourGroups)) {
+      for (const group of tourGroups) {
+        if (Array.isArray(group.participants) && group.participants.length > 0) {
+          // Count directly from participants array
+          for (const participant of group.participants) {
+            calculatedTotalParticipants += participant.count || 1;
+            calculatedTotalChildCount += participant.childCount || 0;
+          }
+        } else if (group.size > 0) {
+          // Use size as fallback
+          calculatedTotalParticipants += group.size;
+          calculatedTotalChildCount += group.childCount || 0;
+        }
+      }
+    }
+    
+    // Use provided values as fallback if our calculation is 0
+    const finalTotalParticipants = calculatedTotalParticipants > 0 
+      ? calculatedTotalParticipants 
+      : (providedTotalParticipants || 0);
+      
+    const finalChildCount = calculatedTotalChildCount > 0 
+      ? calculatedTotalChildCount 
+      : (providedTotalChildCount || 0);
+    
+    const finalAdultCount = finalTotalParticipants - finalChildCount;
+    
+    // Format the display string
+    const formatted = formatParticipantCount(finalTotalParticipants, finalChildCount);
+    
     return {
-      totalParticipants: 6, // 4+2 = 6 total
-      totalChildCount: 2,
-      adultCount: 4,
-      formattedParticipantCount: "4+2"
+      totalParticipants: finalTotalParticipants,
+      totalChildCount: finalChildCount,
+      adultCount: finalAdultCount,
+      formattedParticipantCount: formatted
     };
-  }, [tourGroups]);
+  }, [tourGroups, providedTotalParticipants, providedTotalChildCount]);
   
   const totalGroups = Array.isArray(tourGroups) ? tourGroups.length : 0;
   
