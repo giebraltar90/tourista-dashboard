@@ -10,7 +10,7 @@ export * from './GuideTicketRequirements';
 export * from './useTicketCountLogic';
 export * from './services/ticketAssignmentService';
 export * from './services/ticketBucketService';
-export * from './types';
+export { TicketStatusProps } from './types';
 export * from './ticket-bucket/TicketBucketCard';
 export * from './ticket-bucket/TicketBucketEmpty';
 export * from './ticket-bucket/TicketBucketFooter';
