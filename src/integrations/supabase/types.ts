@@ -146,6 +146,7 @@ export type Database = {
         Row: {
           access_time: string | null
           allocated_tickets: number | null
+          assigned_tours: string[] | null
           available_tickets: number | null
           bucket_type: string
           created_at: string | null
@@ -154,12 +155,14 @@ export type Database = {
           max_tickets: number
           reference_number: string
           tickets_range: string
+          tour_allocations: Json | null
           tour_id: string | null
           updated_at: string | null
         }
         Insert: {
           access_time?: string | null
           allocated_tickets?: number | null
+          assigned_tours?: string[] | null
           available_tickets?: number | null
           bucket_type: string
           created_at?: string | null
@@ -168,12 +171,14 @@ export type Database = {
           max_tickets: number
           reference_number: string
           tickets_range: string
+          tour_allocations?: Json | null
           tour_id?: string | null
           updated_at?: string | null
         }
         Update: {
           access_time?: string | null
           allocated_tickets?: number | null
+          assigned_tours?: string[] | null
           available_tickets?: number | null
           bucket_type?: string
           created_at?: string | null
@@ -182,6 +187,7 @@ export type Database = {
           max_tickets?: number
           reference_number?: string
           tickets_range?: string
+          tour_allocations?: Json | null
           tour_id?: string | null
           updated_at?: string | null
         }
