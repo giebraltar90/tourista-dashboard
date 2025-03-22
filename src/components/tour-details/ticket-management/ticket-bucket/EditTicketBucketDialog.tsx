@@ -67,7 +67,10 @@ export const EditTicketBucketDialog = ({ isOpen, onClose, bucket }: EditTicketBu
           
           <div className="space-y-2">
             <Label htmlFor="type">Bucket Type</Label>
-            <Select value={bucketType} onValueChange={setBucketType}>
+            <Select 
+              value={bucketType} 
+              onValueChange={(value) => setBucketType(value as 'petit' | 'grande')}
+            >
               <SelectTrigger id="type">
                 <SelectValue placeholder="Select bucket type" />
               </SelectTrigger>
