@@ -4,7 +4,7 @@
  * This file is maintained for backward compatibility
  */
 
-export { performOptimisticUpdate } from './optimisticUpdateService';
+export { performOptimisticUpdate } from './optimistic';
 export { persistGuideAssignmentChanges } from './persistenceService';
 export { handleUIUpdates } from './notificationService';
 
