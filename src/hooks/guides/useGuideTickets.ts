@@ -9,8 +9,11 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
     tourLocation
   });
   
-  // Only Versailles tours require special ticket handling for guides
-  if (!tourLocation || !tourLocation.toLowerCase().includes('versailles')) {
+  // Check if this is a location requiring guide tickets
+  const isVersionLocationMatched = tourLocation?.toLowerCase().includes('versailles');
+  const isMontmartreLocationMatched = tourLocation?.toLowerCase().includes('montmartre');
+  
+  if (!isVersionLocationMatched && !isMontmartreLocationMatched) {
     return false;
   }
   

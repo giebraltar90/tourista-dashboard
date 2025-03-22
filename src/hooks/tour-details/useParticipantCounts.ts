@@ -75,54 +75,48 @@ export const useParticipantCounts = (
   const childTickets = totalChildCount;
   const totalTickets = totalParticipants;
   
-  // Calculate guide tickets if it's a Versailles tour
+  // Calculate guide tickets if it's a location requiring guide tickets
   let guideAdultTickets = 0;
   let guideChildTickets = 0;
   
-  const isVersaillesTour = location.toLowerCase().includes('versailles');
+  const isTourRequiringGuideTickets = 
+    location.toLowerCase().includes('versailles') || 
+    location.toLowerCase().includes('montmartre');
   
-  if (isVersaillesTour) {
-    const countedGuideIds = new Set();
+  if (isTourRequiringGuideTickets) {
+    // Check guide 1
+    if (guide1Info && doesGuideNeedTicket(guide1Info, location)) {
+      const ticketType = getGuideTicketType(guide1Info);
+      if (ticketType === 'adult') {
+        guideAdultTickets++;
+        console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
+      } else if (ticketType === 'child') {
+        guideChildTickets++;
+        console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
+      }
+    }
     
-    for (const group of tourGroups) {
-      if (group.guideId && !countedGuideIds.has(group.guideId)) {
-        // Use our improved utility to get guide info
-        const { info: guideInfo } = getGuideNameAndInfo(
-          guide1,
-          guide2,
-          guide3,
-          guide1Info,
-          guide2Info,
-          guide3Info,
-          allGuides,
-          group.guideId
-        );
-        
-        if (guideInfo) {
-          countedGuideIds.add(group.guideId);
-          
-          console.log(`GUIDE TICKET DEBUG: Found guide info for group with guide ${guideInfo.name}:`, {
-            id: guideInfo.id,
-            name: guideInfo.name,
-            guideType: guideInfo.guideType
-          });
-          
-          if (doesGuideNeedTicket(guideInfo, location)) {
-            const ticketType = getGuideTicketType(guideInfo);
-            if (ticketType === 'adult') {
-              guideAdultTickets++;
-              console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
-            }
-            if (ticketType === 'child') {
-              guideChildTickets++;
-              console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guideInfo.name} (${guideInfo.guideType})`);
-            }
-          } else {
-            console.log(`GUIDE TICKET DEBUG: No ticket needed for guide ${guideInfo.name} (${guideInfo.guideType})`);
-          }
-        } else {
-          console.log(`GUIDE TICKET DEBUG: Could not find guide info for guideId: ${group.guideId}`);
-        }
+    // Check guide 2
+    if (guide2Info && doesGuideNeedTicket(guide2Info, location)) {
+      const ticketType = getGuideTicketType(guide2Info);
+      if (ticketType === 'adult') {
+        guideAdultTickets++;
+        console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
+      } else if (ticketType === 'child') {
+        guideChildTickets++;
+        console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
+      }
+    }
+    
+    // Check guide 3
+    if (guide3Info && doesGuideNeedTicket(guide3Info, location)) {
+      const ticketType = getGuideTicketType(guide3Info);
+      if (ticketType === 'adult') {
+        guideAdultTickets++;
+        console.log(`GUIDE TICKET DEBUG: Adding adult ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
+      } else if (ticketType === 'child') {
+        guideChildTickets++;
+        console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
       }
     }
     

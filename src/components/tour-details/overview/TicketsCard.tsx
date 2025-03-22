@@ -54,8 +54,10 @@ export const TicketsCard = ({
   const totalRequiredChildTickets = validChildTickets + guideChildTickets;
   const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
   
-  // Check if it's a Versailles tour
-  const isVersaillesTour = location.toLowerCase().includes('versailles');
+  // Check if it's a location requiring special guide tickets
+  const isLocationRequiringTickets = 
+    location.toLowerCase().includes('versailles') || 
+    location.toLowerCase().includes('montmartre');
   
   // Determine if we have enough tickets
   const hasEnoughTickets = totalRequiredTickets <= validTotalTickets;
@@ -151,7 +153,7 @@ export const TicketsCard = ({
             </div>
           )}
           
-          {isVersaillesTour && (
+          {isLocationRequiringTickets && (
             <div className="mt-3 pt-3 border-t text-xs">
               <div className="flex items-start mb-1">
                 <TooltipProvider>
@@ -160,7 +162,7 @@ export const TicketsCard = ({
                       <Info className="h-3.5 w-3.5 text-muted-foreground mr-1.5 mt-0.5" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Guide requirements at Versailles:</p>
+                      <p>Guide requirements at {location.includes('Versailles') ? 'Versailles' : 'Montmartre'}:</p>
                       <ul className="list-disc pl-4 mt-1 space-y-1">
                         <li>GA Ticket: Over 26 years old, requires an adult ticket, cannot guide inside</li>
                         <li>GA Free: Under 26, requires a child ticket, cannot guide inside</li>
@@ -170,7 +172,7 @@ export const TicketsCard = ({
                   </Tooltip>
                 </TooltipProvider>
                 <span className="text-muted-foreground">
-                  Versailles guide tickets required based on guide type
+                  {location.includes('Versailles') ? 'Versailles' : 'Montmartre'} guide tickets required based on guide type
                 </span>
               </div>
             </div>

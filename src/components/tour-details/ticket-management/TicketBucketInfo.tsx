@@ -17,6 +17,7 @@ interface TicketBucketInfoProps {
   requiredTickets: number;
   tourDate: Date;
   totalParticipants: number;
+  guideTicketsNeeded?: number;
 }
 
 export const TicketBucketInfo = ({ 
@@ -25,7 +26,8 @@ export const TicketBucketInfo = ({
   tourId, 
   requiredTickets, 
   tourDate,
-  totalParticipants 
+  totalParticipants,
+  guideTicketsNeeded = 0
 }: TicketBucketInfoProps) => {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const { handleRemoveBucket } = useTicketAssignmentService();
@@ -43,8 +45,9 @@ export const TicketBucketInfo = ({
     let availableTickets = 0;
     
     if (bucket.tour_id === tourId) {
-      // For buckets assigned to this tour, subtract the required tickets from available
-      availableTickets = Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
+      // For buckets assigned to this tour, we consider their full capacity
+      // since the allocated_tickets already includes this tour's tickets
+      availableTickets = bucket.max_tickets;
     } else {
       // For other buckets, just show normal availability
       availableTickets = Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
@@ -59,14 +62,16 @@ export const TicketBucketInfo = ({
       totalBucketTickets,
       requiredTickets,
       totalParticipants,
+      guideTicketsNeeded,
       bucketCount: validBuckets.length,
       bucketAssignedToTour: bucketAssignedToTour ? {
         id: bucketAssignedToTour.id,
         ref: bucketAssignedToTour.reference_number,
         maxTickets: bucketAssignedToTour.max_tickets,
         allocatedTickets: bucketAssignedToTour.allocated_tickets,
-        availableAfterThisTour: bucketAssignedToTour.max_tickets - 
-          (bucketAssignedToTour.allocated_tickets + requiredTickets)
+        totalTicketsNeeded: totalParticipants + guideTicketsNeeded,
+        availableAfterAllocation: bucketAssignedToTour.max_tickets - 
+          (bucketAssignedToTour.allocated_tickets)
       } : null,
       bucketDetails: validBuckets.map(b => ({
         id: b.id,
@@ -77,7 +82,7 @@ export const TicketBucketInfo = ({
         isAssignedToThisTour: b.tour_id === tourId
       }))
     });
-  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId]);
+  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded]);
 
   // We have enough tickets if a bucket is assigned to this tour
   const hasEnoughBucketTickets = !!bucketAssignedToTour;
