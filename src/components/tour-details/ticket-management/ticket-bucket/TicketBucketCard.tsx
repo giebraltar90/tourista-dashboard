@@ -10,44 +10,37 @@ import { EditTicketBucketDialog } from "./EditTicketBucketDialog";
 interface TicketBucketCardProps {
   bucket: TicketBucket;
   onRemove: (bucketId: string) => void;
+  tourId: string;
+  requiredTickets: number;
 }
 
-export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) => {
+export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: TicketBucketCardProps) => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  // Safely calculate available tickets
-  let availableTickets = 0;
-  try {
-    if (bucket.available_tickets !== undefined) {
-      availableTickets = typeof bucket.available_tickets === 'number' 
-        ? bucket.available_tickets 
-        : parseInt(String(bucket.available_tickets), 10);
-    } else {
-      availableTickets = bucket.max_tickets - bucket.allocated_tickets;
-    }
-    
-    // Ensure it's a valid number
-    if (isNaN(availableTickets)) {
-      console.warn("Invalid available tickets for bucket:", bucket);
-      availableTickets = 0;
-    }
-  } catch (e) {
-    console.error("Error calculating available tickets:", e);
-    availableTickets = 0;
-  }
+  // Safely calculate available tickets, accounting for this tour's requirement
+  const isBucketAssignedToThisTour = bucket.tour_id === tourId;
+  
+  // Calculate the effective allocated tickets including this tour's participants if the bucket is assigned to this tour
+  const effectiveAllocatedTickets = bucket.allocated_tickets + (isBucketAssignedToThisTour ? requiredTickets : 0);
+  
+  // Calculate available tickets (the number shown to users)
+  let availableTickets = Math.max(0, bucket.max_tickets - effectiveAllocatedTickets);
   
   // Log bucket information for debugging
   useEffect(() => {
-    console.log("🔍 [TicketBucketCard] Rendering bucket:", {
+    console.log("🔍 [TicketBucketCard] Rendering bucket with calculations:", {
       id: bucket.id,
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
-      allocatedTickets: bucket.allocated_tickets,
+      baseAllocatedTickets: bucket.allocated_tickets,
+      effectiveAllocatedTickets,
       availableTickets,
-      date: bucket.date instanceof Date ? bucket.date.toISOString() : String(bucket.date),
-      dateString: bucket.date ? String(bucket.date) : "undefined"
+      isBucketAssignedToThisTour,
+      tourId,
+      bucketTourId: bucket.tour_id,
+      requiredTickets
     });
-  }, [bucket, availableTickets]);
+  }, [bucket, availableTickets, effectiveAllocatedTickets, isBucketAssignedToThisTour, tourId, requiredTickets]);
   
   // Safely format date for display
   let dateToUse;
@@ -62,14 +55,12 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
       // Handle any other type by converting to string first
       dateToUse = new Date(String(bucket.date));
     } else {
-      console.warn("Undefined date:", bucket.date);
       dateToUse = new Date(); // Fallback
     }
     
     if (isValid(dateToUse)) {
       formattedDate = format(dateToUse, "MMM d, yyyy");
     } else {
-      console.warn("Invalid date after conversion:", dateToUse);
       formattedDate = "Date unavailable";
     }
   } catch (e) {
@@ -105,6 +96,12 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
               {bucket.access_time || "No specified time"}
             </span>
           </div>
+          
+          {isBucketAssignedToThisTour && (
+            <div className="text-xs bg-blue-50 text-blue-800 p-2 rounded-md mb-2">
+              <span className="font-medium">Tour allocation:</span> {requiredTickets} ticket{requiredTickets !== 1 ? 's' : ''} assigned to this tour
+            </div>
+          )}
         </CardContent>
         
         <CardFooter className="p-2 flex justify-between bg-secondary/20">

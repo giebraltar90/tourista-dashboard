@@ -16,58 +16,60 @@ interface TicketBucketInfoProps {
   tourId: string;
   requiredTickets: number;
   tourDate: Date;
+  totalParticipants: number;
 }
 
-export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, tourDate }: TicketBucketInfoProps) => {
+export const TicketBucketInfo = ({ 
+  buckets, 
+  isLoading, 
+  tourId, 
+  requiredTickets, 
+  tourDate,
+  totalParticipants 
+}: TicketBucketInfoProps) => {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const { handleRemoveBucket } = useTicketAssignmentService();
 
   // Safely ensure buckets array is valid
   const validBuckets = Array.isArray(buckets) ? buckets : [];
 
-  // Safely calculate total tickets available in buckets
+  // Safely calculate total tickets available in buckets, accounting for allocated tickets
+  // We need to first find if any buckets are assigned to this tour
+  const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
+  
+  // Calculate the total available tickets across all buckets
   const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
-    // Handle both cases: when available_tickets is provided or needs to be calculated
-    let availableTickets = 0;
+    // For buckets assigned to this tour, we need to account for the participants
+    const effectiveAllocatedTickets = bucket.allocated_tickets + 
+      (bucket.tour_id === tourId ? requiredTickets : 0);
     
-    try {
-      if (bucket.available_tickets !== undefined) {
-        availableTickets = typeof bucket.available_tickets === 'number' 
-          ? bucket.available_tickets 
-          : parseInt(String(bucket.available_tickets), 10);
-      } else {
-        availableTickets = bucket.max_tickets - bucket.allocated_tickets;
-      }
-      
-      // Ensure it's a valid number
-      if (isNaN(availableTickets)) {
-        console.warn("Invalid available tickets for bucket:", bucket);
-        availableTickets = 0;
-      }
-    } catch (e) {
-      console.error("Error calculating available tickets:", e);
-      availableTickets = 0;
-    }
+    // Calculate available tickets
+    const availableTickets = Math.max(0, bucket.max_tickets - effectiveAllocatedTickets);
     
     return sum + availableTickets;
   }, 0);
 
-  console.log("🔍 [TicketBucketInfo] Calculated total bucket tickets:", {
+  console.log("🔍 [TicketBucketInfo] Calculated tickets:", {
     totalBucketTickets,
     requiredTickets,
+    totalParticipants,
     bucketCount: validBuckets.length,
-    bucketsDetail: validBuckets.map(b => ({
+    bucketAssignedToTour: bucketAssignedToTour ? {
+      id: bucketAssignedToTour.id,
+      ref: bucketAssignedToTour.reference_number,
+    } : null,
+    bucketDetails: validBuckets.map(b => ({
       id: b.id,
-      reference: b.reference_number,
+      ref: b.reference_number,
       max: b.max_tickets,
       allocated: b.allocated_tickets,
-      available: b.available_tickets ?? (b.max_tickets - b.allocated_tickets),
-      date: b.date instanceof Date ? b.date.toISOString() : String(b.date)
+      tourId: b.tour_id,
+      isAssignedToThisTour: b.tour_id === tourId
     }))
   });
 
-  // Check if we have enough tickets in buckets
-  const hasEnoughBucketTickets = totalBucketTickets >= requiredTickets;
+  // If we have a bucket assigned to this tour, we have enough tickets
+  const hasEnoughBucketTickets = !!bucketAssignedToTour;
 
   if (isLoading) {
     return (
@@ -102,6 +104,8 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
       <TicketBucketList 
         buckets={validBuckets} 
         onRemoveBucket={(bucketId) => handleRemoveBucket(bucketId, tourId)} 
+        tourId={tourId}
+        requiredTickets={requiredTickets}
       />
 
       <TicketBucketFooter 

@@ -4,76 +4,52 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { PenSquare } from "lucide-react";
 import { TicketsManagementProps } from "./types";
-import { TicketCountCard } from "./TicketCountCard";
 import { TicketStatus } from "./TicketStatus";
 import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
-import { useTicketCountLogic } from "./useTicketCountLogic";
-import { GuideTicketRequirements } from "./GuideTicketRequirements";
 import { useEffect } from "react";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Use the custom hook to handle all ticket count calculations
-  const {
-    adultTickets,
-    childTickets,
-    isVersaillesTour,
-    guide1NeedsTicket,
-    guide2NeedsTicket,
-    guide3NeedsTicket,
-    guide1TicketType,
-    guide2TicketType,
-    guide3TicketType,
-    requiredAdultTickets,
-    requiredChildTickets,
-    availableTickets,
-    requiredTickets,
-    hasEnoughTickets,
-    adultGuideTickets,
-    childGuideTickets,
-    totalParticipants
-  } = useTicketCountLogic(tour, guide1Info, guide2Info, guide3Info);
+  // Calculate total participants for ticket requirements
+  const totalParticipants = tour.tourGroups.reduce((sum, group) => {
+    if (Array.isArray(group.participants) && group.participants.length > 0) {
+      return sum + group.participants.reduce((groupSum, p) => groupSum + (p.count || 1), 0);
+    }
+    return sum + group.size;
+  }, 0);
+  
+  // Add guides who need tickets
+  const isVersaillesTour = tour.location.toLowerCase().includes('versailles');
+  const guideTicketsNeeded = isVersaillesTour ? 
+    (guide1Info ? 1 : 0) + (guide2Info ? 1 : 0) + (guide3Info ? 1 : 0) : 0;
+  
+  // Total required tickets
+  const requiredTickets = totalParticipants + guideTicketsNeeded;
 
+  // Fetch ticket buckets for this tour
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
   const tourDate = new Date(tour.date);
   
-  // Log ticket bucket information and calculations for debugging
+  // Update allocated tickets in buckets to reflect participant count
   useEffect(() => {
-    console.log("🔍 [TicketsManagement] Ticket buckets loaded:", {
-      bucketCount: ticketBuckets.length,
-      totalMaxTickets: ticketBuckets.reduce((sum, b) => sum + b.max_tickets, 0),
-      totalAllocatedTickets: ticketBuckets.reduce((sum, b) => sum + b.allocated_tickets, 0),
-      totalAvailableTickets: ticketBuckets.reduce((sum, b) => {
-        const available = b.available_tickets !== undefined ? 
-          b.available_tickets : 
-          (b.max_tickets - b.allocated_tickets);
-        return sum + available;
-      }, 0),
-      requiredTickets,
-      hasEnoughBucketsForRequiredTickets: ticketBuckets.reduce((sum, b) => {
-        const available = b.available_tickets !== undefined ? 
-          b.available_tickets : 
-          (b.max_tickets - b.allocated_tickets);
-        return sum + available;
-      }, 0) >= requiredTickets
-    });
-  }, [ticketBuckets, requiredTickets]);
-
-  // Calculate total tickets from buckets
-  const totalBucketTickets = ticketBuckets.reduce((sum, bucket) => {
-    const available = bucket.available_tickets !== undefined ? 
-      bucket.available_tickets : 
-      (bucket.max_tickets - bucket.allocated_tickets);
-    return sum + available;
-  }, 0);
-  
-  // Update the availableTickets calculation to use bucket tickets when available
-  const effectiveAvailableTickets = ticketBuckets.length > 0 
-    ? totalBucketTickets 
-    : availableTickets;
-  
-  // Recalculate if there are enough tickets
-  const effectiveHasEnoughTickets = effectiveAvailableTickets >= requiredTickets;
+    if (ticketBuckets.length > 0) {
+      // Log information about the ticket calculations
+      console.log("🎫 Ticket allocation calculation:", {
+        totalParticipants,
+        guideTicketsNeeded,
+        requiredTickets,
+        buckets: ticketBuckets.map(b => ({
+          id: b.id,
+          reference: b.reference_number,
+          maxTickets: b.max_tickets,
+          allocatedTickets: b.allocated_tickets,
+          // For display purposes, we'll show allocated tickets including our tour participants
+          effectiveAllocatedTickets: b.allocated_tickets + (b.tour_id === tour.id ? requiredTickets : 0),
+          availableTickets: b.available_tickets
+        }))
+      });
+    }
+  }, [ticketBuckets, requiredTickets, tour.id]);
 
   return (
     <Card>
@@ -83,60 +59,25 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       </CardHeader>
       <CardContent>
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TicketCountCard
-              title="Adult Tickets (18+)"
-              description="Required for guests aged 18 and above"
-              count={adultTickets}
-              guideTickets={isVersaillesTour ? adultGuideTickets : undefined}
-              totalCount={requiredAdultTickets}
-            />
-            
-            <TicketCountCard
-              title="Child Tickets (Under 18)"
-              description="For guests below 18 years"
-              count={childTickets}
-              guideTickets={isVersaillesTour ? childGuideTickets : undefined}
-              totalCount={requiredChildTickets}
-            />
-          </div>
-          
-          <Separator />
-          
+          {/* Ticket buckets section */}
           <TicketBucketInfo 
             buckets={ticketBuckets} 
             isLoading={isLoadingBuckets} 
             tourId={tour.id}
             requiredTickets={requiredTickets}
             tourDate={tourDate}
+            totalParticipants={totalParticipants}
           />
           
           <Separator />
           
-          {isVersaillesTour && (
-            <GuideTicketRequirements
-              tour={tour}
-              guide1Info={guide1Info}
-              guide2Info={guide2Info}
-              guide3Info={guide3Info}
-              guide1NeedsTicket={guide1NeedsTicket}
-              guide2NeedsTicket={guide2NeedsTicket}
-              guide3NeedsTicket={guide3NeedsTicket}
-              guide1TicketType={guide1TicketType}
-              guide2TicketType={guide2TicketType}
-              guide3TicketType={guide3TicketType}
-              hasEnoughTickets={effectiveHasEnoughTickets}
-              availableTickets={effectiveAvailableTickets}
-              requiredTickets={requiredTickets}
-              requiredAdultTickets={requiredAdultTickets}
-              requiredChildTickets={requiredChildTickets}
-            />
-          )}
-          
+          {/* Ticket status summary */}
           <TicketStatus
-            purchasedCount={effectiveAvailableTickets || totalParticipants}
+            purchasedCount={ticketBuckets.length > 0 ? 
+              ticketBuckets.reduce((sum, b) => b.tour_id === tour.id ? sum + b.max_tickets : sum, 0) : 
+              totalParticipants}
             pendingCount={0}
-            distributedCount={tour.numTickets || totalParticipants}
+            distributedCount={requiredTickets}
           />
         </div>
       </CardContent>

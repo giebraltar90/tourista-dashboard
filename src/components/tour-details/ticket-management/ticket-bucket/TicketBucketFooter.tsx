@@ -1,5 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
+import { CheckCircle2, AlertCircle } from "lucide-react";
 
 interface TicketBucketFooterProps {
   totalBucketTickets: number;
@@ -13,19 +14,34 @@ export const TicketBucketFooter = ({
   hasEnoughBucketTickets 
 }: TicketBucketFooterProps) => {
   return (
-    <div className="flex justify-between items-center pt-2 mt-2 border-t">
-      <span className="font-medium">Total Available:</span>
-      <Badge 
-        variant={hasEnoughBucketTickets ? "secondary" : "destructive"} 
-        className={hasEnoughBucketTickets ? "bg-green-100 text-green-800" : ""}
-      >
-        {totalBucketTickets} tickets
-        {requiredTickets > 0 && (
-          <span className="ml-1">
-            ({requiredTickets} needed)
-          </span>
+    <div className="mt-4 pt-4 border-t space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="font-medium">Total Available:</span>
+        <Badge 
+          variant={hasEnoughBucketTickets ? "secondary" : "destructive"} 
+          className={hasEnoughBucketTickets ? "bg-green-100 text-green-800" : ""}
+        >
+          {totalBucketTickets} tickets
+        </Badge>
+      </div>
+      
+      <div className="flex items-center">
+        {hasEnoughBucketTickets ? (
+          <div className="w-full p-2 bg-green-50 text-green-700 rounded-md flex items-center">
+            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+            <span className="text-sm">
+              {requiredTickets} tickets assigned to this tour ({requiredTickets} required)
+            </span>
+          </div>
+        ) : (
+          <div className="w-full p-2 bg-amber-50 text-amber-700 rounded-md flex items-center">
+            <AlertCircle className="h-4 w-4 mr-2 text-amber-600" />
+            <span className="text-sm">
+              No bucket assigned. This tour needs {requiredTickets} tickets.
+            </span>
+          </div>
         )}
-      </Badge>
+      </div>
     </div>
   );
 };

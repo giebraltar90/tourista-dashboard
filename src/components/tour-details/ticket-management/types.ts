@@ -49,4 +49,5 @@ export interface TicketBucketInfoProps {
   tourId: string;
   requiredTickets: number;
   tourDate: Date;
+  totalParticipants: number;
 }
