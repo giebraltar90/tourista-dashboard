@@ -12,6 +12,7 @@ export interface TicketBucket {
   tour_id: string | null;
   created_at: string;
   updated_at: string;
+  guide_tickets?: number; // Added for UI display purposes
 }
 
 export interface TicketBucketFormValues {

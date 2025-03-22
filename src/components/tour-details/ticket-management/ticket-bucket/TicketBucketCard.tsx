@@ -35,8 +35,19 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   // Ensure we don't show negative available tickets
   availableTickets = Math.max(0, availableTickets);
   
-  // Get the formatted participant and guide ticket requirements
+  // Split required tickets into participants and guides
+  // This assumes that if the total required is 8 and we know 2 are for guides,
+  // then 6 must be for participants
+  const participantTickets = requiredTickets - (bucket.guide_tickets || 0);
+  const guideTickets = bucket.guide_tickets || 0;
+  
+  // Format the requirements for display
   let formattedRequirements = '';
+  if (guideTickets > 0) {
+    formattedRequirements = `${participantTickets} + ${guideTickets}`;
+  } else {
+    formattedRequirements = `${requiredTickets}`;
+  }
   
   // Log bucket information for debugging
   useEffect(() => {
@@ -45,12 +56,14 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
-      effectiveAllocated: isBucketAssignedToThisTour ? bucket.allocated_tickets + requiredTickets : bucket.allocated_tickets,
+      effectiveAllocated: isBucketAssignedToThisTour ? bucket.allocated_tickets : bucket.allocated_tickets,
       availableTickets,
       isBucketAssignedToThisTour,
       tourId,
       bucketTourId: bucket.tour_id,
-      requiredTickets
+      requiredTickets,
+      participantTickets,
+      guideTickets
     });
   }, [bucket, availableTickets, isBucketAssignedToThisTour, tourId, requiredTickets]);
   
@@ -111,7 +124,11 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
           
           {isBucketAssignedToThisTour && (
             <div className="text-xs bg-blue-50 text-blue-800 p-2 rounded-md mb-2">
-              <span className="font-medium">Tour allocation:</span> {requiredTickets} ticket{requiredTickets !== 1 ? 's' : ''} assigned to this tour
+              <span className="font-medium">Tour allocation:</span>{' '}
+              {guideTickets > 0 
+                ? `${participantTickets} + ${guideTickets} tickets assigned to this tour${guideTickets > 0 ? ` (${guideTickets} for guides)` : ''}`
+                : `${requiredTickets} ticket${requiredTickets !== 1 ? 's' : ''} assigned to this tour`
+              }
             </div>
           )}
         </CardContent>

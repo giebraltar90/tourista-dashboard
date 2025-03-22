@@ -75,6 +75,12 @@ export const TicketBucketInfo = ({
   // We have enough tickets if a bucket is assigned to this tour
   const hasEnoughBucketTickets = !!bucketAssignedToTour;
 
+  // Add guide tickets information to buckets for consistent display
+  const bucketsWithGuideInfo = validBuckets.map(bucket => ({
+    ...bucket,
+    guide_tickets: guideTicketsNeeded
+  }));
+
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -106,7 +112,7 @@ export const TicketBucketInfo = ({
       />
 
       <TicketBucketList 
-        buckets={validBuckets} 
+        buckets={bucketsWithGuideInfo} 
         onRemoveBucket={(bucketId) => handleRemoveBucket(bucketId, tourId)} 
         tourId={tourId}
         requiredTickets={requiredTickets}

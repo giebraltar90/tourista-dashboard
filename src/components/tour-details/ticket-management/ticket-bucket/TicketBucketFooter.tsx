@@ -39,7 +39,7 @@ export const TicketBucketFooter = ({
             <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
             <span className="text-sm">
               Tour allocation: {formattedTicketRequirements} tickets assigned to this tour
-              {guideTicketsNeeded > 0 && ` (${guideTicketsNeeded} for guides)`}
+              {guideTicketsNeeded > 0 ? ` (${guideTicketsNeeded} for guides)` : ''}
             </span>
           </div>
         ) : (
@@ -47,7 +47,7 @@ export const TicketBucketFooter = ({
             <AlertCircle className="h-4 w-4 mr-2 text-amber-600" />
             <span className="text-sm">
               No bucket assigned. This tour needs {formattedTicketRequirements} tickets
-              {guideTicketsNeeded > 0 && ` (including ${guideTicketsNeeded} for guides)`}
+              {guideTicketsNeeded > 0 ? ` (including ${guideTicketsNeeded} for guides)` : ''}
             </span>
           </div>
         )}
