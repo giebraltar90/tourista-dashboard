@@ -1,9 +1,11 @@
 
+import { QueryClient } from "@tanstack/react-query";
+
 /**
  * Updates the tour data in the query cache for optimistic UI updates
  */
 export const performOptimisticUpdate = (
-  queryClient: any, 
+  queryClient: QueryClient, 
   tourId: string, 
   updatedGroups: any[]
 ): void => {
@@ -30,7 +32,7 @@ export const performOptimisticUpdate = (
  */
 export const handleUIUpdates = async (
   tourId: string, 
-  queryClient: any, 
+  queryClient: QueryClient, 
   guideId: string | null, 
   guideName: string, 
   success: boolean

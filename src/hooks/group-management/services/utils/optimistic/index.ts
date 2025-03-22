@@ -1,13 +1,14 @@
 
-export { updateQueryCache } from './coreUpdateService';
-export { updateTourGroupsById } from './groupUpdateService';
+import { QueryClient } from "@tanstack/react-query";
+import { updateQueryCache } from './coreUpdateService';
+import { updateTourGroupsById } from './groupUpdateService';
 
 /**
  * Performs an optimistic update on the query cache
  * This is a utility wrapper that combines the other functions
  */
 export const performOptimisticUpdate = <T>(
-  queryClient: any,
+  queryClient: QueryClient,
   queryKey: unknown[],
   updater: (oldData: T) => T
 ): void => {
@@ -16,3 +17,6 @@ export const performOptimisticUpdate = <T>(
     return updater(oldData);
   });
 };
+
+// Export the utility functions
+export { updateQueryCache, updateTourGroupsById };
