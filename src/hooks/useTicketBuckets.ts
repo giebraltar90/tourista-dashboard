@@ -39,7 +39,7 @@ export function useTicketBuckets(tourId: string) {
             if (typeof bucket.date === 'string') {
               bucketDate = new Date(bucket.date);
               bucketDate.setHours(12, 0, 0, 0);
-            } else if (bucket.date instanceof Date) {
+            } else if (bucket.date && bucket.date instanceof Date) {
               bucketDate = bucket.date;
               bucketDate.setHours(12, 0, 0, 0);
             } else {

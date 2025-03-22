@@ -21,7 +21,7 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
     if (bucket.available_tickets !== undefined) {
       availableTickets = typeof bucket.available_tickets === 'number' 
         ? bucket.available_tickets 
-        : parseInt(bucket.available_tickets.toString(), 10);
+        : parseInt(String(bucket.available_tickets), 10);
     } else {
       availableTickets = bucket.max_tickets - bucket.allocated_tickets;
     }
