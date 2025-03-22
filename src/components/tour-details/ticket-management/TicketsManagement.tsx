@@ -12,7 +12,7 @@ import { doesGuideNeedTicket, getGuideTicketType } from "@/hooks/guides/useGuide
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Use the correct hook to calculate participant counts
+  // Use the correct hook to calculate participant counts for this specific tour
   const participantCounts = useParticipantCounts(
     tour.tourGroups,
     guide1Info,
@@ -41,11 +41,11 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   // Total required tickets including guides
   const requiredTickets = totalParticipants + guideTicketsNeeded;
 
-  // Fetch ticket buckets for this tour
+  // Fetch ticket buckets for this specific tour
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
   const tourDate = new Date(tour.date);
   
-  // Calculate if we have enough tickets
+  // Calculate if we have enough tickets for this tour
   const availableTickets = ticketBuckets.length > 0 ? 
     ticketBuckets.reduce((sum, b) => b.tour_id === tour.id ? sum + b.max_tickets : sum, 0) : 
     (tour.numTickets || totalParticipants);
@@ -54,7 +54,9 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   
   // Log ticket calculations for debugging
   useEffect(() => {
-    console.log("🎫 [TicketsManagement] Ticket requirements:", {
+    console.log(`🎫 [TicketsManagement] Ticket requirements for tour ${tour.id} at ${tour.location}:`, {
+      tourId: tour.id,
+      tourLocation: tour.location,
       totalParticipants,
       totalChildCount,
       adultTickets,
@@ -68,6 +70,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       hasEnoughTickets
     });
   }, [
+    tour.id,
+    tour.location,
     ticketBuckets, 
     totalParticipants, 
     totalChildCount,
@@ -84,7 +88,7 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     <Card>
       <CardHeader>
         <CardTitle>Ticket Management</CardTitle>
-        <CardDescription>Manage tickets for this tour</CardDescription>
+        <CardDescription>Manage tickets for {tour.tourName || 'this tour'}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-6">

@@ -29,11 +29,12 @@ export const useParticipantCounts = (
   useEffect(() => {
     console.log("GUIDE TICKET DEBUG: useParticipantCounts called with:", {
       tourGroupsLength: tourGroups?.length || 0,
-      guide1: guide1Info ? { id: guide1Info.id, name: guide1Info.name } : null,
-      guide2: guide2Info ? { id: guide2Info.id, name: guide2Info.name } : null,
-      guide3: guide3Info ? { id: guide3Info.id, name: guide3Info.name } : null,
+      tourLocation: location,
+      guide1: guide1Info ? { id: guide1Info.id, name: guide1Info.name, type: guide1Info.guideType } : null,
+      guide2: guide2Info ? { id: guide2Info.id, name: guide2Info.name, type: guide2Info.guideType } : null,
+      guide3: guide3Info ? { id: guide3Info.id, name: guide3Info.name, type: guide3Info.guideType } : null,
     });
-  }, [tourGroups, guide1Info, guide2Info, guide3Info]);
+  }, [tourGroups, guide1Info, guide2Info, guide3Info, location]);
   
   // Calculate total participants and child count
   let totalParticipants = 0;
@@ -79,9 +80,12 @@ export const useParticipantCounts = (
   let guideAdultTickets = 0;
   let guideChildTickets = 0;
   
+  // Check if this specific tour requires guide tickets based on location
   const isTourRequiringGuideTickets = 
     location.toLowerCase().includes('versailles') || 
     location.toLowerCase().includes('montmartre');
+  
+  console.log(`GUIDE TICKET DEBUG: Tour location "${location}" requires guide tickets: ${isTourRequiringGuideTickets}`);
   
   if (isTourRequiringGuideTickets) {
     // Check guide 1
@@ -94,6 +98,8 @@ export const useParticipantCounts = (
         guideChildTickets++;
         console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide1Info.name} (${guide1Info.guideType})`);
       }
+    } else {
+      console.log(`GUIDE TICKET DEBUG: Guide 1 ${guide1} does not need a ticket or is missing info`);
     }
     
     // Check guide 2
@@ -106,6 +112,8 @@ export const useParticipantCounts = (
         guideChildTickets++;
         console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide2Info.name} (${guide2Info.guideType})`);
       }
+    } else {
+      console.log(`GUIDE TICKET DEBUG: Guide 2 ${guide2} does not need a ticket or is missing info`);
     }
     
     // Check guide 3
@@ -118,9 +126,11 @@ export const useParticipantCounts = (
         guideChildTickets++;
         console.log(`GUIDE TICKET DEBUG: Adding child ticket for guide ${guide3Info.name} (${guide3Info.guideType})`);
       }
+    } else {
+      console.log(`GUIDE TICKET DEBUG: Guide 3 ${guide3} does not need a ticket or is missing info`);
     }
     
-    console.log(`GUIDE TICKET DEBUG: Final count: ${guideAdultTickets} adult tickets, ${guideChildTickets} child tickets required for guides`);
+    console.log(`GUIDE TICKET DEBUG: Final count for tour at ${location}: ${guideAdultTickets} adult tickets, ${guideChildTickets} child tickets required for guides`);
   }
   
   return {

@@ -24,13 +24,13 @@ export const TicketsCard = ({
   location = ''
 }: TicketsCardProps) => {
   console.log("GUIDE TICKET DEBUG: TicketsCard rendering with values:", {
+    location,
     adultTickets,
     childTickets,
     totalTickets,
     requiredTickets,
     guideAdultTickets,
-    guideChildTickets,
-    location
+    guideChildTickets
   });
   
   // Extra validation to ensure counts are non-negative numbers
@@ -56,13 +56,13 @@ export const TicketsCard = ({
   
   // Check if it's a location requiring special guide tickets
   const isLocationRequiringTickets = 
-    location.toLowerCase().includes('versailles') || 
-    location.toLowerCase().includes('montmartre');
+    location?.toLowerCase().includes('versailles') || 
+    location?.toLowerCase().includes('montmartre');
   
   // Determine if we have enough tickets
   const hasEnoughTickets = totalRequiredTickets <= validTotalTickets;
   
-  console.log("GUIDE TICKET DEBUG: TicketsCard final calculations:", {
+  console.log("GUIDE TICKET DEBUG: TicketsCard final calculations for location " + location + ":", {
     originalValues: { adultTickets, childTickets, totalTickets, requiredTickets },
     validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
     calculatedTotal,
@@ -70,7 +70,8 @@ export const TicketsCard = ({
     missingTickets,
     guideTickets: { guideAdultTickets, guideChildTickets },
     totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets },
-    hasEnoughTickets
+    hasEnoughTickets,
+    isLocationRequiringTickets
   });
 
   // Calculate missing adult and child tickets separately
@@ -97,7 +98,7 @@ export const TicketsCard = ({
             <span className="font-medium">{validChildTickets} tickets</span>
           </div>
           
-          {(guideAdultTickets > 0 || guideChildTickets > 0) && (
+          {(guideAdultTickets > 0 || guideChildTickets > 0) && isLocationRequiringTickets && (
             <>
               <div className="pt-2 pb-1 border-t">
                 <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
@@ -162,7 +163,7 @@ export const TicketsCard = ({
                       <Info className="h-3.5 w-3.5 text-muted-foreground mr-1.5 mt-0.5" />
                     </TooltipTrigger>
                     <TooltipContent className="max-w-xs">
-                      <p>Guide requirements at {location.includes('Versailles') ? 'Versailles' : 'Montmartre'}:</p>
+                      <p>Guide requirements at {location?.includes('Versailles') ? 'Versailles' : 'Montmartre'}:</p>
                       <ul className="list-disc pl-4 mt-1 space-y-1">
                         <li>GA Ticket: Over 26 years old, requires an adult ticket, cannot guide inside</li>
                         <li>GA Free: Under 26, requires a child ticket, cannot guide inside</li>
@@ -172,7 +173,7 @@ export const TicketsCard = ({
                   </Tooltip>
                 </TooltipProvider>
                 <span className="text-muted-foreground">
-                  {location.includes('Versailles') ? 'Versailles' : 'Montmartre'} guide tickets required based on guide type
+                  {location?.includes('Versailles') ? 'Versailles' : 'Montmartre'} guide tickets required based on guide type
                 </span>
               </div>
             </div>

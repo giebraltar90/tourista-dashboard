@@ -35,10 +35,10 @@ export const TicketBucketInfo = ({
   // Safely ensure buckets array is valid
   const validBuckets = Array.isArray(buckets) ? buckets : [];
 
-  // Find if any bucket is assigned to this tour
+  // Find if any bucket is assigned to this specific tour
   const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
   
-  // Calculate the total available tickets across all buckets
+  // Calculate the total available tickets across all buckets for this tour
   const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
     let availableTickets = 0;
     
@@ -55,7 +55,8 @@ export const TicketBucketInfo = ({
 
   // Log calculations for debugging
   useEffect(() => {
-    console.log("🎫 [TicketBucketInfo] Calculated tickets:", {
+    console.log(`🎫 [TicketBucketInfo] Calculated tickets for tour ${tourId}:`, {
+      tourId,
       totalBucketTickets,
       requiredTickets,
       totalParticipants,

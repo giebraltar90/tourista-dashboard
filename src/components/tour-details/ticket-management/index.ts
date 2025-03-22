@@ -15,4 +15,3 @@ export * from './ticket-bucket/TicketBucketEmpty';
 export * from './ticket-bucket/TicketBucketFooter';
 export * from './ticket-bucket/TicketBucketHeader';
 export * from './ticket-bucket/TicketBucketList';
-// We no longer need to export the EditTicketBucketDialog from here as we're using the refactored version
