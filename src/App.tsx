@@ -18,7 +18,15 @@ import GuideDashboard from "./pages/guide/GuideDashboard";
 import GuideProfile from "./pages/guide/GuideProfile";
 import GuideMessages from "./pages/guide/GuideMessages";
 
-const queryClient = new QueryClient();
+// Create query client with error logging
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 2,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 // SEO handler component to update meta tags on route changes
 function SEOHandler() {
