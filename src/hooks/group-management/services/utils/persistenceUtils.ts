@@ -7,3 +7,6 @@
 export { performOptimisticUpdate } from './optimisticUpdateService';
 export { persistGuideAssignmentChanges } from './persistenceService';
 export { handleUIUpdates } from './notificationService';
+
+// Re-export participant service functionality
+export { updateParticipantGroupInDatabase } from '../participantService/movementService';
