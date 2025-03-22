@@ -4,8 +4,8 @@ import { GuideInfo } from "@/types/ventrata";
 // Helper function to determine if a guide needs a ticket based on tour location and guide type
 export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boolean {
   console.log("GUIDE TICKET DEBUG: Checking if guide needs ticket:", {
-    guideName: guide.name,
-    guideType: guide.guideType,
+    guideName: guide?.name,
+    guideType: guide?.guideType,
     tourLocation,
     isGuideInfoValid: !!guide && !!guide.guideType
   });

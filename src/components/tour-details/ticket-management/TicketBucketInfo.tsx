@@ -39,15 +39,7 @@ export const TicketBucketInfo = ({
   const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
   
   // Calculate the total available tickets across all buckets for this tour
-  const totalBucketTickets = validBuckets.reduce((sum, bucket) => {
-    if (bucket.tour_id === tourId) {
-      // For buckets assigned to this tour, we count the total max tickets
-      return sum + bucket.max_tickets;
-    } else {
-      // For unassigned buckets, count all available tickets
-      return sum + Math.max(0, bucket.max_tickets - bucket.allocated_tickets);
-    }
-  }, 0);
+  const totalBucketTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
 
   // Log calculations for debugging
   useEffect(() => {
@@ -63,7 +55,8 @@ export const TicketBucketInfo = ({
         id: bucketAssignedToTour.id,
         ref: bucketAssignedToTour.reference_number,
         maxTickets: bucketAssignedToTour.max_tickets,
-        allocatedTickets: bucketAssignedToTour.allocated_tickets
+        allocatedTickets: bucketAssignedToTour.allocated_tickets,
+        tourId: bucketAssignedToTour.tour_id
       } : null
     });
   }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets]);

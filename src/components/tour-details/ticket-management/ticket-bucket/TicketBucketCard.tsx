@@ -20,18 +20,19 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
   // Check if this bucket is assigned to the current tour
   const isBucketAssignedToThisTour = bucket.tour_id === tourId;
   
-  // Calculate available tickets, accounting for current tour requirements
-  let availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+  // Calculate available tickets that would be shown to other tours
+  const ticketsAllocatedToOtherTours = isBucketAssignedToThisTour 
+    ? bucket.allocated_tickets - requiredTickets 
+    : bucket.allocated_tickets;
   
-  // If this bucket is assigned to the current tour, we need to adjust available tickets differently
-  if (isBucketAssignedToThisTour) {
-    // For an assigned bucket, the available tickets is what remains after all allocations
-    // We need to subtract the current tour's allocated tickets from the total
-    availableTickets = bucket.max_tickets - (bucket.allocated_tickets - requiredTickets);
-  }
+  const availableTicketsForOtherTours = bucket.max_tickets - ticketsAllocatedToOtherTours;
   
-  // Ensure we don't show negative available tickets
-  availableTickets = Math.max(0, availableTickets);
+  // When assigned to this tour, we show remaining tickets after allocation to other tours
+  // (this excludes tickets allocated to this tour since they're already accounted for)
+  // When not assigned, we show the total available tickets
+  const displayAvailableTickets = isBucketAssignedToThisTour 
+    ? availableTicketsForOtherTours 
+    : (bucket.max_tickets - bucket.allocated_tickets);
   
   // Split required tickets into participants and guides
   const guideTickets = bucket.guide_tickets || 0;
@@ -52,7 +53,9 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
       reference: bucket.reference_number,
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
-      availableTickets,
+      ticketsAllocatedToOtherTours,
+      availableTicketsForOtherTours,
+      displayAvailableTickets,
       isBucketAssignedToThisTour,
       tourId,
       bucketTourId: bucket.tour_id,
@@ -63,7 +66,7 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
         bucket.allocated_tickets - requiredTickets : 
         bucket.allocated_tickets
     });
-  }, [bucket, availableTickets, isBucketAssignedToThisTour, tourId, requiredTickets]);
+  }, [bucket, isBucketAssignedToThisTour, tourId, requiredTickets, ticketsAllocatedToOtherTours, availableTicketsForOtherTours, displayAvailableTickets]);
   
   // Safely format date for display
   let dateToUse;
@@ -105,8 +108,8 @@ export const TicketBucketCard = ({ bucket, onRemove, tourId, requiredTickets }: 
             <div className="flex items-center text-sm space-x-1">
               <Ticket className="h-4 w-4 text-indigo-500" />
               <span>
-                <span className={availableTickets === 0 ? "text-destructive" : "text-primary"}>
-                  {isBucketAssignedToThisTour ? bucket.max_tickets - bucket.allocated_tickets + requiredTickets : availableTickets}
+                <span className={displayAvailableTickets <= 0 ? "text-destructive" : "text-primary"}>
+                  {displayAvailableTickets}
                 </span>
                 /{bucket.max_tickets}
               </span>
