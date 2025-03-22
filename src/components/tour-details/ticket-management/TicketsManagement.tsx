@@ -40,11 +40,23 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
   const tourDate = new Date(tour.date);
   
-  // Calculate if we have enough tickets for this tour
-  const availableTickets = ticketBuckets.length > 0 ? 
-    ticketBuckets.reduce((sum, b) => b.tour_id === tour.id ? sum + b.max_tickets : sum, 0) : 
-    (tour.numTickets || totalParticipants);
+  // Find bucket for this tour
+  const bucketAssignedToTour = ticketBuckets.find(bucket => 
+    bucket.assigned_tours && bucket.assigned_tours.includes(tour.id)
+  );
   
+  // Calculate available tickets based on bucket allocation
+  const bucketMaxTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
+  
+  // Calculate allocated tickets to other tours from this bucket
+  const allocatedToOtherTours = bucketAssignedToTour ? 
+    bucketAssignedToTour.tour_allocations?.reduce((total, allocation) => 
+      allocation.tour_id !== tour.id ? total + allocation.tickets_required : total, 0) || 0 : 0;
+  
+  // Available tickets is the max tickets minus allocations to other tours
+  const availableTickets = bucketAssignedToTour ? bucketMaxTickets - allocatedToOtherTours : 0;
+  
+  // Calculate if we have enough tickets for this tour
   const hasEnoughTickets = availableTickets >= requiredTickets;
   
   // Log ticket calculations for debugging
@@ -61,6 +73,8 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       // Totals and allocation
       requiredTickets,
       bucketCount: ticketBuckets.length,
+      bucketMaxTickets,
+      allocatedToOtherTours,
       availableTickets,
       hasEnoughTickets,
       // Guide info
@@ -93,7 +107,9 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     availableTickets,
     guide1Info,
     guide2Info,
-    guide3Info
+    guide3Info,
+    bucketMaxTickets,
+    allocatedToOtherTours
   ]);
 
   return (

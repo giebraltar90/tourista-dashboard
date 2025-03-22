@@ -12,12 +12,12 @@ export const useTicketAssignmentService = () => {
   /**
    * Assign a ticket bucket to a tour
    */
-  const handleAssignBucket = async (bucketId: string, tourId: string) => {
+  const handleAssignBucket = async (bucketId: string, tourId: string, requiredTickets: number = 0) => {
     try {
-      await assignBucketToTour(bucketId, tourId);
+      await assignBucketToTour(bucketId, tourId, requiredTickets);
       
       // Invalidate relevant queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['ticketBuckets', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['ticketBuckets'] });
       queryClient.invalidateQueries({ queryKey: ['availableBuckets'] });
       
       toast.success("Ticket bucket assigned successfully");
@@ -34,10 +34,10 @@ export const useTicketAssignmentService = () => {
    */
   const handleRemoveBucket = async (bucketId: string, tourId: string) => {
     try {
-      await removeBucketFromTour(bucketId);
+      await removeBucketFromTour(bucketId, tourId);
       
       // Invalidate relevant queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['ticketBuckets', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['ticketBuckets'] });
       queryClient.invalidateQueries({ queryKey: ['availableBuckets'] });
       
       toast.success("Ticket bucket removed from tour");

@@ -14,9 +14,16 @@ interface AssignBucketDialogProps {
   onClose: () => void;
   tourId: string;
   tourDate: Date;
+  requiredTickets?: number;
 }
 
-export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: AssignBucketDialogProps) => {
+export const AssignBucketDialog = ({ 
+  isOpen, 
+  onClose, 
+  tourId, 
+  tourDate,
+  requiredTickets = 0 
+}: AssignBucketDialogProps) => {
   const [selectedBucketId, setSelectedBucketId] = useState<string>("");
   const [isAssigning, setIsAssigning] = useState(false);
   const { handleAssignBucket } = useTicketAssignmentService();
@@ -32,6 +39,8 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
     originalTourDate: tourDate.toISOString(),
     displayDate: displayDate.toISOString(),
     formattedDate,
+    tourId,
+    requiredTickets,
     dateComponents: {
       year: displayDate.getFullYear(),
       month: displayDate.getMonth() + 1,
@@ -57,6 +66,10 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
         id: b.id,
         reference: b.reference_number,
         date: b.date.toISOString(),
+        maxTickets: b.max_tickets,
+        allocatedTickets: b.allocated_tickets,
+        assignedTours: b.assigned_tours?.length || 0,
+        availableTickets: b.max_tickets - b.allocated_tickets,
         dateComponents: {
           year: b.date.getFullYear(),
           month: b.date.getMonth() + 1,
@@ -67,19 +80,40 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
     );
   }, [availableBuckets]);
 
-  // Filter out buckets that are already assigned to any tour
-  const unassignedBuckets = availableBuckets.filter(bucket => !bucket.tour_id);
+  // Filter buckets that can accommodate this tour's tickets
+  const availableBucketsForTour = availableBuckets.filter(bucket => {
+    // Get total allocated tickets for existing tours
+    const totalAllocated = bucket.tour_allocations ? 
+      bucket.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
+      bucket.allocated_tickets || 0;
+    
+    // Check if this bucket has enough remaining tickets for this tour
+    const remainingTickets = bucket.max_tickets - totalAllocated;
+    
+    // Also check if this tour isn't already assigned to this bucket
+    const tourIsAlreadyAssigned = bucket.assigned_tours && bucket.assigned_tours.includes(tourId);
+    
+    // Return true if there are enough remaining tickets and tour isn't already assigned
+    return remainingTickets >= requiredTickets && !tourIsAlreadyAssigned;
+  });
   
-  // Log the filtered unassigned buckets
+  // Log the filtered buckets
   useEffect(() => {
-    console.log("🔍 [AssignBucketDialog] Unassigned buckets:", 
-      unassignedBuckets.map(b => ({
+    console.log("🔍 [AssignBucketDialog] Filtered buckets with enough capacity:", 
+      availableBucketsForTour.map(b => ({
         id: b.id,
         reference: b.reference_number,
-        date: b.date.toISOString()
+        maxTickets: b.max_tickets,
+        totalAllocated: b.tour_allocations ? 
+          b.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
+          b.allocated_tickets || 0,
+        requiredTickets,
+        available: b.max_tickets - (b.tour_allocations ? 
+          b.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
+          b.allocated_tickets || 0)
       }))
     );
-  }, [unassignedBuckets]);
+  }, [availableBucketsForTour, requiredTickets]);
 
   const handleAssignBucketClick = async () => {
     if (!selectedBucketId) {
@@ -89,12 +123,13 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
     console.log("🔍 [AssignBucketDialog] Assigning bucket:", {
       bucketId: selectedBucketId,
       tourId,
-      selectedBucket: unassignedBuckets.find(b => b.id === selectedBucketId)
+      requiredTickets,
+      selectedBucket: availableBuckets.find(b => b.id === selectedBucketId)
     });
 
     setIsAssigning(true);
     try {
-      const success = await handleAssignBucket(selectedBucketId, tourId);
+      const success = await handleAssignBucket(selectedBucketId, tourId, requiredTickets);
       console.log("🔍 [AssignBucketDialog] Assignment result:", success);
       if (success) {
         onClose();
@@ -125,20 +160,34 @@ export const AssignBucketDialog = ({ isOpen, onClose, tourId, tourDate }: Assign
                 <SelectValue placeholder="Select a ticket bucket" />
               </SelectTrigger>
               <SelectContent>
-                {unassignedBuckets.length === 0 ? (
+                {availableBucketsForTour.length === 0 ? (
                   <SelectItem value="none" disabled>
-                    No unassigned buckets available for this date
+                    No buckets with enough capacity available
                   </SelectItem>
                 ) : (
-                  unassignedBuckets.map((bucket) => (
-                    <SelectItem key={bucket.id} value={bucket.id}>
-                      {bucket.reference_number} - {bucket.bucket_type} - {bucket.max_tickets - bucket.allocated_tickets} available
-                      {bucket.access_time && ` - ${bucket.access_time}`}
-                    </SelectItem>
-                  ))
+                  availableBucketsForTour.map((bucket) => {
+                    // Calculate remaining capacity
+                    const allocatedTotal = bucket.tour_allocations ? 
+                      bucket.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
+                      bucket.allocated_tickets || 0;
+                    
+                    const remainingCapacity = bucket.max_tickets - allocatedTotal;
+                    
+                    return (
+                      <SelectItem key={bucket.id} value={bucket.id}>
+                        {bucket.reference_number} - {bucket.bucket_type} - {remainingCapacity}/{bucket.max_tickets} available
+                        {bucket.access_time && ` - ${bucket.access_time}`}
+                      </SelectItem>
+                    );
+                  })
                 )}
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="text-sm text-muted-foreground">
+            This tour needs {requiredTickets} tickets
+            {requiredTickets > 0 && <span className="text-xs ml-1">(including guide tickets if required)</span>}
           </div>
         </div>
         

@@ -13,10 +13,11 @@ export function useTicketBuckets(tourId: string) {
       console.log("🔍 [useTicketBuckets] Fetching ticket buckets for tour:", tourId);
       
       try {
+        // Get all buckets where this tour is in assigned_tours
         const { data, error } = await supabase
           .from('ticket_buckets')
           .select('*')
-          .eq('tour_id', tourId);
+          .contains('assigned_tours', [tourId]);
           
         if (error) {
           console.error("🔴 [useTicketBuckets] Error fetching ticket buckets:", error);
@@ -47,13 +48,23 @@ export function useTicketBuckets(tourId: string) {
             // Set to noon to avoid timezone issues
             bucketDate.setHours(12, 0, 0, 0);
             
+            // Ensure tour_allocations is at least an empty array
+            const tourAllocations = bucket.tour_allocations || [];
+            
+            // Calculate total allocated tickets
+            const totalAllocated = tourAllocations.reduce(
+              (sum, allocation) => sum + allocation.tickets_required, 0
+            );
+            
             // Calculate available tickets
-            const availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+            const availableTickets = bucket.max_tickets - totalAllocated;
             
             // Return processed bucket
             return {
               ...bucket,
               date: bucketDate,
+              tour_allocations: tourAllocations,
+              allocated_tickets: totalAllocated,
               available_tickets: availableTickets
             };
           } catch (e) {
@@ -62,6 +73,7 @@ export function useTicketBuckets(tourId: string) {
             return {
               ...bucket,
               date: new Date(),
+              tour_allocations: [],
               available_tickets: 0
             };
           }

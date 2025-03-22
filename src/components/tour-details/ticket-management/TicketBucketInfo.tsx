@@ -35,16 +35,29 @@ export const TicketBucketInfo = ({
   // Safely ensure buckets array is valid
   const validBuckets = Array.isArray(buckets) ? buckets : [];
 
-  // Find if any bucket is assigned to this specific tour
-  const bucketAssignedToTour = validBuckets.find(bucket => bucket.tour_id === tourId);
+  // Find bucket that is assigned to this specific tour
+  const bucketAssignedToTour = validBuckets.find(bucket => 
+    bucket.assigned_tours && bucket.assigned_tours.includes(tourId)
+  );
   
-  // Calculate the total available tickets across all buckets for this tour
-  const totalBucketTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
+  // Calculate the total available tickets in the bucket
+  const bucketMaxTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
+  
+  // Calculate allocated tickets to other tours from this bucket
+  const allocatedToOtherTours = bucketAssignedToTour ? 
+    bucketAssignedToTour.tour_allocations?.reduce((total, allocation) => 
+      allocation.tour_id !== tourId ? total + allocation.tickets_required : total, 0) || 0 : 0;
+  
+  // Calculate the total available tickets for this tour
+  const totalBucketTickets = bucketMaxTickets > allocatedToOtherTours ? 
+    bucketMaxTickets - allocatedToOtherTours : 0;
 
   // Log calculations for debugging
   useEffect(() => {
     console.log(`🎫 [TicketBucketInfo] Calculated tickets for tour ${tourId}:`, {
       tourId,
+      bucketMaxTickets,
+      allocatedToOtherTours,
       totalBucketTickets,
       requiredTickets,
       totalParticipants,
@@ -56,18 +69,19 @@ export const TicketBucketInfo = ({
         ref: bucketAssignedToTour.reference_number,
         maxTickets: bucketAssignedToTour.max_tickets,
         allocatedTickets: bucketAssignedToTour.allocated_tickets,
-        tourId: bucketAssignedToTour.tour_id
+        assignedTours: bucketAssignedToTour.assigned_tours?.length || 0,
+        tourAllocations: bucketAssignedToTour.tour_allocations
       } : null
     });
-  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets]);
+  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets, bucketMaxTickets, allocatedToOtherTours]);
 
-  // We have enough tickets if a bucket is assigned to this tour
-  const hasEnoughBucketTickets = !!bucketAssignedToTour;
+  // We have enough tickets if a bucket is assigned to this tour and has enough available tickets
+  const hasEnoughBucketTickets = !!bucketAssignedToTour && totalBucketTickets >= requiredTickets;
 
   // Add guide tickets information to buckets for consistent display
   const bucketsWithGuideInfo = validBuckets.map(bucket => ({
     ...bucket,
-    guide_tickets: bucket.tour_id === tourId ? guideTicketsNeeded : 0
+    guide_tickets: bucket.assigned_tours?.includes(tourId) ? guideTicketsNeeded : 0
   }));
 
   if (isLoading) {
@@ -120,6 +134,7 @@ export const TicketBucketInfo = ({
           onClose={() => setIsAssignDialogOpen(false)} 
           tourId={tourId}
           tourDate={tourDate}
+          requiredTickets={requiredTickets}
         />
       )}
     </div>

@@ -3,6 +3,11 @@ import { GuideInfo } from "@/types/ventrata";
 
 // Helper function to determine if a guide needs a ticket based on tour location and guide type
 export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boolean {
+  if (!guide || !guide.guideType || !tourLocation) {
+    console.log(`GUIDE TICKET DEBUG: Guide or location info missing, defaulting to no ticket`);
+    return false;
+  }
+  
   console.log("GUIDE TICKET DEBUG: Checking if guide needs ticket:", {
     guideName: guide?.name,
     guideType: guide?.guideType,
@@ -11,20 +16,15 @@ export function doesGuideNeedTicket(guide: GuideInfo, tourLocation: string): boo
   });
   
   // Check if this is a location requiring guide tickets
-  const isVersionLocationMatched = tourLocation?.toLowerCase().includes('versailles');
+  const isVersaillesLocationMatched = tourLocation?.toLowerCase().includes('versailles');
   const isMontmartreLocationMatched = tourLocation?.toLowerCase().includes('montmartre');
   
-  if (!isVersionLocationMatched && !isMontmartreLocationMatched) {
+  if (!isVersaillesLocationMatched && !isMontmartreLocationMatched) {
     console.log(`GUIDE TICKET DEBUG: Location ${tourLocation} does not require guide tickets`);
     return false;
   }
   
-  if (!guide || !guide.guideType) {
-    console.log(`GUIDE TICKET DEBUG: Guide or guide type is missing, defaulting to no ticket`);
-    return false;
-  }
-  
-  // Based on guide type
+  // Based on guide type - make sure we use exact string comparison
   switch (guide.guideType) {
     case 'GA Ticket':
       console.log(`GUIDE TICKET DEBUG: Guide ${guide.name} (GA Ticket) needs an adult ticket`);
@@ -53,6 +53,7 @@ export function getGuideTicketType(guide: GuideInfo): 'adult' | 'child' | null {
     guideType: guide.guideType
   });
   
+  // Make sure we use exact string comparison
   switch (guide.guideType) {
     case 'GA Ticket':
       console.log(`GUIDE TICKET DEBUG: Guide ${guide.name} needs adult ticket`);
