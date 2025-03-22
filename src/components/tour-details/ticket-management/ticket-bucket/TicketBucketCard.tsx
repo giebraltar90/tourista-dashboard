@@ -16,7 +16,9 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   // Calculate available tickets
-  const availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+  const availableTickets = bucket.available_tickets !== undefined ? 
+    bucket.available_tickets : 
+    (bucket.max_tickets - bucket.allocated_tickets);
   
   // Log bucket information for debugging
   useEffect(() => {
@@ -26,17 +28,19 @@ export const TicketBucketCard = ({ bucket, onRemove }: TicketBucketCardProps) =>
       maxTickets: bucket.max_tickets,
       allocatedTickets: bucket.allocated_tickets,
       availableTickets,
-      date: bucket.date.toISOString(),
-      dateComponents: {
+      date: bucket.date instanceof Date ? bucket.date.toISOString() : bucket.date,
+      dateComponents: bucket.date instanceof Date ? {
         year: bucket.date.getFullYear(),
         month: bucket.date.getMonth() + 1,
         day: bucket.date.getDate()
-      }
+      } : "Not a Date object"
     });
-  }, [bucket]);
+  }, [bucket, availableTickets]);
   
   // Format date for display
-  const formattedDate = format(bucket.date, "MMM d, yyyy");
+  const formattedDate = bucket.date instanceof Date ? 
+    format(bucket.date, "MMM d, yyyy") : 
+    "Invalid Date";
 
   return (
     <>

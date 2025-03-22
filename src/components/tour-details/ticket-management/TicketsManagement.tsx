@@ -43,16 +43,29 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       bucketCount: ticketBuckets.length,
       totalMaxTickets: ticketBuckets.reduce((sum, b) => sum + b.max_tickets, 0),
       totalAllocatedTickets: ticketBuckets.reduce((sum, b) => sum + b.allocated_tickets, 0),
-      totalAvailableTickets: ticketBuckets.reduce((sum, b) => sum + (b.max_tickets - b.allocated_tickets), 0),
+      totalAvailableTickets: ticketBuckets.reduce((sum, b) => {
+        const available = b.available_tickets !== undefined ? 
+          b.available_tickets : 
+          (b.max_tickets - b.allocated_tickets);
+        return sum + available;
+      }, 0),
       requiredTickets,
-      hasEnoughBucketsForRequiredTickets: ticketBuckets.reduce((sum, b) => 
-        sum + (b.max_tickets - b.allocated_tickets), 0) >= requiredTickets
+      hasEnoughBucketsForRequiredTickets: ticketBuckets.reduce((sum, b) => {
+        const available = b.available_tickets !== undefined ? 
+          b.available_tickets : 
+          (b.max_tickets - b.allocated_tickets);
+        return sum + available;
+      }, 0) >= requiredTickets
     });
   }, [ticketBuckets, requiredTickets]);
 
   // Calculate total tickets from buckets
-  const totalBucketTickets = ticketBuckets.reduce((sum, bucket) => 
-    sum + (bucket.max_tickets - bucket.allocated_tickets), 0);
+  const totalBucketTickets = ticketBuckets.reduce((sum, bucket) => {
+    const available = bucket.available_tickets !== undefined ? 
+      bucket.available_tickets : 
+      (bucket.max_tickets - bucket.allocated_tickets);
+    return sum + available;
+  }, 0);
   
   // Update the availableTickets calculation to use bucket tickets when available
   const effectiveAvailableTickets = ticketBuckets.length > 0 

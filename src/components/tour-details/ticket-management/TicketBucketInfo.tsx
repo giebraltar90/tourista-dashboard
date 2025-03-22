@@ -24,8 +24,11 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
 
   // Calculate total tickets available in buckets
   const totalBucketTickets = buckets.reduce((sum, bucket) => {
-    // Calculate available tickets for each bucket
-    const availableTickets = bucket.max_tickets - bucket.allocated_tickets;
+    // Use the available_tickets property if it exists, otherwise calculate it
+    const availableTickets = bucket.available_tickets !== undefined ? 
+      bucket.available_tickets : 
+      (bucket.max_tickets - bucket.allocated_tickets);
+    
     return sum + availableTickets;
   }, 0);
 
@@ -38,7 +41,7 @@ export const TicketBucketInfo = ({ buckets, isLoading, tourId, requiredTickets, 
       reference: b.reference_number,
       max: b.max_tickets,
       allocated: b.allocated_tickets,
-      available: b.max_tickets - b.allocated_tickets
+      available: b.available_tickets || (b.max_tickets - b.allocated_tickets)
     }))
   });
 
