@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CSVTicketBucket, TicketBucket, TicketBucketFormValues } from "@/types/ticketBuckets";
 import { toast } from "sonner";
@@ -148,12 +149,13 @@ export const createTicketBucket = async (bucket: TicketBucketFormValues) => {
 
 export const updateTicketBucket = async (id: string, updates: Partial<TicketBucketFormValues>) => {
   // IMPORTANT FIX: Set time to noon for the date to avoid timezone issues
-  let formattedUpdates = { ...updates };
+  let formattedUpdates: any = { ...updates };
   
   if (updates.date) {
     const localDate = new Date(updates.date);
     localDate.setHours(12, 0, 0, 0);
     
+    // Format the date as a string for the database
     formattedUpdates = {
       ...updates,
       date: localDate.toISOString().split('T')[0],

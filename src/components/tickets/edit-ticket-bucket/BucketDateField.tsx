@@ -23,7 +23,9 @@ export function BucketDateField({ date, onDateChange }: BucketDateFieldProps) {
         month: date.getMonth() + 1,
         day: date.getDate(),
         dayOfWeek: date.getDay(),
-        timezoneOffset: date.getTimezoneOffset()
+        timezoneOffset: date.getTimezoneOffset(),
+        localDate: date.toLocaleDateString(),
+        isoDate: date.toISOString().split('T')[0]
       }
     });
   }, []);
@@ -31,6 +33,7 @@ export function BucketDateField({ date, onDateChange }: BucketDateFieldProps) {
   const handleDateSelect = (newDate: Date | undefined) => {
     if (!newDate) return;
     
+    // Deep debug the selected date
     console.log("🔍 [BucketDateField] Selected date from calendar:", {
       newDate: newDate.toISOString(),
       components: {
@@ -38,12 +41,31 @@ export function BucketDateField({ date, onDateChange }: BucketDateFieldProps) {
         month: newDate.getMonth() + 1,
         day: newDate.getDate(),
         dayOfWeek: newDate.getDay(),
-        formatted: format(newDate, 'PPP')
+        timezoneOffset: newDate.getTimezoneOffset(),
+        utcDay: new Date(newDate.toISOString()).getUTCDate(),
+        formatted: format(newDate, 'PPP'),
+        hours: newDate.getHours(),
+        minutes: newDate.getMinutes()
+      }
+    });
+    
+    // Create a new date object and set the time to noon to avoid timezone issues
+    const fixedDate = new Date(newDate);
+    fixedDate.setHours(12, 0, 0, 0);
+    
+    console.log("🔍 [BucketDateField] Adjusted date with noon time:", {
+      fixedDate: fixedDate.toISOString(),
+      components: {
+        year: fixedDate.getFullYear(),
+        month: fixedDate.getMonth() + 1,
+        day: fixedDate.getDate(),
+        hours: fixedDate.getHours(),
+        utcDay: new Date(fixedDate.toISOString()).getUTCDate()
       }
     });
     
     // Apply the selection to parent component
-    onDateChange(newDate);
+    onDateChange(fixedDate);
   };
 
   return (
