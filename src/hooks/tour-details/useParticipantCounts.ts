@@ -62,25 +62,49 @@ export const useParticipantCounts = (
     const validGuide2 = guide2Name && guide2Name.trim() !== '';
     const validGuide3 = guide3Name && guide3Name.trim() !== '';
     
+    // Special case check for Sophie Miller
+    const isSophieMillerGuide1 = validGuide1 && guide1Name.toLowerCase().includes('sophie miller');
+    const isSophieMillerGuide2 = validGuide2 && guide2Name.toLowerCase().includes('sophie miller');
+    const isSophieMillerGuide3 = validGuide3 && guide3Name.toLowerCase().includes('sophie miller');
+    
+    // If any guide is Sophie Miller, ensure they're set to GC type
+    if (isSophieMillerGuide1 && guide1Info && guide1Info.guideType !== 'GC') {
+      console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Forcing Sophie Miller (guide1) to GC type`);
+      guide1Info.guideType = 'GC';
+    }
+    
+    if (isSophieMillerGuide2 && guide2Info && guide2Info.guideType !== 'GC') {
+      console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Forcing Sophie Miller (guide2) to GC type`);
+      guide2Info.guideType = 'GC';
+    }
+    
+    if (isSophieMillerGuide3 && guide3Info && guide3Info.guideType !== 'GC') {
+      console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Forcing Sophie Miller (guide3) to GC type`);
+      guide3Info.guideType = 'GC';
+    }
+    
     // Log all guide information for debugging
     console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] FULL GUIDE INFO for location "${location}":`, {
       guide1: validGuide1 ? {
         name: guide1Name,
         info: guide1Info,
         type: guide1Info?.guideType || 'unknown',
-        needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, location) : false
+        needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, location) : false,
+        isSophieMiller: isSophieMillerGuide1
       } : null,
       guide2: validGuide2 ? {
         name: guide2Name,
         info: guide2Info,
         type: guide2Info?.guideType || 'unknown',
-        needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, location) : false
+        needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, location) : false,
+        isSophieMiller: isSophieMillerGuide2
       } : null,
       guide3: validGuide3 ? {
         name: guide3Name,
         info: guide3Info,
         type: guide3Info?.guideType || 'unknown',
-        needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, location) : false
+        needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, location) : false,
+        isSophieMiller: isSophieMillerGuide3
       } : null,
       location,
       validGuide1,
@@ -103,10 +127,10 @@ export const useParticipantCounts = (
       if (!processedGuides.has(guideName.toLowerCase())) {
         processedGuides.add(guideName.toLowerCase());
         
-        // Check if Sophie Miller for special case
-        if (guideName.toLowerCase().includes('sophie miller') && guide1Info.guideType !== 'GC') {
-          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] WARNING: Sophie Miller detected but not marked as GC. Forcing GC type.`);
-          // Override to GC type
+        // Skip ticket counting for Sophie Miller since she should always be GC
+        if (guideName.toLowerCase().includes('sophie miller')) {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Sophie Miller detected as guide1, setting as GC (no ticket needed)`);
+          // Ensure Sophie Miller is always GC type
           guide1Info.guideType = 'GC';
         }
         
@@ -118,7 +142,8 @@ export const useParticipantCounts = (
           guideType: guide1Info.guideType,
           needsTicket,
           ticketType,
-          location
+          location,
+          isSophieMiller: isSophieMillerGuide1
         });
         
         if (needsTicket) {
@@ -145,10 +170,10 @@ export const useParticipantCounts = (
       if (!processedGuides.has(guideName.toLowerCase())) {
         processedGuides.add(guideName.toLowerCase());
         
-        // Check if Sophie Miller for special case
-        if (guideName.toLowerCase().includes('sophie miller') && guide2Info.guideType !== 'GC') {
-          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] WARNING: Sophie Miller detected but not marked as GC. Forcing GC type.`);
-          // Override to GC type
+        // Skip ticket counting for Sophie Miller since she should always be GC
+        if (guideName.toLowerCase().includes('sophie miller')) {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Sophie Miller detected as guide2, setting as GC (no ticket needed)`);
+          // Ensure Sophie Miller is always GC type
           guide2Info.guideType = 'GC';
         }
         
@@ -160,7 +185,8 @@ export const useParticipantCounts = (
           guideType: guide2Info.guideType,
           needsTicket,
           ticketType,
-          location
+          location,
+          isSophieMiller: isSophieMillerGuide2
         });
         
         if (needsTicket) {
@@ -187,10 +213,10 @@ export const useParticipantCounts = (
       if (!processedGuides.has(guideName.toLowerCase())) {
         processedGuides.add(guideName.toLowerCase());
         
-        // Check if Sophie Miller for special case
-        if (guideName.toLowerCase().includes('sophie miller') && guide3Info.guideType !== 'GC') {
-          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] WARNING: Sophie Miller detected but not marked as GC. Forcing GC type.`);
-          // Override to GC type
+        // Skip ticket counting for Sophie Miller since she should always be GC
+        if (guideName.toLowerCase().includes('sophie miller')) {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Sophie Miller detected as guide3, setting as GC (no ticket needed)`);
+          // Ensure Sophie Miller is always GC type
           guide3Info.guideType = 'GC';
         }
         
@@ -202,7 +228,8 @@ export const useParticipantCounts = (
           guideType: guide3Info.guideType,
           needsTicket,
           ticketType,
-          location
+          location,
+          isSophieMiller: isSophieMillerGuide3
         });
         
         if (needsTicket) {
@@ -232,6 +259,14 @@ export const useParticipantCounts = (
         guide1: validGuide1 ? guide1Name : 'invalid',
         guide2: validGuide2 ? guide2Name : 'invalid',
         guide3: validGuide3 ? guide3Name : 'invalid',
+      },
+      sophieMiller: {
+        isGuide1: isSophieMillerGuide1,
+        isGuide2: isSophieMillerGuide2,
+        isGuide3: isSophieMillerGuide3,
+        guide1Type: guide1Info?.guideType,
+        guide2Type: guide2Info?.guideType,
+        guide3Type: guide3Info?.guideType
       }
     });
     
