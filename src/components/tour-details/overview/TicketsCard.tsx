@@ -58,6 +58,14 @@ export const TicketsCard = ({
   const isLocationRequiringTickets = 
     location?.toLowerCase().includes('versailles') || 
     location?.toLowerCase().includes('montmartre');
+
+  console.log("GUIDE TICKET DEBUG: [TicketsCard] Guide ticket check: ", {
+    location,
+    isLocationRequiringTickets,
+    guideAdultTickets: validGuideAdultTickets,
+    guideChildTickets: validGuideChildTickets,
+    totalGuideTickets
+  });
   
   // Determine if we have enough tickets
   const hasEnoughTickets = totalRequiredTickets <= validTotalTickets;
@@ -89,7 +97,7 @@ export const TicketsCard = ({
             <span className="font-medium">{validChildTickets} tickets</span>
           </div>
           
-          {isLocationRequiringTickets && totalGuideTickets > 0 && (
+          {isLocationRequiringTickets && (
             <>
               <div className="pt-2 pb-1 border-t">
                 <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
@@ -108,14 +116,14 @@ export const TicketsCard = ({
                   <span className="font-medium">{validGuideChildTickets} tickets</span>
                 </div>
               )}
+              
+              {totalGuideTickets === 0 && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Guide Tickets:</span>
+                  <span className="font-medium text-green-600">No tickets needed</span>
+                </div>
+              )}
             </>
-          )}
-          
-          {isLocationRequiringTickets && totalGuideTickets === 0 && (
-            <div className="flex justify-between pt-2 border-t">
-              <span className="text-muted-foreground">Guide Tickets:</span>
-              <span className="font-medium text-green-600">No tickets needed</span>
-            </div>
           )}
           
           <div className="flex justify-between pt-2 border-t">

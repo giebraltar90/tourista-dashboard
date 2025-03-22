@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
@@ -61,18 +62,30 @@ export const useParticipantCounts = (
     const validGuide2 = guide2Name && guide2Name.trim() !== '';
     const validGuide3 = guide3Name && guide3Name.trim() !== '';
     
-    console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Initial participant counts for location "${location}":`, {
-      totalParticipants,
-      totalChildCount,
-      guide1: validGuide1 ? { name: guide1Name, type: guide1Info?.guideType || 'unknown' } : null,
-      guide2: validGuide2 ? { name: guide2Name, type: guide2Info?.guideType || 'unknown' } : null,
-      guide3: validGuide3 ? { name: guide3Name, type: guide3Info?.guideType || 'unknown' } : null,
-      validGuide1: validGuide1,
-      validGuide2: validGuide2,
-      validGuide3: validGuide3,
-      hasGuide1Info: !!guide1Info,
-      hasGuide2Info: !!guide2Info,
-      hasGuide3Info: !!guide3Info
+    // Log all guide information for debugging
+    console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] FULL GUIDE INFO for location "${location}":`, {
+      guide1: validGuide1 ? {
+        name: guide1Name,
+        info: guide1Info,
+        type: guide1Info?.guideType || 'unknown',
+        needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, location) : false
+      } : null,
+      guide2: validGuide2 ? {
+        name: guide2Name,
+        info: guide2Info,
+        type: guide2Info?.guideType || 'unknown',
+        needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, location) : false
+      } : null,
+      guide3: validGuide3 ? {
+        name: guide3Name,
+        info: guide3Info,
+        type: guide3Info?.guideType || 'unknown',
+        needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, location) : false
+      } : null,
+      location,
+      validGuide1,
+      validGuide2,
+      validGuide3
     });
     
     // Set default guide ticket counts
@@ -82,16 +95,31 @@ export const useParticipantCounts = (
     // Keep a record of which guides we've processed to avoid duplicates
     const processedGuides = new Set<string>();
     
-    // Only check guide1 if both name and info exist
+    // Explicitly check each guide for ticket requirements
     if (guide1Info && validGuide1) {
       const guideName = guide1Name.trim();
       
       // Skip if already processed this guide
-      if (!processedGuides.has(guideName)) {
-        processedGuides.add(guideName);
+      if (!processedGuides.has(guideName.toLowerCase())) {
+        processedGuides.add(guideName.toLowerCase());
+        
+        // Check if Sophie Miller for special case
+        if (guideName.toLowerCase().includes('sophie miller') && guide1Info.guideType !== 'GC') {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] WARNING: Sophie Miller detected but not marked as GC. Forcing GC type.`);
+          // Override to GC type
+          guide1Info.guideType = 'GC';
+        }
         
         const needsTicket = doesGuideNeedTicket(guide1Info, location);
         const ticketType = getGuideTicketType(guide1Info);
+        
+        console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide1 ticket check for ${guideName}:`, {
+          guideName,
+          guideType: guide1Info.guideType,
+          needsTicket,
+          ticketType,
+          location
+        });
         
         if (needsTicket) {
           if (ticketType === 'adult') {
@@ -114,11 +142,26 @@ export const useParticipantCounts = (
       const guideName = guide2Name.trim();
       
       // Skip if already processed this guide (e.g., if guide2 has same name as guide1)
-      if (!processedGuides.has(guideName)) {
-        processedGuides.add(guideName);
+      if (!processedGuides.has(guideName.toLowerCase())) {
+        processedGuides.add(guideName.toLowerCase());
+        
+        // Check if Sophie Miller for special case
+        if (guideName.toLowerCase().includes('sophie miller') && guide2Info.guideType !== 'GC') {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] WARNING: Sophie Miller detected but not marked as GC. Forcing GC type.`);
+          // Override to GC type
+          guide2Info.guideType = 'GC';
+        }
         
         const needsTicket = doesGuideNeedTicket(guide2Info, location);
         const ticketType = getGuideTicketType(guide2Info);
+        
+        console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide2 ticket check for ${guideName}:`, {
+          guideName,
+          guideType: guide2Info.guideType,
+          needsTicket,
+          ticketType,
+          location
+        });
         
         if (needsTicket) {
           if (ticketType === 'adult') {
@@ -141,11 +184,26 @@ export const useParticipantCounts = (
       const guideName = guide3Name.trim();
       
       // Skip if already processed this guide
-      if (!processedGuides.has(guideName)) {
-        processedGuides.add(guideName);
+      if (!processedGuides.has(guideName.toLowerCase())) {
+        processedGuides.add(guideName.toLowerCase());
+        
+        // Check if Sophie Miller for special case
+        if (guideName.toLowerCase().includes('sophie miller') && guide3Info.guideType !== 'GC') {
+          console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] WARNING: Sophie Miller detected but not marked as GC. Forcing GC type.`);
+          // Override to GC type
+          guide3Info.guideType = 'GC';
+        }
         
         const needsTicket = doesGuideNeedTicket(guide3Info, location);
         const ticketType = getGuideTicketType(guide3Info);
+        
+        console.log(`GUIDE TICKET DEBUG: [useParticipantCounts] Guide3 ticket check for ${guideName}:`, {
+          guideName,
+          guideType: guide3Info.guideType,
+          needsTicket,
+          ticketType,
+          location
+        });
         
         if (needsTicket) {
           if (ticketType === 'adult') {

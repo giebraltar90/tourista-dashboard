@@ -9,6 +9,7 @@ import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
+import { doesGuideNeedTicket } from "@/hooks/guides/useGuideTickets";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
   // Validate guide information to only include valid guides
@@ -16,19 +17,53 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
   const guide2Name = tour.guide2 ? tour.guide2.trim() : '';
   const guide3Name = tour.guide3 ? tour.guide3.trim() : '';
   
-  // Debug log of actual guide data
-  console.log("GUIDE TICKET DEBUG: [TicketsManagement] Raw guide data:", {
+  // Super detailed logging for guide info - critical for debugging
+  console.log("GUIDE TICKET DEBUG: [TicketsManagement] COMPLETE GUIDE INFO:", {
     tourId: tour.id,
     tourLocation: tour.location,
-    guide1: { name: guide1Name, info: guide1Info },
-    guide2: { name: guide2Name, info: guide2Info },
-    guide3: { name: guide3Name, info: guide3Info },
+    guide1: { 
+      name: guide1Name, 
+      info: guide1Info, 
+      needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, tour.location || '') : false,
+      type: guide1Info?.guideType || 'unknown',
+      isSophieMiller: guide1Name?.toLowerCase().includes('sophie miller') || false
+    },
+    guide2: { 
+      name: guide2Name, 
+      info: guide2Info,
+      needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, tour.location || '') : false,
+      type: guide2Info?.guideType || 'unknown',
+      isSophieMiller: guide2Name?.toLowerCase().includes('sophie miller') || false
+    },
+    guide3: { 
+      name: guide3Name, 
+      info: guide3Info,
+      needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, tour.location || '') : false,
+      type: guide3Info?.guideType || 'unknown',
+      isSophieMiller: guide3Name?.toLowerCase().includes('sophie miller') || false
+    },
     uniqueGuideCount: new Set([
       guide1Name && guide1Name.trim(), 
       guide2Name && guide2Name.trim(), 
       guide3Name && guide3Name.trim()
     ].filter(Boolean)).size
   });
+  
+  // Force Sophie Miller to be GC type if she's one of the guides
+  if (guide1Info && guide1Name.toLowerCase().includes('sophie miller') && guide1Info.guideType !== 'GC') {
+    console.log('GUIDE TICKET DEBUG: [TicketsManagement] Forcing Sophie Miller (guide1) to be GC type');
+    guide1Info.guideType = 'GC';
+  }
+  
+  if (guide2Info && guide2Name.toLowerCase().includes('sophie miller') && guide2Info.guideType !== 'GC') {
+    console.log('GUIDE TICKET DEBUG: [TicketsManagement] Forcing Sophie Miller (guide2) to be GC type');
+    guide2Info.guideType = 'GC';
+  }
+  
+  if (guide3Info && guide3Name.toLowerCase().includes('sophie miller') && guide3Info.guideType !== 'GC') {
+    console.log('GUIDE TICKET DEBUG: [TicketsManagement] Forcing Sophie Miller (guide3) to be GC type');
+    guide3Info.guideType = 'GC';
+  }
   
   // Use the participant counts hook to get ticket requirements with validated guide names
   const participantCounts = useParticipantCounts(

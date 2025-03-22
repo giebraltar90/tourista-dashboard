@@ -57,7 +57,7 @@ export const TicketBucketInfo = ({
   const totalBucketTickets = bucketMaxTickets > 0 ? 
     bucketMaxTickets - allocatedToOtherTours : 0;
 
-  // Log calculations for debugging
+  // Log calculations for debugging with added guide ticket information
   useEffect(() => {
     console.log(`🎫 [TicketBucketInfo] Calculated tickets for tour ${tourId}:`, {
       tourId,
