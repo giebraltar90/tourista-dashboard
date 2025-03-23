@@ -73,24 +73,18 @@ export const TicketsCard = ({
       location,
       locationNeedsGuideTickets,
       hasAssignedGuides,
-      guide1Info: guide1Info ? { 
-        name: guide1Info.name || 'unknown',
-        type: guide1Info.guideType || 'unknown'
-      } : 'none',
-      guide2Info: guide2Info ? {
-        name: guide2Info.name || 'unknown',
-        type: guide2Info.guideType || 'unknown'
-      } : 'none',
-      guide3Info: guide3Info ? {
-        name: guide3Info.name || 'unknown',
-        type: guide3Info.guideType || 'unknown'
-      } : 'none',
-      participantAdults: validAdultTickets,
-      participantChildren: validChildTickets,
-      guideAdultTickets,
-      guideChildTickets,
-      totalGuideTickets: guideAdultTickets + guideChildTickets,
-      guidesCount: guidesWithTickets.length,
+      guideDetails: {
+        guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
+        guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
+        guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
+      },
+      tickets: {
+        participantAdults: validAdultTickets,
+        participantChildren: validChildTickets,
+        guideAdultTickets,
+        guideChildTickets,
+        totalGuideTickets: guideAdultTickets + guideChildTickets,
+      },
       guides: guidesWithTickets.map(g => ({
         name: g.guideName,
         type: g.guideType,
