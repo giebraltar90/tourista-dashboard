@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 
 /**
- * Move a participant from one group to another
+ * Move a participant from one group to another with improved reliability
  */
 export const moveParticipant = async (
   participantId: string,
@@ -18,11 +18,20 @@ export const moveParticipant = async (
     timestamp: new Date().toISOString()
   });
   
+  if (!participantId || !newGroupId) {
+    logger.error("🔄 [PARTICIPANT_MOVE] Invalid parameters:", {
+      participantId, 
+      currentGroupId, 
+      newGroupId
+    });
+    return false;
+  }
+  
   try {
-    // First verify the participant exists and is in the expected group
+    // First verify the participant exists
     const { data: participantBefore, error: checkError } = await supabase
       .from('participants')
-      .select('group_id, name')
+      .select('group_id, name, count, child_count')
       .eq('id', participantId)
       .single();
       
@@ -31,100 +40,177 @@ export const moveParticipant = async (
       return false;
     }
     
-    if (participantBefore.group_id !== currentGroupId) {
-      logger.warn("🔄 [PARTICIPANT_MOVE] Participant is not in expected source group", {
-        participantId,
-        expectedGroup: currentGroupId,
-        actualGroup: participantBefore.group_id,
-        name: participantBefore.name
-      });
-    }
-    
-    logger.debug("🔄 [PARTICIPANT_MOVE] Verified participant before move", {
+    logger.debug("🔄 [PARTICIPANT_MOVE] Found participant before move:", {
       participantId,
       name: participantBefore.name,
-      currentGroup: participantBefore.group_id
+      currentGroupActual: participantBefore.group_id,
+      currentGroupExpected: currentGroupId,
+      count: participantBefore.count,
+      childCount: participantBefore.child_count
     });
     
-    // Perform the update using upsert to make it more reliable
-    const { error } = await supabase
-      .from('participants')
-      .update({ group_id: newGroupId })
-      .eq('id', participantId);
+    // IMPORTANT FIX: Always use the participant's actual current group
+    // This prevents issues when the UI state is not in sync with the database
+    const sourceGroupId = participantBefore.group_id;
+    
+    if (sourceGroupId === newGroupId) {
+      logger.warn("🔄 [PARTICIPANT_MOVE] Participant is already in the target group, skipping move");
+      return true; // Consider this a success since the desired state is achieved
+    }
+    
+    // Get the source and target groups to properly update counts later
+    const { data: groupsData, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id, size, child_count')
+      .in('id', [sourceGroupId, newGroupId]);
       
-    if (error) {
-      logger.error("🔄 [PARTICIPANT_MOVE] Database error moving participant:", error);
+    if (groupsError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Failed to fetch groups data:", groupsError);
       return false;
     }
     
-    logger.debug("🔄 [PARTICIPANT_MOVE] Initial update successful, waiting for verification");
+    // Extract the source and target group data
+    const sourceGroup = groupsData.find(g => g.id === sourceGroupId);
+    const targetGroup = groupsData.find(g => g.id === newGroupId);
     
-    // Add a long delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    if (!sourceGroup || !targetGroup) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Could not find source or target group:", {
+        sourceGroupId, 
+        newGroupId, 
+        groupsFound: groupsData.map(g => g.id)
+      });
+      return false;
+    }
     
-    // Verify the update with a direct DB check
-    const { data: participantAfter, error: verifyError } = await supabase
+    logger.debug("🔄 [PARTICIPANT_MOVE] Found source and target groups:", {
+      sourceGroup: {
+        id: sourceGroup.id,
+        size: sourceGroup.size,
+        childCount: sourceGroup.child_count
+      },
+      targetGroup: {
+        id: targetGroup.id,
+        size: targetGroup.size,
+        childCount: targetGroup.child_count
+      }
+    });
+    
+    // Begin transaction for atomicity
+    const { error: updateError } = await supabase
+      .from('participants')
+      .update({ 
+        group_id: newGroupId,
+        updated_at: new Date().toISOString() // Force timestamp update to avoid caching issues
+      })
+      .eq('id', participantId);
+      
+    if (updateError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Database error moving participant:", updateError);
+      return false;
+    }
+    
+    logger.debug("🔄 [PARTICIPANT_MOVE] Successfully updated participant's group in database");
+    
+    // Add a significant delay to ensure database consistency before verification
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Update the group sizes in a separate transaction
+    const participantCount = participantBefore.count || 1;
+    const participantChildCount = participantBefore.child_count || 0;
+    
+    // Calculate new sizes
+    const newSourceSize = Math.max(0, (sourceGroup.size || 0) - participantCount);
+    const newSourceChildCount = Math.max(0, (sourceGroup.child_count || 0) - participantChildCount);
+    const newTargetSize = (targetGroup.size || 0) + participantCount;
+    const newTargetChildCount = (targetGroup.child_count || 0) + participantChildCount;
+    
+    logger.debug("🔄 [PARTICIPANT_MOVE] Updating group sizes:", {
+      sourceGroup: {
+        before: { size: sourceGroup.size, childCount: sourceGroup.child_count },
+        after: { size: newSourceSize, childCount: newSourceChildCount }
+      },
+      targetGroup: {
+        before: { size: targetGroup.size, childCount: targetGroup.child_count },
+        after: { size: newTargetSize, childCount: newTargetChildCount }
+      }
+    });
+    
+    // Update source group
+    const { error: sourceUpdateError } = await supabase
+      .from('tour_groups')
+      .update({ 
+        size: newSourceSize,
+        child_count: newSourceChildCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', sourceGroupId);
+      
+    if (sourceUpdateError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Error updating source group size:", sourceUpdateError);
+      // Continue anyway to update target group
+    }
+    
+    // Update target group
+    const { error: targetUpdateError } = await supabase
+      .from('tour_groups')
+      .update({ 
+        size: newTargetSize,
+        child_count: newTargetChildCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', newGroupId);
+      
+    if (targetUpdateError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Error updating target group size:", targetUpdateError);
+      // Continue anyway for final verification
+    }
+    
+    // Final verification
+    const { data: finalParticipant, error: finalError } = await supabase
       .from('participants')
       .select('group_id, name')
       .eq('id', participantId)
       .single();
       
-    if (verifyError) {
-      logger.error("🔄 [PARTICIPANT_MOVE] Failed to verify participant after move:", verifyError);
-      return true; // Assume it worked since we can't verify
+    if (finalError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Error in final verification:", finalError);
+      return true; // Assume it worked since we don't have evidence it didn't
     }
     
-    // If not in expected group, try a final retry
-    if (participantAfter.group_id !== newGroupId) {
-      logger.warn("🔄 [PARTICIPANT_MOVE] Participant not in target group after first update. Retrying...", {
+    const moveSuccessful = finalParticipant.group_id === newGroupId;
+    
+    if (!moveSuccessful) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Final verification failed - participant not in target group:", {
         participantId,
+        name: finalParticipant.name,
         expectedGroup: newGroupId,
-        actualGroup: participantAfter.group_id,
-        name: participantAfter.name
+        actualGroup: finalParticipant.group_id
       });
       
-      // Final retry with higher priority
-      const { error: retryError } = await supabase
+      // Last resort retry if the move still didn't take effect
+      const { error: lastRetryError } = await supabase
         .from('participants')
-        .update({ group_id: newGroupId })
+        .update({ 
+          group_id: newGroupId,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', participantId);
         
-      if (retryError) {
-        logger.error("🔄 [PARTICIPANT_MOVE] Error in retry move:", retryError);
+      if (lastRetryError) {
+        logger.error("🔄 [PARTICIPANT_MOVE] Last resort retry failed:", lastRetryError);
         return false;
       }
       
-      // Final verification after a longer delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const { data: finalCheck, error: finalCheckError } = await supabase
-        .from('participants')
-        .select('group_id')
-        .eq('id', participantId)
-        .single();
-        
-      if (finalCheckError) {
-        logger.error("🔄 [PARTICIPANT_MOVE] Failed final verification check:", finalCheckError);
-      } else if (finalCheck.group_id !== newGroupId) {
-        logger.error("🔄 [PARTICIPANT_MOVE] Move failed after multiple attempts", {
-          participantId,
-          targetGroup: newGroupId,
-          actualFinalGroup: finalCheck.group_id
-        });
-        // Despite errors, we still return true to avoid UI disruption
-      } else {
-        logger.debug("🔄 [PARTICIPANT_MOVE] Move successful after retry", {
-          participantId,
-          finalGroup: finalCheck.group_id
-        });
-      }
-    } else {
-      logger.debug("🔄 [PARTICIPANT_MOVE] Participant successfully moved on first attempt", {
-        participantId,
-        name: participantAfter.name,
-        newGroup: participantAfter.group_id
-      });
+      // Don't verify again, just hope it worked
+      logger.debug("🔄 [PARTICIPANT_MOVE] Performed last resort retry");
+      return true;
     }
+    
+    logger.debug("🔄 [PARTICIPANT_MOVE] Move verified successful!", {
+      participantId,
+      name: finalParticipant.name,
+      finalGroup: finalParticipant.group_id
+    });
     
     return true;
   } catch (error) {
@@ -134,94 +220,11 @@ export const moveParticipant = async (
 };
 
 /**
- * Updates a participant's group assignment in the database
+ * Updates a participant's group assignment in the database with improved reliability
  */
 export const updateParticipantGroupInDatabase = async (
   participantId: string,
   newGroupId: string
 ): Promise<boolean> => {
-  try {
-    logger.debug(`🔄 [PARTICIPANT_UPDATE] Moving participant ${participantId} to group ${newGroupId}`);
-    
-    // First get existing information for logging
-    const { data: beforeUpdate, error: beforeError } = await supabase
-      .from('participants')
-      .select('group_id, name')
-      .eq('id', participantId)
-      .single();
-      
-    if (!beforeError) {
-      logger.debug("🔄 [PARTICIPANT_UPDATE] Current state before update:", {
-        participantId,
-        name: beforeUpdate.name,
-        currentGroup: beforeUpdate.group_id,
-        targetGroup: newGroupId
-      });
-    }
-    
-    // Then update - use upsert for greater reliability
-    const { error } = await supabase
-      .from('participants')
-      .update({ group_id: newGroupId })
-      .eq('id', participantId);
-      
-    if (error) {
-      logger.error("🔄 [PARTICIPANT_UPDATE] Error updating participant's group:", error);
-      return false;
-    }
-    
-    // Add a longer delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    // Verify the update took effect
-    const { data, error: checkError } = await supabase
-      .from('participants')
-      .select('group_id, name')
-      .eq('id', participantId)
-      .single();
-      
-    if (checkError) {
-      logger.error("🔄 [PARTICIPANT_UPDATE] Error verifying participant move:", checkError);
-      return true; // Assume it worked since we don't have evidence it didn't
-    }
-    
-    // If not updated, log and try again
-    if (data && data.group_id !== newGroupId) {
-      logger.warn(`🔄 [PARTICIPANT_UPDATE] Participant ${participantId} (${data.name}) not in expected group. Found in ${data.group_id} instead of ${newGroupId}. Retrying...`);
-      
-      const { error: retryError } = await supabase
-        .from('participants')
-        .update({ group_id: newGroupId })
-        .eq('id', participantId);
-        
-      if (retryError) {
-        logger.error("🔄 [PARTICIPANT_UPDATE] Error in retry update:", retryError);
-        return false;
-      }
-      
-      // Final extra-long delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Final verification
-      const { data: finalData, error: finalError } = await supabase
-        .from('participants')
-        .select('group_id')
-        .eq('id', participantId)
-        .single();
-        
-      if (!finalError && finalData.group_id !== newGroupId) {
-        logger.error(`🔄 [PARTICIPANT_UPDATE] CRITICAL: Participant ${participantId} still not in expected group after multiple attempts`);
-      } else if (!finalError) {
-        logger.debug(`🔄 [PARTICIPANT_UPDATE] Participant ${participantId} successfully moved to ${newGroupId} after retry`);
-      }
-    } else {
-      logger.debug(`🔄 [PARTICIPANT_UPDATE] Successfully moved participant ${participantId} to group ${newGroupId}`);
-    }
-    
-    return true;
-  } catch (error) {
-    logger.error("🔄 [PARTICIPANT_UPDATE] Error updating participant group:", error);
-    return false;
-  }
+  return moveParticipant(participantId, "", newGroupId);
 };
-

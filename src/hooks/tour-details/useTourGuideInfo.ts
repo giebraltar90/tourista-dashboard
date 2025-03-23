@@ -200,15 +200,18 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       referenceCode: safeTour.referenceCode,
       guide1Info: guide1Info ? {
         name: guide1Info.name,
-        type: guide1Info.guideType
+        type: guide1Info.guideType,
+        id: guide1Info.id
       } : 'none',
       guide2Info: guide2Info ? {
         name: guide2Info.name,
-        type: guide2Info.guideType
+        type: guide2Info.guideType,
+        id: guide2Info.id
       } : 'none',
       guide3Info: guide3Info ? {
         name: guide3Info.name,
-        type: guide3Info.guideType
+        type: guide3Info.guideType,
+        id: guide3Info.id
       } : 'none',
     });
   }, [id, guide1Info, guide2Info, guide3Info, safeTour.referenceCode]);

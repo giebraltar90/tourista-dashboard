@@ -48,52 +48,39 @@ export const useParticipantMovement = (
         toGroup: toGroup.name,
         participantId: participant.id,
         fromGroupId: fromGroup.id,
-        toGroupId: toGroup.id
+        toGroupId: toGroup.id,
+        participantCount: participant.count || 1,
+        participantChildCount: participant.childCount || 0
       });
       
-      // First update the database - CRITICAL: Do this before state updates
-      const dbUpdateSuccess = await moveParticipant(participant.id, fromGroup.id, toGroup.id);
-      
-      if (!dbUpdateSuccess) {
-        toast.error("Failed to update participant's group in the database");
-        logger.error(`👤 [MOVE_PARTICIPANT] Database update failed for participant ${participant.id}`);
-        setIsMovePending(false);
-        return;
-      }
-      
-      logger.debug(`👤 [MOVE_PARTICIPANT] Database update completed, now updating UI`);
-      
-      // Clone the tourGroups to avoid state mutation
+      // First get a deep copy for optimistic updates
+      // This is critical to avoid mutating the original state
       const updatedGroups = JSON.parse(JSON.stringify(tourGroups));
       
-      // Start with actual group verification to ensure we have the correct current state
-      logger.debug(`👤 [MOVE_PARTICIPANT] Verifying participant current group before UI update`);
-      
+      // Immediately apply optimistic updates to UI for a smooth experience
       // Remove from the source group
       if (Array.isArray(updatedGroups[fromGroupIndex].participants)) {
         const initialLength = updatedGroups[fromGroupIndex].participants.length;
         updatedGroups[fromGroupIndex].participants = 
           updatedGroups[fromGroupIndex].participants.filter((p: any) => p.id !== participant.id);
         
-        logger.debug(`👤 [MOVE_PARTICIPANT] Removed participant from source group. Before: ${initialLength}, After: ${updatedGroups[fromGroupIndex].participants.length}`);
+        logger.debug(`👤 [MOVE_PARTICIPANT] Optimistic UI update - removed participant from source group. Before: ${initialLength}, After: ${updatedGroups[fromGroupIndex].participants.length}`);
       }
       
       // Then add to the destination group
       if (!Array.isArray(updatedGroups[toGroupIndex].participants)) {
         updatedGroups[toGroupIndex].participants = [];
-        logger.debug(`👤 [MOVE_PARTICIPANT] Created participants array for destination group`);
+        logger.debug(`👤 [MOVE_PARTICIPANT] Optimistic UI update - created participants array for destination group`);
       }
       
       // Update the participant's group_id to the new group
       const updatedParticipant = {...participant, group_id: toGroup.id};
       updatedGroups[toGroupIndex].participants.push(updatedParticipant);
       
-      logger.debug(`👤 [MOVE_PARTICIPANT] Added participant to destination group. New length: ${updatedGroups[toGroupIndex].participants.length}`);
+      logger.debug(`👤 [MOVE_PARTICIPANT] Optimistic UI update - added participant to destination group. New length: ${updatedGroups[toGroupIndex].participants.length}`);
       
-      // CRITICAL FIX: Recalculate all group sizes based on participants
+      // Recalculate all group sizes for UI consistency
       const recalculatedGroups = recalculateAllTourGroupSizes(updatedGroups);
-      
-      logger.debug(`👤 [MOVE_PARTICIPANT] Recalculated all group sizes after participant move`);
       
       // Cancel any in-flight queries to avoid race conditions
       await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
@@ -113,37 +100,66 @@ export const useParticipantMovement = (
       
       logger.debug(`👤 [MOVE_PARTICIPANT] Applied optimistic update to query cache`);
       
-      // Add delay to ensure UI reflects changes
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Now actually update the database - IMPORTANT: Do this AFTER UI updates
+      // This guarantees a responsive UI even if the database operation takes time
+      const dbUpdateSuccess = await moveParticipant(participant.id, fromGroup.id, toGroup.id);
       
-      // Call updateTourGroups to persist changes
+      if (!dbUpdateSuccess) {
+        toast.error("Failed to update participant's group in the database");
+        logger.error(`👤 [MOVE_PARTICIPANT] Database update failed for participant ${participant.id}`);
+        
+        // Revert optimistic update on error
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        setIsMovePending(false);
+        setSelectedParticipant(null);
+        return;
+      }
+      
+      logger.debug(`👤 [MOVE_PARTICIPANT] Database update completed successfully`);
+      
+      // Add delay to ensure UI reflects changes
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Persistent state update via the API
+      // This ensures that if the direct database update didn't persist correctly,
+      // we have a fallback that will update the state through the API
       updateTourGroups(recalculatedGroups, {
         onSuccess: () => {
           toast.success(`Moved ${participant.name || 'Participant'} to ${toGroup.name || `Group ${toGroupIndex + 1}`}`);
-          logger.debug(`👤 [MOVE_PARTICIPANT] Successfully persisted group changes to database`);
+          logger.debug(`👤 [MOVE_PARTICIPANT] Successfully persisted group changes through API`);
           
-          // Force a full refresh after a longer delay to ensure DB consistency
+          // Force a data refresh after all operations are complete
           setTimeout(() => {
             logger.debug(`👤 [MOVE_PARTICIPANT] Triggering final data refresh`);
             queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
           }, 2000);
         },
         onError: (error: any) => {
-          logger.error("👤 [MOVE_PARTICIPANT] Error updating tour groups:", error);
-          toast.error("Failed to save group changes");
+          logger.error("👤 [MOVE_PARTICIPANT] Error updating tour groups through API:", error);
+          // Only show error if we haven't already shown one
+          if (dbUpdateSuccess) {
+            toast.error("Failed to save all group changes");
+          }
           
           // Revert optimistic update on error
           queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        },
+        onSettled: () => {
+          // Always reset pending state when done
+          setIsMovePending(false);
+          setSelectedParticipant(null);
         }
       });
-      
-      // Reset selection regardless
-      setSelectedParticipant(null);
     } catch (error) {
       logger.error("👤 [MOVE_PARTICIPANT] Error moving participant:", error);
       toast.error("Failed to move participant");
-    } finally {
+      
+      // Reset state
       setIsMovePending(false);
+      setSelectedParticipant(null);
+      
+      // Force a refresh to get consistent state
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
     }
   }, [selectedParticipant, tourGroups, tourId, updateTourGroups, queryClient]);
 
