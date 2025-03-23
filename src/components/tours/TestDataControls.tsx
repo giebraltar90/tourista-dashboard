@@ -1,7 +1,6 @@
 
 import { Button } from "@/components/ui/button";
 import { Loader2, Bug } from "lucide-react";
-import { useState } from "react";
 import { useTestData } from "@/hooks/testData/useTestData";
 import { useDebugMode } from "@/contexts/DebugContext";
 import {
@@ -17,22 +16,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const TestDataControls = () => {
-  const { createTestTours, clearTestData } = useTestData();
-  const [isCreating, setIsCreating] = useState(false);
-  const [isClearing, setIsClearing] = useState(false);
+  const { createTestTours, clearTestData, isCreatingTestData, isClearingTestData } = useTestData();
   const debugMode = useDebugMode();
-  
-  const handleCreateTestData = async () => {
-    setIsCreating(true);
-    await createTestTours();
-    setIsCreating(false);
-  };
-  
-  const handleClearTestData = async () => {
-    setIsClearing(true);
-    await clearTestData();
-    setIsClearing(false);
-  };
   
   return (
     <div className="flex flex-col gap-3 mt-4">
@@ -46,10 +31,10 @@ export const TestDataControls = () => {
       <div className="flex gap-3 justify-end">
         <Button 
           variant="outline" 
-          onClick={handleCreateTestData}
-          disabled={isCreating || isClearing}
+          onClick={createTestTours}
+          disabled={isCreatingTestData || isClearingTestData}
         >
-          {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {isCreatingTestData && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Create Test Data
         </Button>
         
@@ -57,9 +42,9 @@ export const TestDataControls = () => {
           <AlertDialogTrigger asChild>
             <Button 
               variant="destructive" 
-              disabled={isCreating || isClearing}
+              disabled={isCreatingTestData || isClearingTestData}
             >
-              {isClearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isClearingTestData && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Clear Test Data
             </Button>
           </AlertDialogTrigger>
@@ -72,7 +57,7 @@ export const TestDataControls = () => {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleClearTestData}>
+              <AlertDialogAction onClick={clearTestData}>
                 Yes, Clear All Data
               </AlertDialogAction>
             </AlertDialogFooter>

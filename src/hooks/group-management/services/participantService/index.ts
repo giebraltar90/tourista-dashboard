@@ -21,6 +21,27 @@ export const formatParticipantCount = (totalCount: number, childCount: number = 
 };
 
 /**
+ * Calculates total participants across all groups
+ */
+export const calculateTotalParticipants = (groups: any[]): number => {
+  if (!Array.isArray(groups)) return 0;
+  
+  return groups.reduce((total, group) => {
+    // Use size property directly if available
+    if (typeof group.size === 'number') {
+      return total + group.size;
+    }
+    
+    // Otherwise try to calculate from participants
+    if (Array.isArray(group.participants)) {
+      return total + group.participants.reduce((sum, p) => sum + (p.count || 1), 0);
+    }
+    
+    return total;
+  }, 0);
+};
+
+/**
  * Validates a participant object
  */
 export const validateParticipant = (participant: any): boolean => {

@@ -9,18 +9,23 @@ import { createTestTourGroups } from "./createTourGroups";
 import { createTestModifications } from "./createModifications";
 import { createTestTickets } from "./createTickets";
 import { createTestParticipants } from "./createParticipants";
+import { logger } from "@/utils/logger";
+import { useState } from "react";
 
 /**
  * Hook for managing test data creation and clearing
  */
 export const useTestData = () => {
   const queryClient = useQueryClient();
+  const [isCreatingTestData, setIsCreatingTestData] = useState(false);
+  const [isClearingTestData, setIsClearingTestData] = useState(false);
 
   /**
    * Create comprehensive test data
    */
   const createTestTours = async () => {
     try {
+      setIsCreatingTestData(true);
       toast.info("Creating comprehensive test data...");
       
       // Step 1: Create test guides
@@ -28,6 +33,7 @@ export const useTestData = () => {
       
       if (!guides || guides.length === 0) {
         toast.error("Failed to create test guides");
+        setIsCreatingTestData(false);
         return false;
       }
       
@@ -42,6 +48,7 @@ export const useTestData = () => {
       
       if (!tours || tours.length === 0) {
         toast.error("Failed to create test tours");
+        setIsCreatingTestData(false);
         return false;
       }
       
@@ -50,6 +57,7 @@ export const useTestData = () => {
       
       if (!groups || groups.length === 0) {
         toast.error("Failed to create test tour groups");
+        setIsCreatingTestData(false);
         return false;
       }
       
@@ -60,7 +68,7 @@ export const useTestData = () => {
         toast.warning("Failed to create test participants");
         // Continue anyway, this is not critical
       } else {
-        console.log(`Created ${participants.length} test participants`);
+        logger.info(`Created ${participants.length} test participants`);
       }
       
       // Step 5: Create test tickets for the tours
@@ -77,9 +85,11 @@ export const useTestData = () => {
       toast.success(`Test data created successfully: ${tours.length} tours, ${groups.length} groups, ${participants?.length || 0} participants`);
       return true;
     } catch (error) {
-      console.error("Error creating test data:", error);
+      logger.error("Error creating test data:", error);
       toast.error("Failed to create test data");
       return false;
+    } finally {
+      setIsCreatingTestData(false);
     }
   };
   
@@ -88,24 +98,48 @@ export const useTestData = () => {
    */
   const clearTestData = async () => {
     try {
-      await clearAllTestData();
+      setIsClearingTestData(true);
+      logger.info("Starting to clear all test data...");
       
-      // Invalidate queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['tours'] });
-      queryClient.invalidateQueries({ queryKey: ['guides'] });
-      queryClient.invalidateQueries({ queryKey: ['participants'] });
+      // Show a loading toast
+      const toastId = toast.loading("Clearing test data...");
       
-      toast.success("Test data cleared successfully");
-      return true;
+      const result = await clearAllTestData();
+      
+      // Dismiss the loading toast
+      toast.dismiss(toastId);
+      
+      if (result) {
+        logger.info("Test data successfully cleared");
+        
+        // Force a full invalidation of all queries to refresh UI
+        queryClient.invalidateQueries();
+        
+        // Also reset the query cache to ensure completely fresh data
+        queryClient.resetQueries({ queryKey: ['tours'] });
+        queryClient.resetQueries({ queryKey: ['guides'] });
+        queryClient.resetQueries({ queryKey: ['participants'] });
+        
+        toast.success("Test data cleared successfully");
+        return true;
+      } else {
+        logger.error("Failed to clear test data");
+        toast.error("Failed to clear test data");
+        return false;
+      }
     } catch (error) {
-      console.error("Error clearing test data:", error);
+      logger.error("Error clearing test data:", error);
       toast.error("Failed to clear test data");
       return false;
+    } finally {
+      setIsClearingTestData(false);
     }
   };
   
   return {
     createTestTours,
-    clearTestData
+    clearTestData,
+    isCreatingTestData,
+    isClearingTestData
   };
 };
