@@ -38,24 +38,18 @@ export const TicketsCard = ({
       id: tourId, 
       tourGroups: tourGroups || [],
       // Add required fields for TourCardProps
-      date: "",
-      tourName: "",
-      tourType: "",
+      date: new Date(), // Using current date as default
+      tourName: "Tour",
+      tourType: "default",
       startTime: "",
       endTime: "",
-      capacity: 0,
-      status: "",
+      referenceCode: "",
       guide1: guide1Info?.name || ""
     },
     guide1Info,
     guide2Info,
     guide3Info
   );
-  
-  // Format ticket counts
-  const formattedAdultTickets = `${adultTickets}`;
-  const formattedChildTickets = `${childTickets}`;
-  const formattedTotalTickets = `${totalTickets}`;
   
   // Check if we have enough tickets
   const hasEnoughTickets = totalTickets >= requiredTickets;
@@ -74,8 +68,8 @@ export const TicketsCard = ({
       </CardHeader>
       <CardContent className="text-sm space-y-4">
         <ParticipantTicketsSection 
-          formattedAdultTickets={formattedAdultTickets} 
-          formattedChildTickets={formattedChildTickets}
+          validAdultTickets={adultTickets} 
+          validChildTickets={childTickets}
         />
         
         {locationNeedsGuideTickets && (
@@ -91,7 +85,7 @@ export const TicketsCard = ({
         
         <TotalTicketsSection 
           hasEnoughTickets={hasEnoughTickets} 
-          formattedTotalTickets={formattedTotalTickets}
+          formattedTotalTickets={`${totalTickets}`}
           requiredTickets={actualRequiredTickets} // Pass the required tickets value
         />
       </CardContent>
