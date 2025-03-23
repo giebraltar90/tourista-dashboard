@@ -31,6 +31,7 @@ export const GuideSelectionPopover = ({
 }: GuideSelectionPopoverProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [localSelectedGuide, setLocalSelectedGuide] = useState(selectedGuide);
+  const [isSelectInteracted, setIsSelectInteracted] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
@@ -50,17 +51,35 @@ export const GuideSelectionPopover = ({
       
       // Update local state first for immediate UI feedback
       setLocalSelectedGuide(guideId);
+      setIsSelectInteracted(true);
       
-      // Close the popover while assigning to prevent multiple selections
-      setIsOpen(false);
-      
-      // Call the parent handler to actually assign the guide
-      await onAssignGuide(guideId);
+      // Only close the popover if a real selection was made
+      if (guideId !== localSelectedGuide) {
+        setIsOpen(false);
+        
+        // Call the parent handler to actually assign the guide
+        await onAssignGuide(guideId);
+      }
     } catch (error) {
       console.error("Error in GuideSelectionPopover:", error);
       // Revert local state if there was an error
       setLocalSelectedGuide(selectedGuide);
     }
+  };
+
+  // Handle close without selection
+  const handleOpenChange = (open: boolean) => {
+    // If closing without making a selection, reset state
+    if (!open && !isSelectInteracted) {
+      setLocalSelectedGuide(selectedGuide);
+    }
+    
+    // Reset the interaction flag when closing
+    if (!open) {
+      setIsSelectInteracted(false);
+    }
+    
+    setIsOpen(open);
   };
 
   // Process guide options to ensure all have readable names
@@ -82,7 +101,7 @@ export const GuideSelectionPopover = ({
     : [];
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="outline" disabled={isAssigning}>
           {isAssigning ? (
@@ -104,6 +123,7 @@ export const GuideSelectionPopover = ({
             onValueChange={(value) => handleAssignGuide(value)}
             value={localSelectedGuide}
             disabled={isAssigning}
+            onOpenChange={() => setIsSelectInteracted(true)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select guide" />

@@ -43,7 +43,11 @@ export const TicketsCard = ({
       tourType: "default",
       startTime: "",
       referenceCode: "",
-      guide1: guide1Info?.name || ""
+      guide1: guide1Info?.name || "",
+      guide2: guide2Info?.name || "",
+      guide3: guide3Info?.name || "",
+      numTickets: totalTickets || 0,
+      isHighSeason: false
     },
     guide1Info,
     guide2Info,

@@ -1,3 +1,4 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
 import { GuideInfo } from "@/types/ventrata";
@@ -63,8 +64,18 @@ export const AssignGuideDialog = ({
     onOpenChange(false);
   };
 
+  // Ensure dialog can be closed properly
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // When closing, make sure we call the parent's onOpenChange
+      onOpenChange(false);
+    } else {
+      onOpenChange(true);
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Assign Guide to Group {groupIndex + 1}</DialogTitle>
