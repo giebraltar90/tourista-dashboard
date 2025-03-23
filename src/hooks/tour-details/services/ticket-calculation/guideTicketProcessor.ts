@@ -42,7 +42,8 @@ export const processGuideTicketRequirement = (
   logger.debug(`🎟️ [ProcessGuide] Processing guide ${guideName} (${guideKey}):`, {
     guideType: guideInfo.guideType,
     isAssigned,
-    assignedGuideIds: Array.from(assignedGuideIds)
+    assignedGuideIds: Array.from(assignedGuideIds),
+    location
   });
   
   // If guide is not assigned to any groups, no ticket needed
@@ -69,9 +70,6 @@ export const processGuideTicketRequirement = (
     };
   }
 
-  // Log guide type for debugging
-  logger.debug(`🎟️ [ProcessGuide] Checking ticket requirement for ${guideName} (${guideKey}) with type: ${guideInfo.guideType}`);
-  
   // Determine if guide needs a ticket based on type
   const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
   let ticketType = null;

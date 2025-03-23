@@ -5,20 +5,24 @@ interface ParticipantTicketsSectionProps {
 }
 
 export const ParticipantTicketsSection = ({ 
-  validAdultTickets,
+  validAdultTickets, 
   validChildTickets 
 }: ParticipantTicketsSectionProps) => {
   return (
-    <>
-      <div className="flex justify-between">
-        <span className="text-muted-foreground">Participant adult tickets:</span>
-        <span className="font-medium">{validAdultTickets}</span>
+    <div>
+      <div className="text-xs text-muted-foreground mb-1">
+        Participant Tickets
       </div>
       
-      <div className="flex justify-between">
-        <span className="text-muted-foreground">Participant child tickets:</span>
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Adult participants:</span>
+        <span className="font-medium">{validAdultTickets}</span>
+      </div>
+
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Child participants:</span>
         <span className="font-medium">{validChildTickets}</span>
       </div>
-    </>
+    </div>
   );
 };

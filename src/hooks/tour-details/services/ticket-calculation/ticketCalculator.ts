@@ -28,13 +28,7 @@ export const calculateGuideTicketsNeeded = (
   
   // Detailed logging of input data
   logger.debug(`🎟️ [CalculateTickets] Starting calculation with:`, {
-    tourGroups: validTourGroups.length,
-    groupDetails: validTourGroups.map(g => ({
-      id: g.id || 'unknown',
-      name: g.name || 'unnamed',
-      guideId: g.guideId || g.guide_id || 'none',
-      guideName: g.guideName || 'none'
-    })),
+    groupCount: validTourGroups.length,
     location,
     guide1: guide1Info ? {
       id: guide1Info.id || 'unknown',
@@ -55,7 +49,7 @@ export const calculateGuideTicketsNeeded = (
   
   // Find assigned guides and log results
   const assignedGuideIds = findAssignedGuides(validTourGroups, guide1Info, guide2Info, guide3Info);
-  logger.debug(`🎟️ [CalculateTickets] Found assigned guides: ${Array.from(assignedGuideIds).join(', ') || 'none'}`);
+  logger.debug(`🎟️ [CalculateTickets] Found ${assignedGuideIds.size} assigned guides: ${Array.from(assignedGuideIds).join(', ') || 'none'}`);
   
   if (assignedGuideIds.size === 0) {
     logger.debug(`🎟️ [CalculateTickets] No assigned guides found, returning zero tickets`);
