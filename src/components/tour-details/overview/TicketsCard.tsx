@@ -1,3 +1,4 @@
+
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useGuideTicketRequirements } from "@/hooks/tour-details/useGuideTicketRequirements";
@@ -34,7 +35,7 @@ export const TicketsCard = ({
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
   
-  // Use our new hook to determine guide requirements
+  // Create a simplified mock tour for the guide requirements hook
   const mockTour = {
     id: tourId,
     location: location || '',
@@ -51,6 +52,7 @@ export const TicketsCard = ({
     isHighSeason: false
   };
   
+  // Get guide ticket requirements
   const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
     mockTour, guide1Info, guide2Info, guide3Info
   );
@@ -61,58 +63,65 @@ export const TicketsCard = ({
     guides: guidesWithTickets
   } = guideTickets;
   
-  // Log ticket calculation for debugging
+  // Log detailed debug information for guide tickets
   useEffect(() => {
-    // First log the basic tour info
-    logger.debug(`🎟️ [TicketsCard] Tour ${tourId} ticket calculation:`, {
+    logger.debug(`🎟️ [TicketsCard] Tour ${tourId} ticket data:`, {
       location,
       locationNeedsGuideTickets,
       hasAssignedGuides,
-      validAdultTickets,
-      validChildTickets,
+      participantAdults: validAdultTickets,
+      participantChildren: validChildTickets,
       guideAdultTickets,
       guideChildTickets,
-      guidesCount: guidesWithTickets.length
+      totalGuideTickets: guideAdultTickets + guideChildTickets,
+      guidesCount: guidesWithTickets.length,
+      guides: guidesWithTickets.map(g => ({
+        name: g.guideName,
+        type: g.guideType,
+        ticketType: g.ticketType
+      })),
+      groupCount: Array.isArray(tourGroups) ? tourGroups.length : 0,
+      groupsWithGuides: Array.isArray(tourGroups) ? 
+        tourGroups.filter(g => g.guideId && g.guideId !== 'unassigned').length : 0
     });
     
-    // Then log detailed guide info
-    if (guide1Info) {
-      logger.debug(`🎟️ [TicketsCard] Guide1 info:`, {
+    // Log tour groups with assigned guides
+    if (Array.isArray(tourGroups) && tourGroups.length > 0) {
+      const groupsWithGuides = tourGroups.filter(g => g.guideId && g.guideId !== 'unassigned');
+      if (groupsWithGuides.length > 0) {
+        logger.debug(`🎟️ [TicketsCard] Groups with assigned guides:`, 
+          groupsWithGuides.map(g => ({
+            id: g.id,
+            name: g.name || 'Unnamed',
+            guideId: g.guideId,
+            guideName: g.guideName || 'Unknown'
+          }))
+        );
+      }
+    }
+    
+    // Log guides details
+    logger.debug(`🎟️ [TicketsCard] Available guides for ticket calculation:`, {
+      guide1: guide1Info ? {
         id: guide1Info.id,
         name: guide1Info.name,
-        type: guide1Info.guideType,
-        needsTicket: guidesWithTickets.some(g => g.guideName === guide1Info.name)
-      });
-    }
-    
-    if (guide2Info) {
-      logger.debug(`🎟️ [TicketsCard] Guide2 info:`, {
+        type: guide1Info.guideType
+      } : null,
+      guide2: guide2Info ? {
         id: guide2Info.id,
         name: guide2Info.name,
-        type: guide2Info.guideType,
-        needsTicket: guidesWithTickets.some(g => g.guideName === guide2Info.name)
-      });
-    }
-    
-    if (guide3Info) {
-      logger.debug(`🎟️ [TicketsCard] Guide3 info:`, {
+        type: guide2Info.guideType
+      } : null,
+      guide3: guide3Info ? {
         id: guide3Info.id,
         name: guide3Info.name,
-        type: guide3Info.guideType,
-        needsTicket: guidesWithTickets.some(g => g.guideName === guide3Info.name)
-      });
-    }
-    
-    // Log the guides who need tickets
-    if (guidesWithTickets.length > 0) {
-      logger.debug(`🎟️ [TicketsCard] Guides requiring tickets:`, 
-        guidesWithTickets.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType} ticket`)
-      );
-    }
+        type: guide3Info.guideType
+      } : null
+    });
   }, [
     tourId, location, locationNeedsGuideTickets, hasAssignedGuides, 
     validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets,
-    guide1Info, guide2Info, guide3Info, guidesWithTickets
+    guide1Info, guide2Info, guide3Info, guidesWithTickets, tourGroups
   ]);
   
   // Total required tickets calculations

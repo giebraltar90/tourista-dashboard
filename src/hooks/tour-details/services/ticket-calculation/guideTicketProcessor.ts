@@ -35,6 +35,13 @@ export const processGuideTicketRequirement = (
   // Check if this guide is assigned to any groups
   const isAssigned = assignedGuideIds.has(guideKey);
   
+  // Log guide details
+  logger.debug(`🎟️ [ProcessGuide] Processing guide ${guideName} (${guideKey}):`, {
+    guideType: guideInfo.guideType,
+    isAssigned,
+    assignedGuideIds: Array.from(assignedGuideIds)
+  });
+  
   // If guide is not assigned to any groups, no ticket needed
   if (!isAssigned) {
     logger.debug(`🎟️ [ProcessGuide] Guide ${guideName} (${guideKey}) is not assigned to any groups`);
@@ -58,7 +65,7 @@ export const processGuideTicketRequirement = (
   }
 
   // Log guide type for debugging
-  logger.debug(`🎟️ [ProcessGuide] Checking ticket requirement for ${guideName} with type: ${guideInfo.guideType}`);
+  logger.debug(`🎟️ [ProcessGuide] Checking ticket requirement for ${guideName} (${guideKey}) with type: ${guideInfo.guideType}`);
   
   // Determine if guide needs a ticket based on type
   const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
@@ -98,6 +105,16 @@ export const calculateGuideTickets = (
     ticketType: string | null;
   }>;
 } => {
+  // Log full guide requirements
+  logger.debug(`🎟️ [CalculateTickets] Processing ${guideRequirements.length} guides for tickets:`, 
+    guideRequirements.map(guide => ({
+      name: guide.guideName,
+      needsTicket: guide.needsTicket,
+      ticketType: guide.ticketType,
+      type: guide.guideInfo?.guideType || 'unknown'
+    }))
+  );
+
   // Count tickets by type
   let adultTickets = 0;
   let childTickets = 0;
@@ -123,6 +140,7 @@ export const calculateGuideTickets = (
   logger.debug(`🎟️ [CalculateTickets] Final guide ticket counts:`, {
     adultTickets,
     childTickets,
+    totalTickets: adultTickets + childTickets,
     guidesWithTickets: guidesWithTickets.length,
     guideDetails: guidesWithTickets.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
   });

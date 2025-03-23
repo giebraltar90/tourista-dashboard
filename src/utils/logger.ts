@@ -38,29 +38,54 @@ class Logger {
     this.debugEnabled = enabled || this.forceDebug;
   }
 
+  formatArgs(args: any[]): any[] {
+    if (args.length === 0) return args;
+    
+    // Extract the first argument if it's a string
+    if (typeof args[0] === 'string') {
+      const firstArg = args[0];
+      const restArgs = args.slice(1);
+      
+      // If we already have a prefix, don't add timestamp
+      if (firstArg.startsWith('🎟️') || 
+          firstArg.startsWith('🔍') || 
+          firstArg.startsWith('✅') || 
+          firstArg.startsWith('❌') ||
+          firstArg.startsWith('❓')) {
+        return [firstArg, ...restArgs];
+      }
+      
+      // Add timestamp to first arg if it's a string
+      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+      return [`[${timestamp}] ${firstArg}`, ...restArgs];
+    }
+    
+    return args;
+  }
+
   log(...args: any[]) {
     // Always show logs
-    this.originalConsole.log(...args);
+    this.originalConsole.log(...this.formatArgs(args));
   }
 
   info(...args: any[]) {
     // Always show info messages
-    this.originalConsole.info(...args);
+    this.originalConsole.info(...this.formatArgs(args));
   }
 
   warn(...args: any[]) {
     // Always show warnings
-    this.originalConsole.warn(...args);
+    this.originalConsole.warn(...this.formatArgs(args));
   }
 
   error(...args: any[]) {
     // Always show errors
-    this.originalConsole.error(...args);
+    this.originalConsole.error(...this.formatArgs(args));
   }
 
   debug(...args: any[]) {
     // Force debug logs for troubleshooting
-    this.originalConsole.debug(...args);
+    this.originalConsole.debug(...this.formatArgs(args));
   }
 }
 

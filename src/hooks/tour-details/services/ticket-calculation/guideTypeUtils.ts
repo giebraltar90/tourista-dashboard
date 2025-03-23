@@ -1,39 +1,87 @@
+import { logger } from "@/utils/logger";
 
 /**
- * Check if a guide's type indicates they need a ticket
+ * Determine if a guide needs a ticket based on their guide type
  */
 export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
-  // Normalize guide type to uppercase for consistent comparison
-  const guideTypeUpper = (guideType || "").toUpperCase();
+  // Normalize guide type by trimming and converting to lowercase
+  const normalizedType = guideType?.trim().toLowerCase() || "";
   
-  // GC guides never need tickets
-  if (guideTypeUpper === "GC") {
+  // Logging for debugging
+  logger.debug(`🎟️ [guideTypeNeedsTicket] Checking guide type "${guideType}"`);
+  
+  // Guide types that never need tickets
+  const noTicketTypes = ["gc", "gc guide", "guide coordinator"];
+  
+  // Guide types that always need tickets
+  const ticketTypes = [
+    "ga ticket", "ga tickets", "guide assistant",
+    "guide assistant ticket", "ticket guide"
+  ];
+  
+  // Check if guide type is in the no-ticket list
+  const isNoTicketType = noTicketTypes.some(type => 
+    normalizedType.includes(type)
+  );
+  
+  // Check if guide type is in the needs-ticket list
+  const isTicketType = ticketTypes.some(type => 
+    normalizedType.includes(type)
+  );
+  
+  // If explicitly no ticket, return false
+  if (isNoTicketType) {
+    logger.debug(`🎟️ [guideTypeNeedsTicket] Guide type "${guideType}" is explicitly NO ticket type (GC)`);
     return false;
   }
   
-  // All other guide types need tickets
-  return true;
+  // If explicitly ticket type, return true
+  if (isTicketType) {
+    logger.debug(`🎟️ [guideTypeNeedsTicket] Guide type "${guideType}" is explicitly ticket type (GA Ticket)`);
+    return true;
+  }
+  
+  // Default case: if contains "free" (case insensitive), it needs a ticket
+  // GA Free is a child ticket
+  const needsTicket = normalizedType.includes("free");
+  
+  logger.debug(`🎟️ [guideTypeNeedsTicket] Guide type "${guideType}" checked:`, {
+    normalizedType,
+    isNoTicketType,
+    isTicketType,
+    containsFree: normalizedType.includes("free"),
+    needsTicket
+  });
+  
+  return needsTicket;
 };
 
 /**
- * Determine the ticket type needed based on guide type
+ * Determine what type of ticket a guide needs (adult or child)
  */
 export const determineTicketTypeForGuide = (guideType: string = ""): "adult" | "child" | null => {
-  // Normalize guide type to uppercase for consistent comparison
-  const guideTypeUpper = (guideType || "").toUpperCase();
+  // Normalize guide type
+  const normalizedType = guideType?.trim().toLowerCase() || "";
   
-  // GC guides don't need tickets
-  if (guideTypeUpper === "GC") {
+  // Log the input for debugging
+  logger.debug(`🎟️ [determineTicketTypeForGuide] Determining ticket type for "${guideType}"`);
+  
+  // First check if guide needs ticket at all
+  if (!guideTypeNeedsTicket(guideType)) {
+    logger.debug(`🎟️ [determineTicketTypeForGuide] Guide type "${guideType}" doesn't need a ticket`);
     return null;
   }
   
-  // GA Free (under 26) guides need child tickets
-  if (guideTypeUpper.includes("FREE") || 
-      guideTypeUpper.includes("UNDER") || 
-      guideTypeUpper.includes("U26")) {
-    return "child";
-  }
+  // If type contains "free" (case insensitive), it's a child ticket
+  // Otherwise it's an adult ticket
+  const isChildTicket = normalizedType.includes("free");
+  const ticketType = isChildTicket ? "child" : "adult";
   
-  // GA Ticket (over 26) guides and others need adult tickets
-  return "adult";
+  logger.debug(`🎟️ [determineTicketTypeForGuide] Guide type "${guideType}" needs ${ticketType} ticket`, {
+    normalizedType,
+    isChildTicket,
+    ticketType
+  });
+  
+  return ticketType;
 };
