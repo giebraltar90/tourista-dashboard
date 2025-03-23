@@ -1,6 +1,4 @@
 
-import { Badge } from "@/components/ui/badge";
-
 interface GuideTicketsListProps {
   guides: Array<{
     guideName: string;

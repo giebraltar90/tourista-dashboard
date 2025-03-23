@@ -1,7 +1,6 @@
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
-import { GuideTicketsList } from "./GuideTicketsList";
 
 interface GuideWithTicket {
   guideName: string;
@@ -27,8 +26,7 @@ export const GuideTicketsSection = ({
     locationNeedsGuideTickets,
     guideAdultTickets,
     guideChildTickets,
-    guidesWithTicketsCount: guidesWithTickets.length,
-    guides: guidesWithTickets.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
+    guidesWithTicketsCount: guidesWithTickets.length
   });
   
   // Always display the section, even if there are no guide tickets
@@ -53,8 +51,6 @@ export const GuideTicketsSection = ({
               <span className="font-medium">{guideChildTickets}</span>
             </div>
           )}
-          
-          <GuideTicketsList guides={guidesWithTickets} />
         </>
       ) : (
         <div className="flex justify-between text-sm">
