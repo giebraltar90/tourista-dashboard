@@ -1,4 +1,3 @@
-
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils/ticketCalculation";
@@ -43,7 +42,7 @@ export const TicketsCard = ({
     tourGroups: tourGroups || [],
     date: new Date(),
     tourName: '',
-    tourType: '',
+    tourType: 'default' as 'default' | 'food' | 'private',
     startTime: '',
     referenceCode: '',
     guide1: '',

@@ -3,6 +3,57 @@ import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
 
 /**
+ * Check if a location requires guide tickets
+ */
+export const locationRequiresGuideTickets = (location: string = ""): boolean => {
+  // Normalize location to lowercase for case-insensitive comparison
+  const locationLower = (location || '').toLowerCase().trim();
+  
+  return locationLower.includes('versailles') || 
+         locationLower.includes('versaille') || // Common misspelling
+         locationLower.includes('montmartre');
+};
+
+/**
+ * Check if a guide's type indicates they need a ticket
+ */
+export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
+  // Normalize guide type to uppercase for consistent comparison
+  const guideTypeUpper = (guideType || "").toUpperCase();
+  
+  // GC guides never need tickets
+  if (guideTypeUpper === "GC") {
+    return false;
+  }
+  
+  // All other guide types need tickets
+  return true;
+};
+
+/**
+ * Determine the ticket type needed based on guide type
+ */
+export const determineTicketTypeForGuide = (guideType: string = ""): "adult" | "child" | null => {
+  // Normalize guide type to uppercase for consistent comparison
+  const guideTypeUpper = (guideType || "").toUpperCase();
+  
+  // GC guides don't need tickets
+  if (guideTypeUpper === "GC") {
+    return null;
+  }
+  
+  // GA Free (under 26) guides need child tickets
+  if (guideTypeUpper.includes("FREE") || 
+      guideTypeUpper.includes("UNDER") || 
+      guideTypeUpper.includes("U26")) {
+    return "child";
+  }
+  
+  // GA Ticket (over 26) guides and others need adult tickets
+  return "adult";
+};
+
+/**
  * Determine what ticket type a guide needs based on their guide type
  */
 export const getGuideTicketRequirement = (
@@ -21,43 +72,105 @@ export const getGuideTicketRequirement = (
     guideId: guideInfo.id || 'unknown',
     location
   });
-
-  // Normalize location to lowercase for case-insensitive comparison
-  const locationLower = (location || '').toLowerCase().trim();
   
-  // Check if location requires tickets (only Versailles and Montmartre need tickets)
-  if (!locationLower || 
-      (!locationLower.includes('versailles') && 
-       !locationLower.includes('versaille') && 
-       !locationLower.includes('montmartre'))) {
+  // Check if location requires tickets
+  if (!locationRequiresGuideTickets(location)) {
     logger.debug(`🎟️ [TicketRequirement] Location "${location}" doesn't require guide tickets`);
     return { needsTicket: false, ticketType: null };
   }
 
-  // Normalize guide type to uppercase for consistent comparison
-  const guideType = (guideInfo.guideType || "").toUpperCase();
-
-  // GC guides never need tickets
-  if (guideType === "GC") {
-    logger.debug(`🎟️ [TicketRequirement] Guide ${guideInfo.name} is GC, no ticket needed`);
-    return { needsTicket: false, ticketType: null };
-  } 
+  // Determine if guide needs a ticket based on type
+  const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
+  const ticketType = determineTicketTypeForGuide(guideInfo.guideType);
   
-  // GA Free (under 26) guides need child tickets
-  else if (guideType.includes("FREE") || guideType.includes("UNDER") || guideType.includes("U26")) {
-    logger.debug(`🎟️ [TicketRequirement] Guide ${guideInfo.name} is FREE (under 26), needs child ticket`);
-    return { needsTicket: true, ticketType: "child" };
-  } 
-  
-  // GA Ticket (over 26) guides need adult tickets
-  else if (guideType.includes("TICKET") || guideType.includes("GA ") || guideType.includes("ADULT")) {
-    logger.debug(`🎟️ [TicketRequirement] Guide ${guideInfo.name} is TICKET (over 26), needs adult ticket`);
-    return { needsTicket: true, ticketType: "adult" };
+  // Log the result
+  if (needsTicket) {
+    logger.debug(`🎟️ [TicketRequirement] Guide ${guideInfo.name} needs a ${ticketType} ticket`);
+  } else {
+    logger.debug(`🎟️ [TicketRequirement] Guide ${guideInfo.name} doesn't need a ticket`);
   }
   
-  // Default: Unknown guide types assume adult ticket
-  logger.debug(`🎟️ [TicketRequirement] Guide ${guideInfo.name} has unknown type (${guideType}), defaulting to adult ticket`);
-  return { needsTicket: true, ticketType: "adult" };
+  return { needsTicket, ticketType };
+};
+
+/**
+ * Find which guides are assigned to groups
+ */
+export const findAssignedGuides = (
+  tourGroups: any[] = [],
+  guide1Info: GuideInfo | null,
+  guide2Info: GuideInfo | null,
+  guide3Info: GuideInfo | null
+): Set<string> => {
+  const assignedGuideIds = new Set<string>();
+  
+  tourGroups.forEach(group => {
+    if (group.guideId && group.guideId !== "unassigned") {
+      // Check if this guide matches one of our main guides
+      if (guide1Info && (group.guideId === guide1Info.id || group.guideId === guide1Info.name || group.guideId === "guide1")) {
+        assignedGuideIds.add("guide1");
+        logger.debug(`🎟️ [FindAssignedGuides] Found guide1 assigned to group ${group.name || 'Unnamed'}`);
+      }
+      else if (guide2Info && (group.guideId === guide2Info.id || group.guideId === guide2Info.name || group.guideId === "guide2")) {
+        assignedGuideIds.add("guide2");
+        logger.debug(`🎟️ [FindAssignedGuides] Found guide2 assigned to group ${group.name || 'Unnamed'}`);
+      }
+      else if (guide3Info && (group.guideId === guide3Info.id || group.guideId === guide3Info.name || group.guideId === "guide3")) {
+        assignedGuideIds.add("guide3");
+        logger.debug(`🎟️ [FindAssignedGuides] Found guide3 assigned to group ${group.name || 'Unnamed'}`);
+      }
+    }
+  });
+  
+  return assignedGuideIds;
+};
+
+/**
+ * Process a single guide's ticket requirements
+ */
+export const processGuideTicketRequirement = (
+  guideInfo: GuideInfo | null,
+  location: string,
+  assignedGuideIds: Set<string>,
+  guideKey: string
+): { 
+  needsTicket: boolean; 
+  ticketType: "adult" | "child" | null;
+  guideDetails: { guideName: string; guideType: string; ticketType: string | null } | null;
+} => {
+  // Skip if guide info is missing or guide is not assigned
+  if (!guideInfo || !assignedGuideIds.has(guideKey)) {
+    return { needsTicket: false, ticketType: null, guideDetails: null };
+  }
+  
+  logger.debug(`🎟️ [ProcessGuide] Processing assigned ${guideKey} (${guideInfo.name})`);
+  
+  const { needsTicket, ticketType } = getGuideTicketRequirement(guideInfo, location);
+  
+  if (!needsTicket) {
+    logger.debug(`🎟️ [ProcessGuide] ${guideKey} doesn't need a ticket`);
+    return { 
+      needsTicket: false, 
+      ticketType: null,
+      guideDetails: {
+        guideName: guideInfo.name || `Guide ${guideKey.replace('guide', '')}`,
+        guideType: String(guideInfo.guideType) || "Unknown",
+        ticketType: null
+      }
+    };
+  }
+  
+  logger.debug(`🎟️ [ProcessGuide] ${guideKey} needs a ${ticketType} ticket`);
+  
+  return {
+    needsTicket,
+    ticketType,
+    guideDetails: {
+      guideName: guideInfo.name || `Guide ${guideKey.replace('guide', '')}`,
+      guideType: String(guideInfo.guideType) || "Unknown",
+      ticketType
+    }
+  };
 };
 
 /**
@@ -74,115 +187,38 @@ export const calculateGuideTicketsNeeded = (
   let childTickets = 0;
   const guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> = [];
   
-  // Normalize location to lowercase for case-insensitive comparison
-  const locationLower = (location || '').toLowerCase().trim();
-  
-  logger.debug("🎟️ [CalculateTickets] Starting guide ticket calculation", {
-    tourId: tourGroups[0]?.tourId || 'unknown',
-    guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'null',
-    guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
-    guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
-    location,
-    locationLower,
-    tourGroupsCount: tourGroups?.length || 0
-  });
-
   // Skip ticket calculation if location doesn't require tickets
-  if (!locationLower || 
-      (!locationLower.includes('versailles') && 
-       !locationLower.includes('versaille') && 
-       !locationLower.includes('montmartre'))) {
+  if (!locationRequiresGuideTickets(location)) {
     logger.debug(`🎟️ [CalculateTickets] Location "${location}" doesn't require guide tickets`);
     return { adultTickets: 0, childTickets: 0, guides: [] };
   }
   
-  // IMPORTANT: Find which guides are actually assigned to groups
-  const assignedGuideIds = new Set<string>();
-  
-  tourGroups.forEach(group => {
-    if (group.guideId && group.guideId !== "unassigned") {
-      // Check if this guide matches one of our main guides
-      if (guide1Info && (group.guideId === guide1Info.id || group.guideId === guide1Info.name || group.guideId === "guide1")) {
-        assignedGuideIds.add("guide1");
-        logger.debug(`🎟️ [CalculateTickets] Found guide1 assigned to group ${group.name || 'Unnamed'}`);
-      }
-      else if (guide2Info && (group.guideId === guide2Info.id || group.guideId === guide2Info.name || group.guideId === "guide2")) {
-        assignedGuideIds.add("guide2");
-        logger.debug(`🎟️ [CalculateTickets] Found guide2 assigned to group ${group.name || 'Unnamed'}`);
-      }
-      else if (guide3Info && (group.guideId === guide3Info.id || group.guideId === guide3Info.name || group.guideId === "guide3")) {
-        assignedGuideIds.add("guide3");
-        logger.debug(`🎟️ [CalculateTickets] Found guide3 assigned to group ${group.name || 'Unnamed'}`);
-      }
-    }
-  });
-  
+  // Find assigned guides
+  const assignedGuideIds = findAssignedGuides(tourGroups, guide1Info, guide2Info, guide3Info);
   logger.debug(`🎟️ [CalculateTickets] Found assigned guides: ${Array.from(assignedGuideIds).join(', ') || 'none'}`);
   
-  // Process guide1 - only if actually assigned
-  if (guide1Info && assignedGuideIds.has("guide1")) {
-    logger.debug(`🎟️ [CalculateTickets] Processing assigned guide1 (${guide1Info.name})`);
-    
-    const { needsTicket, ticketType } = getGuideTicketRequirement(guide1Info, location);
-    
-    if (needsTicket) {
-      if (ticketType === "adult") adultTickets++;
-      if (ticketType === "child") childTickets++;
-      
-      guides.push({
-        guideName: guide1Info.name || "Guide 1",
-        guideType: String(guide1Info.guideType) || "Unknown",
-        ticketType
-      });
-      
-      logger.debug(`🎟️ [CalculateTickets] Guide1 needs a ${ticketType} ticket`);
-    } else {
-      logger.debug(`🎟️ [CalculateTickets] Guide1 doesn't need a ticket`);
-    }
+  // Process guide1
+  const guide1Result = processGuideTicketRequirement(guide1Info, location, assignedGuideIds, "guide1");
+  if (guide1Result.needsTicket) {
+    if (guide1Result.ticketType === "adult") adultTickets++;
+    if (guide1Result.ticketType === "child") childTickets++;
+    if (guide1Result.guideDetails) guides.push(guide1Result.guideDetails);
   }
   
-  // Process guide2 - only if actually assigned
-  if (guide2Info && assignedGuideIds.has("guide2")) {
-    logger.debug(`🎟️ [CalculateTickets] Processing assigned guide2 (${guide2Info.name})`);
-    
-    const { needsTicket, ticketType } = getGuideTicketRequirement(guide2Info, location);
-    
-    if (needsTicket) {
-      if (ticketType === "adult") adultTickets++;
-      if (ticketType === "child") childTickets++;
-      
-      guides.push({
-        guideName: guide2Info.name || "Guide 2",
-        guideType: String(guide2Info.guideType) || "Unknown",
-        ticketType
-      });
-      
-      logger.debug(`🎟️ [CalculateTickets] Guide2 needs a ${ticketType} ticket`);
-    } else {
-      logger.debug(`🎟️ [CalculateTickets] Guide2 doesn't need a ticket`);
-    }
+  // Process guide2
+  const guide2Result = processGuideTicketRequirement(guide2Info, location, assignedGuideIds, "guide2");
+  if (guide2Result.needsTicket) {
+    if (guide2Result.ticketType === "adult") adultTickets++;
+    if (guide2Result.ticketType === "child") childTickets++;
+    if (guide2Result.guideDetails) guides.push(guide2Result.guideDetails);
   }
   
-  // Process guide3 - only if actually assigned
-  if (guide3Info && assignedGuideIds.has("guide3")) {
-    logger.debug(`🎟️ [CalculateTickets] Processing assigned guide3 (${guide3Info.name})`);
-    
-    const { needsTicket, ticketType } = getGuideTicketRequirement(guide3Info, location);
-    
-    if (needsTicket) {
-      if (ticketType === "adult") adultTickets++;
-      if (ticketType === "child") childTickets++;
-      
-      guides.push({
-        guideName: guide3Info.name || "Guide 3",
-        guideType: String(guide3Info.guideType) || "Unknown",
-        ticketType
-      });
-      
-      logger.debug(`🎟️ [CalculateTickets] Guide3 needs a ${ticketType} ticket`);
-    } else {
-      logger.debug(`🎟️ [CalculateTickets] Guide3 doesn't need a ticket`);
-    }
+  // Process guide3
+  const guide3Result = processGuideTicketRequirement(guide3Info, location, assignedGuideIds, "guide3");
+  if (guide3Result.needsTicket) {
+    if (guide3Result.ticketType === "adult") adultTickets++;
+    if (guide3Result.ticketType === "child") childTickets++;
+    if (guide3Result.guideDetails) guides.push(guide3Result.guideDetails);
   }
 
   // Final count check
