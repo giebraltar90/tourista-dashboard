@@ -85,4 +85,3 @@ export const validateParticipantMove = (
   // If validation passes
   return { valid: true };
 };
-

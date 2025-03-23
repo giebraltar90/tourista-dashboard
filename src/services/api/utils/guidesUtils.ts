@@ -125,4 +125,3 @@ export const formatGuideId = (id: string | undefined): string => {
   }
   return id;
 };
-

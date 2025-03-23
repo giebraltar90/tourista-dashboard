@@ -81,4 +81,3 @@ export const enrichToursWithGuideNames = async (tours) => {
     return enrichedTour;
   });
 };
-

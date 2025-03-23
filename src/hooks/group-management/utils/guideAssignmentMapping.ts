@@ -71,4 +71,3 @@ export const mapGuideIdToUuid = (
   console.error(`Could not map guide ID "${guideId}" to a valid UUID`);
   return null;
 };
-
