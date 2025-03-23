@@ -6,7 +6,6 @@ import { TourOverview } from "./TourOverview";
 import { TicketsManagement } from "./ticket-management";
 import { ModificationsTab } from "./ModificationsTab";
 import { GuideInfo } from "@/types/ventrata";
-import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 import { memo, useMemo } from "react";
 
 export interface NormalizedTourContentProps {
@@ -40,10 +39,6 @@ export const NormalizedTourContent = memo(({
       </div>
     );
   }
-
-  // Ensure tourGroups is an array before passing to useParticipantCounts
-  const tourGroups = tour.tourGroups || [];
-  const participantCounts = useParticipantCounts(tourGroups);
   
   // Memoize the active content to prevent unnecessary re-renders
   const activeContent = useMemo(() => {
@@ -52,7 +47,6 @@ export const NormalizedTourContent = memo(({
         return (
           <TourOverview 
             tour={tour} 
-            participantCounts={participantCounts}
             guide1Info={guide1Info}
             guide2Info={guide2Info}
             guide3Info={guide3Info}
@@ -78,14 +72,13 @@ export const NormalizedTourContent = memo(({
         return (
           <TourOverview 
             tour={tour} 
-            participantCounts={participantCounts}
             guide1Info={guide1Info}
             guide2Info={guide2Info}
             guide3Info={guide3Info}
           />
         );
     }
-  }, [activeTab, tour, tourId, guide1Info, guide2Info, guide3Info, participantCounts]);
+  }, [activeTab, tour, tourId, guide1Info, guide2Info, guide3Info]);
   
   return (
     <div className="container mx-auto py-6 space-y-8">
