@@ -5,7 +5,7 @@ export * from './useAssignGuide';
 export * from './useDeleteGroup';
 export * from './useDropTarget';
 export * from './useGroupManagement';
-export * from './useGuideAssignmentForm';
+export * from './guide-assignment/useGuideAssignmentForm';
 export * from './useGuideNameInfo';
 export * from './useParticipantLoading';
 export * from './useParticipantMovement';
