@@ -17,16 +17,27 @@ export const InformationCardsSection = ({
   participantCounts, 
   isHighSeason 
 }: InformationCardsSectionProps) => {
+  // Ensure we get the correct values from participantCounts
+  const { 
+    totalParticipants,
+    adultCount,
+    childCount,
+    totalTickets,
+    totalTicketsNeeded,
+    adultTickets,
+    childTickets
+  } = participantCounts;
+
   return (
     <div>
       <h3 className="text-lg font-semibold mb-4">Tour Overview</h3>
       <InfoCardsGrid 
         tour={tour}
         isHighSeason={isHighSeason}
-        adultTickets={participantCounts.adultTickets}
-        childTickets={participantCounts.childTickets}
-        totalTickets={participantCounts.totalTickets}
-        requiredTickets={participantCounts.totalTicketsNeeded}
+        adultTickets={adultTickets}
+        childTickets={childTickets}
+        totalTickets={totalTickets}
+        requiredTickets={totalTicketsNeeded}
         location={tour.location}
       />
     </div>

@@ -4,11 +4,10 @@ import { TourGroupsSection } from "./overview/TourGroupsSection";
 import { InformationCardsSection } from "./overview/InformationCardsSection";
 import { GroupsManagement } from "./groups-management";
 import { GuideInfo } from "@/types/ventrata";
-import { ParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
+import { useParticipantCountsSync } from "@/hooks/tour-details/useParticipantCountsSync";
 
 interface TourOverviewProps {
   tour: TourCardProps;
-  participantCounts: ParticipantCounts;
   guide1Info?: GuideInfo | null;
   guide2Info?: GuideInfo | null;
   guide3Info?: GuideInfo | null;
@@ -16,7 +15,6 @@ interface TourOverviewProps {
 
 export const TourOverview = ({ 
   tour,
-  participantCounts, 
   guide1Info,
   guide2Info,
   guide3Info
@@ -26,6 +24,9 @@ export const TourOverview = ({
   
   // Safely access tourGroups with a fallback
   const tourGroups = tour?.tourGroups || [];
+
+  // Use synced participant counts for consistent display
+  const participantCounts = useParticipantCountsSync(tourGroups);
 
   // Guard against undefined tour
   if (!tour) {
