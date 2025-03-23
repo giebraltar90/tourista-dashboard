@@ -31,8 +31,10 @@ export const AddModificationDialog = ({ isOpen, setIsOpen, tourId }: AddModifica
     try {
       await addModification({
         description,
-        status,
-        details: { source: "user_input" }
+        details: { 
+          source: "user_input",
+          status: status // Include status inside details instead
+        }
       });
       
       setDescription("");
