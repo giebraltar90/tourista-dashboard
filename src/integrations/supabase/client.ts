@@ -21,11 +21,42 @@ export const supabase = createSupabaseClient(
 // Add a helper for checking database connection
 export const checkDatabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.from('tours').select('id').limit(1);
-    return { connected: !error, error: error?.message };
+    // Try accessing a table that we know should exist
+    const { data, error } = await supabase
+      .from('tours')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Database connection check failed (query error):", error);
+      return { 
+        connected: false, 
+        error: error.message,
+        errorCode: error.code,
+        hint: 'Check your network connection and Supabase configuration'
+      };
+    }
+    
+    // Now check if the newly recreated bucket_tour_assignments table exists
+    const { error: assignmentError } = await supabase
+      .from('bucket_tour_assignments')
+      .select('id')
+      .limit(1);
+      
+    if (assignmentError && !assignmentError.message.includes('relation "bucket_tour_assignments" does not exist')) {
+      console.warn("Bucket assignment table check failed:", assignmentError);
+    }
+    
+    return { connected: true, error: null };
   } catch (err) {
-    console.error("Database connection check failed:", err);
-    return { connected: false, error: err instanceof Error ? err.message : 'Unknown connection error' };
+    console.error("Database connection check failed (exception):", err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown connection error';
+    return { 
+      connected: false, 
+      error: errorMessage,
+      hint: 'An unexpected error occurred while connecting to the database'
+    };
   }
 };
 

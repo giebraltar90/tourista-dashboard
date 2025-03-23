@@ -33,6 +33,54 @@ export type Database = {
         }
         Relationships: []
       }
+      bucket_tour_assignments: {
+        Row: {
+          access_time: string | null
+          bucket_id: string | null
+          bucket_type: string | null
+          created_at: string | null
+          date: string | null
+          id: string
+          reference_number: string | null
+          tickets_ordered: number | null
+          tickets_required: number | null
+          tour_id: string | null
+          tour_name: string | null
+          tour_reference: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_time?: string | null
+          bucket_id?: string | null
+          bucket_type?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          reference_number?: string | null
+          tickets_ordered?: number | null
+          tickets_required?: number | null
+          tour_id?: string | null
+          tour_name?: string | null
+          tour_reference?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_time?: string | null
+          bucket_id?: string | null
+          bucket_type?: string | null
+          created_at?: string | null
+          date?: string | null
+          id?: string
+          reference_number?: string | null
+          tickets_ordered?: number | null
+          tickets_required?: number | null
+          tour_id?: string | null
+          tour_name?: string | null
+          tour_reference?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       guides: {
         Row: {
           birthday: string | null
@@ -401,21 +449,7 @@ export type Database = {
       }
     }
     Views: {
-      bucket_tour_assignments: {
-        Row: {
-          access_time: string | null
-          bucket_id: string | null
-          bucket_type: string | null
-          date: string | null
-          reference_number: string | null
-          tickets_ordered: number | null
-          tickets_required: number | null
-          tour_id: string | null
-          tour_name: string | null
-          tour_reference: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_table_exists: {
