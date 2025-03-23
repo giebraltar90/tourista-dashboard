@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { GuideInfo } from '@/types/ventrata';
@@ -11,9 +10,26 @@ interface UseTourGuideInfoResult {
   tourWithGuideIds: TourCardProps;
 }
 
-export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult => {
-  // Extract relevant data from tour
-  const { id, guide1, guide2, guide3, tourGroups = [] } = tour || {};
+export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoResult => {
+  // Ensure tour is not null and provide fallback values
+  const safeTour = tour || {
+    id: '',
+    date: new Date(),
+    location: '',
+    tourName: '',
+    tourType: 'default',
+    startTime: '',
+    referenceCode: '',
+    guide1: '',
+    guide2: '',
+    guide3: '',
+    tourGroups: [],
+    numTickets: 0,
+    isHighSeason: false
+  };
+  
+  // Extract relevant data from tour with null safety
+  const { id, guide1, guide2, guide3, tourGroups = [] } = safeTour;
   
   console.log("🔄 [useTourGuideInfo] Starting with tour:", {
     id,
@@ -24,15 +40,15 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
   });
   
   // Direct hook calls to get guide info
-  const rawGuide1Info = useGuideInfo(guide1);
-  const rawGuide2Info = useGuideInfo(guide2);
-  const rawGuide3Info = useGuideInfo(guide3);
+  const rawGuide1Info = useGuideInfo(guide1 || '');
+  const rawGuide2Info = useGuideInfo(guide2 || '');
+  const rawGuide3Info = useGuideInfo(guide3 || '');
   
   // Keep track of processed guide info
   const [guide1Info, setGuide1Info] = useState<GuideInfo | null>(null);
   const [guide2Info, setGuide2Info] = useState<GuideInfo | null>(null);
   const [guide3Info, setGuide3Info] = useState<GuideInfo | null>(null);
-  const [tourWithGuideIds, setTourWithGuideIds] = useState<TourCardProps>(tour);
+  const [tourWithGuideIds, setTourWithGuideIds] = useState<TourCardProps>(safeTour);
   
   // Helper to check if a guide is Sophie Miller
   const isSophieMiller = (name: string = ''): boolean => {
@@ -94,7 +110,7 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
     setGuide3Info(processedGuide3Info);
     
     // Map guide UUIDs to guide1, guide2, guide3 in tourGroups for easier reference
-    if (tourGroups?.length) {
+    if (Array.isArray(tourGroups) && tourGroups.length > 0) {
       const updatedGroups = tourGroups.map(group => {
         let mappedGuideId = group.guideId;
         
@@ -120,13 +136,13 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
       });
       
       setTourWithGuideIds({
-        ...tour,
+        ...safeTour,
         tourGroups: updatedGroups
       });
     } else {
-      setTourWithGuideIds(tour);
+      setTourWithGuideIds(safeTour);
     }
-  }, [id, rawGuide1Info, rawGuide2Info, rawGuide3Info, guide1, guide2, guide3, tour, tourGroups]);
+  }, [id, rawGuide1Info, rawGuide2Info, rawGuide3Info, guide1, guide2, guide3, safeTour, tourGroups]);
   
   console.log("🔄 [useTourGuideInfo] Returning processed guide info:", {
     guide1Info: guide1Info ? {

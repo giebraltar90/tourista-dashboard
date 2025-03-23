@@ -45,10 +45,14 @@ const TourDetailsPage = () => {
       });
     } else if (error) {
       console.error("🚀 [TourDetailsPage] Error loading tour:", error);
+    } else if (isLoading) {
+      console.log("🚀 [TourDetailsPage] Loading tour data...");
+    } else {
+      console.log("🚀 [TourDetailsPage] No tour data available yet");
     }
-  }, [tour, error]);
+  }, [tour, error, isLoading]);
   
-  // Custom hook for guide information
+  // Custom hook for guide information - safely pass tour
   const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
   
   // Listen for refresh-participants event
