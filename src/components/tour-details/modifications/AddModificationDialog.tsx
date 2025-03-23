@@ -30,7 +30,6 @@ export const AddModificationDialog = ({ isOpen, setIsOpen, tourId }: AddModifica
     
     try {
       await addModification({
-        tourId,
         description,
         status,
         details: { source: "user_input" }

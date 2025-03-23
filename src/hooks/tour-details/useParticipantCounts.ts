@@ -8,6 +8,12 @@ export interface ParticipantCounts {
   childCount: number;
   totalGroups: number;
   groupsWithGuides: number;
+  // Add missing properties used in other components
+  adultTickets: number;
+  childTickets: number;
+  totalTickets: number;
+  totalTicketsNeeded: number;
+  totalChildCount: number;
 }
 
 export const useParticipantCounts = (tourGroups: VentrataTourGroup[]): ParticipantCounts => {
@@ -16,7 +22,13 @@ export const useParticipantCounts = (tourGroups: VentrataTourGroup[]): Participa
     adultCount: 0,
     childCount: 0,
     totalGroups: 0,
-    groupsWithGuides: 0
+    groupsWithGuides: 0,
+    // Initialize new properties
+    adultTickets: 0,
+    childTickets: 0,
+    totalTickets: 0,
+    totalTicketsNeeded: 0,
+    totalChildCount: 0
   });
 
   useEffect(() => {
@@ -66,12 +78,19 @@ export const useParticipantCounts = (tourGroups: VentrataTourGroup[]): Participa
     // Calculate adult count (total - children)
     const adultCount = Math.max(0, totalParticipants - childCount);
 
+    // Set all counts including the new properties
     setCounts({
       totalParticipants,
       adultCount,
       childCount,
       totalGroups: Array.isArray(tourGroups) ? tourGroups.length : 0,
-      groupsWithGuides
+      groupsWithGuides,
+      // Map the calculated values to the new properties
+      adultTickets: adultCount,
+      childTickets: childCount,
+      totalTickets: totalParticipants,
+      totalTicketsNeeded: totalParticipants,
+      totalChildCount: childCount
     });
   }, [tourGroups]);
 

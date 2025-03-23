@@ -38,7 +38,7 @@ export const DatabaseStatus = ({ dbCheckResult }: DatabaseStatusProps) => {
   }
 
   return (
-    <Alert variant="success" className="bg-green-50 text-green-800 border-green-200">
+    <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
       <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
       <AlertDescription>
         Database is ready with {dbCheckResult.participantCount} participants.
