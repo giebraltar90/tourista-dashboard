@@ -44,7 +44,7 @@ export const determineTicketTypeForGuide = (guideType: string = ""): "adult" | "
     return null;
   }
   
-  // Guide types that need child tickets - GA Free
+  // Guide types that need child tickets - GA Free or contains 'free'
   if (normalizedType.includes("free")) {
     logger.debug(`🎟️ [determineTicketTypeForGuide] Type "${guideType}" needs a child ticket`);
     return "child";

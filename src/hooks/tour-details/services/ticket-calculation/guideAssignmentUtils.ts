@@ -5,6 +5,7 @@ import { determineTicketTypeForGuide } from "./guideTypeUtils";
 
 /**
  * Find which guides are assigned to groups for this tour
+ * We now assume all guides need tickets if they're present
  */
 export const findAssignedGuides = (
   tourGroups: any[] = [],
@@ -14,59 +15,17 @@ export const findAssignedGuides = (
 ): Set<string> => {
   const assignedGuideIds = new Set<string>();
   
-  // Ensure tour groups is an array
-  if (!Array.isArray(tourGroups)) {
-    logger.debug(`🎟️ [findAssignedGuides] tourGroups is not an array, defaulting to all available guides`);
-    // Add all available guides by default
-    if (guide1Info) assignedGuideIds.add("guide1");
-    if (guide2Info) assignedGuideIds.add("guide2");
-    if (guide3Info) assignedGuideIds.add("guide3");
-    return assignedGuideIds;
-  }
-  
-  // Log input data for debugging
-  logger.debug(`🎟️ [findAssignedGuides] Checking ${tourGroups.length} groups for assigned guides`, {
-    guide1: guide1Info?.name || 'none',
-    guide2: guide2Info?.name || 'none',
-    guide3: guide3Info?.name || 'none'
-  });
-  
-  // Add all available guides (assume they're assigned if present)
+  // Add all available guides by default
   if (guide1Info) assignedGuideIds.add("guide1");
   if (guide2Info) assignedGuideIds.add("guide2");
   if (guide3Info) assignedGuideIds.add("guide3");
   
-  // For logging: collect guide info for assigned guides
-  const assignedGuides: Array<{id: string, position: string, name: string}> = [];
-  
-  if (guide1Info) {
-    assignedGuides.push({
-      id: guide1Info.id || "guide1",
-      position: "guide1",
-      name: guide1Info.name || "Guide 1"
-    });
-  }
-  
-  if (guide2Info) {
-    assignedGuides.push({
-      id: guide2Info.id || "guide2",
-      position: "guide2",
-      name: guide2Info.name || "Guide 2"
-    });
-  }
-  
-  if (guide3Info) {
-    assignedGuides.push({
-      id: guide3Info.id || "guide3",
-      position: "guide3",
-      name: guide3Info.name || "Guide 3"
-    });
-  }
-  
   // Log the results
   logger.debug(`🎟️ [findAssignedGuides] Found ${assignedGuideIds.size} assigned guides:`, {
     assignedGuidePositions: Array.from(assignedGuideIds),
-    guideDetails: assignedGuides
+    guide1: guide1Info?.name || 'none',
+    guide2: guide2Info?.name || 'none',
+    guide3: guide3Info?.name || 'none'
   });
   
   return assignedGuideIds;
