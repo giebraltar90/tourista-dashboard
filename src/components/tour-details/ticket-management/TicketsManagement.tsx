@@ -1,117 +1,133 @@
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { PenSquare } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TicketsManagementProps } from "./types";
+import { TicketCountCard } from "./TicketCountCard";
+import { useEffect, useState } from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
 import { TicketStatus } from "./TicketStatus";
+import { TicketSufficiencyAlert } from "./TicketSufficiencyAlert";
 import { TicketBucketInfo } from "./TicketBucketInfo";
-import { useTicketBuckets } from "@/hooks/useTicketBuckets";
-import { useEffect } from "react";
-import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
+import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils";
 
-export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Use the participant counts hook to get ticket requirements
-  const participantCounts = useParticipantCounts(
-    tour.tourGroups || [],
-    tour.location || ''
+export const TicketsManagement = ({ 
+  tour, 
+  guide1Info, 
+  guide2Info, 
+  guide3Info 
+}: TicketsManagementProps) => {
+  const [activeTab, setActiveTab] = useState("status");
+  
+  // Calculate total participants and child count
+  const totalParticipants = tour.tourGroups.reduce(
+    (sum, group) => sum + group.size, 
+    0
   );
   
-  const { totalParticipants } = participantCounts;
-  
-  // Total required tickets is just participants (removed guide tickets)
-  const requiredTickets = totalParticipants;
-
-  // Fetch ticket buckets for this specific tour
-  const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
-  const tourDate = new Date(tour.date);
-  
-  // Find bucket for this tour
-  const bucketAssignedToTour = ticketBuckets.find(bucket => 
-    bucket.assigned_tours && bucket.assigned_tours.includes(tour.id)
+  const totalChildCount = tour.tourGroups.reduce(
+    (sum, group) => sum + group.childCount, 
+    0
   );
   
-  // Find the allocation specifically for this tour
-  const tourAllocation = bucketAssignedToTour?.tour_allocations?.find(
-    allocation => allocation.tour_id === tour.id
-  );
-  const ticketsAllocatedToThisTour = tourAllocation?.tickets_required || 0;
+  const adultParticipants = totalParticipants - totalChildCount;
   
-  // Calculate bucket metrics
-  const bucketMaxTickets = bucketAssignedToTour ? bucketAssignedToTour.max_tickets : 0;
-  
-  // Calculate allocated tickets to other tours from this bucket
-  const allocatedToOtherTours = bucketAssignedToTour ? 
-    (bucketAssignedToTour.allocated_tickets || 0) - ticketsAllocatedToThisTour : 0;
-  
-  // Available tickets is the max tickets minus allocations to other tours
-  const availableTickets = bucketAssignedToTour ? bucketMaxTickets - allocatedToOtherTours : 0;
-  
-  // Calculate if we have enough tickets for this tour
-  const hasEnoughTickets = availableTickets >= requiredTickets;
-  
-  // Log ticket calculations for debugging
-  useEffect(() => {
-    console.log(`🎫 [TicketsManagement] Ticket requirements for tour ${tour.id} at ${tour.location}:`, {
-      tourId: tour.id,
-      tourLocation: tour.location,
-      tourGroups: tour.tourGroups?.length || 0,
-      totalParticipants,
-      // Totals and allocation
-      requiredTickets,
-      bucketCount: ticketBuckets.length,
-      bucketMaxTickets,
-      allocatedToOtherTours,
-      availableTickets,
-      hasEnoughTickets
-    });
-  }, [
-    tour.id,
+  // Calculate tickets needed for guides based on guide types
+  const { 
+    adultTickets: guideAdultTickets, 
+    childTickets: guideChildTickets,
+    guides: guidesWithTickets
+  } = calculateGuideTicketsNeeded(
+    guide1Info,
+    guide2Info,
+    guide3Info,
     tour.location,
-    tour.tourGroups,
-    ticketBuckets, 
-    totalParticipants, 
-    requiredTickets, 
-    availableTickets,
-    bucketMaxTickets,
-    allocatedToOtherTours,
-    ticketsAllocatedToThisTour
-  ]);
-
+    tour.tourGroups
+  );
+  
+  // Total tickets needed including guides
+  const totalAdultTicketsNeeded = adultParticipants + guideAdultTickets;
+  const totalChildTicketsNeeded = totalChildCount + guideChildTickets;
+  const totalTicketsNeeded = totalAdultTicketsNeeded + totalChildTicketsNeeded;
+  
+  // Get the number of tickets already assigned to this tour
+  const purchasedTickets = tour.numTickets || 0;
+  
+  // Get information about guides that need tickets
+  const guidesNeedingAdultTickets = guidesWithTickets.filter(g => g.ticketType === 'adult');
+  const guidesNeedingChildTickets = guidesWithTickets.filter(g => g.ticketType === 'child');
+  
   return (
-    <Card>
+    <Card className="col-span-3">
       <CardHeader>
         <CardTitle>Ticket Management</CardTitle>
-        <CardDescription>Manage tickets for {tour.tourName || 'this tour'}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6">
-          {/* Ticket buckets section */}
-          <TicketBucketInfo 
-            buckets={ticketBuckets} 
-            isLoading={isLoadingBuckets} 
-            tourId={tour.id}
-            requiredTickets={requiredTickets}
-            tourDate={tourDate}
-            totalParticipants={totalParticipants}
-          />
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="mb-4">
+            <TabsTrigger value="status">Ticket Status</TabsTrigger>
+            <TabsTrigger value="buckets">Ticket Buckets</TabsTrigger>
+          </TabsList>
+          <TabsContent value="status" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TicketCountCard
+                title="Adult Tickets Needed"
+                description={`${adultParticipants} adult participants ${guideAdultTickets > 0 ? `+ ${guideAdultTickets} guides` : ''}`}
+                count={totalAdultTicketsNeeded}
+                guideTickets={guidesNeedingAdultTickets}
+                totalCount={totalTicketsNeeded}
+              />
+              
+              <TicketCountCard
+                title="Child Tickets Needed"
+                description={`${totalChildCount} child participants ${guideChildTickets > 0 ? `+ ${guideChildTickets} guides` : ''}`}
+                count={totalChildTicketsNeeded}
+                guideTickets={guidesNeedingChildTickets}
+                totalCount={totalTicketsNeeded}
+              />
+            </div>
+            
+            <TicketStatus
+              purchasedCount={purchasedTickets}
+              pendingCount={0}
+              distributedCount={0}
+            />
+            
+            <TicketSufficiencyAlert
+              hasEnoughTickets={purchasedTickets >= totalTicketsNeeded}
+              availableTickets={purchasedTickets}
+              requiredTickets={totalTicketsNeeded}
+              requiredAdultTickets={totalAdultTicketsNeeded}
+              requiredChildTickets={totalChildTicketsNeeded}
+            />
+            
+            {guidesWithTickets.length > 0 && (
+              <Alert>
+                <InfoIcon className="h-4 w-4" />
+                <AlertTitle>Guide Ticket Information</AlertTitle>
+                <AlertDescription>
+                  <ul className="mt-2 text-sm">
+                    <li>GA Ticket guides (over 26): Require adult tickets for Versailles.</li>
+                    <li>GA Free guides (under 26): Require child tickets for Versailles.</li>
+                    <li>GC guides: Can guide inside Versailles, no tickets needed.</li>
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
           
-          <Separator />
-          
-          {/* Ticket status summary */}
-          <TicketStatus
-            purchasedCount={availableTickets}
-            pendingCount={0}
-            distributedCount={requiredTickets}
-          />
-        </div>
+          <TabsContent value="buckets">
+            <TicketBucketInfo
+              buckets={[]}
+              isLoading={false}
+              tourId={tour.id}
+              requiredTickets={totalTicketsNeeded}
+              tourDate={tour.date}
+              totalParticipants={totalParticipants}
+            />
+          </TabsContent>
+        </Tabs>
       </CardContent>
-      <CardFooter className="border-t p-4">
-        <Button className="ml-auto">
-          <PenSquare className="mr-2 h-4 w-4" />
-          Manage Tickets
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

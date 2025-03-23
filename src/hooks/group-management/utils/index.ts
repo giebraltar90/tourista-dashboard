@@ -12,19 +12,25 @@ export * from './participantPreservation';
 export * from './databaseOperations';
 export * from './optimisticUpdates';
 
-// Re-export existing utilities - these already contain a 'findGuideName' function
-// which is causing the conflict, so we need to be explicit about what we export
+// Re-export existing utilities with explicit naming to avoid conflicts
 export { 
   processGuideIdForAssignment
 } from './guideAssignmentUtils';
 
-// Let's fix this re-export which is causing an error - we need to check what's actually exported
+// Export guide info utilities
 export {
   getGuideNameAndInfo
 } from './guideInfoUtils';
 
+// Export guide name utilities with explicit naming
 export {
   findGuideName as findGuideNameByTour,
   generateGroupName,
   getGuideNameForAssignment
 } from './guideNameUtils';
+
+// Export ticket calculation utilities
+export {
+  calculateGuideTicketsNeeded,
+  getGuideTicketRequirement
+} from './ticketCalculation';
