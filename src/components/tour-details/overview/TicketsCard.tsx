@@ -44,49 +44,51 @@ export const TicketsCard = ({
   
   // Check if there are assigned guides in any groups
   const hasAssignedGuides = tourGroups?.some(g => {
+    // A guide is considered assigned if guideId exists and isn't "unassigned"
     const hasGuide = g.guideId && g.guideId !== "unassigned";
-    logger.debug(`🎟️ [TicketsCard] Group guide check: ${g.name || 'Group'} - guideId: ${g.guideId}, hasGuide: ${hasGuide}`);
+    
+    // If we have a guide assigned to this group, see if it matches one of our main guides
+    if (hasGuide) {
+      logger.debug(`🎟️ [TicketsCard] Group ${g.name || 'Unnamed'} has guide: ${g.guideId}`);
+    }
+    
     return hasGuide;
   }) || false;
   
-  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} has assigned guides: ${hasAssignedGuides}, requires tickets: ${locationNeedsGuideTickets}, location: ${location}, locationLower: ${locationLower}`);
+  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} guide check: requires tickets: ${locationNeedsGuideTickets}, location: ${location}, has assigned guides: ${hasAssignedGuides}`);
   
-  // Calculate guide tickets only if needed and there are assigned guides
+  // Calculate guide tickets only if needed and there are guides
   const { 
     adultTickets: guideAdultTickets, 
     childTickets: guideChildTickets,
     guides: guidesWithTickets
-  } = (locationNeedsGuideTickets) ? calculateGuideTicketsNeeded(
-    guide1Info,
-    guide2Info,
-    guide3Info,
-    location,
-    tourGroups
-  ) : { adultTickets: 0, childTickets: 0, guides: [] };
+  } = (locationNeedsGuideTickets && hasAssignedGuides) 
+    ? calculateGuideTicketsNeeded(
+        guide1Info,
+        guide2Info,
+        guide3Info,
+        location,
+        tourGroups
+      ) 
+    : { adultTickets: 0, childTickets: 0, guides: [] };
   
   // Log ticket calculation for debugging
   useEffect(() => {
-    logger.debug("🎟️ [TicketsCard] Ticket calculation for tour " + tourId, {
-      tourId,
+    // First log the basic tour info
+    logger.debug(`🎟️ [TicketsCard] Tour ${tourId} ticket calculation:`, {
       location,
-      locationLower,
       locationNeedsGuideTickets,
       hasAssignedGuides,
       validAdultTickets,
       validChildTickets,
       guideAdultTickets,
       guideChildTickets,
-      guidesWithTickets,
-      guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'null',
-      guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
-      guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
-      tourGroupsCount: tourGroups?.length || 0,
-      tourGroupGuides: tourGroups?.map(g => g.guideId || 'none') || []
+      guidesCount: guidesWithTickets.length
     });
     
-    // Print detailed info for each guide
+    // Then log detailed guide info
     if (guide1Info) {
-      logger.debug(`🎟️ [TicketsCard] Guide1 details:`, {
+      logger.debug(`🎟️ [TicketsCard] Guide1 info:`, {
         id: guide1Info.id,
         name: guide1Info.name,
         type: guide1Info.guideType,
@@ -95,7 +97,7 @@ export const TicketsCard = ({
     }
     
     if (guide2Info) {
-      logger.debug(`🎟️ [TicketsCard] Guide2 details:`, {
+      logger.debug(`🎟️ [TicketsCard] Guide2 info:`, {
         id: guide2Info.id,
         name: guide2Info.name,
         type: guide2Info.guideType,
@@ -104,7 +106,7 @@ export const TicketsCard = ({
     }
     
     if (guide3Info) {
-      logger.debug(`🎟️ [TicketsCard] Guide3 details:`, {
+      logger.debug(`🎟️ [TicketsCard] Guide3 info:`, {
         id: guide3Info.id,
         name: guide3Info.name,
         type: guide3Info.guideType,
@@ -112,16 +114,17 @@ export const TicketsCard = ({
       });
     }
     
-    // Log the actual guides assigned to groups
-    logger.debug(`🎟️ [TicketsCard] Guides assigned to groups:`, {
-      assignments: tourGroups?.map(g => ({
-        groupName: g.name || `Group ${g.id}`,
-        guideId: g.guideId || 'none'
-      })) || []
-    });
-  }, [validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets, 
-      guide1Info, guide2Info, guide3Info, location, guidesWithTickets, tourGroups, tourId, 
-      locationNeedsGuideTickets, hasAssignedGuides]);
+    // Log the guides who need tickets
+    if (guidesWithTickets.length > 0) {
+      logger.debug(`🎟️ [TicketsCard] Guides requiring tickets:`, 
+        guidesWithTickets.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType} ticket`)
+      );
+    }
+  }, [
+    tourId, location, locationNeedsGuideTickets, hasAssignedGuides, 
+    validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets,
+    guide1Info, guide2Info, guide3Info, guidesWithTickets
+  ]);
   
   // Total required tickets calculations
   const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
@@ -153,7 +156,7 @@ export const TicketsCard = ({
             <span className="font-medium">{validChildTickets}</span>
           </div>
 
-          {locationNeedsGuideTickets && (
+          {locationNeedsGuideTickets && hasAssignedGuides && (
             <>
               <div className="pt-2 pb-1 text-xs text-muted-foreground border-t">
                 Guide Tickets

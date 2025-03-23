@@ -84,10 +84,7 @@ export const calculateGuideTicketsNeeded = (
     guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
     location,
     locationLower,
-    tourGroupsCount: tourGroups?.length || 0,
-    requiresTickets: locationLower.includes('versailles') || 
-                    locationLower.includes('versaille') || 
-                    locationLower.includes('montmartre')
+    tourGroupsCount: tourGroups?.length || 0
   });
 
   // Skip ticket calculation if location doesn't require tickets
@@ -99,102 +96,101 @@ export const calculateGuideTicketsNeeded = (
     return { adultTickets: 0, childTickets: 0, guides: [] };
   }
   
-  // IMPORTANT: Track processed guides to avoid counting duplicates
-  const processedGuideIds = new Set<string>();
+  // IMPORTANT: Find which guides are actually assigned to groups
+  const assignedGuideIds = new Set<string>();
   
-  // Process guide1
-  if (guide1Info && guide1Info.id) {
-    logger.debug(`🎟️ [CalculateTickets] Processing guide1 (${guide1Info.name})`);
-    
-    if (!processedGuideIds.has(guide1Info.id)) {
-      const { needsTicket, ticketType } = getGuideTicketRequirement(guide1Info, location);
-      
-      if (needsTicket) {
-        if (ticketType === "adult") adultTickets++;
-        if (ticketType === "child") childTickets++;
-        
-        guides.push({
-          guideName: guide1Info.name || "Guide 1",
-          guideType: String(guide1Info.guideType) || "Unknown",
-          ticketType
-        });
+  tourGroups.forEach(group => {
+    if (group.guideId && group.guideId !== "unassigned") {
+      // Check if this guide matches one of our main guides
+      if (guide1Info && (group.guideId === guide1Info.id || group.guideId === guide1Info.name || group.guideId === "guide1")) {
+        assignedGuideIds.add("guide1");
+        logger.debug(`🎟️ [CalculateTickets] Found guide1 assigned to group ${group.name || 'Unnamed'}`);
       }
+      else if (guide2Info && (group.guideId === guide2Info.id || group.guideId === guide2Info.name || group.guideId === "guide2")) {
+        assignedGuideIds.add("guide2");
+        logger.debug(`🎟️ [CalculateTickets] Found guide2 assigned to group ${group.name || 'Unnamed'}`);
+      }
+      else if (guide3Info && (group.guideId === guide3Info.id || group.guideId === guide3Info.name || group.guideId === "guide3")) {
+        assignedGuideIds.add("guide3");
+        logger.debug(`🎟️ [CalculateTickets] Found guide3 assigned to group ${group.name || 'Unnamed'}`);
+      }
+    }
+  });
+  
+  logger.debug(`🎟️ [CalculateTickets] Found assigned guides: ${Array.from(assignedGuideIds).join(', ') || 'none'}`);
+  
+  // Process guide1 - only if actually assigned
+  if (guide1Info && assignedGuideIds.has("guide1")) {
+    logger.debug(`🎟️ [CalculateTickets] Processing assigned guide1 (${guide1Info.name})`);
+    
+    const { needsTicket, ticketType } = getGuideTicketRequirement(guide1Info, location);
+    
+    if (needsTicket) {
+      if (ticketType === "adult") adultTickets++;
+      if (ticketType === "child") childTickets++;
       
-      processedGuideIds.add(guide1Info.id);
-      
-      logger.debug(`🎟️ [CalculateTickets] Guide1 ticket requirement:`, {
-        guideName: guide1Info.name,
-        needsTicket,
-        ticketType,
-        guideType: guide1Info.guideType
+      guides.push({
+        guideName: guide1Info.name || "Guide 1",
+        guideType: String(guide1Info.guideType) || "Unknown",
+        ticketType
       });
+      
+      logger.debug(`🎟️ [CalculateTickets] Guide1 needs a ${ticketType} ticket`);
+    } else {
+      logger.debug(`🎟️ [CalculateTickets] Guide1 doesn't need a ticket`);
     }
   }
   
-  // Process guide2
-  if (guide2Info && guide2Info.id) {
-    logger.debug(`🎟️ [CalculateTickets] Processing guide2 (${guide2Info.name})`);
+  // Process guide2 - only if actually assigned
+  if (guide2Info && assignedGuideIds.has("guide2")) {
+    logger.debug(`🎟️ [CalculateTickets] Processing assigned guide2 (${guide2Info.name})`);
     
-    if (!processedGuideIds.has(guide2Info.id)) {
-      const { needsTicket, ticketType } = getGuideTicketRequirement(guide2Info, location);
+    const { needsTicket, ticketType } = getGuideTicketRequirement(guide2Info, location);
+    
+    if (needsTicket) {
+      if (ticketType === "adult") adultTickets++;
+      if (ticketType === "child") childTickets++;
       
-      if (needsTicket) {
-        if (ticketType === "adult") adultTickets++;
-        if (ticketType === "child") childTickets++;
-        
-        guides.push({
-          guideName: guide2Info.name || "Guide 2",
-          guideType: String(guide2Info.guideType) || "Unknown",
-          ticketType
-        });
-      }
-      
-      processedGuideIds.add(guide2Info.id);
-      
-      logger.debug(`🎟️ [CalculateTickets] Guide2 ticket requirement:`, {
-        guideName: guide2Info.name,
-        needsTicket,
-        ticketType,
-        guideType: guide2Info.guideType
+      guides.push({
+        guideName: guide2Info.name || "Guide 2",
+        guideType: String(guide2Info.guideType) || "Unknown",
+        ticketType
       });
+      
+      logger.debug(`🎟️ [CalculateTickets] Guide2 needs a ${ticketType} ticket`);
+    } else {
+      logger.debug(`🎟️ [CalculateTickets] Guide2 doesn't need a ticket`);
     }
   }
   
-  // Process guide3
-  if (guide3Info && guide3Info.id) {
-    logger.debug(`🎟️ [CalculateTickets] Processing guide3 (${guide3Info.name})`);
+  // Process guide3 - only if actually assigned
+  if (guide3Info && assignedGuideIds.has("guide3")) {
+    logger.debug(`🎟️ [CalculateTickets] Processing assigned guide3 (${guide3Info.name})`);
     
-    if (!processedGuideIds.has(guide3Info.id)) {
-      const { needsTicket, ticketType } = getGuideTicketRequirement(guide3Info, location);
+    const { needsTicket, ticketType } = getGuideTicketRequirement(guide3Info, location);
+    
+    if (needsTicket) {
+      if (ticketType === "adult") adultTickets++;
+      if (ticketType === "child") childTickets++;
       
-      if (needsTicket) {
-        if (ticketType === "adult") adultTickets++;
-        if (ticketType === "child") childTickets++;
-        
-        guides.push({
-          guideName: guide3Info.name || "Guide 3",
-          guideType: String(guide3Info.guideType) || "Unknown",
-          ticketType
-        });
-      }
-      
-      processedGuideIds.add(guide3Info.id);
-      
-      logger.debug(`🎟️ [CalculateTickets] Guide3 ticket requirement:`, {
-        guideName: guide3Info.name,
-        needsTicket,
-        ticketType,
-        guideType: guide3Info.guideType
+      guides.push({
+        guideName: guide3Info.name || "Guide 3",
+        guideType: String(guide3Info.guideType) || "Unknown",
+        ticketType
       });
+      
+      logger.debug(`🎟️ [CalculateTickets] Guide3 needs a ${ticketType} ticket`);
+    } else {
+      logger.debug(`🎟️ [CalculateTickets] Guide3 doesn't need a ticket`);
     }
   }
 
   // Final count check
-  logger.debug("🎟️ [CalculateTickets] Final guide ticket requirements", {
+  logger.debug("🎟️ [CalculateTickets] Final guide ticket counts", {
     adultTickets,
     childTickets,
     guidesWithTickets: guides.length,
-    processedGuideIds: Array.from(processedGuideIds),
+    assignedGuideCount: assignedGuideIds.size,
     guideDetails: guides.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
   });
   

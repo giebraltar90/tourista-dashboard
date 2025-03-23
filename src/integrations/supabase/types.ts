@@ -425,6 +425,17 @@ export type Database = {
         }
         Returns: string
       }
+      update_groups_after_move: {
+        Args: {
+          source_group_id: string
+          target_group_id: string
+          source_size: number
+          source_child_count: number
+          target_size: number
+          target_child_count: number
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       guide_type: "GA Ticket" | "GA Free" | "GC"
