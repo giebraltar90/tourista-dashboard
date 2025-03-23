@@ -1,5 +1,5 @@
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { loadParticipantsData } from "@/services/api/participants/participantDbService";
 import { toast } from "sonner";
@@ -14,14 +14,24 @@ export const useParticipantRefresh = (
   recalculateGroupSizes: () => void
 ) => {
   const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
+  const lastToastTime = useRef(Date.now());
+  const initialLoadComplete = useRef(false);
   
   /**
    * Load participants for a tour
    */
-  const loadParticipants = useCallback(async (tourIdParam: string = tourId, showToast: boolean = true) => {
+  const loadParticipants = useCallback(async (tourIdParam: string = tourId, showToast: boolean = false) => {
     const usedTourId = tourIdParam || tourId;
     if (!usedTourId) {
       console.error("DATABASE DEBUG: No tour ID provided for loading participants");
+      return;
+    }
+    
+    // Prevent frequent refreshes - add a time-based guard
+    const now = Date.now();
+    const timeSinceLastLoad = now - lastToastTime.current;
+    if (timeSinceLastLoad < 2000 && initialLoadComplete.current) {
+      console.log("DATABASE DEBUG: Skipping too frequent participant refresh");
       return;
     }
     
@@ -66,10 +76,15 @@ export const useParticipantRefresh = (
           // Recalculate group sizes
           recalculateGroupSizes();
           
-          // Show success toast if needed
-          if (showToast) {
+          // Show success toast if needed and not too frequent
+          const isInitialLoad = !initialLoadComplete.current;
+          if (showToast && !isInitialLoad && timeSinceLastLoad > 5000) {
             toast.success("Participants loaded successfully");
+            lastToastTime.current = now;
           }
+          
+          // Mark initial load as complete
+          initialLoadComplete.current = true;
         } else {
           console.log("DATABASE DEBUG: No groups returned from loadParticipantsData");
         }

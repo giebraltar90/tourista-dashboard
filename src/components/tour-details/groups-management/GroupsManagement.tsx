@@ -128,36 +128,6 @@ export const GroupsManagement = ({
               No tour groups available. Try using the "Add Test Participants" button above.
             </div>
           )}
-          
-          {/* Group guide management component without the capacity section */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold mb-4">Guide Assignments</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.isArray(localTourGroups) && localTourGroups.map((group, index) => (
-                <div 
-                  key={index}
-                  className="p-4 bg-muted rounded-lg"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium">{group.name || `Group ${index + 1}`}</h4>
-                    <button 
-                      className="text-primary text-sm"
-                      onClick={() => handleOpenAssignGuide(index)}
-                    >
-                      {group.guideId ? "Change Guide" : "Assign Guide"}
-                    </button>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {group.guideId ? (
-                      <span>Guide assigned: {group.guideName || "Unknown Guide"}</span>
-                    ) : (
-                      <span>No guide assigned</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </CardContent>
       

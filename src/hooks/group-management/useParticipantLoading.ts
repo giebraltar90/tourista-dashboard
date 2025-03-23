@@ -19,6 +19,7 @@ export const useParticipantLoading = () => {
   const [isLoading, setIsLoading] = useState(false);
   const lastToastTime = useRef(0);
   const toastIdRef = useRef<string | number | null>(null);
+  const initialLoadComplete = useRef(false);
   
   // Load participants data from Supabase
   const loadParticipants = useCallback(async (
@@ -68,8 +69,11 @@ export const useParticipantLoading = () => {
         window.dispatchEvent(new CustomEvent('participants-loaded'));
         
         // Only show success toast if requested AND enough time has passed since last toast
+        // AND it's not the initial load (or explicitly requested)
         const now = Date.now();
-        if (showSuccessToast && now - lastToastTime.current > 3000) {
+        const isInitialLoad = !initialLoadComplete.current;
+        
+        if (showSuccessToast && now - lastToastTime.current > 5000 && !isInitialLoad) {
           // Dismiss any existing toasts first
           if (toastIdRef.current) {
             toast.dismiss(toastIdRef.current);
@@ -79,6 +83,9 @@ export const useParticipantLoading = () => {
           toastIdRef.current = toast.success("Participant data refreshed");
           lastToastTime.current = now;
         }
+        
+        // Mark initial load as complete
+        initialLoadComplete.current = true;
       }, 500);
     } catch (error) {
       console.error("DATABASE DEBUG: Exception in loadParticipants:", error);
