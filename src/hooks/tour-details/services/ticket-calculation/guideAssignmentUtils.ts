@@ -30,7 +30,8 @@ export const findAssignedGuides = (
       name: guide3Info.name,
       type: guide3Info.guideType
     } : 'none',
-    groupCount: tourGroups.length,
+    groupCount: Array.isArray(tourGroups) ? tourGroups.length : 0,
+    validGroups: Array.isArray(tourGroups) ? tourGroups.filter(g => !!g).length : 0,
   });
   
   // Create lookup tables for matching
@@ -64,6 +65,23 @@ export const findAssignedGuides = (
     idToKey: Object.fromEntries(guideIdToKey),
   });
 
+  // Check for valid tourGroups array
+  if (!Array.isArray(tourGroups)) {
+    logger.debug(`❌ [FindAssignedGuides] tourGroups is not an array`);
+    return assignedGuideIds;
+  }
+
+  // Detailed debugging for all tour groups
+  logger.debug(`🔎 [FindAssignedGuides] Examining ${tourGroups.length} tour groups:`, 
+    tourGroups.map((g, idx) => ({
+      index: idx,
+      id: g?.id || 'unknown',
+      name: g?.name || `Group ${idx+1}`,
+      guideId: g?.guideId || g?.guide_id || 'none',
+      guideName: g?.guideName || 'none'
+    }))
+  );
+
   // Detailed logging for each group
   tourGroups.forEach((group, index) => {
     if (!group) {
@@ -88,7 +106,26 @@ export const findAssignedGuides = (
       return;
     }
     
-    // First try ID-based matching (most reliable)
+    // First try guide position matching (direct guide1, guide2, guide3)
+    if (groupGuideId === "guide1" || groupGuideId === "guide 1") {
+      assignedGuideIds.add("guide1");
+      logger.debug(`✅ [FindAssignedGuides] Found guide1 by position in group ${group.name || index}`);
+      return;
+    }
+    
+    if (groupGuideId === "guide2" || groupGuideId === "guide 2") {
+      assignedGuideIds.add("guide2");
+      logger.debug(`✅ [FindAssignedGuides] Found guide2 by position in group ${group.name || index}`);
+      return;
+    }
+    
+    if (groupGuideId === "guide3" || groupGuideId === "guide 3") {
+      assignedGuideIds.add("guide3");
+      logger.debug(`✅ [FindAssignedGuides] Found guide3 by position in group ${group.name || index}`);
+      return;
+    }
+    
+    // Next try ID-based matching (most reliable)
     const guideIdNormalized = typeof groupGuideId === 'string' ? groupGuideId.toLowerCase() : '';
     if (guideIdToKey.has(guideIdNormalized)) {
       const guideKey = guideIdToKey.get(guideIdNormalized);
@@ -117,7 +154,29 @@ export const findAssignedGuides = (
       }
     }
 
-    // If we got here, try one last heuristic - check if the guide ID matches any guide names
+    // Direct guide name matching
+    if (guide1Info && guide1Info.name && groupGuideName && 
+        guide1Info.name.toLowerCase() === groupGuideName.toLowerCase()) {
+      assignedGuideIds.add("guide1");
+      logger.debug(`✅ [FindAssignedGuides] Found guide1 by direct name comparison in group ${group.name || index}`);
+      return;
+    }
+    
+    if (guide2Info && guide2Info.name && groupGuideName && 
+        guide2Info.name.toLowerCase() === groupGuideName.toLowerCase()) {
+      assignedGuideIds.add("guide2");
+      logger.debug(`✅ [FindAssignedGuides] Found guide2 by direct name comparison in group ${group.name || index}`);
+      return;
+    }
+    
+    if (guide3Info && guide3Info.name && groupGuideName && 
+        guide3Info.name.toLowerCase() === groupGuideName.toLowerCase()) {
+      assignedGuideIds.add("guide3");
+      logger.debug(`✅ [FindAssignedGuides] Found guide3 by direct name comparison in group ${group.name || index}`);
+      return;
+    }
+
+    // Check if guide ID actually matches one of our guide names (important fallback)
     if (typeof groupGuideId === 'string' && guide1Info && guide1Info.name && 
         groupGuideId.toLowerCase() === guide1Info.name.toLowerCase()) {
       assignedGuideIds.add("guide1");
@@ -136,6 +195,31 @@ export const findAssignedGuides = (
         groupGuideId.toLowerCase() === guide3Info.name.toLowerCase()) {
       assignedGuideIds.add("guide3");
       logger.debug(`✅ [FindAssignedGuides] Found guide3 by ID-name match in group ${group.name || index}`);
+      return;
+    }
+    
+    // Check if guide ID is inside any of the guide names (partial matching)
+    if (typeof groupGuideId === 'string' && guide1Info && guide1Info.name && 
+        guide1Info.name.toLowerCase().includes(groupGuideId.toLowerCase()) ||
+        (groupGuideId.toLowerCase().includes(guide1Info?.name?.toLowerCase() || ''))) {
+      assignedGuideIds.add("guide1");
+      logger.debug(`✅ [FindAssignedGuides] Found guide1 by partial ID-name match in group ${group.name || index}`);
+      return;
+    }
+    
+    if (typeof groupGuideId === 'string' && guide2Info && guide2Info.name && 
+        guide2Info.name.toLowerCase().includes(groupGuideId.toLowerCase()) ||
+        (groupGuideId.toLowerCase().includes(guide2Info?.name?.toLowerCase() || ''))) {
+      assignedGuideIds.add("guide2");
+      logger.debug(`✅ [FindAssignedGuides] Found guide2 by partial ID-name match in group ${group.name || index}`);
+      return;
+    }
+    
+    if (typeof groupGuideId === 'string' && guide3Info && guide3Info.name && 
+        guide3Info.name.toLowerCase().includes(groupGuideId.toLowerCase()) ||
+        (groupGuideId.toLowerCase().includes(guide3Info?.name?.toLowerCase() || ''))) {
+      assignedGuideIds.add("guide3");
+      logger.debug(`✅ [FindAssignedGuides] Found guide3 by partial ID-name match in group ${group.name || index}`);
       return;
     }
     
@@ -171,8 +255,56 @@ export const findAssignedGuides = (
       }
     }
     
+    // If all else fails, check the group name for the guide name
+    if (group.name && typeof group.name === 'string') {
+      const groupNameLower = group.name.toLowerCase();
+      
+      if (guide1Info?.name && groupNameLower.includes(guide1Info.name.toLowerCase())) {
+        assignedGuideIds.add("guide1");
+        logger.debug(`✅ [FindAssignedGuides] Found guide1 in group name: ${group.name}`);
+        return;
+      }
+      
+      if (guide2Info?.name && groupNameLower.includes(guide2Info.name.toLowerCase())) {
+        assignedGuideIds.add("guide2");
+        logger.debug(`✅ [FindAssignedGuides] Found guide2 in group name: ${group.name}`);
+        return;
+      }
+      
+      if (guide3Info?.name && groupNameLower.includes(guide3Info.name.toLowerCase())) {
+        assignedGuideIds.add("guide3");
+        logger.debug(`✅ [FindAssignedGuides] Found guide3 in group name: ${group.name}`);
+        return;
+      }
+    }
+    
     logger.debug(`❓ [FindAssignedGuides] Could not match guide for group ${group.name || index} with guideId ${groupGuideId}`);
   });
+  
+  // Fallback: if we didn't find any guides but tourGroups has guides assigned in the group name
+  if (assignedGuideIds.size === 0) {
+    tourGroups.forEach((group) => {
+      if (!group || !group.name) return;
+      
+      // Check if group name contains any guide names (common pattern)
+      const groupName = group.name.toLowerCase();
+      
+      if (guide1Info?.name && groupName.includes(`(${guide1Info.name.toLowerCase()})`)) {
+        assignedGuideIds.add("guide1");
+        logger.debug(`✅ [FindAssignedGuides] Fallback: Found guide1 in parentheses in group name: ${group.name}`);
+      }
+      
+      if (guide2Info?.name && groupName.includes(`(${guide2Info.name.toLowerCase()})`)) {
+        assignedGuideIds.add("guide2");
+        logger.debug(`✅ [FindAssignedGuides] Fallback: Found guide2 in parentheses in group name: ${group.name}`);
+      }
+      
+      if (guide3Info?.name && groupName.includes(`(${guide3Info.name.toLowerCase()})`)) {
+        assignedGuideIds.add("guide3");
+        logger.debug(`✅ [FindAssignedGuides] Fallback: Found guide3 in parentheses in group name: ${group.name}`);
+      }
+    });
+  }
   
   logger.debug(`🔎 [FindAssignedGuides] Final assigned guide IDs: ${Array.from(assignedGuideIds).join(', ') || 'None'}`);
   

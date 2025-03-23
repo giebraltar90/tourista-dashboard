@@ -45,9 +45,9 @@ export const TicketsCard = ({
     tourType: 'default' as 'default' | 'food' | 'private',
     startTime: '',
     referenceCode: '',
-    guide1: '',
-    guide2: '',
-    guide3: '',
+    guide1: guide1Info?.name || '',
+    guide2: guide2Info?.name || '',
+    guide3: guide3Info?.name || '',
     numTickets: 0,
     isHighSeason: false
   };
@@ -69,6 +69,18 @@ export const TicketsCard = ({
       location,
       locationNeedsGuideTickets,
       hasAssignedGuides,
+      guide1Info: guide1Info ? { 
+        name: guide1Info.name || 'unknown',
+        type: guide1Info.guideType || 'unknown'
+      } : 'none',
+      guide2Info: guide2Info ? {
+        name: guide2Info.name || 'unknown',
+        type: guide2Info.guideType || 'unknown'
+      } : 'none',
+      guide3Info: guide3Info ? {
+        name: guide3Info.name || 'unknown',
+        type: guide3Info.guideType || 'unknown'
+      } : 'none',
       participantAdults: validAdultTickets,
       participantChildren: validChildTickets,
       guideAdultTickets,
@@ -99,25 +111,6 @@ export const TicketsCard = ({
         );
       }
     }
-    
-    // Log guides details
-    logger.debug(`🎟️ [TicketsCard] Available guides for ticket calculation:`, {
-      guide1: guide1Info ? {
-        id: guide1Info.id,
-        name: guide1Info.name,
-        type: guide1Info.guideType
-      } : null,
-      guide2: guide2Info ? {
-        id: guide2Info.id,
-        name: guide2Info.name,
-        type: guide2Info.guideType
-      } : null,
-      guide3: guide3Info ? {
-        id: guide3Info.id,
-        name: guide3Info.name,
-        type: guide3Info.guideType
-      } : null
-    });
   }, [
     tourId, location, locationNeedsGuideTickets, hasAssignedGuides, 
     validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets,
@@ -154,7 +147,7 @@ export const TicketsCard = ({
             <span className="font-medium">{validChildTickets}</span>
           </div>
 
-          {locationNeedsGuideTickets && hasAssignedGuides && (
+          {locationNeedsGuideTickets && (
             <>
               <div className="pt-2 pb-1 text-xs text-muted-foreground border-t">
                 Guide Tickets

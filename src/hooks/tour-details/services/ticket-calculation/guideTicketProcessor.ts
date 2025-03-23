@@ -15,6 +15,7 @@ export const processGuideTicketRequirement = (
 ): {
   guideInfo: GuideInfo | null;
   guideName: string;
+  guideType: string;
   needsTicket: boolean;
   ticketType: "adult" | "child" | null;
 } => {
@@ -24,13 +25,15 @@ export const processGuideTicketRequirement = (
     return {
       guideInfo: null,
       guideName: `Unknown ${guideKey}`,
+      guideType: "unknown",
       needsTicket: false,
       ticketType: null
     };
   }
 
-  // Extract guide name for logging
+  // Extract guide name and type for logging
   const guideName = guideInfo.name || guideKey;
+  const guideType = guideInfo.guideType || "unknown";
   
   // Check if this guide is assigned to any groups
   const isAssigned = assignedGuideIds.has(guideKey);
@@ -48,6 +51,7 @@ export const processGuideTicketRequirement = (
     return {
       guideInfo,
       guideName,
+      guideType,
       needsTicket: false,
       ticketType: null
     };
@@ -59,6 +63,7 @@ export const processGuideTicketRequirement = (
     return {
       guideInfo,
       guideName,
+      guideType,
       needsTicket: false,
       ticketType: null
     };
@@ -81,6 +86,7 @@ export const processGuideTicketRequirement = (
   return {
     guideInfo,
     guideName,
+    guideType,
     needsTicket,
     ticketType
   };
@@ -93,6 +99,7 @@ export const calculateGuideTickets = (
   guideRequirements: Array<{
     guideInfo: GuideInfo | null;
     guideName: string;
+    guideType: string;
     needsTicket: boolean;
     ticketType: "adult" | "child" | null;
   }>
@@ -111,7 +118,7 @@ export const calculateGuideTickets = (
       name: guide.guideName,
       needsTicket: guide.needsTicket,
       ticketType: guide.ticketType,
-      type: guide.guideInfo?.guideType || 'unknown'
+      type: guide.guideType || 'unknown'
     }))
   );
 
@@ -121,7 +128,7 @@ export const calculateGuideTickets = (
   
   // Process each guide that needs a ticket for the result
   const guidesWithTickets = guideRequirements
-    .filter(guide => guide.needsTicket && guide.guideInfo)
+    .filter(guide => guide.needsTicket)
     .map(guide => {
       if (guide.ticketType === "adult") {
         adultTickets++;
@@ -131,7 +138,7 @@ export const calculateGuideTickets = (
       
       return {
         guideName: guide.guideName,
-        guideType: guide.guideInfo?.guideType || "Unknown",
+        guideType: guide.guideType || "Unknown",
         ticketType: guide.ticketType
       };
     });

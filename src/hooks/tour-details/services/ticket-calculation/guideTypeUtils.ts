@@ -1,3 +1,4 @@
+
 import { logger } from "@/utils/logger";
 
 /**
@@ -11,12 +12,17 @@ export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
   logger.debug(`🎟️ [guideTypeNeedsTicket] Checking guide type "${guideType}"`);
   
   // Guide types that never need tickets
-  const noTicketTypes = ["gc", "gc guide", "guide coordinator"];
+  const noTicketTypes = [
+    "gc", "gc guide", "guide coordinator",
+    "guide coordinator",
+    "coordinator"
+  ];
   
   // Guide types that always need tickets
   const ticketTypes = [
     "ga ticket", "ga tickets", "guide assistant",
-    "guide assistant ticket", "ticket guide"
+    "guide assistant ticket", "ticket guide",
+    "ga", "guide assistant"
   ];
   
   // Check if guide type is in the no-ticket list
