@@ -1,15 +1,15 @@
+import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Validate if a string is a valid UUID
+ * UUID validation helper 
+ * Used to determine whether to use Supabase or the API
  */
 export const isValidUuid = (id: string | undefined): boolean => {
   if (!id) return false;
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };
 
-/**
- * Alias for isValidUuid for backward compatibility
- */
+// Alias for compatibility with existing code
 export const isUuid = isValidUuid;
 
 /**
@@ -124,4 +124,13 @@ export const formatGuideId = (id: string | undefined): string => {
     return `${id.substring(0, 8)}...`;
   }
   return id;
+};
+
+/**
+ * Normalize a guide ID to ensure it's properly formatted before use.
+ * Returns the original ID if it's a valid UUID, null otherwise.
+ */
+export const normalizeGuideId = (id: string | undefined | null): string | null => {
+  if (!id) return null;
+  return isValidUuid(id) ? id : null;
 };

@@ -8,7 +8,7 @@ import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourC
 import { useTourDatabaseCheck } from "./hooks/useTourDatabaseCheck";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents";
-import { useEffect } from "react";
+import { useEffect, useCallback, memo } from "react";
 
 /**
  * Main tour details page component - refactored for cleaner organization
@@ -32,8 +32,8 @@ const TourDetailsPage = () => {
     handleRefetch
   } = useTourDetailsData(tourId);
   
-  // Debug tour data
-  useEffect(() => {
+  // Debug tour data - using useCallback to prevent recreation on each render
+  const logTourData = useCallback(() => {
     if (tour) {
       console.log("🚀 [TourDetailsPage] Tour data loaded:", {
         id: tour.id,
@@ -51,6 +51,11 @@ const TourDetailsPage = () => {
       console.log("🚀 [TourDetailsPage] No tour data available yet");
     }
   }, [tour, error, isLoading]);
+  
+  // Log tour data only when dependencies change
+  useEffect(() => {
+    logTourData();
+  }, [logTourData]);
   
   // Custom hook for guide information - safely pass tour
   const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
@@ -89,4 +94,5 @@ const TourDetailsPage = () => {
   );
 };
 
-export default TourDetailsPage;
+// Use memo to prevent unnecessary re-renders
+export default memo(TourDetailsPage);

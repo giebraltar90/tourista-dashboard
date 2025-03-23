@@ -7,6 +7,7 @@ import { TicketsManagement } from "./ticket-management";
 import { ModificationsTab } from "./ModificationsTab";
 import { GuideInfo } from "@/types/ventrata";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
+import { memo, useMemo } from "react";
 
 export interface NormalizedTourContentProps {
   tour: TourCardProps;
@@ -18,7 +19,7 @@ export interface NormalizedTourContentProps {
   onTabChange?: (value: string) => void;
 }
 
-export const NormalizedTourContent = ({
+export const NormalizedTourContent = memo(({
   tour,
   tourId,
   guide1Info,
@@ -44,6 +45,48 @@ export const NormalizedTourContent = ({
   const tourGroups = tour.tourGroups || [];
   const participantCounts = useParticipantCounts(tourGroups);
   
+  // Memoize the active content to prevent unnecessary re-renders
+  const activeContent = useMemo(() => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <TourOverview 
+            tour={tour} 
+            participantCounts={participantCounts}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+          />
+        );
+      case "tickets":
+        return (
+          <TicketsManagement 
+            tour={tour} 
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+          />
+        );
+      case "modifications":
+        return (
+          <ModificationsTab 
+            tour={tour}
+            tourId={tourId}
+          />
+        );
+      default:
+        return (
+          <TourOverview 
+            tour={tour} 
+            participantCounts={participantCounts}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+          />
+        );
+    }
+  }, [activeTab, tour, tourId, guide1Info, guide2Info, guide3Info, participantCounts]);
+  
   return (
     <div className="container mx-auto py-6 space-y-8">
       <TourHeader 
@@ -62,32 +105,10 @@ export const NormalizedTourContent = ({
       />
       
       <div className="space-y-8">
-        {activeTab === "overview" && (
-          <TourOverview 
-            tour={tour} 
-            participantCounts={participantCounts}
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            guide3Info={guide3Info}
-          />
-        )}
-        
-        {activeTab === "tickets" && (
-          <TicketsManagement 
-            tour={tour} 
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            guide3Info={guide3Info}
-          />
-        )}
-        
-        {activeTab === "modifications" && (
-          <ModificationsTab 
-            tour={tour}
-            tourId={tourId}
-          />
-        )}
+        {activeContent}
       </div>
     </div>
   );
-};
+});
+
+NormalizedTourContent.displayName = "NormalizedTourContent";

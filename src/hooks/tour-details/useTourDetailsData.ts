@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useTourById } from "@/hooks/tourData";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 export function useTourDetailsData(tourId: string) {
   const [activeTab, setActiveTab] = useState("overview");
@@ -18,6 +18,10 @@ export function useTourDetailsData(tourId: string) {
   const handleRefetch = useCallback(() => {
     if (tourId) {
       console.log("Manually refreshing tour data");
+      
+      // Set the last refetch time before executing the refetch
+      lastRefetchTime.current = Date.now();
+      
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       refetch().catch(err => {
         console.error("Error refetching tour:", err);
@@ -27,7 +31,6 @@ export function useTourDetailsData(tourId: string) {
           variant: "destructive"
         });
       });
-      lastRefetchTime.current = Date.now();
     }
   }, [tourId, queryClient, refetch]);
   

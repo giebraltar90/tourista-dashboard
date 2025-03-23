@@ -50,6 +50,7 @@ export function useGuideInfo(guideName: string) {
     enabled: !!guideName,
     staleTime: 10 * 60 * 1000, // 10 minutes
     retry: 1, // Only retry once to prevent excessive requests
+    refetchOnWindowFocus: false, // Prevent refetching on window focus
   });
   
   if (isError) {
