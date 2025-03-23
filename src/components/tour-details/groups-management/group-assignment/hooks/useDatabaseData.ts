@@ -1,90 +1,98 @@
 
-import { useState, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface DatabaseCheckResult {
   tablesExist: boolean;
-  participantsCount?: number;
+  error: string | null;
   toursCount?: number;
   tourGroupsCount?: number;
-  error?: string;
+  participantsCount?: number;
 }
 
-export const useDatabaseData = (tourId: string) => {
+export const useDatabaseData = () => {
   const [dbCheckResult, setDbCheckResult] = useState<DatabaseCheckResult | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const checkDatabase = useCallback(async () => {
-    setIsLoading(true);
+  const checkDatabaseStatus = async () => {
     try {
-      // Check if tour exists
-      const { data: tourData, error: tourError } = await supabase
-        .from("tours")
-        .select("id")
-        .eq("id", tourId)
+      // Check if the necessary tables exist
+      const { data: tourTableExists, error: tourTableError } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'tours')
         .single();
 
-      if (tourError) {
-        throw new Error(`Tour check failed: ${tourError.message}`);
+      const { data: tourGroupsTableExists, error: tourGroupsTableError } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'tour_groups')
+        .single();
+
+      const { data: participantsTableExists, error: participantsTableError } = await supabase
+        .from('information_schema.tables')
+        .select('table_name')
+        .eq('table_schema', 'public')
+        .eq('table_name', 'participants')
+        .single();
+
+      // If any of the tables don't exist, return error
+      if (tourTableError || tourGroupsTableError || participantsTableError) {
+        setDbCheckResult({
+          tablesExist: false,
+          error: 'Required database tables are missing'
+        });
+        return;
       }
 
-      // Get the tour's groups
-      const { data: groupsData, error: groupsError } = await supabase
-        .from("tour_groups")
-        .select("id")
-        .eq("tour_id", tourId);
+      // Count records in the tables
+      const { data: toursCount, error: toursCountError } = await supabase
+        .from('tours')
+        .select('id', { count: 'exact', head: true });
 
-      if (groupsError) {
-        throw new Error(`Groups check failed: ${groupsError.message}`);
-      }
+      const { data: tourGroupsCount, error: tourGroupsCountError } = await supabase
+        .from('tour_groups')
+        .select('id', { count: 'exact', head: true });
 
-      const groupIds = groupsData.map(group => group.id);
+      const { data: participantsData, error: participantsCountError } = await supabase
+        .from('participants')
+        .select('id', { count: 'exact', head: true });
 
-      // Use RPC function to count participants
-      const { data: participantsData, error: participantsError } = await supabase
-        .rpc("debug_check_participants", { group_ids: groupIds });
-
-      if (participantsError) {
-        throw new Error(`Participants check failed: ${participantsError.message}`);
+      if (toursCountError || tourGroupsCountError || participantsCountError) {
+        setDbCheckResult({
+          tablesExist: true,
+          error: 'Could not count records in database tables'
+        });
+        return;
       }
 
       setDbCheckResult({
         tablesExist: true,
-        participantsCount: participantsData?.participant_count || 0,
-        tourGroupsCount: groupIds.length,
-        toursCount: 1
+        error: null,
+        toursCount: toursCount?.length ?? 0,
+        tourGroupsCount: tourGroupsCount?.length ?? 0,
+        participantsCount: participantsData?.length ?? 0
       });
-
-    } catch (error: any) {
-      console.error("Database check error:", error);
+    } catch (error) {
+      console.error('Error checking database status:', error);
       setDbCheckResult({
         tablesExist: false,
-        error: error.message
+        error: 'Error checking database status'
       });
-    } finally {
-      setIsLoading(false);
     }
-  }, [tourId]);
+  };
 
-  const handleRefresh = useCallback(() => {
-    setIsRefreshing(true);
-    checkDatabase().finally(() => {
-      setIsRefreshing(false);
-      toast.success("Database status refreshed");
-    });
-  }, [checkDatabase]);
+  useEffect(() => {
+    checkDatabaseStatus();
+  }, []);
 
-  // Initial check
-  useState(() => {
-    checkDatabase();
-  });
+  const refreshDatabaseStatus = () => {
+    checkDatabaseStatus();
+  };
 
   return {
     dbCheckResult,
-    isLoading,
-    isRefreshing,
-    handleRefresh
+    refreshDatabaseStatus
   };
 };

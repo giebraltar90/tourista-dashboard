@@ -7,7 +7,6 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideInfo, useGuideData } from "@/hooks/guides";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { GroupCapacityAlert } from "./GroupCapacityAlert";
-import { GroupCapacityInfo } from "./GroupCapacityInfo";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { useState } from "react";
 import { GroupGuideCard } from "./GroupGuideCard";
@@ -30,7 +29,6 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   
   const isHighSeason = !!tour.isHighSeason;
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
-  const totalParticipants = tourGroups.reduce((sum, group) => sum + (group.size || 0), 0);
   
   const requiredGroups = isHighSeason ? 
     DEFAULT_CAPACITY_SETTINGS.highSeasonGroups : 
@@ -53,11 +51,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   return (
     <Card className="mt-6">
       <CardHeader>
-        <GroupCapacityInfo 
-          tour={tour} 
-          isHighSeason={isHighSeason} 
-          totalParticipants={totalParticipants} 
-        />
+        <h3 className="text-lg font-medium">Guide Assignments</h3>
       </CardHeader>
       
       <CardContent>

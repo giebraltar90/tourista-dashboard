@@ -46,7 +46,7 @@ export const DatabaseStatus = ({ dbCheckResult }: DatabaseStatusProps) => {
   }
 
   return (
-    <Alert variant="default">
+    <Alert>
       <CheckCircle className="h-4 w-4 text-green-500" />
       <AlertTitle>Database Status</AlertTitle>
       <AlertDescription>
