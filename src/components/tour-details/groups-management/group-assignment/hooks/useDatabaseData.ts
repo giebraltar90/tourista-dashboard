@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,8 +26,9 @@ export const useDatabaseData = () => {
       // Check each table individually
       for (const tableName of tables) {
         try {
+          // Fix SQL ambiguity by using quoted parameter name
           const { data: exists, error: checkError } = await supabase.rpc('check_table_exists', {
-            table_name: tableName
+            "table_name": tableName
           });
           
           if (checkError) {

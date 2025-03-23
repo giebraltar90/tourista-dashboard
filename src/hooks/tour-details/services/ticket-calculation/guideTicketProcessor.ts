@@ -77,6 +77,3 @@ export const processGuideTicketRequirement = (
     ticketType
   };
 };
-
-// Update index exports to include this function
-export const calculateGuideTickets = null; // This is a placeholder to address the missing export error
