@@ -56,7 +56,7 @@ export const TicketsCard = ({
     adultTickets: guideAdultTickets, 
     childTickets: guideChildTickets,
     guides: guidesWithTickets
-  } = (locationNeedsGuideTickets && hasAssignedGuides) ? calculateGuideTicketsNeeded(
+  } = (locationNeedsGuideTickets) ? calculateGuideTicketsNeeded(
     guide1Info,
     guide2Info,
     guide3Info,
@@ -144,27 +144,44 @@ export const TicketsCard = ({
       <CardContent>
         <div className="grid gap-2">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Adult tickets:</span>
+            <span className="text-muted-foreground">Participant adult tickets:</span>
             <span className="font-medium">{validAdultTickets}</span>
           </div>
           
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Child tickets:</span>
+            <span className="text-muted-foreground">Participant child tickets:</span>
             <span className="font-medium">{validChildTickets}</span>
           </div>
 
-          {guideAdultTickets > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">GA Ticket (adult):</span>
-              <span className="font-medium">{guideAdultTickets}</span>
-            </div>
-          )}
-
-          {guideChildTickets > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">GA Free (child):</span>
-              <span className="font-medium">{guideChildTickets}</span>
-            </div>
+          {locationNeedsGuideTickets && (
+            <>
+              <div className="pt-2 pb-1 text-xs text-muted-foreground border-t">
+                Guide Tickets
+              </div>
+              
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">GA Ticket guides (adult):</span>
+                <span className="font-medium">{guideAdultTickets}</span>
+              </div>
+  
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">GA Free guides (child):</span>
+                <span className="font-medium">{guideChildTickets}</span>
+              </div>
+              
+              {guidesWithTickets.length > 0 && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {guidesWithTickets.map((guide, idx) => (
+                    <div key={idx} className="flex justify-between items-center py-0.5">
+                      <span>{guide.guideName}</span>
+                      <Badge variant="outline" className="text-xs h-5">
+                        {guide.ticketType}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           )}
           
           <div className="flex justify-between pt-2 border-t">

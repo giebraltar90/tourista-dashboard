@@ -1,14 +1,14 @@
 
 import { Routes, Route } from "react-router-dom";
-import HomePage from "@/pages/home";
-import AboutPage from "@/pages/about";
-import ToursPage from "@/pages/tours";
-import TourDetails from "@/pages/TourDetails";
-import GuidesPage from "@/pages/guides";
-import SettingsPage from "@/pages/settings";
-import NotFound from "@/pages/not-found";
+import HomePage from "./pages/home";
+import AboutPage from "./pages/about";
+import ToursPage from "./pages/tours";
+import TourDetails from "./pages/TourDetails";
+import GuidesPage from "./pages/guides";
+import SettingsPage from "./pages/settings";
+import NotFound from "./pages/not-found";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "./components/theme-provider";
 import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
 import { useEffect } from "react";
 

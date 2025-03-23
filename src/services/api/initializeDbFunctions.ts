@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
+import { createGroupsUpdateFunction } from "./db/functions/createGroupsUpdateFunction";
 
 /**
  * Initialize all required database functions on application startup
@@ -10,10 +11,10 @@ export const initializeDbFunctions = async () => {
     logger.debug("Creating/updating database functions...");
     
     // Create the update_groups_after_move function for atomic group updates
-    const { error: moveError } = await supabase.rpc('create_groups_update_function', {});
+    const success = await createGroupsUpdateFunction();
     
-    if (moveError) {
-      logger.error("Failed to create update_groups_after_move function:", moveError);
+    if (!success) {
+      logger.error("Failed to create update_groups_after_move function");
     } else {
       logger.debug("Successfully created/updated update_groups_after_move function");
     }

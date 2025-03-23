@@ -5,10 +5,9 @@ import { logger } from "@/utils/logger";
 export const createGroupsUpdateFunction = async () => {
   try {
     // This function creates the PostgreSQL function to atomically update groups after a move
-    // Using RPC to create the function
-    const { error } = await supabase.rpc('admin_create_function', {
-      function_name: 'update_groups_after_move',
-      function_definition: `
+    // Using execute_sql RPC to create the function
+    const { error } = await supabase.rpc('execute_sql', {
+      sql_query: `
         CREATE OR REPLACE FUNCTION update_groups_after_move(
           source_group_id UUID,
           target_group_id UUID,

@@ -8,7 +8,38 @@ import { logger } from "@/utils/logger";
 export const createUpdateGroupsFunction = async () => {
   try {
     // Using a raw SQL query to create the function
-    const { error } = await supabase.rpc('create_groups_update_function');
+    const { error } = await supabase.rpc('execute_sql', {
+      sql_query: `
+        CREATE OR REPLACE FUNCTION update_groups_after_move(
+          source_group_id UUID,
+          target_group_id UUID,
+          source_size INT,
+          source_child_count INT,
+          target_size INT,
+          target_child_count INT
+        ) RETURNS VOID AS $$
+        BEGIN
+          -- Update the source group
+          UPDATE tour_groups 
+          SET 
+            size = GREATEST(0, source_size), 
+            child_count = GREATEST(0, source_child_count),
+            updated_at = NOW()
+          WHERE id = source_group_id;
+          
+          -- Update the target group
+          UPDATE tour_groups 
+          SET 
+            size = target_size, 
+            child_count = target_child_count,
+            updated_at = NOW()
+          WHERE id = target_group_id;
+          
+          RETURN;
+        END;
+        $$ LANGUAGE plpgsql;
+      `
+    });
     
     if (error) {
       logger.error("Error creating update_groups_after_move function:", error);
