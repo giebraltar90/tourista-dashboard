@@ -40,17 +40,10 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
   // Get high season flag
   const isHighSeason = Boolean(tour.isHighSeason);
   
-  // Calculate participant counts using our custom hook
+  // Calculate participant counts using our custom hook - simplified
   const participantCounts = useParticipantCounts(
     tourGroups,
-    guide1Info,
-    guide2Info,
-    guide3Info,
-    tour.guide1 || "",
-    tour.guide2 || "",
-    tour.guide3 || "",
-    tour.location,
-    allGuides
+    tour.location
   );
 
   return (

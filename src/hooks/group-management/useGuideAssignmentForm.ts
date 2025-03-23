@@ -5,17 +5,37 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAssignGuide } from "./useAssignGuide";
 import { toast } from "sonner";
-import { useGuideData } from "@/hooks/guides/useGuideData";
-import { 
-  FormValues, 
-  UseGuideAssignmentFormProps, 
-  UseGuideAssignmentFormResult 
-} from "./types";
 
 // Define form schema with Zod
 const formSchema = z.object({
   guideId: z.string().optional(),
 });
+
+export interface FormValues {
+  guideId?: string;
+}
+
+export interface UseGuideAssignmentFormProps {
+  tourId: string;
+  groupIndex: number;
+  guides: Array<{
+    id: string;
+    name: string;
+    info: any | null;
+  }>;
+  currentGuideId?: string;
+  onSuccess: () => void;
+  tour?: any;
+}
+
+export interface UseGuideAssignmentFormResult {
+  form: any;
+  isSubmitting: boolean;
+  handleSubmit: (values: FormValues) => Promise<void>;
+  handleRemoveGuide: () => Promise<void>;
+  hasChanges: boolean;
+  hasCurrentGuide: boolean;
+}
 
 /**
  * Hook for handling guide assignment form functionality
@@ -25,12 +45,10 @@ export const useGuideAssignmentForm = ({
   groupIndex,
   guides,
   currentGuideId,
-  onSuccess,
-  tour
+  onSuccess
 }: UseGuideAssignmentFormProps): UseGuideAssignmentFormResult => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
-  const { guides: allGuides = [] } = useGuideData() || { guides: [] };
   const [currentValue, setCurrentValue] = useState(currentGuideId || "_none");
   
   // Initialize the form

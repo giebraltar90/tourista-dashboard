@@ -1,16 +1,13 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Info, Check } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Check } from "lucide-react";
 
 interface TicketsCardProps {
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
   requiredTickets?: number;
-  guideAdultTickets?: number;
-  guideChildTickets?: number;
   location?: string;
 }
 
@@ -19,41 +16,19 @@ export const TicketsCard = ({
   childTickets, 
   totalTickets,
   requiredTickets,
-  guideAdultTickets = 0,
-  guideChildTickets = 0,
   location = ''
 }: TicketsCardProps) => {
   // Ensure counts are non-negative numbers
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
-  const validGuideAdultTickets = Math.max(0, guideAdultTickets || 0);
-  const validGuideChildTickets = Math.max(0, guideChildTickets || 0);
   
-  // Check if it's a location requiring special guide tickets
-  const isLocationRequiringTickets = 
-    location?.toLowerCase().includes('versailles') || 
-    location?.toLowerCase().includes('montmartre');
-    
   // Total required tickets calculations
-  const totalRequiredAdultTickets = validAdultTickets + validGuideAdultTickets;
-  const totalRequiredChildTickets = validChildTickets + validGuideChildTickets;
-  const totalGuideTickets = validGuideAdultTickets + validGuideChildTickets;
+  const totalRequiredAdultTickets = validAdultTickets;
+  const totalRequiredChildTickets = validChildTickets;
   const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
   
   // Determine if we have enough tickets
   const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
-  
-  // Log current ticket breakdown for debugging
-  console.log("TicketsCard render:", {
-    location,
-    isLocationRequiringTickets,
-    validAdultTickets,
-    validChildTickets,
-    validGuideAdultTickets,
-    validGuideChildTickets,
-    totalRequiredTickets,
-    hasEnoughTickets
-  });
 
   return (
     <Card>
@@ -70,35 +45,6 @@ export const TicketsCard = ({
             <span className="text-muted-foreground">Child (Under 18):</span>
             <span className="font-medium">{validChildTickets} tickets</span>
           </div>
-          
-          {isLocationRequiringTickets && (
-            <>
-              <div className="pt-2 pb-1 border-t">
-                <span className="text-xs font-medium text-muted-foreground">Guide Tickets:</span>
-              </div>
-              
-              {validGuideAdultTickets > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">GA Ticket (Adult):</span>
-                  <span className="font-medium">{validGuideAdultTickets} tickets</span>
-                </div>
-              )}
-              
-              {validGuideChildTickets > 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">GA Free (Child):</span>
-                  <span className="font-medium">{validGuideChildTickets} tickets</span>
-                </div>
-              )}
-              
-              {totalGuideTickets === 0 && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Guide Tickets:</span>
-                  <span className="font-medium text-green-600">No tickets needed</span>
-                </div>
-              )}
-            </>
-          )}
           
           <div className="flex justify-between pt-2 border-t">
             <span className="text-muted-foreground">Total:</span>
@@ -117,31 +63,6 @@ export const TicketsCard = ({
                 <Check className="h-3 w-3 mr-1" />
                 Tickets sufficient
               </Badge>
-            </div>
-          )}
-          
-          {isLocationRequiringTickets && (
-            <div className="mt-3 pt-3 border-t text-xs">
-              <div className="flex items-start mb-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground mr-1.5 mt-0.5" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Guide requirements at {location?.includes('Versailles') ? 'Versailles' : 'Montmartre'}:</p>
-                      <ul className="list-disc pl-4 mt-1 space-y-1">
-                        <li>GA Ticket: Over 26 years old, requires an adult ticket, cannot guide inside</li>
-                        <li>GA Free: Under 26, requires a child ticket, cannot guide inside</li>
-                        <li>GC: Can guide inside, no ticket needed</li>
-                      </ul>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <span className="text-muted-foreground">
-                  {location?.includes('Versailles') ? 'Versailles' : 'Montmartre'} guide tickets required based on guide type
-                </span>
-              </div>
             </div>
           )}
         </div>

@@ -45,19 +45,18 @@ export const updateGuideInSupabase = async (
     console.log("Sending to database:", updateData);
 
     // Update the guide assignment in the database
-    const { error, data } = await supabase
+    const { error } = await supabase
       .from('tour_groups')
       .update(updateData)
       .eq('id', groupId)
-      .eq('tour_id', tourId)
-      .select();
+      .eq('tour_id', tourId);
       
     if (error) {
       console.error("Error updating guide assignment:", error);
       return false;
     }
     
-    console.log("Successfully updated guide assignment in Supabase. Response:", data);
+    console.log("Successfully updated guide assignment in Supabase");
     return true;
   } catch (error) {
     console.error("Error updating guide assignment:", error);

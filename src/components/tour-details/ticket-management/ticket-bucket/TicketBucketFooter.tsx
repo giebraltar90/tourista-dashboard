@@ -6,30 +6,17 @@ interface TicketBucketFooterProps {
   totalBucketTickets: number;
   requiredTickets: number;
   hasEnoughBucketTickets: boolean;
-  guideTicketsNeeded?: number;
 }
 
 export const TicketBucketFooter = ({ 
   totalBucketTickets, 
   requiredTickets, 
-  hasEnoughBucketTickets,
-  guideTicketsNeeded = 0
+  hasEnoughBucketTickets
 }: TicketBucketFooterProps) => {
-  // Calculate participant tickets (total required minus guides)
-  const participantTicketsNeeded = Math.max(0, requiredTickets - guideTicketsNeeded);
-  
-  // Format the ticket requirements differently based on whether guide tickets are needed
-  const formattedTicketRequirements = guideTicketsNeeded > 0 
-    ? `${participantTicketsNeeded} + ${guideTicketsNeeded}`
-    : requiredTickets.toString();
-  
   console.log("🎫 [TicketBucketFooter] Rendering requirements:", {
     totalBucketTickets,
     requiredTickets,
-    hasEnoughBucketTickets,
-    guideTicketsNeeded,
-    participantTicketsNeeded,
-    formattedTicketRequirements
+    hasEnoughBucketTickets
   });
 
   return (
@@ -49,16 +36,14 @@ export const TicketBucketFooter = ({
           <div className="w-full p-2 bg-green-50 text-green-700 rounded-md flex items-center">
             <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
             <span className="text-sm">
-              Tour allocation: {formattedTicketRequirements} tickets assigned to this tour
-              {guideTicketsNeeded > 0 ? ` (${guideTicketsNeeded} for guides)` : ''}
+              Tour allocation: {requiredTickets} tickets assigned to this tour
             </span>
           </div>
         ) : (
           <div className="w-full p-2 bg-amber-50 text-amber-700 rounded-md flex items-center">
             <AlertCircle className="h-4 w-4 mr-2 text-amber-600" />
             <span className="text-sm">
-              No bucket assigned. This tour needs {formattedTicketRequirements} tickets
-              {guideTicketsNeeded > 0 ? ` (including ${guideTicketsNeeded} for guides)` : ''}
+              No bucket assigned. This tour needs {requiredTickets} tickets
             </span>
           </div>
         )}

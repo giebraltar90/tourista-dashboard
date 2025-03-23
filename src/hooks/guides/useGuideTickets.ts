@@ -2,13 +2,6 @@
 import { GuideInfo } from '@/types/ventrata';
 
 /**
- * Determines if a guide name is Sophie Miller
- */
-export const isSophieMiller = (name: string = ''): boolean => {
-  return name?.toLowerCase().includes('sophie miller');
-};
-
-/**
  * Determines if a guide needs a ticket based on guide type and location
  */
 export const doesGuideNeedTicket = (

@@ -19,13 +19,15 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
   const assignGuide = async (groupIdOrIndex: string | number, guideId: string) => {
     const tourId = getTourId();
     
-    // Convert groupIndex to string for database operations if needed
+    // Determine the actual group ID
     const groupId = typeof groupIdOrIndex === 'number' 
-      ? String(groupIdOrIndex) // This is for backward compatibility
+      ? String(groupIdOrIndex) // This handles numeric group indices
       : groupIdOrIndex;
     
     if (!tourId || !groupId) {
+      console.error("Missing required data for guide assignment:", { tourId, groupId });
       setAssignmentError("Missing required data");
+      toast.error("Missing required tour or group information");
       return false;
     }
 
@@ -39,10 +41,12 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         guideId: guideId === "_none" ? null : guideId
       });
 
-      // Update the group with the new guide
+      // Update the group with the new guide in the database
       const { error } = await supabase
         .from("tour_groups")
-        .update({ guide_id: guideId === "_none" ? null : guideId })
+        .update({ 
+          guide_id: guideId === "_none" ? null : guideId 
+        })
         .eq("id", groupId);
 
       if (error) {
