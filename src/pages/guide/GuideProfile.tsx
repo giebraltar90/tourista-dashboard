@@ -16,7 +16,9 @@ import { Calendar as CalendarIcon, IdCard } from "lucide-react";
 const GuideProfile = () => {
   const { role, guideView } = useRole();
   const { guideName = "" } = useGuideTours();
-  const guideInfo = useGuideInfo(guideName);
+  const guideInfoQuery = useGuideInfo(guideName);
+  // Extract the data from the query result
+  const guideInfo = guideInfoQuery.data;
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
   if (role === "operator" && !guideView) {

@@ -14,14 +14,17 @@ export function useTourGuideInfo(tour: TourCardProps | undefined | null) {
   const guide3Id = useMemo(() => tour?.guide3 || '', [tour]);
 
   // Use the useGuideInfo hook to get guide information
-  const { data: guide1Info } = useGuideInfo(guide1Id);
-  const { data: guide2Info } = useGuideInfo(guide2Id);
-  const { data: guide3Info } = useGuideInfo(guide3Id);
+  const guide1Query = useGuideInfo(guide1Id);
+  const guide2Query = useGuideInfo(guide2Id);
+  const guide3Query = useGuideInfo(guide3Id);
 
   // Return the guide information
   return {
-    guide1Info,
-    guide2Info,
-    guide3Info
+    guide1Info: guide1Query.data,
+    guide2Info: guide2Query.data,
+    guide3Info: guide3Query.data,
+    guide1Loading: guide1Query.isLoading,
+    guide2Loading: guide2Query.isLoading,
+    guide3Loading: guide3Query.isLoading
   };
 }

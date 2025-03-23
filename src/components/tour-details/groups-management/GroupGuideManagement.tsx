@@ -18,9 +18,15 @@ interface GroupGuideManagementProps {
 }
 
 export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
-  const guide1Info = useGuideInfo(tour.guide1 || '');
-  const guide2Info = useGuideInfo(tour.guide2 || '');
-  const guide3Info = useGuideInfo(tour.guide3 || '');
+  const guide1Query = useGuideInfo(tour.guide1 || '');
+  const guide2Query = useGuideInfo(tour.guide2 || '');
+  const guide3Query = useGuideInfo(tour.guide3 || '');
+  
+  // Extract the data from the query results
+  const guide1Info = guide1Query.data;
+  const guide2Info = guide2Query.data;
+  const guide3Info = guide3Query.data;
+  
   const { guides = [] } = useGuideData();
   
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
