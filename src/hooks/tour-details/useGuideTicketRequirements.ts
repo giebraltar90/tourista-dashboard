@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { GuideInfo } from '@/types/ventrata';
-import { locationRequiresGuideTickets, calculateGuideTicketsNeeded } from '@/hooks/group-management/utils/ticketCalculation';
+import { locationRequiresGuideTickets, calculateGuideTicketsNeeded } from '@/hooks/tour-details/services/ticketCalculationService';
 import { logger } from '@/utils/logger';
 
 export interface GuideTicketRequirementsResult {

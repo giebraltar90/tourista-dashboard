@@ -1,10 +1,9 @@
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils/ticketCalculation";
+import { useGuideTicketRequirements } from "@/hooks/tour-details/useGuideTicketRequirements";
 import { GuideInfo } from "@/types/ventrata";
 import { useEffect } from "react";
 import { logger } from "@/utils/logger";
-import { useGuideRequirements } from "@/hooks/tour-details/useGuideRequirements";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -52,26 +51,15 @@ export const TicketsCard = ({
     isHighSeason: false
   };
   
-  const { locationNeedsGuideTickets, hasAssignedGuides } = useGuideRequirements(
+  const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
     mockTour, guide1Info, guide2Info, guide3Info
   );
   
-  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} guide check: requires tickets: ${locationNeedsGuideTickets}, location: ${location}, has assigned guides: ${hasAssignedGuides}`);
-  
-  // Calculate guide tickets only if needed and there are guides
   const { 
     adultTickets: guideAdultTickets, 
     childTickets: guideChildTickets,
     guides: guidesWithTickets
-  } = (locationNeedsGuideTickets && hasAssignedGuides) 
-    ? calculateGuideTicketsNeeded(
-        guide1Info,
-        guide2Info,
-        guide3Info,
-        location,
-        tourGroups
-      ) 
-    : { adultTickets: 0, childTickets: 0, guides: [] };
+  } = guideTickets;
   
   // Log ticket calculation for debugging
   useEffect(() => {

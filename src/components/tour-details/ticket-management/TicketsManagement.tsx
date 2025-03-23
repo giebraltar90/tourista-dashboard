@@ -1,11 +1,9 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TicketsManagementProps } from "./types";
 import { useEffect } from "react";
 import { TicketBucketInfo } from "./TicketBucketInfo";
-import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils/ticketCalculation";
+import { useGuideTicketRequirements } from "@/hooks/tour-details/useGuideTicketRequirements";
 import { logger } from "@/utils/logger";
-import { useGuideRequirements } from "@/hooks/tour-details/useGuideRequirements";
 
 export const TicketsManagement = ({ 
   tour, 
@@ -27,24 +25,16 @@ export const TicketsManagement = ({
   const adultParticipants = totalParticipants - totalChildCount;
   
   // Use the new hook to determine guide requirements
-  const { locationNeedsGuideTickets, hasAssignedGuides } = useGuideRequirements(
+  const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
     tour, guide1Info, guide2Info, guide3Info
   );
   
-  // Calculate tickets needed for guides based on guide types
+  // Get guide ticket counts from the hook response
   const { 
     adultTickets: guideAdultTickets, 
     childTickets: guideChildTickets,
     guides: guidesWithTickets
-  } = (locationNeedsGuideTickets && hasAssignedGuides) 
-    ? calculateGuideTicketsNeeded(
-        guide1Info,
-        guide2Info,
-        guide3Info,
-        tour.location,
-        tour.tourGroups
-      )
-    : { adultTickets: 0, childTickets: 0, guides: [] };
+  } = guideTickets;
   
   // Total tickets needed including guides
   const totalAdultTicketsNeeded = adultParticipants + guideAdultTickets;
