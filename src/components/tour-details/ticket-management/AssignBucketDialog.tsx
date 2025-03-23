@@ -81,15 +81,14 @@ export const AssignBucketDialog = ({
   }, [availableBuckets]);
 
   // Filter buckets that can accommodate this tour's tickets
-  // Fixed filtering logic to prevent UI freeze
   const availableBucketsForTour = availableBuckets.filter(bucket => {
-    // Skip filtering if no tickets are needed - all buckets are valid
+    // If no tickets are needed, only filter out buckets that already have this tour assigned
     if (requiredTickets <= 0) {
       // Don't show buckets that already have this tour assigned
       return !(bucket.assigned_tours && bucket.assigned_tours.includes(tourId));
     }
     
-    // Calculate available tickets more safely
+    // Calculate available tickets safely
     const allocatedTickets = typeof bucket.allocated_tickets === 'number' 
       ? bucket.allocated_tickets 
       : 0;

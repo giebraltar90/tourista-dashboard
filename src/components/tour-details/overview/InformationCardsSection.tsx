@@ -7,19 +7,26 @@ import {
 } from "./";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { ParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
+import { GuideInfo } from "@/types/ventrata";
 
 interface InformationCardsSectionProps {
   tour: TourCardProps;
   tourGroups: VentrataTourGroup[];
   participantCounts: ParticipantCounts;
   isHighSeason: boolean;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
 export const InformationCardsSection = ({ 
   tour, 
   tourGroups, 
   participantCounts,
-  isHighSeason
+  isHighSeason,
+  guide1Info = null,
+  guide2Info = null,
+  guide3Info = null
 }: InformationCardsSectionProps) => {
   const {
     totalParticipants,
@@ -51,6 +58,10 @@ export const InformationCardsSection = ({
         totalTickets={totalTickets}
         requiredTickets={requiredTickets > 0 ? requiredTickets : totalParticipants}
         location={tour.location}
+        guide1Info={guide1Info}
+        guide2Info={guide2Info}
+        guide3Info={guide3Info}
+        tourGroups={tourGroups}
       />
     </div>
   );

@@ -1,7 +1,9 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check, Users } from "lucide-react";
+import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils";
+import { GuideInfo } from "@/types/ventrata";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -9,6 +11,10 @@ interface TicketsCardProps {
   totalTickets: number;
   requiredTickets?: number;
   location?: string;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
+  tourGroups?: any[];
 }
 
 export const TicketsCard = ({ 
@@ -16,15 +22,31 @@ export const TicketsCard = ({
   childTickets, 
   totalTickets,
   requiredTickets,
-  location = ''
+  location = '',
+  guide1Info = null,
+  guide2Info = null,
+  guide3Info = null,
+  tourGroups = []
 }: TicketsCardProps) => {
   // Ensure counts are non-negative numbers
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
   
+  // Calculate guide tickets
+  const { 
+    adultTickets: guideAdultTickets, 
+    childTickets: guideChildTickets 
+  } = calculateGuideTicketsNeeded(
+    guide1Info,
+    guide2Info,
+    guide3Info,
+    location,
+    tourGroups
+  );
+  
   // Total required tickets calculations
-  const totalRequiredAdultTickets = validAdultTickets;
-  const totalRequiredChildTickets = validChildTickets;
+  const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
+  const totalRequiredChildTickets = validChildTickets + guideChildTickets;
   const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
   
   // Determine if we have enough tickets
@@ -39,12 +61,41 @@ export const TicketsCard = ({
         <div className="grid gap-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Adult (18+):</span>
-            <span className="font-medium">{validAdultTickets} tickets</span>
+            <span className="font-medium">
+              {validAdultTickets} 
+              {guideAdultTickets > 0 && 
+                <span className="text-xs text-muted-foreground ml-1">
+                  (+{guideAdultTickets} guide)
+                </span>
+              }
+            </span>
           </div>
+          
           <div className="flex justify-between">
             <span className="text-muted-foreground">Child (Under 18):</span>
-            <span className="font-medium">{validChildTickets} tickets</span>
+            <span className="font-medium">
+              {validChildTickets}
+              {guideChildTickets > 0 && 
+                <span className="text-xs text-muted-foreground ml-1">
+                  (+{guideChildTickets} guide)
+                </span>
+              }
+            </span>
           </div>
+          
+          {(guideAdultTickets > 0 || guideChildTickets > 0) && (
+            <div className="flex justify-between text-xs">
+              <span className="text-muted-foreground flex items-center">
+                <Users className="h-3 w-3 mr-1" />
+                Guide tickets:
+              </span>
+              <span>
+                {guideAdultTickets > 0 && `${guideAdultTickets} adult`}
+                {guideAdultTickets > 0 && guideChildTickets > 0 && ', '}
+                {guideChildTickets > 0 && `${guideChildTickets} child`}
+              </span>
+            </div>
+          )}
           
           <div className="flex justify-between pt-2 border-t">
             <span className="text-muted-foreground">Total:</span>
