@@ -7,7 +7,7 @@ import { logger } from "@/utils/logger";
 export const countTicketsByType = (
   guidesWithRequirements: Array<{
     needsTicket: boolean;
-    ticketType: string | null;
+    ticketType: "adult" | "child" | null;
   }>
 ): { adultTickets: number; childTickets: number; totalTickets: number } => {
   let adultTickets = 0;
@@ -44,12 +44,12 @@ export const mapGuidesToResultFormat = (
     guideName: string;
     guideType: string;
     needsTicket: boolean;
-    ticketType: string | null;
+    ticketType: "adult" | "child" | null;
   }>
 ): Array<{
   guideName: string;
   guideType: string;
-  ticketType: string | null;
+  ticketType: "adult" | "child" | null;
 }> => {
   return guideRequirements.map(guide => ({
     guideName: guide.guideName,

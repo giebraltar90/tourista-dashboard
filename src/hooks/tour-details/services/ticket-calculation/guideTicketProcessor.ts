@@ -60,7 +60,7 @@ export const processGuideTicketRequirement = (
 
   // Determine if guide needs a ticket based on type
   const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
-  let ticketType = null;
+  let ticketType: "adult" | "child" | null = null;
   
   if (needsTicket) {
     ticketType = determineTicketTypeForGuide(guideInfo.guideType);
@@ -95,7 +95,7 @@ export const calculateGuideTickets = (
   guides: Array<{
     guideName: string;
     guideType: string;
-    ticketType: string | null;
+    ticketType: "adult" | "child" | null;
   }>;
 } => {
   // Log full guide requirements
