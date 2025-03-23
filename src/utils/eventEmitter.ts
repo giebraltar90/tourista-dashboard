@@ -1,4 +1,5 @@
 
+
 type EventCallback = (...args: any[]) => void;
 
 class EventEmitterClass {
