@@ -17,23 +17,15 @@ export const useGuideTicketRequirements = (
   // We always consider guide tickets (no longer location dependent)
   const locationNeedsGuideTickets = true;
   
-  // Find assigned guides from tour groups (we now assume all guides need tickets if present)
+  // Find assigned guides from tour groups
   const assignedGuidePositions = useMemo(() => {
-    // Create a set that includes all guides if they exist
-    const guides = new Set<string>();
-    if (guide1Info) guides.add("guide1");
-    if (guide2Info) guides.add("guide2");
-    if (guide3Info) guides.add("guide3");
-    
-    logger.debug(`🎟️ [useGuideTicketRequirements] Assigned guides:`, {
-      guide1: guide1Info?.name || 'none',
-      guide2: guide2Info?.name || 'none',
-      guide3: guide3Info?.name || 'none',
-      positions: Array.from(guides)
-    });
-    
-    return guides;
-  }, [guide1Info, guide2Info, guide3Info]);
+    return findAssignedGuides(
+      tour.tourGroups,
+      guide1Info,
+      guide2Info,
+      guide3Info
+    );
+  }, [tour.tourGroups, guide1Info, guide2Info, guide3Info]);
   
   // Calculate guide tickets needed
   const guidesWithTickets = useMemo(() => {

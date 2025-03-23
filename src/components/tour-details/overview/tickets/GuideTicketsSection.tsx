@@ -32,7 +32,6 @@ export const GuideTicketsSection = ({
   });
   
   // Always display the section, even if there are no guide tickets
-  // This ensures the section label is always visible
   return (
     <div>
       <div className="text-xs text-muted-foreground mb-1">
