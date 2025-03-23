@@ -35,9 +35,9 @@ export const TicketsCard = ({
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
   
-  // Check if location needs guide tickets
-  const locationNeedsGuideTickets = location && 
-    (location.toLowerCase().includes('versailles') || location.toLowerCase().includes('montmartre'));
+  // Check if location needs guide tickets - normalize location to lowercase for case-insensitive comparison
+  const locationLower = location.toLowerCase();
+  const locationNeedsGuideTickets = locationLower.includes('versailles') || locationLower.includes('montmartre');
   
   // Check if there are assigned guides in any groups
   const hasAssignedGuides = tourGroups?.some(g => {
@@ -46,7 +46,7 @@ export const TicketsCard = ({
     return hasGuide;
   }) || false;
   
-  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} has assigned guides: ${hasAssignedGuides}, requires tickets: ${locationNeedsGuideTickets}, location: ${location}`);
+  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} has assigned guides: ${hasAssignedGuides}, requires tickets: ${locationNeedsGuideTickets}, location: ${location}, locationLower: ${locationLower}`);
   
   // Calculate guide tickets only if needed and there are assigned guides
   const { 
@@ -66,6 +66,7 @@ export const TicketsCard = ({
     logger.debug("🎟️ [TicketsCard] Ticket calculation for tour " + tourId, {
       tourId,
       location,
+      locationLower,
       locationNeedsGuideTickets,
       hasAssignedGuides,
       validAdultTickets,

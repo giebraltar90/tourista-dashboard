@@ -25,7 +25,8 @@ export const useGroupCardState = (
     console.log(`DATABASE DEBUG: useGroupCardState initialized for group ${groupName} (ID: ${groupId})`, {
       hasParticipantsArray: Array.isArray(participants),
       participantsLength: Array.isArray(participants) ? participants.length : 0,
-      firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null
+      firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null,
+      isExpandedInitialValue: true // Log that we're initializing with expanded state
     });
   }, []);
   

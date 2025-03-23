@@ -15,7 +15,8 @@ export const useGroupCardState = (
   childCount?: number,
   onRefreshParticipants?: () => void
 ) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  // Start expanded by default - changed from false to true
+  const [isExpanded, setIsExpanded] = useState(true);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -24,7 +25,8 @@ export const useGroupCardState = (
     console.log(`DATABASE DEBUG: useGroupCardState initialized for group ${groupName} (ID: ${groupId})`, {
       hasParticipantsArray: Array.isArray(participants),
       participantsLength: Array.isArray(participants) ? participants.length : 0,
-      firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null
+      firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null,
+      isExpandedInitialValue: true // Log that we're initializing with expanded state
     });
   }, []);
   

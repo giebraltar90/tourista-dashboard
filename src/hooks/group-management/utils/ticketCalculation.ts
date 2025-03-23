@@ -22,10 +22,13 @@ export const getGuideTicketRequirement = (
     location
   });
 
+  // Normalize location to lowercase for case-insensitive comparison
+  const locationLower = location.toLowerCase();
+  
   // Check if location requires tickets (only Versailles and Montmartre need tickets)
   if (!location || 
-      (!location.toLowerCase().includes('versailles') && 
-       !location.toLowerCase().includes('montmartre'))) {
+      (!locationLower.includes('versailles') && 
+       !locationLower.includes('montmartre'))) {
     logger.debug(`🎟️ [TicketRequirement] Location "${location}" doesn't require guide tickets`);
     return { needsTicket: false, ticketType: null };
   }
@@ -70,19 +73,23 @@ export const calculateGuideTicketsNeeded = (
   let childTickets = 0;
   const guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> = [];
   
+  // Normalize location to lowercase for case-insensitive comparison
+  const locationLower = location.toLowerCase();
+  
   logger.debug("🎟️ [CalculateTickets] Starting guide ticket calculation", {
     tourId: tourGroups[0]?.tourId || 'unknown',
     guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'null',
     guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
     guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
     location,
+    locationLower,
     tourGroupsCount: tourGroups?.length || 0
   });
 
   // Skip ticket calculation if location doesn't require tickets
   if (!location || 
-      (!location.toLowerCase().includes('versailles') && 
-       !location.toLowerCase().includes('montmartre'))) {
+      (!locationLower.includes('versailles') && 
+       !locationLower.includes('montmartre'))) {
     logger.debug(`🎟️ [CalculateTickets] Location "${location}" doesn't require guide tickets`);
     return { adultTickets: 0, childTickets: 0, guides: [] };
   }
