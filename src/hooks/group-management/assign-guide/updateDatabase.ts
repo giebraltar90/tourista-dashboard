@@ -5,7 +5,7 @@ import { logger } from "@/utils/logger";
 /**
  * Update the database with the guide assignment
  */
-export const updateDatabaseWithGuideAssignment = async (
+export const updateDatabase = async (
   groupId: string,
   guideId: string | null,
   updatedName: string
@@ -29,7 +29,10 @@ export const updateDatabaseWithGuideAssignment = async (
     logger.log(`🔄 [AssignGuide] Successfully updated group ${groupId} with guide ${guideId || 'none'}`);
     return true;
   } catch (error) {
-    logger.error("🔄 [AssignGuide] Exception in updateDatabaseWithGuideAssignment:", error);
+    logger.error("🔄 [AssignGuide] Exception in updateDatabase:", error);
     return false;
   }
 };
+
+// Alias for backward compatibility
+export const updateDatabaseWithGuideAssignment = updateDatabase;

@@ -6,7 +6,7 @@ import { logger } from "@/utils/logger";
 /**
  * Fetches available guides and processes the guide ID
  */
-export const fetchAndProcessGuideId = async (
+export const processGuideId = async (
   guideId: string
 ): Promise<string | null> => {
   // Fetch all available guides to ensure we can map special IDs to proper UUIDs

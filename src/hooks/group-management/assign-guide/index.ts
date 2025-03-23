@@ -2,7 +2,7 @@
 // Export all functions from sub-modules
 export { resolveGroupId } from './resolveGroupId';
 export { processGuideId } from './processGuideId';
-export { prepareGroupName } from './createGroupName';
+export { prepareGroupName, createDisplayNameForGroup } from './createGroupName';
 export { updateDatabase } from './updateDatabase';
 
 // Re-export types

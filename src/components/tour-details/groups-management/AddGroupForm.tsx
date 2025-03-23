@@ -43,9 +43,8 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { guides } = useGuideData();
   
-  // Get the existing groups to pass to the useAddGroup hook
-  const existingGroups: VentrataTourGroup[] = []; // We'll pass an empty array and let the hook handle it
-  const { addGroup, isLoading } = useAddGroup(tourId, existingGroups);
+  // Get the addGroup function
+  const { addGroup } = useAddGroup(tourId);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -66,7 +65,7 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
       
       console.log("Submitting new group:", groupData);
       
-      await addGroup(groupData);
+      await addGroup();
       
       form.reset();
       onSuccess();
@@ -134,8 +133,8 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
           <Button type="button" variant="outline" onClick={onSuccess}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting || isLoading}>
-            {isSubmitting || isLoading ? "Adding..." : "Add Group"}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Adding..." : "Add Group"}
           </Button>
         </div>
       </form>

@@ -3,64 +3,61 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
 /**
- * Fetches current group data and prepares new group name
+ * Prepare a group name for display, optionally incorporating guide name
  */
 export const prepareGroupName = async (
-  tourId: string,
-  actualGroupId: string,
-  finalGuideId: string | null
-): Promise<string | null> => {
+  groupId: string, 
+  guideId: string | null
+): Promise<string> => {
   try {
-    // Fetch current group data
-    const { data: currentGroup, error: currentGroupError } = await supabase
+    // First, get the current group name
+    const { data: group, error: groupError } = await supabase
       .from("tour_groups")
-      .select("name, participants(*)")
-      .eq("id", actualGroupId)
+      .select("name")
+      .eq("id", groupId)
       .single();
       
-    if (currentGroupError) {
-      logger.error("🔄 [AssignGuide] Error fetching current group data:", currentGroupError);
-      return null;
+    if (groupError) {
+      logger.error("🔄 [AssignGuide] Error fetching group:", groupError);
+      return "";
     }
     
-    // Prepare group name
-    let baseGroupName = currentGroup?.name || "";
+    let groupName = group?.name || "";
     
-    // Extract just the group number part if possible
-    let groupNumber = "";
-    if (baseGroupName) {
-      const groupMatch = baseGroupName.match(/^Group\s+(\d+)/i);
-      if (groupMatch && groupMatch[1]) {
-        groupNumber = groupMatch[1];
-        logger.debug(`🔄 [AssignGuide] Extracted group number ${groupNumber} from "${baseGroupName}"`);
-      }
+    // If no guide ID is provided, just use the base name
+    if (!guideId) {
+      return groupName;
     }
     
-    // Create new group name
-    let newGroupName = groupNumber ? `Group ${groupNumber}` : baseGroupName;
-    
-    // Add guide name if assigned
-    if (finalGuideId) {
-      // Fetch the guide name
-      const { data: guideData } = await supabase
-        .from("guides")
-        .select("name")
-        .eq("id", finalGuideId)
-        .single();
+    // Get the guide name if a guide ID is provided
+    const { data: guide, error: guideError } = await supabase
+      .from("guides")
+      .select("name")
+      .eq("id", guideId)
+      .single();
       
-      if (guideData?.name) {
-        newGroupName = groupNumber 
-          ? `Group ${groupNumber} (${guideData.name})` 
-          : `${baseGroupName} (${guideData.name})`;
-        logger.debug(`🔄 [AssignGuide] Created new group name with guide: "${newGroupName}"`);
-      }
-    } else {
-      logger.debug(`🔄 [AssignGuide] Using base group name without guide: "${newGroupName}"`);
+    if (guideError) {
+      logger.error("🔄 [AssignGuide] Error fetching guide:", guideError);
+      return groupName;
     }
     
-    return newGroupName;
+    // Create a display name that includes the guide if available
+    if (guide && guide.name) {
+      // If the group name already contains a guide name in parentheses, replace it
+      if (groupName.includes("(") && groupName.includes(")")) {
+        groupName = groupName.replace(/\s*\([^)]*\)\s*$/, "");
+      }
+      
+      // Append the guide name in parentheses
+      return `${groupName.trim()} (${guide.name})`;
+    }
+    
+    return groupName;
   } catch (error) {
-    logger.error("🔄 [AssignGuide] Error preparing group name:", error);
-    return null;
+    logger.error("🔄 [AssignGuide] Error in prepareGroupName:", error);
+    return "";
   }
 };
+
+// Add the createDisplayNameForGroup export that's being imported elsewhere
+export const createDisplayNameForGroup = prepareGroupName;

@@ -26,7 +26,8 @@ export const useTourCapacity = (tourId: string) => {
         return false;
       }
       
-      const oldCapacity = tour.capacity || 0;
+      // Use numTickets for capacity if capacity property doesn't exist
+      const oldCapacity = tour.numTickets || 0;
       
       // Check if there's any actual change
       if (oldCapacity === newCapacity) {
@@ -34,11 +35,12 @@ export const useTourCapacity = (tourId: string) => {
         return true;
       }
       
-      // Update the capacity on the server
-      await updateTourCapacity(tourId, newCapacity);
+      // Update the high season flag (which affects capacity)
+      // Use a boolean parameter for updateTourCapacity
+      await updateTourCapacity(tourId, Boolean(newCapacity > oldCapacity));
       
       // Record the modification
-      addModification({
+      await addModification({
         description: `Tour capacity changed from ${oldCapacity} to ${newCapacity}`,
         details: {
           type: "capacity_update",
@@ -67,7 +69,7 @@ export const useTourCapacity = (tourId: string) => {
     if (!tour || !tour.tourGroups) return { total: 0, percentage: 0 };
     
     const total = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
-    const capacity = tour.capacity || 0;
+    const capacity = tour.numTickets || 0; // Use numTickets instead of capacity
     const percentage = capacity > 0 ? Math.round((total / capacity) * 100) : 0;
     
     return { total, capacity, percentage };
@@ -76,6 +78,6 @@ export const useTourCapacity = (tourId: string) => {
   return {
     updateCapacity,
     calculateCapacityUsage,
-    tourCapacity: tour?.capacity || 0
+    tourCapacity: tour?.numTickets || 0 // Use numTickets instead of capacity
   };
 };
