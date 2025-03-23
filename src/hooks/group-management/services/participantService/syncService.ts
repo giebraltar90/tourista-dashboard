@@ -55,10 +55,13 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
       if (updateError) {
         logger.error(`🔁 [GROUP_SYNC] Error updating size for group ${group.id}:`, updateError);
       }
+      
+      // Add a small delay between operations to prevent race conditions
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
     // Add a longer delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
     // Verify the updates
     const { data: verifyGroups, error: verifyError } = await supabase
@@ -85,6 +88,24 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
               calculatedChildCount,
               participantCount: group.participants.length
             });
+            
+            // Auto-correct the values if they don't match
+            const { error: fixError } = await supabase
+              .from('tour_groups')
+              .update({
+                size: calculatedSize,
+                child_count: calculatedChildCount
+              })
+              .eq('id', group.id);
+              
+            if (fixError) {
+              logger.error(`🔁 [GROUP_SYNC] Error fixing group ${group.id}:`, fixError);
+            } else {
+              logger.debug(`🔁 [GROUP_SYNC] Auto-fixed group ${group.id} with correct size ${calculatedSize} and childCount ${calculatedChildCount}`);
+            }
+            
+            // Add a small delay after the fix
+            await new Promise(resolve => setTimeout(resolve, 200));
           } else {
             logger.debug(`🔁 [GROUP_SYNC] Verification passed for group ${group.id} (${group.name || 'Unnamed'})`);
           }
@@ -98,4 +119,3 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
     return false;
   }
 };
-

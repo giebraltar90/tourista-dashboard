@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils";
 import { GuideInfo } from "@/types/ventrata";
 import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -47,19 +48,20 @@ export const TicketsCard = ({
   
   // Log ticket calculation for debugging
   useEffect(() => {
-    console.log("🎟️ [TicketsCard] Ticket calculation results:", {
+    logger.debug("🎟️ [TicketsCard] Ticket calculation results:", {
       validAdultTickets,
       validChildTickets,
       guideAdultTickets,
       guideChildTickets,
       guidesWithTickets,
       location,
-      guide1Type: guide1Info?.guideType,
-      guide2Type: guide2Info?.guideType,
-      guide3Type: guide3Info?.guideType
+      guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'null',
+      guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
+      guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
+      tourGroupsCount: tourGroups?.length || 0
     });
   }, [validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets, 
-      guide1Info, guide2Info, guide3Info, location, guidesWithTickets]);
+      guide1Info, guide2Info, guide3Info, location, guidesWithTickets, tourGroups?.length]);
   
   // Total required tickets calculations
   const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
@@ -104,26 +106,46 @@ export const TicketsCard = ({
             <span className="text-muted-foreground">Total tickets needed:</span>
             <Badge 
               variant="outline" 
-              className={`font-medium ${hasEnoughTickets ? "bg-green-100 text-green-800 border-green-300" : ""}`}
+              className={`font-medium ${hasEnoughTickets ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"}`}
             >
               {formattedTotalTickets}
             </Badge>
           </div>
           
-          {/* Guide ticket breakdown section */}
-          {guidesWithTickets.length > 0 && (
+          {/* Guide ticket breakdown section - always show if there are guides, even if no tickets needed */}
+          {guide1Info || guide2Info || guide3Info ? (
             <div className="mt-3 border-t pt-3">
               <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
               <div className="space-y-1 text-xs">
-                {guidesWithTickets.map((guide, index) => (
-                  <div key={index} className="flex justify-between">
-                    <span className="text-muted-foreground">{guide.guideName}:</span>
-                    <span>{guide.ticketType === 'adult' ? 'Adult ticket' : 'Child ticket'}</span>
+                {guidesWithTickets.length > 0 ? (
+                  guidesWithTickets.map((guide, index) => (
+                    <div key={index} className="flex justify-between">
+                      <span className="text-muted-foreground">{guide.guideName}:</span>
+                      <span>{guide.ticketType === 'adult' ? 'Adult ticket' : 'Child ticket'}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-muted-foreground italic">No guide tickets required</div>
+                )}
+                
+                {/* Show all guides for debugging */}
+                {(guide1Info || guide2Info || guide3Info) && guidesWithTickets.length === 0 && (
+                  <div className="mt-1 text-xs text-gray-400">
+                    <div>Guide types:</div>
+                    {guide1Info && (
+                      <div>{guide1Info.name}: {guide1Info.guideType}</div>
+                    )}
+                    {guide2Info && (
+                      <div>{guide2Info.name}: {guide2Info.guideType}</div>
+                    )}
+                    {guide3Info && (
+                      <div>{guide3Info.name}: {guide3Info.guideType}</div>
+                    )}
                   </div>
-                ))}
+                )}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

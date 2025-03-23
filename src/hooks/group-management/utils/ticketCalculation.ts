@@ -14,14 +14,15 @@ export const getGuideTicketRequirement = (
     return { needsTicket: false, ticketType: null };
   }
 
-  // Log for debugging
+  // Log for debugging with much more detail
   logger.debug("🎟️ [TicketRequirement] Checking guide ticket requirement", {
     guideName: guideInfo.name,
     guideType: guideInfo.guideType,
-    location
+    location,
+    guideId: guideInfo.id || 'unknown'
   });
 
-  // Get guide type and handle different formats
+  // Get guide type and handle different formats - normalize to uppercase for comparison
   const guideType = (guideInfo.guideType || "").toUpperCase();
   
   if (guideType === "GC") {
@@ -59,9 +60,9 @@ export const calculateGuideTicketsNeeded = (
   const guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> = [];
   
   logger.debug("🎟️ [CalculateTickets] Starting guide ticket calculation", {
-    hasGuide1: !!guide1Info,
-    hasGuide2: !!guide2Info, 
-    hasGuide3: !!guide3Info,
+    guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'null',
+    guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
+    guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
     location,
     tourGroupsCount: tourGroups?.length || 0
   });
@@ -83,7 +84,10 @@ export const calculateGuideTicketsNeeded = (
     
     logger.debug(`🎟️ [CalculateTickets] Processed guide1 (${guide1Info.name})`, {
       needsTicket,
-      ticketType
+      ticketType,
+      guideType: guide1Info.guideType,
+      adultTickets,
+      childTickets
     });
   }
   
@@ -104,7 +108,10 @@ export const calculateGuideTicketsNeeded = (
     
     logger.debug(`🎟️ [CalculateTickets] Processed guide2 (${guide2Info.name})`, {
       needsTicket,
-      ticketType
+      ticketType,
+      guideType: guide2Info.guideType,
+      adultTickets,
+      childTickets
     });
   }
   
@@ -125,7 +132,10 @@ export const calculateGuideTicketsNeeded = (
     
     logger.debug(`🎟️ [CalculateTickets] Processed guide3 (${guide3Info.name})`, {
       needsTicket,
-      ticketType
+      ticketType,
+      guideType: guide3Info.guideType,
+      adultTickets,
+      childTickets
     });
   }
   
@@ -161,7 +171,9 @@ export const calculateGuideTicketsNeeded = (
           groupId: group.id,
           guideId: group.guideId,
           needsTicket,
-          ticketType
+          ticketType,
+          adultTickets,
+          childTickets
         });
       }
     }
@@ -170,7 +182,8 @@ export const calculateGuideTicketsNeeded = (
   logger.debug("🎟️ [CalculateTickets] Final guide ticket requirements", {
     adultTickets,
     childTickets,
-    guidesWithTickets: guides.filter(g => g.ticketType !== null).length
+    guidesWithTickets: guides.filter(g => g.ticketType !== null).length,
+    guideDetails: guides.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
   });
   
   return { adultTickets, childTickets, guides: guides.filter(g => g.ticketType !== null) };

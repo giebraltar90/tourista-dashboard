@@ -39,15 +39,13 @@ class Logger {
   }
 
   log(...args: any[]) {
-    if (this.debugEnabled) {
-      this.originalConsole.log(...args);
-    }
+    // Always show logs
+    this.originalConsole.log(...args);
   }
 
   info(...args: any[]) {
-    if (this.debugEnabled) {
-      this.originalConsole.info(...args);
-    }
+    // Always show info messages
+    this.originalConsole.info(...args);
   }
 
   warn(...args: any[]) {
