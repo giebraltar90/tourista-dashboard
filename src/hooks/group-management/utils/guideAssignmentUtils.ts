@@ -1,66 +1,40 @@
 
-import { GuideOption } from "../types";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
-import { findGuideUuidByName as findGuideUuidByNameFromMapping } from "../services/utils/guideMappingService";
 
 /**
- * Find guide UUID by name in a list of guides
- * @deprecated Use findGuideUuidByName from guideMappingService instead
- */
-export const findGuideUuidByName = findGuideUuidByNameFromMapping;
-
-/**
- * Process guide ID for assignment, handling special IDs and mapping to UUIDs
+ * Process a guide ID to ensure it's valid for assignment
+ * 
+ * This handles special cases like "_none" and ensures UUIDs are valid
  */
 export const processGuideIdForAssignment = (
-  guideId: string | undefined, 
-  guides: GuideOption[], 
-  allGuides: any[],
-  tour?: any
+  guideId: string,
+  guides: Array<{ id: string; name: string; info?: any }>
 ): string | null => {
-  // Handle removal case
   if (!guideId || guideId === "_none") {
-    return null;
+    return null; // Guide is being unassigned
   }
   
-  // If it's already a valid UUID, return it directly
+  // If it's already a valid UUID, use it directly
   if (isValidUuid(guideId)) {
     return guideId;
   }
   
-  // Find the selected guide by id in our guides array to get the name
-  const selectedGuide = guides.find(g => g.id === guideId);
-  
-  if (selectedGuide && selectedGuide.name) {
-    // Try to find the UUID by name first
-    const uuidByName = findGuideUuidByNameFromMapping(selectedGuide.name, allGuides);
-    if (uuidByName) {
-      console.log(`Mapped guide name ${selectedGuide.name} to UUID: ${uuidByName}`);
-      return uuidByName;
+  // Special case for guide1, guide2, guide3 IDs
+  if (guideId.startsWith('guide')) {
+    // Try to find the matching guide in the guides array
+    const matchingGuide = guides.find(g => g.id === guideId);
+    if (matchingGuide && isValidUuid(matchingGuide.id)) {
+      return matchingGuide.id;
     }
   }
   
-  // If we can't find by name, try the standard mapping with tour data
-  if (tour) {
-    // Prepare enhanced tour data for mapping
-    const enhancedTour = {
-      ...tour,
-      guides: allGuides
-    };
-    
-    // Use the mapSpecialGuideIdToUuid function from guidesUtils
-    const mappedId = mapSpecialGuideIdToUuid(guideId, enhancedTour);
-    console.log("Mapped special guide ID to UUID:", { 
-      original: guideId, 
-      mapped: mappedId 
-    });
-    
-    return mappedId;
+  // Try to find a guide with a matching name
+  const guideByName = guides.find(g => g.name === guideId);
+  if (guideByName && isValidUuid(guideByName.id)) {
+    return guideByName.id;
   }
   
-  console.error(`Failed to map guide ID "${guideId}" to a valid UUID`);
-  return null;
+  // Last-resort fallback: return the original ID
+  console.warn(`Could not find a valid UUID for guide ID: ${guideId}`);
+  return guideId;
 };
-
-// Import the existing function to avoid circular dependency
-import { mapSpecialGuideIdToUuid } from "@/services/api/utils/guidesUtils";

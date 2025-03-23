@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAssignGuide } from "./useAssignGuide";
 import { toast } from "sonner";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -67,13 +68,15 @@ export const useGuideAssignmentForm = ({
       guidesCount: guides.length,
       currentGuideId,
       currentValue,
+      guides: guides.map(g => ({ id: g.id, name: g.name }))
     });
   }, [tourId, groupIndex, guides, currentGuideId, currentValue]);
 
   // Update form value when currentGuideId prop changes
   useEffect(() => {
-    setCurrentValue(currentGuideId || "_none");
-    form.setValue("guideId", currentGuideId || "_none");
+    const newValue = currentGuideId || "_none";
+    setCurrentValue(newValue);
+    form.setValue("guideId", newValue);
   }, [currentGuideId, form]);
   
   /**
@@ -98,8 +101,25 @@ export const useGuideAssignmentForm = ({
         selectedGuide: guides.find(g => g.id === values.guideId)?.name
       });
       
+      // Process the guide ID to ensure it's a valid UUID if not "_none"
+      let processedGuideId = selectedGuideId;
+      if (selectedGuideId !== "_none" && !isValidUuid(selectedGuideId)) {
+        // Try to find the guide with matching name or id from the guide list
+        const matchingGuide = guides.find(g => 
+          g.id === selectedGuideId || 
+          g.name === selectedGuideId
+        );
+        
+        if (matchingGuide && isValidUuid(matchingGuide.id)) {
+          processedGuideId = matchingGuide.id;
+          console.log(`Mapped guide ID ${selectedGuideId} to UUID ${processedGuideId}`);
+        } else {
+          console.warn(`Could not find valid UUID for guide ID ${selectedGuideId}`);
+        }
+      }
+      
       // Call the assign guide function with the selected ID
-      const success = await assignGuide(groupIndex, selectedGuideId);
+      const success = await assignGuide(groupIndex, processedGuideId);
       
       if (success) {
         // Update the current value to match the form

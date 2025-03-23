@@ -65,7 +65,17 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
       }
       
       // Process the guide ID - special handling for the "unassign" case
-      const finalGuideId = guideId === "_none" ? null : guideId;
+      let finalGuideId = null; // Default to null for unassign
+      
+      if (guideId !== "_none") {
+        if (isValidUuid(guideId)) {
+          finalGuideId = guideId;
+        } else {
+          console.warn(`Non-UUID guide ID provided: ${guideId}. This might cause issues.`);
+          // We'll try to use it anyway, but log a warning
+          finalGuideId = guideId;
+        }
+      }
       
       console.log("Making Supabase update with:", {
         tourId,
@@ -100,7 +110,7 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
           
         if (guideData?.name) {
           // If we found the guide's name, update the group name
-          const groupName = `Group ${(groupIdOrIndex as number) + 1} (${guideData.name})`;
+          const groupName = `Group ${(typeof groupIdOrIndex === 'number' ? groupIdOrIndex + 1 : '?')} (${guideData.name})`;
           await supabase
             .from("tour_groups")
             .update({ name: groupName })
@@ -108,7 +118,7 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         }
       } else {
         // If we're removing a guide, update the group name to the default
-        const groupName = `Group ${(groupIdOrIndex as number) + 1}`;
+        const groupName = `Group ${(typeof groupIdOrIndex === 'number' ? groupIdOrIndex + 1 : '?')}`;
         await supabase
           .from("tour_groups")
           .update({ name: groupName })
