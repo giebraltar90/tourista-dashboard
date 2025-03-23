@@ -11,7 +11,7 @@ export const supabase = createSupabaseClient(
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(15000), // Increase timeout to 15 seconds
+          signal: AbortSignal.timeout(20000), // Increase timeout to 20 seconds
         });
       },
     },
@@ -34,12 +34,17 @@ export const supabase = createSupabaseClient(
 // Add a helper for checking database connection
 export const checkDatabaseConnection = async () => {
   try {
-    // Try accessing a table that we know should exist
+    // Try accessing a table that we know should exist with a higher timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20 seconds timeout
+    
     const { data, error } = await supabase
       .from('tours')
       .select('id')
       .limit(1)
       .maybeSingle();
+    
+    clearTimeout(timeoutId);
     
     if (error) {
       console.error("Database connection check failed (query error):", error);

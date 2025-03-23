@@ -72,7 +72,8 @@ export const useTourById = (tourId: string) => {
     gcTime: 300000, // 5 minutes
     refetchOnWindowFocus: false, // Don't refetch automatically on window focus
     refetchOnMount: true,
-    retry: 2,
+    retry: 3, // Increase retry attempts
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     // Properly type the error handling
     meta: {
       onError: (error: Error) => {
