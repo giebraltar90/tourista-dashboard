@@ -1,7 +1,7 @@
 
-export type GuideType = 'GA Free' | 'GA Ticket' | 'GC' | 'GI' | 'GT';
+export type GuideType = 'GA Free' | 'GA Ticket' | 'GC';
 export type TourType = 'food' | 'private' | 'default';
-export type ModificationStatus = 'pending' | 'complete' | 'cancelled';
+export type ModificationStatus = 'pending' | 'complete';
 
 /**
  * Helper function to generate a random ID

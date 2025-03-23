@@ -16,8 +16,8 @@ export const createTestGuides = async () => {
     { name: "Carlos Martinez", guide_type: "GA Ticket" as GuideType, birthday: "1988-05-18" },
     { name: "Maria Garcia", guide_type: "GA Free" as GuideType, birthday: "1995-07-15" },
     { name: "Tobias Schmidt", guide_type: "GC" as GuideType, birthday: "1982-08-27" },
-    { name: "Emma Johnson", guide_type: "GI" as GuideType, birthday: "1991-04-12" },
-    { name: "Lucas Müller", guide_type: "GT" as GuideType, birthday: "1987-09-30" }
+    { name: "Emma Johnson", guide_type: "GA Free" as GuideType, birthday: "1991-04-12" },
+    { name: "Lucas Müller", guide_type: "GA Ticket" as GuideType, birthday: "1987-09-30" }
   ];
   
   // First check if guides already exist

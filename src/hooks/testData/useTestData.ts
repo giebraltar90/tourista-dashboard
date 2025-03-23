@@ -44,7 +44,7 @@ export const useTestData = () => {
       toast.info("Clearing test data...");
       
       // Clear data in order of dependencies
-      const tables = ['participants', 'tour_groups', 'tickets', 'modifications', 'ticket_buckets', 'tours', 'guides'];
+      const tables = ['participants', 'tour_groups', 'tickets', 'modifications', 'ticket_buckets', 'tours', 'guides'] as const;
       
       for (const table of tables) {
         const { error } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
