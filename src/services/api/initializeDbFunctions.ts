@@ -28,13 +28,15 @@ export const initializeDbFunctions = async () => {
 
 /**
  * Execute this function on app startup to ensure the DB functions are created
+ * Returns a Promise so it can be properly handled with catch()
  */
-export const ensureDbFunctionsExist = () => {
-  initializeDbFunctions().then(success => {
+export const ensureDbFunctionsExist = async (): Promise<boolean> => {
+  return initializeDbFunctions().then(success => {
     if (success) {
       logger.debug("Database functions initialized successfully");
     } else {
       logger.error("Failed to initialize database functions");
     }
+    return success;
   });
 };

@@ -11,7 +11,6 @@ import TicketsPage from "./pages/TicketsPage";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
-import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RoleProvider } from "@/contexts/RoleContext";
 
