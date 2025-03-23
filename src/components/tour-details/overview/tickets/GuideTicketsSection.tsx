@@ -28,6 +28,7 @@ export const GuideTicketsSection = ({
     guideAdultTickets,
     guideChildTickets,
     guidesWithTicketsCount: guidesWithTickets.length,
+    guides: guidesWithTickets.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
   });
   
   // Always display the section, even if there are no guide tickets

@@ -16,7 +16,11 @@ export const findAssignedGuides = (
   
   // Ensure tour groups is an array
   if (!Array.isArray(tourGroups)) {
-    logger.debug(`🎟️ [findAssignedGuides] tourGroups is not an array, skipping assignment check`);
+    logger.debug(`🎟️ [findAssignedGuides] tourGroups is not an array, defaulting to all available guides`);
+    // Add all available guides by default
+    if (guide1Info) assignedGuideIds.add("guide1");
+    if (guide2Info) assignedGuideIds.add("guide2");
+    if (guide3Info) assignedGuideIds.add("guide3");
     return assignedGuideIds;
   }
   
