@@ -7,7 +7,6 @@ import {
   getGuideTicketRequirement,
   findAssignedGuides,
   processGuideTicketRequirement,
-  calculateGuideTickets,
   calculateGuideTicketsNeeded,
   calculateCompleteGuideTicketRequirements
 } from './ticket-calculation';
@@ -20,7 +19,6 @@ export {
   getGuideTicketRequirement,
   findAssignedGuides,
   processGuideTicketRequirement,
-  calculateGuideTickets,
   calculateGuideTicketsNeeded,
   calculateCompleteGuideTicketRequirements
 };
