@@ -21,13 +21,25 @@ export const TourOverview = ({
   guide3Info
 }: TourOverviewProps) => {
   // Check if this is high season (example logic)
-  const isHighSeason = tour.isHighSeason || false;
+  const isHighSeason = tour?.isHighSeason || false;
+  
+  // Safely access tourGroups with a fallback
+  const tourGroups = tour?.tourGroups || [];
+
+  // Guard against undefined tour
+  if (!tour) {
+    return (
+      <div className="text-center p-8 bg-muted rounded-lg">
+        <p className="text-muted-foreground">Cannot display tour overview. Tour data is missing.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
       <InformationCardsSection 
         tour={tour} 
-        tourGroups={tour.tourGroups}
+        tourGroups={tourGroups}
         participantCounts={participantCounts}
         isHighSeason={isHighSeason}
         guide1Info={guide1Info}

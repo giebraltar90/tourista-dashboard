@@ -14,7 +14,7 @@ export interface ModificationsTabProps {
 
 export const ModificationsTab = ({ tour, tourId }: ModificationsTabProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { modifications, isLoading, error } = useModifications(tourId);
+  const { modifications, addModification, isAddingModification } = useModifications(tourId);
   
   const handleOpenDialog = () => {
     setIsDialogOpen(true);
@@ -36,7 +36,7 @@ export const ModificationsTab = ({ tour, tourId }: ModificationsTabProps) => {
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isAddingModification ? (
             <div className="flex justify-center p-6">
               <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full"></div>
             </div>
@@ -45,9 +45,9 @@ export const ModificationsTab = ({ tour, tourId }: ModificationsTabProps) => {
               {modifications.map((mod) => (
                 <div key={mod.id} className="p-4 border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium">{mod.type}</h3>
+                    <h3 className="font-medium">{mod.status || "Modified"}</h3>
                     <span className="text-sm text-muted-foreground">
-                      {new Date(mod.timestamp).toLocaleDateString()}
+                      {new Date(mod.date).toLocaleDateString()}
                     </span>
                   </div>
                   <p className="text-sm">{mod.description}</p>
@@ -64,7 +64,7 @@ export const ModificationsTab = ({ tour, tourId }: ModificationsTabProps) => {
       
       <AddModificationDialog 
         isOpen={isDialogOpen} 
-        onOpenChange={setIsDialogOpen} 
+        setIsOpen={setIsDialogOpen} 
         tourId={tourId}
       />
     </>

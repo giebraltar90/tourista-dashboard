@@ -28,6 +28,19 @@ export const NormalizedTourContent = ({
   activeTab = "overview",
   onTabChange,
 }: NormalizedTourContentProps) => {
+  // Guard against undefined tour data
+  if (!tour || !tour.date) {
+    console.error("Tour data is missing or incomplete", { tourId, tour });
+    return (
+      <div className="container mx-auto py-6">
+        <div className="p-8 text-center bg-muted rounded-lg">
+          <h2 className="text-xl font-medium mb-2">Error loading tour details</h2>
+          <p className="text-muted-foreground">The tour data is incomplete or could not be loaded.</p>
+        </div>
+      </div>
+    );
+  }
+
   const participantCounts = useParticipantCounts(tour.tourGroups);
   
   return (

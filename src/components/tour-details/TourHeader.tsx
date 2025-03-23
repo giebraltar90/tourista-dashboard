@@ -3,7 +3,6 @@ import { format } from "date-fns";
 import { AlertCircle, Calendar, Clock, MapPin, PenSquare, MessageSquare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useRole } from "@/contexts/RoleContext";
 import { GuideInfo } from "@/types/ventrata";
 
@@ -18,16 +17,24 @@ export interface TourHeaderProps {
 }
 
 export const TourHeader = ({ 
-  tourName, 
-  date, 
-  startTime, 
-  location,
+  tourName = "Unnamed Tour", 
+  date = new Date(),  
+  startTime = "00:00", 
+  location = "Unknown",
   guide1Info,
   guide2Info,
   guide3Info
 }: TourHeaderProps) => {
   const { guideView } = useRole();
-  const formattedDate = format(date, 'EEEE, MMMM d, yyyy');
+  
+  // Safely format the date with fallback
+  let formattedDate;
+  try {
+    formattedDate = format(date instanceof Date ? date : new Date(date), 'EEEE, MMMM d, yyyy');
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    formattedDate = "Invalid date";
+  }
   
   // This will be determined elsewhere - not needed for this component
   const isBelowMinimum = false;
