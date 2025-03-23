@@ -39,12 +39,15 @@ export const TicketsCard = ({
   const locationNeedsGuideTickets = location && 
     (location.toLowerCase().includes('versailles') || location.toLowerCase().includes('montmartre'));
   
-  // Calculate guide tickets only if needed
+  // Check if there are assigned guides to any groups
+  const hasAssignedGuides = tourGroups?.some(g => g.guideId && g.guideId !== "unassigned") || false;
+  
+  // Calculate guide tickets only if needed and there are assigned guides
   const { 
     adultTickets: guideAdultTickets, 
     childTickets: guideChildTickets,
     guides: guidesWithTickets
-  } = locationNeedsGuideTickets ? calculateGuideTicketsNeeded(
+  } = (locationNeedsGuideTickets && hasAssignedGuides) ? calculateGuideTicketsNeeded(
     guide1Info,
     guide2Info,
     guide3Info,
@@ -56,19 +59,20 @@ export const TicketsCard = ({
   useEffect(() => {
     logger.debug("🎟️ [TicketsCard] Ticket calculation for tour " + tourId, {
       tourId,
+      location,
+      locationNeedsGuideTickets,
+      hasAssignedGuides,
       validAdultTickets,
       validChildTickets,
       guideAdultTickets,
       guideChildTickets,
       guidesWithTickets,
-      location,
-      locationNeedsGuideTickets,
       guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'null',
       guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
       guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
       tourGroupsCount: tourGroups?.length || 0,
       tourGroupGuides: tourGroups?.map(g => g.guideId || 'none') || [],
-      hasAssignedGuides: tourGroups?.some(g => g.guideId && g.guideId !== "unassigned") || false
+      hasAssignedGuides
     });
     
     // Print detailed info for each guide
@@ -99,7 +103,8 @@ export const TicketsCard = ({
       });
     }
   }, [validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets, 
-      guide1Info, guide2Info, guide3Info, location, guidesWithTickets, tourGroups, tourId, locationNeedsGuideTickets]);
+      guide1Info, guide2Info, guide3Info, location, guidesWithTickets, tourGroups, tourId, 
+      locationNeedsGuideTickets, hasAssignedGuides]);
   
   // Total required tickets calculations
   const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
@@ -168,7 +173,7 @@ export const TicketsCard = ({
                 ))}
               </div>
             </div>
-          ) : (locationNeedsGuideTickets && (guide1Info || guide2Info || guide3Info)) ? (
+          ) : (locationNeedsGuideTickets && hasAssignedGuides && (guide1Info || guide2Info || guide3Info)) ? (
             <div className="mt-3 border-t pt-3">
               <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
               <div className="text-muted-foreground italic text-xs">No guide tickets required</div>

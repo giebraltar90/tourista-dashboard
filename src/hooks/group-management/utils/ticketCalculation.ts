@@ -14,12 +14,12 @@ export const getGuideTicketRequirement = (
     return { needsTicket: false, ticketType: null };
   }
 
-  // Log for debugging with much more detail
+  // Log guide information for debugging
   logger.debug("🎟️ [TicketRequirement] Checking guide ticket requirement", {
     guideName: guideInfo.name,
     guideType: guideInfo.guideType,
-    location,
-    guideId: guideInfo.id || 'unknown'
+    guideId: guideInfo.id || 'unknown',
+    location
   });
 
   // Check if location requires tickets (only Versailles and Montmartre need tickets)
@@ -100,10 +100,25 @@ export const calculateGuideTicketsNeeded = (
     return { adultTickets: 0, childTickets: 0, guides: [] };
   }
   
-  // Process guide1
+  // Map actual assigned guides in groups to determine which guides are being used
+  const assignedGuideIds = new Set<string>();
+  tourGroups.forEach(group => {
+    if (group.guideId && group.guideId !== "unassigned") {
+      assignedGuideIds.add(group.guideId);
+      logger.debug(`🎟️ [CalculateTickets] Found assigned guide in group: ${group.guideId}`);
+    }
+  });
+  
+  logger.debug(`🎟️ [CalculateTickets] Assigned guide IDs: ${Array.from(assignedGuideIds).join(', ')}`);
+  
+  // Process guide1 only if they're actually assigned to a group
   if (guide1Info && guide1Info.id) {
-    // Check if we've already processed this guide
-    if (!processedGuideIds.has(guide1Info.id)) {
+    const isGuide1Assigned = assignedGuideIds.has("guide1") || assignedGuideIds.has(guide1Info.id);
+    
+    logger.debug(`🎟️ [CalculateTickets] Guide1 (${guide1Info.name}) assigned status: ${isGuide1Assigned}`);
+    
+    // Only process this guide if they're actually assigned
+    if (isGuide1Assigned && !processedGuideIds.has(guide1Info.id)) {
       const { needsTicket, ticketType } = getGuideTicketRequirement(guide1Info, location);
       
       if (needsTicket) {
@@ -131,10 +146,14 @@ export const calculateGuideTicketsNeeded = (
     }
   }
   
-  // Process guide2
+  // Process guide2 only if they're actually assigned to a group
   if (guide2Info && guide2Info.id) {
-    // Check if we've already processed this guide
-    if (!processedGuideIds.has(guide2Info.id)) {
+    const isGuide2Assigned = assignedGuideIds.has("guide2") || assignedGuideIds.has(guide2Info.id);
+    
+    logger.debug(`🎟️ [CalculateTickets] Guide2 (${guide2Info.name}) assigned status: ${isGuide2Assigned}`);
+    
+    // Only process this guide if they're actually assigned
+    if (isGuide2Assigned && !processedGuideIds.has(guide2Info.id)) {
       const { needsTicket, ticketType } = getGuideTicketRequirement(guide2Info, location);
       
       if (needsTicket) {
@@ -162,10 +181,14 @@ export const calculateGuideTicketsNeeded = (
     }
   }
   
-  // Process guide3
+  // Process guide3 only if they're actually assigned to a group
   if (guide3Info && guide3Info.id) {
-    // Check if we've already processed this guide
-    if (!processedGuideIds.has(guide3Info.id)) {
+    const isGuide3Assigned = assignedGuideIds.has("guide3") || assignedGuideIds.has(guide3Info.id);
+    
+    logger.debug(`🎟️ [CalculateTickets] Guide3 (${guide3Info.name}) assigned status: ${isGuide3Assigned}`);
+    
+    // Only process this guide if they're actually assigned
+    if (isGuide3Assigned && !processedGuideIds.has(guide3Info.id)) {
       const { needsTicket, ticketType } = getGuideTicketRequirement(guide3Info, location);
       
       if (needsTicket) {
@@ -199,7 +222,8 @@ export const calculateGuideTicketsNeeded = (
     childTickets,
     guidesWithTickets: guides.length,
     processedGuideIds: Array.from(processedGuideIds),
-    guideDetails: guides.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
+    guideDetails: guides.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`),
+    assignedGuideIds: Array.from(assignedGuideIds)
   });
   
   return { 
