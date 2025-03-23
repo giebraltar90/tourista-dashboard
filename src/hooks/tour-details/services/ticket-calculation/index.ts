@@ -4,7 +4,7 @@ export { locationRequiresGuideTickets } from './locationUtils';
 export { guideTypeNeedsTicket, determineTicketTypeForGuide } from './guideTypeUtils';
 export { getGuideTicketRequirement } from './guideRequirementUtils';
 export { findAssignedGuides } from './guideAssignmentUtils';
-export { processGuideTicketRequirement, calculateGuideTickets } from './guideTicketProcessor';
+export { processGuideTicketRequirement } from './guideTicketProcessor';
 
 // New core module exports
 export { 
