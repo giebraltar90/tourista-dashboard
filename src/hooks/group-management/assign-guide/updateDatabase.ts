@@ -3,36 +3,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
 /**
- * Update the database with the guide assignment
+ * Update guide assignment in the database
  */
 export const updateDatabase = async (
-  groupId: string,
-  guideId: string | null,
+  groupId: string, 
+  guideId: string | null, 
   updatedName: string
 ): Promise<boolean> => {
   try {
-    // Update the group with the new guide ID and name
-    const { error: updateError } = await supabase
-      .from('tour_groups')
-      .update({
+    logger.debug("🔄 [AssignGuide] Updating database:", { 
+      groupId, 
+      guideId: guideId || 'null', 
+      updatedName 
+    });
+    
+    const { error } = await supabase
+      .from("tour_groups")
+      .update({ 
         guide_id: guideId,
         name: updatedName,
         updated_at: new Date().toISOString()
       })
-      .eq('id', groupId);
-
-    if (updateError) {
-      logger.error("🔄 [AssignGuide] Error updating group:", updateError);
+      .eq("id", groupId);
+      
+    if (error) {
+      logger.error("🔄 [AssignGuide] Error updating group:", error);
       return false;
     }
-
-    logger.log(`🔄 [AssignGuide] Successfully updated group ${groupId} with guide ${guideId || 'none'}`);
+    
+    logger.debug("🔄 [AssignGuide] Successfully updated guide assignment");
     return true;
   } catch (error) {
-    logger.error("🔄 [AssignGuide] Exception in updateDatabase:", error);
+    logger.error("🔄 [AssignGuide] Unexpected error in updateDatabase:", error);
     return false;
   }
 };
-
-// Alias for backward compatibility
-export const updateDatabaseWithGuideAssignment = updateDatabase;

@@ -1,28 +1,43 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { GuideInfo } from "@/types/ventrata";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/utils/logger';
+
+interface GuideData {
+  id: string;
+  name: string;
+  guide_type: "GA Ticket" | "GA Free" | "GC";
+  birthday: string;
+  updated_at: string;
+  created_at: string;
+  user_id: string;
+}
 
 /**
- * Hook to fetch all guides from the database
+ * Hook to fetch all available guides
  */
 export const useGuides = () => {
   return useQuery({
-    queryKey: ["guides"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("guides")
-        .select("*")
-        .order("name");
+    queryKey: ['guides'],
+    queryFn: async (): Promise<GuideData[]> => {
+      try {
+        const { data, error } = await supabase
+          .from('guides')
+          .select('*')
+          .order('name');
         
-      if (error) {
-        console.error("Error fetching guides:", error);
+        if (error) {
+          logger.error("Error fetching guides:", error);
+          throw new Error(error.message);
+        }
+        
+        return data || [];
+      } catch (error) {
+        logger.error("Unexpected error in useGuides:", error);
         throw error;
       }
-      
-      return data || [];
     },
-    staleTime: 60000, // 1 minute
-    gcTime: 300000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

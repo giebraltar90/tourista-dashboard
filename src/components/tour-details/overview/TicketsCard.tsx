@@ -5,8 +5,9 @@ import { GuideInfo } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { Separator } from "@/components/ui/separator";
 import { ParticipantTicketsSection, GuideTicketsSection, TotalTicketsSection } from "./tickets";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { logger } from "@/utils/logger";
+import { useTicketRecalculation } from "@/hooks/tour-details/useTicketRecalculation";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -33,6 +34,10 @@ export const TicketsCard = ({
   tourGroups = [],
   tourId = ""
 }: TicketsCardProps) => {
+  // Use ticket recalculation hook
+  const tourIdString = String(tourId || '');
+  useTicketRecalculation(tourIdString);
+  
   // Calculate guide ticket requirements
   const { locationNeedsGuideTickets, guideTickets } = useGuideTicketRequirements(
     { 
@@ -56,26 +61,51 @@ export const TicketsCard = ({
     guide3Info
   );
   
+  // Track the last calculated data to detect changes
+  const [lastCalculation, setLastCalculation] = useState({
+    adultTickets,
+    childTickets,
+    guideAdultTickets: guideTickets.adultTickets,
+    guideChildTickets: guideTickets.childTickets,
+    guides: guideTickets.guides.map(g => g.guideName).join(',')
+  });
+  
   // Log changes to participant counts or guides to help with debugging
   useEffect(() => {
-    logger.debug("🎟️ [TicketsCard] Recalculating tickets:", {
-      tourId,
+    const currentData = {
       adultTickets,
       childTickets,
-      totalTickets,
-      locationNeedsGuideTickets,
-      guideTickets: {
-        adults: guideTickets.adultTickets,
-        children: guideTickets.childTickets,
-        guides: guideTickets.guides.map(g => g.guideName)
-      },
-      participantsCount: tourGroups?.reduce((total, group) => total + group.size, 0) || 0,
-      guidesAssigned: [
-        guide1Info?.name, 
-        guide2Info?.name, 
-        guide3Info?.name
-      ].filter(Boolean).join(', ') || 'None'
-    });
+      guideAdultTickets: guideTickets.adultTickets,
+      guideChildTickets: guideTickets.childTickets,
+      guides: guideTickets.guides.map(g => g.guideName).join(',')
+    };
+    
+    // Check if anything has changed
+    const hasChanged = JSON.stringify(currentData) !== JSON.stringify(lastCalculation);
+    
+    if (hasChanged) {
+      logger.debug("🎟️ [TicketsCard] Recalculating tickets:", {
+        tourId,
+        adultTickets,
+        childTickets,
+        totalTickets,
+        locationNeedsGuideTickets,
+        guideTickets: {
+          adults: guideTickets.adultTickets,
+          children: guideTickets.childTickets,
+          guides: guideTickets.guides.map(g => g.guideName)
+        },
+        participantsCount: tourGroups?.reduce((total, group) => total + group.size, 0) || 0,
+        guidesAssigned: [
+          guide1Info?.name, 
+          guide2Info?.name, 
+          guide3Info?.name
+        ].filter(Boolean).join(', ') || 'None'
+      });
+      
+      // Update the last calculation
+      setLastCalculation(currentData);
+    }
   }, [
     tourId,
     adultTickets, 
@@ -86,7 +116,8 @@ export const TicketsCard = ({
     guide1Info, 
     guide2Info, 
     guide3Info,
-    locationNeedsGuideTickets
+    locationNeedsGuideTickets,
+    lastCalculation
   ]);
   
   // Check if we have enough tickets
@@ -98,6 +129,9 @@ export const TicketsCard = ({
   // Calculate the actual total required tickets including guides
   const actualRequiredTickets = requiredTickets > 0 ? 
     requiredTickets : totalTicketsNeeded;
+    
+  // Format the total tickets as "x + y" where x is adult and y is child
+  const formattedTotalTickets = `${adultTickets} + ${childTickets}`;
   
   return (
     <Card>
@@ -123,8 +157,8 @@ export const TicketsCard = ({
         
         <TotalTicketsSection 
           hasEnoughTickets={hasEnoughTickets} 
-          formattedTotalTickets={`${totalTickets}`}
-          requiredTickets={actualRequiredTickets} // Pass the required tickets value
+          formattedTotalTickets={formattedTotalTickets}
+          requiredTickets={actualRequiredTickets}
         />
       </CardContent>
     </Card>

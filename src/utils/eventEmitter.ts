@@ -1,0 +1,31 @@
+
+type EventHandler = (...args: any[]) => void;
+
+class SimpleEventEmitter {
+  private events: Record<string, EventHandler[]> = {};
+  
+  on(event: string, handler: EventHandler): void {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(handler);
+  }
+  
+  off(event: string, handler: EventHandler): void {
+    if (!this.events[event]) return;
+    this.events[event] = this.events[event].filter(h => h !== handler);
+  }
+  
+  emit(event: string, ...args: any[]): void {
+    if (!this.events[event]) return;
+    this.events[event].forEach(handler => handler(...args));
+  }
+  
+  // Useful for debugging event subscriptions
+  listenerCount(event: string): number {
+    return this.events[event]?.length || 0;
+  }
+}
+
+// Export a singleton instance
+export const EventEmitter = new SimpleEventEmitter();

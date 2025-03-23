@@ -7,6 +7,7 @@ import { resolveGroupId } from "./resolveGroupId";
 import { processGuideId } from "./processGuideId";
 import { prepareGroupName } from "./createGroupName";
 import { updateDatabase } from "./updateDatabase";
+import { EventEmitter } from "@/utils/eventEmitter";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
@@ -54,6 +55,9 @@ export const useAssignGuide = (tourId: string) => {
             timestamp: new Date().toISOString()
           }
         });
+        
+        // Notify of guide change to trigger ticket recalculation
+        EventEmitter.emit(`guide-change:${tourId}`);
         
         // Refetch tour data to update UI
         await refetch();

@@ -1,12 +1,7 @@
 
-// Export all functions from sub-modules
+// Re-export all functions from the assign-guide module
 export { resolveGroupId } from './resolveGroupId';
 export { processGuideId } from './processGuideId';
-export { prepareGroupName, createDisplayNameForGroup } from './createGroupName';
 export { updateDatabase } from './updateDatabase';
-
-// Re-export types
-export * from './types';
-
-// Export the hook directly
+export { prepareGroupName, createDisplayNameForGroup } from './createGroupName';
 export { useAssignGuide } from './useAssignGuide';

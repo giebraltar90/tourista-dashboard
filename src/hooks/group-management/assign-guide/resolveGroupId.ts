@@ -1,52 +1,52 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
 /**
- * Resolves a group index to an actual group ID
+ * Resolve a group ID from a tour ID and group index
  */
 export const resolveGroupId = async (
-  tourId: string,
-  groupIdOrIndex: string | number
-): Promise<{ groupId: string | null; groupData?: any }> => {
-  // If we already have a string ID, use it directly
-  if (typeof groupIdOrIndex === 'string') {
-    logger.debug(`🔄 [AssignGuide] Using provided group ID directly: ${groupIdOrIndex}`);
-    return { groupId: groupIdOrIndex };
-  }
-  
-  // Otherwise, we need to fetch the groups and find the ID by index
-  const { data: tourData, error: tourError } = await supabase
-    .from("tours")
-    .select("tour_groups(id, name, size, child_count, guide_id, participants(*))")
-    .eq("id", tourId)
-    .single();
+  tourId: string, 
+  groupIndex: number
+): Promise<{ groupId: string; groupData?: any }> => {
+  try {
+    logger.debug("🔄 [AssignGuide] Resolving group ID:", { tourId, groupIndex });
     
-  if (tourError) {
-    logger.error("🔄 [AssignGuide] Error fetching tour groups:", tourError);
-    return { groupId: null };
-  }
-  
-  if (!tourData?.tour_groups || !Array.isArray(tourData.tour_groups) || !tourData.tour_groups[groupIdOrIndex]) {
-    logger.error("🔄 [AssignGuide] Group index out of bounds:", {
-      groupIndex: groupIdOrIndex,
-      availableGroups: tourData?.tour_groups?.length || 0
+    // Get all groups for the tour
+    const { data: groups, error } = await supabase
+      .from("tour_groups")
+      .select("*")
+      .eq("tour_id", tourId)
+      .order("created_at", { ascending: true });
+      
+    if (error) {
+      logger.error("🔄 [AssignGuide] Error fetching groups:", error);
+      return { groupId: "" };
+    }
+    
+    // Check if we have groups and if groupIndex is valid
+    if (!groups || !Array.isArray(groups) || groupIndex >= groups.length) {
+      logger.error("🔄 [AssignGuide] Invalid group index:", { 
+        groupIndex, 
+        groupsCount: groups?.length || 0 
+      });
+      return { groupId: "" };
+    }
+    
+    // Get the group at the specified index
+    const group = groups[groupIndex];
+    
+    logger.debug("🔄 [AssignGuide] Found group:", { 
+      groupId: group.id, 
+      groupName: group.name 
     });
-    return { groupId: null };
+    
+    return { 
+      groupId: group.id,
+      groupData: group 
+    };
+  } catch (error) {
+    logger.error("🔄 [AssignGuide] Unexpected error in resolveGroupId:", error);
+    return { groupId: "" };
   }
-  
-  const actualGroupId = tourData.tour_groups[groupIdOrIndex].id;
-  
-  // Log detailed information about the group we're updating
-  logger.debug(`🔄 [AssignGuide] Resolved group index ${groupIdOrIndex} to group ID ${actualGroupId}`, {
-    groupName: tourData.tour_groups[groupIdOrIndex].name,
-    currentGuide: tourData.tour_groups[groupIdOrIndex].guide_id,
-    size: tourData.tour_groups[groupIdOrIndex].size,
-    childCount: tourData.tour_groups[groupIdOrIndex].child_count,
-    participantsCount: tourData.tour_groups[groupIdOrIndex].participants?.length || 0
-  });
-  
-  return { 
-    groupId: actualGroupId,
-    groupData: tourData.tour_groups[groupIdOrIndex]
-  };
 };
