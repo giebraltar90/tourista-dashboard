@@ -23,63 +23,25 @@ export const TicketsCard = ({
   guideChildTickets = 0,
   location = ''
 }: TicketsCardProps) => {
-  console.log("GUIDE TICKET DEBUG: [TicketsCard] Rendering with values:", {
-    location,
-    adultTickets,
-    childTickets,
-    totalTickets,
-    requiredTickets,
-    guideAdultTickets,
-    guideChildTickets,
-    totalGuideTickets: guideAdultTickets + guideChildTickets
-  });
-  
-  // Extra validation to ensure counts are non-negative numbers
+  // Ensure counts are non-negative numbers
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
-  const validTotalTickets = Math.max(0, totalTickets || 0);
   const validGuideAdultTickets = Math.max(0, guideAdultTickets || 0);
   const validGuideChildTickets = Math.max(0, guideChildTickets || 0);
-  
-  // Double-check that our total matches the sum of adult + child tickets
-  const calculatedTotal = validAdultTickets + validChildTickets;
-  
-  // Always use the calculated total for consistency
-  const displayTotal = calculatedTotal;
-    
-  // Total required tickets, including guides
-  const totalRequiredAdultTickets = validAdultTickets + validGuideAdultTickets;
-  const totalRequiredChildTickets = validChildTickets + validGuideChildTickets;
-  const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
-  
-  const totalGuideTickets = validGuideAdultTickets + validGuideChildTickets;
   
   // Check if it's a location requiring special guide tickets
   const isLocationRequiringTickets = 
     location?.toLowerCase().includes('versailles') || 
     location?.toLowerCase().includes('montmartre');
-
-  console.log("GUIDE TICKET DEBUG: [TicketsCard] Guide ticket check: ", {
-    location,
-    isLocationRequiringTickets,
-    guideAdultTickets: validGuideAdultTickets,
-    guideChildTickets: validGuideChildTickets,
-    totalGuideTickets
-  });
+    
+  // Total required tickets calculations
+  const totalRequiredAdultTickets = validAdultTickets + validGuideAdultTickets;
+  const totalRequiredChildTickets = validChildTickets + validGuideChildTickets;
+  const totalGuideTickets = validGuideAdultTickets + validGuideChildTickets;
+  const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
   
   // Determine if we have enough tickets
-  const hasEnoughTickets = totalRequiredTickets <= validTotalTickets;
-  
-  console.log("GUIDE TICKET DEBUG: [TicketsCard] Final calculations for location " + location + ":", {
-    originalValues: { adultTickets, childTickets, totalTickets, requiredTickets },
-    validatedValues: { validAdultTickets, validChildTickets, validTotalTickets },
-    calculatedTotal,
-    displayTotal,
-    guideTickets: { validGuideAdultTickets, validGuideChildTickets, totalGuideTickets },
-    totalRequired: { totalRequiredAdultTickets, totalRequiredChildTickets, totalRequiredTickets },
-    hasEnoughTickets,
-    isLocationRequiringTickets
-  });
+  const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
 
   return (
     <Card>

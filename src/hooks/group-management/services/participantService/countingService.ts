@@ -24,49 +24,8 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
 };
 
 /**
- * Calculate guide tickets needed based on the tour location and guide list
- * 
- * Rules:
- * - GA Free = 1 Child Ticket
- * - GA Ticket = 1 Adult Ticket
- * - GC = No Ticket
- */
-export const calculateGuideTickets = (
-  location: string = "",
-  guide1: string = "",
-  guide2: string = "",
-  guide3: string = ""
-): number => {
-  // If no location, no guide tickets needed
-  if (!location) return 0;
-  
-  // Normalize location to lowercase for comparison
-  const locationLower = location.toLowerCase();
-  
-  // Check if this location requires guide tickets
-  const requiresGuideTickets = 
-    locationLower.includes('versailles') || 
-    locationLower.includes('montmartre');
-  
-  if (!requiresGuideTickets) {
-    return 0;
-  }
-  
-  // Count how many guides are assigned (non-empty strings)
-  let guideCount = 0;
-  if (guide1) guideCount++;
-  if (guide2) guideCount++;
-  if (guide3) guideCount++;
-  
-  console.log(`GUIDE TICKET DEBUG: Found ${guideCount} guides for location ${location}`);
-  
-  // This function only counts guide presence, not their ticket requirements
-  // The actual ticket calculation will be done based on guide types
-  return 0;
-};
-
-/**
- * Calculate guide adult tickets needed based on the tour location and guide list with guide types
+ * Calculate guide adult tickets needed based on guide info
+ * Each GA Ticket guide needs one adult ticket in locations requiring tickets
  */
 export const calculateGuideAdultTickets = (
   location: string = "",
@@ -79,39 +38,45 @@ export const calculateGuideAdultTickets = (
   // If no location or no guides, no guide adult tickets needed
   if (!location || !guides.length) return 0;
   
-  // Normalize location to lowercase for comparison
-  const locationLower = location.toLowerCase();
-  
   // Check if this location requires guide tickets
   const requiresGuideTickets = 
-    locationLower.includes('versailles') || 
-    locationLower.includes('montmartre');
+    location.toLowerCase().includes('versailles') || 
+    location.toLowerCase().includes('montmartre');
   
   if (!requiresGuideTickets) {
     return 0;
   }
   
   // Count how many GA Ticket guides we have (they need adult tickets)
+  const processedGuideNames = new Set<string>();
   let gaTicketGuideCount = 0;
   
   guides.forEach(guide => {
-    // Check guide type
-    const guideType = guide?.info?.guideType;
+    // Skip if no info
+    if (!guide?.info) return;
     
-    if (guideType === 'GA Ticket') {
+    // Skip if already processed this guide (by name to avoid duplicates)
+    const guideName = guide.info.name?.toLowerCase() || '';
+    if (processedGuideNames.has(guideName)) return;
+    
+    // Skip Sophie Miller
+    if (guideName.includes('sophie miller')) return;
+    
+    // Add to processed list
+    processedGuideNames.add(guideName);
+    
+    // Check guide type
+    if (guide.info.guideType === 'GA Ticket') {
       gaTicketGuideCount++;
     }
   });
   
-  console.log(`GUIDE TICKET DEBUG: For location ${location}, found ${gaTicketGuideCount} GA Ticket guides needing adult tickets`);
-  
-  // Return GA Ticket guide count, as they need adult tickets
   return gaTicketGuideCount;
 };
 
 /**
- * Calculate guide child tickets based on the tour location and guide list
- * Each guide needs one child ticket if GA Free
+ * Calculate guide child tickets based on guide info
+ * Each GA Free guide needs one child ticket in locations requiring tickets
  */
 export const calculateGuideChildTickets = (
   location: string = "",
@@ -124,32 +89,38 @@ export const calculateGuideChildTickets = (
   // If no location or no guides, no guide child tickets needed
   if (!location || !guides.length) return 0;
   
-  // Normalize location to lowercase for comparison
-  const locationLower = location.toLowerCase();
-  
   // Check if this location requires guide tickets
   const requiresGuideTickets = 
-    locationLower.includes('versailles') || 
-    locationLower.includes('montmartre');
+    location.toLowerCase().includes('versailles') || 
+    location.toLowerCase().includes('montmartre');
   
   if (!requiresGuideTickets) {
     return 0;
   }
   
   // Count how many GA Free guides we have (they need child tickets)
+  const processedGuideNames = new Set<string>();
   let gaFreeGuideCount = 0;
   
   guides.forEach(guide => {
-    // Check guide type
-    const guideType = guide?.info?.guideType;
+    // Skip if no info
+    if (!guide?.info) return;
     
-    if (guideType === 'GA Free') {
+    // Skip if already processed this guide (by name to avoid duplicates)
+    const guideName = guide.info.name?.toLowerCase() || '';
+    if (processedGuideNames.has(guideName)) return;
+    
+    // Skip Sophie Miller
+    if (guideName.includes('sophie miller')) return;
+    
+    // Add to processed list
+    processedGuideNames.add(guideName);
+    
+    // Check guide type
+    if (guide.info.guideType === 'GA Free') {
       gaFreeGuideCount++;
     }
   });
   
-  console.log(`GUIDE TICKET DEBUG: For location ${location}, found ${gaFreeGuideCount} GA Free guides needing child tickets`);
-  
-  // Return GA Free guide count, as they need child tickets
   return gaFreeGuideCount;
 };

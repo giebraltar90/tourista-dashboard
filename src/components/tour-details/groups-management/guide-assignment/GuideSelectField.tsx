@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { GuideInfo } from "@/types/ventrata";
 import { UseFormReturn } from "react-hook-form";
+import { useEffect, useState } from "react";
 
 interface GuideOption {
   id: string;
@@ -34,27 +35,28 @@ export const GuideSelectField = ({
   guides, 
   defaultValue 
 }: GuideSelectFieldProps) => {
-  // Process guides to ensure all have readable names
-  const processedGuides = guides.map(guide => {
-    // If guide has a UUID as name or name with "..." in it, try to give it a better name
-    if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
-      return {
-        ...guide,
-        name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
-      };
-    }
-    return guide;
-  });
+  const [processedGuides, setProcessedGuides] = useState<GuideOption[]>([]);
   
-  // Filter out any guides with empty ids to avoid the Select.Item error
-  const validGuides = processedGuides.filter(guide => 
-    guide && guide.id && guide.id.trim() !== "" && guide.name
-  );
-  
-  // Log the guides for debugging
-  console.log("GUIDE SELECTION DEBUG: Available guides for selection:", 
-    validGuides.map(g => ({id: g.id, name: g.name, infoName: g.info?.name}))
-  );
+  useEffect(() => {
+    // Process guides to ensure all have readable names
+    const processed = guides.map(guide => {
+      // If guide has a UUID as name or name with "..." in it, try to give it a better name
+      if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
+        return {
+          ...guide,
+          name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
+        };
+      }
+      return guide;
+    });
+    
+    // Filter out any guides with empty ids to avoid the Select.Item error
+    const valid = processed.filter(guide => 
+      guide && guide.id && guide.id.trim() !== "" && guide.name
+    );
+    
+    setProcessedGuides(valid);
+  }, [guides]);
   
   return (
     <FormField
@@ -71,7 +73,7 @@ export const GuideSelectField = ({
             </FormControl>
             <SelectContent>
               <SelectItem value="_none">None (Unassigned)</SelectItem>
-              {validGuides.map((guide) => (
+              {processedGuides.map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
                   <div className="flex items-center">
                     <span>{guide.name}</span>

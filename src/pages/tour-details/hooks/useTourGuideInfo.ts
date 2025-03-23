@@ -1,158 +1,105 @@
 
 import { useState, useEffect } from "react";
-import { TourCardProps } from "@/components/tours/tour-card/types";
-import { GuideInfo, GuideType } from "@/types/ventrata";
+import { useGuideInfo } from "@/hooks/guides/useGuideInfo";
+import { GuideInfo } from "@/types/ventrata";
+import { TourCardProps } from "@/components/tours/TourCard";
 
 /**
- * Hook for handling guide information for a tour
+ * Custom hook to get guide information for a tour
  */
 export const useTourGuideInfo = (tour: TourCardProps | null) => {
-  // State to store guide information
   const [guide1Info, setGuide1Info] = useState<GuideInfo | null>(null);
   const [guide2Info, setGuide2Info] = useState<GuideInfo | null>(null);
   const [guide3Info, setGuide3Info] = useState<GuideInfo | null>(null);
+  
+  // Fetch guide info using the useGuideInfo hook
+  const guide1Data = useGuideInfo(tour?.guide1 || "");
+  const guide2Data = useGuideInfo(tour?.guide2 || "");
+  const guide3Data = useGuideInfo(tour?.guide3 || "");
 
-  // Fetch guide information when tour data changes
   useEffect(() => {
-    const fetchGuideInfo = async () => {
-      if (!tour) return;
-      
-      try {
-        // Import dynamically to avoid hook order issues
-        const { useGuideInfo } = await import("@/hooks/guides");
+    // Update guide1Info when data changes
+    if (tour?.guide1) {
+      if (guide1Data) {
+        // If guide data is available, use it
+        const updatedInfo = { ...guide1Data };
         
-        // Get unique guide names
-        const uniqueGuideNames = new Set<string>();
-        if (tour.guide1 && tour.guide1.trim()) uniqueGuideNames.add(tour.guide1.trim());
-        if (tour.guide2 && tour.guide2.trim()) uniqueGuideNames.add(tour.guide2.trim());
-        if (tour.guide3 && tour.guide3.trim()) uniqueGuideNames.add(tour.guide3.trim());
+        // Special case: Sophie Miller is always a GC guide
+        if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
+          updatedInfo.guideType = 'GC';
+        }
         
-        console.log("GUIDE TICKET DEBUG: [useTourGuideInfo] Fetching guide info for tour:", {
-          tourId: tour.id,
-          location: tour.location,
-          uniqueGuideCount: uniqueGuideNames.size,
-          uniqueGuides: Array.from(uniqueGuideNames),
-          guide1: tour.guide1 || 'none',
-          guide2: tour.guide2 || 'none',
-          guide3: tour.guide3 || 'none'
+        setGuide1Info(updatedInfo);
+      } else {
+        // Create a fallback guide info if no data is available
+        const isSophieMiller = tour.guide1.toLowerCase().includes('sophie miller');
+        setGuide1Info({
+          id: "guide1",
+          name: tour.guide1,
+          birthday: new Date(),
+          guideType: isSophieMiller ? 'GC' : 'GA Ticket'
         });
-        
-        // Create fallback guide info for when data can't be loaded
-        const createFallbackGuide = (name: string, defaultType?: GuideType): GuideInfo => {
-          // For Sophie Miller specifically, always use GC type
-          if (name.toLowerCase().includes('sophie miller')) {
-            console.log(`GUIDE TICKET DEBUG: [useTourGuideInfo] Setting Sophie Miller as GC guide`);
-            return {
-              name,
-              birthday: new Date(),
-              guideType: 'GC'
-            };
-          }
-          
-          // For other guides, use the provided type or generate random
-          const guideType: GuideType = defaultType || getRandomGuideType();
-          return {
-            name,
-            birthday: new Date(),
-            guideType
-          };
-        };
-        
-        // Helper function to safely get guide info
-        const safeGetGuideInfo = (guideName: string | undefined, defaultType?: GuideType): GuideInfo | null => {
-          if (!guideName || guideName.trim() === '') return null;
-          
-          const name = guideName.trim();
-          
-          try {
-            // Special case for Sophie Miller - always make her a GC guide
-            if (name.toLowerCase().includes('sophie miller')) {
-              console.log(`GUIDE TICKET DEBUG: [useTourGuideInfo] Setting Sophie Miller as GC guide`);
-              return {
-                name,
-                birthday: new Date(),
-                guideType: 'GC'
-              };
-            }
-            
-            // For testing/development, we'll randomize guide types
-            // In production, this would make a call to get the real guide type
-            const guideType: GuideType = defaultType || getRandomGuideType();
-            return {
-              name,
-              birthday: new Date(),
-              guideType
-            };
-          } catch (error) {
-            console.error(`Error fetching guide info for ${guideName}:`, error);
-            return createFallbackGuide(name, defaultType);
-          }
-        };
-        
-        // Generate random guide type for testing - in production, this data would come from the database
-        function getRandomGuideType(): GuideType {
-          const types: GuideType[] = ['GA Ticket', 'GA Free', 'GC'];
-          return types[Math.floor(Math.random() * types.length)];
-        }
-        
-        // Set guide info - use consistent types for guide slots
-        if (tour.guide1 && tour.guide1.trim() !== '') {
-          const guideName = tour.guide1.trim();
-          // Check if this is Sophie Miller
-          if (guideName.toLowerCase().includes('sophie miller')) {
-            setGuide1Info(safeGetGuideInfo(guideName, 'GC'));
-          } else {
-            setGuide1Info(safeGetGuideInfo(guideName, 'GA Ticket'));
-          }
-        } else {
-          setGuide1Info(null);
-        }
-        
-        if (tour.guide2 && tour.guide2.trim() !== '') {
-          const guideName = tour.guide2.trim();
-          // Check if this is Sophie Miller
-          if (guideName.toLowerCase().includes('sophie miller')) {
-            setGuide2Info(safeGetGuideInfo(guideName, 'GC'));
-          } else {
-            setGuide2Info(safeGetGuideInfo(guideName, 'GA Free'));
-          }
-        } else {
-          setGuide2Info(null);
-        }
-        
-        if (tour.guide3 && tour.guide3.trim() !== '') {
-          const guideName = tour.guide3.trim();
-          // Check if this is Sophie Miller
-          if (guideName.toLowerCase().includes('sophie miller')) {
-            setGuide3Info(safeGetGuideInfo(guideName, 'GC'));
-          } else {
-            setGuide3Info(safeGetGuideInfo(guideName, 'GC'));
-          }
-        } else {
-          setGuide3Info(null);
-        }
-        
-        console.log("GUIDE TICKET DEBUG: [useTourGuideInfo] Finished setting guide info:", {
-          guide1Info: guide1Info ? {
-            name: guide1Info.name,
-            type: guide1Info.guideType
-          } : null,
-          guide2Info: guide2Info ? {
-            name: guide2Info.name,
-            type: guide2Info.guideType
-          } : null,
-          guide3Info: guide3Info ? {
-            name: guide3Info.name,
-            type: guide3Info.guideType
-          } : null
-        });
-      } catch (error) {
-        console.error("Error loading guide information:", error);
       }
-    };
-    
-    fetchGuideInfo();
-  }, [tour]);
+    } else {
+      setGuide1Info(null);
+    }
+  }, [tour?.guide1, guide1Data]);
+
+  useEffect(() => {
+    // Update guide2Info when data changes
+    if (tour?.guide2) {
+      if (guide2Data) {
+        // If guide data is available, use it
+        const updatedInfo = { ...guide2Data };
+        
+        // Special case: Sophie Miller is always a GC guide
+        if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
+          updatedInfo.guideType = 'GC';
+        }
+        
+        setGuide2Info(updatedInfo);
+      } else {
+        // Create a fallback guide info if no data is available
+        const isSophieMiller = tour.guide2.toLowerCase().includes('sophie miller');
+        setGuide2Info({
+          id: "guide2",
+          name: tour.guide2,
+          birthday: new Date(),
+          guideType: isSophieMiller ? 'GC' : 'GA Ticket'
+        });
+      }
+    } else {
+      setGuide2Info(null);
+    }
+  }, [tour?.guide2, guide2Data]);
+
+  useEffect(() => {
+    // Update guide3Info when data changes
+    if (tour?.guide3) {
+      if (guide3Data) {
+        // If guide data is available, use it
+        const updatedInfo = { ...guide3Data };
+        
+        // Special case: Sophie Miller is always a GC guide
+        if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
+          updatedInfo.guideType = 'GC';
+        }
+        
+        setGuide3Info(updatedInfo);
+      } else {
+        // Create a fallback guide info if no data is available
+        const isSophieMiller = tour.guide3.toLowerCase().includes('sophie miller');
+        setGuide3Info({
+          id: "guide3",
+          name: tour.guide3,
+          birthday: new Date(),
+          guideType: isSophieMiller ? 'GC' : 'GA Ticket'
+        });
+      }
+    } else {
+      setGuide3Info(null);
+    }
+  }, [tour?.guide3, guide3Data]);
 
   return { guide1Info, guide2Info, guide3Info };
 };
