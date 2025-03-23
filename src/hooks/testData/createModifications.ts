@@ -14,19 +14,19 @@ export const createTestModifications = async (tourData: Array<{id: string}>) => 
       tour_id: tourData[0].id,
       description: "Group sizes adjusted",
       details: { type: "group_size", before: 5, after: 6 },
-      status: "complete" as ModificationStatus
+      status: "complete" as "pending" | "complete"
     },
     {
       tour_id: tourData[0].id,
       description: "Guide Noéma assigned to Group 1",
       details: { type: "guide_assignment", groupName: "Group 1", guideName: "Noéma Weber" },
-      status: "complete" as ModificationStatus
+      status: "complete" as "pending" | "complete"
     },
     {
       tour_id: tourData[2].id,
       description: "Changed entry time from 15:30 to 16:00",
       details: { type: "entry_time", before: "15:30", after: "16:00" },
-      status: "complete" as ModificationStatus
+      status: "complete" as "pending" | "complete"
     }
   ];
   

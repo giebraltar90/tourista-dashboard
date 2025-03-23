@@ -9,7 +9,6 @@ export const createTestTicketBuckets = async (tours) => {
   console.log("Creating test ticket buckets for tours...");
   
   const buckets = [];
-  const bucketAssignments = [];
   
   // For each tour, create a ticket bucket if it doesn't have one
   for (const tour of tours) {
@@ -70,11 +69,20 @@ export const createTestTicketBuckets = async (tours) => {
     
     // Return existing buckets for these tours
     const tourIds = tours.map(tour => tour.id);
+    if (tourIds.length === 0) {
+      return [];
+    }
+    
+    // Use a more direct query approach
     const { data: existingBuckets } = await supabase
       .from('ticket_buckets')
-      .select('*')
-      .or(tourIds.map(id => `assigned_tours.cs.{${id}}`).join(','));
+      .select('*');
       
-    return existingBuckets || [];
+    const filteredBuckets = existingBuckets?.filter(bucket => 
+      bucket.assigned_tours && 
+      bucket.assigned_tours.some(id => tourIds.includes(id))
+    ) || [];
+    
+    return filteredBuckets;
   }
 };

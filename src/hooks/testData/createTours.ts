@@ -90,7 +90,7 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
     }
   ];
   
-  // First check if tours already exist
+  // First check for existing tours and delete them
   for (const tour of tours) {
     const { data: existingTour } = await supabase
       .from('tours')
@@ -99,24 +99,18 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       .single();
       
     if (existingTour) {
-      // Update the existing tour
+      // Delete the existing tour to avoid conflicts
       await supabase
         .from('tours')
-        .update({
-          guide1_id: tour.guide1_id,
-          guide2_id: tour.guide2_id,
-          guide3_id: tour.guide3_id,
-          is_high_season: tour.is_high_season,
-          num_tickets: tour.num_tickets
-        })
+        .delete()
         .eq('id', existingTour.id);
     }
   }
   
-  // Create new tours or get existing ones
+  // Create the tours from scratch
   const { data: tourData, error: tourError } = await supabase
     .from('tours')
-    .upsert(tours, { onConflict: 'reference_code' })
+    .insert(tours)
     .select();
     
   if (tourError) {
@@ -124,6 +118,6 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
     throw tourError;
   }
   
-  console.log("Created/updated test tours with proper guide references:", tourData);
+  console.log("Created test tours with proper guide references:", tourData);
   return tourData || [];
 };
