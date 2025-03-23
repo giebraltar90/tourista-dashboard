@@ -1,66 +1,46 @@
 
-type EventCallback = (...args: any[]) => void;
-
-class EventEmitterClass {
-  private events: Record<string, EventCallback[]> = {};
-  private lastErrors: Record<string, Error | null> = {};
-
-  on(event: string, callback: EventCallback) {
-    if (!this.events[event]) {
-      this.events[event] = [];
+/**
+ * Simple event emitter for cross-component communication
+ */
+export const EventEmitter = {
+  _events: {} as Record<string, Function[]>,
+  
+  // Register an event handler
+  on(event: string, callback: Function) {
+    if (!this._events[event]) {
+      this._events[event] = [];
     }
-    this.events[event].push(callback);
-    return this;
-  }
-
-  off(event: string, callback: EventCallback) {
-    if (!this.events[event]) return this;
-    this.events[event] = this.events[event].filter(cb => cb !== callback);
-    return this;
-  }
-
-  emit(event: string, ...args: any[]) {
-    if (!this.events[event]) return false;
+    this._events[event].push(callback);
     
-    // Log event emission for debugging
-    console.log(`EventEmitter: Emitting "${event}" with ${this.events[event].length} listeners`);
+    // For debug purposes only
+    console.log(`EVENT: Registered handler for "${event}", total handlers: ${this._events[event].length}`);
     
-    // Execute each callback in a try/catch to prevent one bad callback from blocking others
-    this.events[event].forEach(callback => {
-      try {
-        callback(...args);
-      } catch (error) {
-        console.error(`Error in "${event}" event listener:`, error);
-        this.lastErrors[event] = error instanceof Error ? error : new Error(String(error));
-      }
-    });
-    
-    return true;
-  }
-
-  once(event: string, callback: EventCallback) {
-    const onceCallback = (...args: any[]) => {
-      this.off(event, onceCallback);
-      callback(...args);
-    };
-    return this.on(event, onceCallback);
-  }
-
-  // Helper to clear all listeners for testing/cleanup
-  clear(event?: string) {
-    if (event) {
-      delete this.events[event];
+    return () => this.off(event, callback); // Return unsubscribe function
+  },
+  
+  // Remove an event handler
+  off(event: string, callback: Function) {
+    if (this._events[event]) {
+      this._events[event] = this._events[event].filter(cb => cb !== callback);
+      
+      // For debug purposes only
+      console.log(`EVENT: Removed handler for "${event}", remaining handlers: ${this._events[event].length}`);
+    }
+  },
+  
+  // Trigger an event
+  emit(event: string, data?: any) {
+    if (this._events[event]) {
+      console.log(`EVENT: Emitting "${event}" with data:`, data);
+      this._events[event].forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`Error in event handler for "${event}":`, error);
+        }
+      });
     } else {
-      this.events = {};
+      console.log(`EVENT: No handlers for "${event}"`);
     }
-    return this;
   }
-
-  // Get number of listeners for a given event
-  listenerCount(event: string): number {
-    return this.events[event]?.length || 0;
-  }
-}
-
-// Create a singleton instance
-export const EventEmitter = new EventEmitterClass();
+};

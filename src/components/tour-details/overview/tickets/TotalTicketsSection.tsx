@@ -1,5 +1,5 @@
 
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 interface TotalTicketsSectionProps {
   hasEnoughTickets: boolean;
@@ -7,20 +7,23 @@ interface TotalTicketsSectionProps {
   requiredTickets: number;
 }
 
-export const TotalTicketsSection = ({ 
-  hasEnoughTickets, 
+export const TotalTicketsSection = ({
+  hasEnoughTickets,
   formattedTotalTickets,
   requiredTickets
 }: TotalTicketsSectionProps) => {
   return (
-    <div className="flex justify-between pt-2 border-t">
-      <span className="text-muted-foreground">Total tickets needed:</span>
-      <Badge 
-        variant="outline" 
-        className={`font-medium ${hasEnoughTickets ? "bg-green-100 text-green-800 border-green-300" : "bg-red-100 text-red-800 border-red-300"}`}
-      >
-        {requiredTickets} tickets
-      </Badge>
+    <div className="pt-1">
+      <div className="flex justify-between text-sm font-medium border-t border-border pt-1">
+        <span>Total required:</span>
+        <span 
+          className={cn(
+            hasEnoughTickets ? "text-green-600" : "text-red-600",
+          )}
+        >
+          {formattedTotalTickets} / {requiredTickets}
+        </span>
+      </div>
     </div>
   );
 };

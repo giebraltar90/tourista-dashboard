@@ -1,6 +1,6 @@
 
 import { useCallback } from "react";
-import { useTourById } from "../../useTourData";
+import { useTourById } from "../../tourData/useTourById";
 import { useModifications } from "../../useModifications";
 import { toast } from "sonner";
 import { resolveGroupId } from "./resolveGroupId";
@@ -8,6 +8,7 @@ import { processGuideId } from "./processGuideId";
 import { prepareGroupName } from "./createGroupName";
 import { updateDatabase } from "./updateDatabase";
 import { EventEmitter } from "@/utils/eventEmitter";
+import { logger } from "@/utils/logger";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
@@ -36,6 +37,13 @@ export const useAssignGuide = (tourId: string) => {
         // Prepare the updated group name
         const updatedName = await prepareGroupName(groupId, processedGuideId);
         
+        logger.debug(`🔧 [useAssignGuide] Assigning guide for tour ${tourId}, group ${groupIndex}:`, {
+          groupId,
+          originalGuideId: guideId,
+          processedGuideId,
+          updatedName
+        });
+        
         // Update the database
         const success = await updateDatabase(groupId, processedGuideId, updatedName);
         
@@ -56,8 +64,9 @@ export const useAssignGuide = (tourId: string) => {
           }
         });
         
-        // Notify of guide change to trigger ticket recalculation
+        // Notify of guide change to trigger ticket recalculation - important!
         EventEmitter.emit(`guide-change:${tourId}`);
+        logger.debug(`🔧 [useAssignGuide] Emitted guide-change:${tourId} event`);
         
         // Refetch tour data to update UI
         await refetch();
