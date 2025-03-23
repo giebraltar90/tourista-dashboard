@@ -37,9 +37,15 @@ export const NormalizedTourContent = ({
         date={tour.date} 
         startTime={tour.startTime}
         location={tour.location}
+        guide1Info={guide1Info}
+        guide2Info={guide2Info}
+        guide3Info={guide3Info}
       />
       
-      <TourTabs activeTab={activeTab} onTabChange={onTabChange} />
+      <TourTabs 
+        activeTab={activeTab} 
+        onTabChange={onTabChange || (() => {})}
+      />
       
       <div className="space-y-8">
         {activeTab === "overview" && (

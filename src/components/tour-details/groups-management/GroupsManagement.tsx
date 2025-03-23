@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsGrid } from "./GroupsGrid";
 import { useGroupManagement } from "@/hooks/group-management";
-import { useGuideInfo } from "@/hooks/guides";
+import { GuideInfo } from "@/types/ventrata";
 import { useDatabaseCheck } from "./hooks/useDatabaseCheck";
 import { useManualRefresh } from "./hooks/useManualRefresh";
 import { GroupsHeader } from "./components/GroupsHeader";
@@ -14,15 +14,20 @@ import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
+  tourId: string;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
-export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
+export const GroupsManagement = ({ 
+  tour, 
+  tourId,
+  guide1Info = null,
+  guide2Info = null,
+  guide3Info = null
+}: GroupsManagementProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
-  
-  // Get guide information safely with null checks
-  const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
 
   // Get group management hooks and functions
   const {
@@ -42,7 +47,7 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
 
   // Database check hook
   const { databaseError, isFixingDatabase, handleFixDatabase } = useDatabaseCheck(
-    tour.id, 
+    tourId, 
     refreshParticipants
   );
   
@@ -51,10 +56,10 @@ export const GroupsManagement = ({ tour }: GroupsManagementProps) => {
   
   // Initial load of participants
   useState(() => {
-    if (tour.id) {
-      console.log("GroupsManagement: Initial loading of participants for tour:", tour.id);
+    if (tourId) {
+      console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
       // Pass false to prevent showing toast during initial load
-      loadParticipants(tour.id, false);
+      loadParticipants(tourId, false);
     }
   });
   

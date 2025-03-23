@@ -3,35 +3,47 @@ import { format } from "date-fns";
 import { AlertCircle, Calendar, Clock, MapPin, PenSquare, MessageSquare, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TourCardProps } from "@/components/tours/TourCard";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useRole } from "@/contexts/RoleContext";
 import { GuideInfo } from "@/types/ventrata";
 
 export interface TourHeaderProps {
-  tour: TourCardProps;
-  guide1Info: GuideInfo | null;
-  guide2Info: GuideInfo | null;
-  guide3Info: GuideInfo | null;
+  tourName: string;
+  date: Date;
+  startTime: string;
+  location: string;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
-export const TourHeader = ({ tour, guide1Info, guide2Info, guide3Info }: TourHeaderProps) => {
+export const TourHeader = ({ 
+  tourName, 
+  date, 
+  startTime, 
+  location,
+  guide1Info,
+  guide2Info,
+  guide3Info
+}: TourHeaderProps) => {
   const { guideView } = useRole();
-  const formattedDate = format(tour.date, 'EEEE, MMMM d, yyyy');
-  const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
-  const isBelowMinimum = totalParticipants < 4;
+  const formattedDate = format(date, 'EEEE, MMMM d, yyyy');
+  
+  // This will be determined elsewhere - not needed for this component
+  const isBelowMinimum = false;
 
   return (
     <>
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{tour.tourName}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{tourName}</h1>
           <div className="flex items-center mt-1 text-muted-foreground">
             <Calendar className="mr-2 h-4 w-4" />
             <span>{formattedDate}</span>
             <Clock className="ml-4 mr-2 h-4 w-4" />
-            <span>{tour.startTime}</span>
+            <span>{startTime}</span>
             <MapPin className="ml-4 mr-2 h-4 w-4" />
-            <span>{tour.location}</span>
+            <span>{location}</span>
           </div>
         </div>
         

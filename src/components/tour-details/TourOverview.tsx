@@ -36,8 +36,11 @@ export const TourOverview = ({
       />
       
       <TourGroupsSection 
-        tourGroups={tour.tourGroups} 
+        tour={tour}
         isHighSeason={isHighSeason}
+        guide1Info={guide1Info}
+        guide2Info={guide2Info}
+        guide3Info={guide3Info}
       />
     </div>
   );

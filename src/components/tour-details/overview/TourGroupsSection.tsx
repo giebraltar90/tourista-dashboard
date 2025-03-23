@@ -1,25 +1,28 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TourCardProps } from "@/components/tours/tour-card/types";
+import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { Button } from "@/components/ui/button";
 import { AssignGuideDialog } from "../groups-management/dialogs/AssignGuideDialog";
 import { useGuideData } from "@/hooks/guides";
+import { TourCardProps } from "@/components/tours/tour-card/types";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
-  guide1Info: GuideInfo | null;
-  guide2Info: GuideInfo | null;
-  guide3Info: GuideInfo | null;
+  isHighSeason: boolean;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
 export const TourGroupsSection = ({ 
   tour, 
-  guide1Info, 
-  guide2Info, 
-  guide3Info 
+  isHighSeason,
+  guide1Info = null, 
+  guide2Info = null, 
+  guide3Info = null 
 }: TourGroupsSectionProps) => {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
@@ -49,14 +52,13 @@ export const TourGroupsSection = ({
     info: guide
   }));
   
-  // Add special guides if they exist in the tour, ensuring each has required properties
+  // Add special guides if they exist in the tour
   if (tour.guide1 && !validGuides.some(g => g.name === tour.guide1)) {
     validGuides.push({
       id: "guide1",
       name: tour.guide1,
       info: guide1Info ? {
         ...guide1Info,
-        // Add id if it doesn't exist in guide1Info
         id: guide1Info.id || "guide1"
       } : null
     });
@@ -68,7 +70,6 @@ export const TourGroupsSection = ({
       name: tour.guide2,
       info: guide2Info ? {
         ...guide2Info,
-        // Add id if it doesn't exist in guide2Info
         id: guide2Info.id || "guide2"
       } : null
     });
@@ -80,7 +81,6 @@ export const TourGroupsSection = ({
       name: tour.guide3,
       info: guide3Info ? {
         ...guide3Info,
-        // Add id if it doesn't exist in guide3Info
         id: guide3Info.id || "guide3"
       } : null
     });
@@ -133,14 +133,14 @@ export const TourGroupsSection = ({
         )}
         
         {/* Guide Assignment Dialog */}
-        {isAssignGuideOpen && selectedGroupIndex >= 0 && (
+        {isAssignGuideOpen && selectedGroupIndex >= 0 && tourGroups[selectedGroupIndex] && (
           <AssignGuideDialog
             isOpen={isAssignGuideOpen}
             onOpenChange={setIsAssignGuideOpen}
             tourId={tour.id}
             groupIndex={selectedGroupIndex}
             guides={validGuides}
-            currentGuideId={tourGroups[selectedGroupIndex]?.guideId}
+            currentGuideId={tourGroups[selectedGroupIndex].guideId}
           />
         )}
       </CardContent>
