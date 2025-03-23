@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { TicketBucketInfo } from "./TicketBucketInfo";
 import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils/ticketCalculation";
 import { logger } from "@/utils/logger";
+import { useGuideRequirements } from "@/hooks/tour-details/useGuideRequirements";
 
 export const TicketsManagement = ({ 
   tour, 
@@ -25,17 +26,10 @@ export const TicketsManagement = ({
   
   const adultParticipants = totalParticipants - totalChildCount;
   
-  // Check if any guides are actually assigned to groups
-  const hasAssignedGuides = tour.tourGroups.some(group => 
-    group.guideId && group.guideId !== "unassigned"
+  // Use the new hook to determine guide requirements
+  const { locationNeedsGuideTickets, hasAssignedGuides } = useGuideRequirements(
+    tour, guide1Info, guide2Info, guide3Info
   );
-  
-  // Location check for guide tickets
-  const locationLower = (tour.location || '').toLowerCase().trim();
-  const locationNeedsGuideTickets = 
-    locationLower.includes('versailles') || 
-    locationLower.includes('montmartre') ||
-    locationLower.includes('versaille');
   
   // Calculate tickets needed for guides based on guide types
   const { 

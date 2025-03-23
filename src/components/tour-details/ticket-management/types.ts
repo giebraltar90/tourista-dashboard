@@ -51,3 +51,10 @@ export interface TicketBucketInfoProps {
   tourDate: Date;
   totalParticipants: number;
 }
+
+export interface GuideTicketRequirement {
+  guideName: string;
+  guideInfo: GuideInfo | null;
+  needsTicket: boolean;
+  ticketType: string | null;
+}

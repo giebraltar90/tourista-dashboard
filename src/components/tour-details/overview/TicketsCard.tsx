@@ -5,6 +5,7 @@ import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils/tick
 import { GuideInfo } from "@/types/ventrata";
 import { useEffect } from "react";
 import { logger } from "@/utils/logger";
+import { useGuideRequirements } from "@/hooks/tour-details/useGuideRequirements";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -35,25 +36,26 @@ export const TicketsCard = ({
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
   
-  // Check if location needs guide tickets - normalize location to lowercase for case-insensitive comparison
-  const locationLower = (location || '').toLowerCase().trim();
-  const locationNeedsGuideTickets = 
-    locationLower.includes('versailles') || 
-    locationLower.includes('montmartre') ||
-    locationLower.includes('versaille');  // Common misspelling
+  // Use our new hook to determine guide requirements
+  const mockTour = {
+    id: tourId,
+    location: location || '',
+    tourGroups: tourGroups || [],
+    date: new Date(),
+    tourName: '',
+    tourType: '',
+    startTime: '',
+    referenceCode: '',
+    guide1: '',
+    guide2: '',
+    guide3: '',
+    numTickets: 0,
+    isHighSeason: false
+  };
   
-  // Check if there are assigned guides in any groups
-  const hasAssignedGuides = tourGroups?.some(g => {
-    // A guide is considered assigned if guideId exists and isn't "unassigned"
-    const hasGuide = g.guideId && g.guideId !== "unassigned";
-    
-    // If we have a guide assigned to this group, see if it matches one of our main guides
-    if (hasGuide) {
-      logger.debug(`🎟️ [TicketsCard] Group ${g.name || 'Unnamed'} has guide: ${g.guideId}`);
-    }
-    
-    return hasGuide;
-  }) || false;
+  const { locationNeedsGuideTickets, hasAssignedGuides } = useGuideRequirements(
+    mockTour, guide1Info, guide2Info, guide3Info
+  );
   
   logger.debug(`🎟️ [TicketsCard] Tour ${tourId} guide check: requires tickets: ${locationNeedsGuideTickets}, location: ${location}, has assigned guides: ${hasAssignedGuides}`);
   
