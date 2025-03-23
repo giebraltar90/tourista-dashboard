@@ -9,17 +9,32 @@ export const supabase = createSupabaseClient(
     global: {
       // Improved fetch options with longer timeout and better error handling
       fetch: (url, options) => {
-        // Build proper headers
+        // Make sure API key is always included
+        const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY';
+        
+        // Build proper headers with correct authorization
         const headers = {
           ...options?.headers,
-          'x-client-info': 'tour-management-app',
-          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
+          'Content-Type': 'application/json',
+          'apikey': apiKey,
+          'Authorization': `Bearer ${apiKey}`,
+          'x-client-info': '@supabase/javascript-sdk/2.x.x'
         };
 
+        console.log(`[Supabase] Fetching ${url}`);
+        
         return fetch(url, {
           ...options,
           headers,
           signal: AbortSignal.timeout(30000), // Increase timeout to 30 seconds
+        }).then(response => {
+          if (response.status === 401) {
+            console.error("[Supabase] Authentication error (401). API key might be invalid or missing.");
+          }
+          return response;
+        }).catch(error => {
+          console.error(`[Supabase] Network error: ${error.message}`, error);
+          throw error;
         });
       },
     },

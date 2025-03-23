@@ -7,6 +7,8 @@ type EventCallback = (data: any) => void;
 class EventEmitterClass {
   private events: Record<string, EventCallback[]> = {};
   private debugEnabled: boolean = true;
+  private isInitialized: boolean = false;
+  private connectionErrors: boolean = false;
 
   constructor() {
     // Check if we're in development mode
@@ -15,6 +17,14 @@ class EventEmitterClass {
     if (this.debugEnabled) {
       console.log('[EventEmitter] Initialized in debug mode');
     }
+    
+    this.isInitialized = true;
+    
+    // Listen for auth events
+    window.addEventListener('supabase-auth-error', () => {
+      this.connectionErrors = true;
+      console.warn('[EventEmitter] Detected authentication issues, some events may not trigger backend operations');
+    });
   }
 
   // Enable or disable debug logging
@@ -28,9 +38,21 @@ class EventEmitterClass {
       console.log(`[EventEmitter] ${message}`, ...args);
     }
   }
+  
+  // Warn about connection issues
+  private warnIfConnectionIssues(): void {
+    if (this.connectionErrors) {
+      this.log('Warning: Connection issues detected, events may not trigger backend operations');
+    }
+  }
 
   // Register an event listener
   on(event: string, callback: EventCallback): void {
+    if (!event) {
+      console.warn('[EventEmitter] Attempted to register a listener with undefined event name');
+      return;
+    }
+    
     if (!this.events[event]) {
       this.events[event] = [];
     }
@@ -66,6 +88,13 @@ class EventEmitterClass {
 
   // Emit an event with data
   emit(event: string, data?: any): void {
+    if (!this.isInitialized) {
+      console.warn('[EventEmitter] Event emitted before initialization:', event);
+      return;
+    }
+    
+    this.warnIfConnectionIssues();
+    
     try {
       const callbacks = this.events[event];
       
@@ -130,6 +159,17 @@ class EventEmitterClass {
     this.events = {};
     this.log('Cleared all event listeners');
   }
+  
+  // Check authentication status
+  checkConnectionStatus(): { hasConnectionErrors: boolean } {
+    return { hasConnectionErrors: this.connectionErrors };
+  }
+  
+  // Reset connection error flag
+  resetConnectionErrors(): void {
+    this.connectionErrors = false;
+    this.log('Reset connection error flag');
+  }
 }
 
 // Create a singleton instance
@@ -143,4 +183,8 @@ export const EVENTS = {
   TOUR_DATA_LOADED: (tourId: string) => `tour-data-loaded:${tourId}`,
   REFRESH_PARTICIPANTS: 'refresh-participants',
   RECALCULATE_TICKETS: (tourId: string) => `recalculate-tickets:${tourId}`,
+  
+  // Add auth events
+  AUTH_ERROR: 'auth-error',
+  AUTH_RESTORED: 'auth-restored',
 };

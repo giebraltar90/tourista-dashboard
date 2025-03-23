@@ -48,7 +48,7 @@ export const useTicketRecalculation = (tourId: string, onRecalculate: () => void
     });
 
     return () => {
-      // Properly cleanup all event listeners 
+      // Properly cleanup all event listeners
       EventEmitter.off(EVENTS.RECALCULATE_TICKETS(tourId));
       EventEmitter.off(EVENTS.GUIDE_CHANGED(tourId));
       EventEmitter.off(EVENTS.GUIDE_ASSIGNMENT_UPDATED(tourId));
@@ -57,9 +57,15 @@ export const useTicketRecalculation = (tourId: string, onRecalculate: () => void
   }, [tourId, handleRecalculation]);
 
   return {
-    // Manually trigger recalculation if needed
     triggerRecalculation: (source: string = 'manual') => {
       handleRecalculation({ source });
+    },
+    // Add these helper methods to match what TicketsCard.tsx is expecting
+    notifyParticipantChange: () => {
+      EventEmitter.emit(EVENTS.PARTICIPANT_CHANGED(tourId), { source: 'component' });
+    },
+    notifyGuideChange: () => {
+      EventEmitter.emit(EVENTS.GUIDE_CHANGED(tourId), { source: 'component' });
     }
   };
 };
