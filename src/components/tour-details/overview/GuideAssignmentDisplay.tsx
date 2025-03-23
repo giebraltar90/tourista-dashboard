@@ -58,9 +58,18 @@ export const GuideAssignmentDisplay = ({
   const handleGuideChange = async (newGuideId: string) => {
     setIsLoading(true);
     try {
-      // Use group ID if found, otherwise use group index as fallback
-      const targetId = groupId || groupIndex;
-      await assignGuide(targetId, newGuideId);
+      // Ensure we're passing a numeric value for the group index
+      if (groupIndex !== -1) {
+        await assignGuide(groupIndex, newGuideId);
+      } else if (groupId) {
+        // If we have a group ID but not an index, try to find the index
+        const foundIndex = tourGroups.findIndex(g => g.id === groupId);
+        if (foundIndex !== -1) {
+          await assignGuide(foundIndex, newGuideId);
+        } else {
+          console.error("Could not find group index for ID:", groupId);
+        }
+      }
     } finally {
       setIsLoading(false);
       setIsChanging(false);

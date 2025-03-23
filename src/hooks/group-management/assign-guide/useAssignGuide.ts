@@ -21,11 +21,13 @@ export const useAssignGuide = (tourId: string) => {
         }
         
         // Resolve group ID from index
-        const groupId = resolveGroupId(tour, groupIndex);
-        if (!groupId) {
+        const result = await resolveGroupId(tourId, groupIndex);
+        if (!result || !result.groupId) {
           toast.error("Group not found");
           return false;
         }
+        
+        const groupId = result.groupId;
         
         // Process guide ID (handle special cases like "guide1", "_none", etc.)
         const processedGuideId = await processGuideId(guideId || "_none");
@@ -63,7 +65,7 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
     },
-    [tour, refetch, addModification]
+    [tour, refetch, addModification, tourId]
   );
   
   return { assignGuide };

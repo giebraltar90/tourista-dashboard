@@ -24,7 +24,18 @@ export const TourGroupGuide = ({
   guideInfo
 }: TourGroupGuideProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { data: guides = [] } = useGuides();
+  const { data: guidesData = [] } = useGuides();
+  
+  // Transform the guides data to match the expected format
+  const guides = guidesData.map(guide => ({
+    id: guide.id,
+    name: guide.name,
+    info: {
+      name: guide.name,
+      birthday: new Date(guide.birthday),
+      guideType: guide.guide_type
+    } as GuideInfo
+  }));
   
   const handleOpenDialog = () => {
     setIsDialogOpen(true);

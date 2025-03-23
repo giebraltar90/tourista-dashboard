@@ -59,5 +59,5 @@ export const prepareGroupName = async (
   }
 };
 
-// Add the createDisplayNameForGroup export that's being imported elsewhere
+// Important: Export createDisplayNameForGroup as an alias of prepareGroupName
 export const createDisplayNameForGroup = prepareGroupName;
