@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 // Type definition for the execute_sql parameters
 interface ExecuteSqlParams {
@@ -11,7 +12,7 @@ interface ExecuteSqlParams {
  */
 export const createDatabaseFunctions = async (): Promise<boolean> => {
   try {
-    console.log("DATABASE DEBUG: Creating database functions");
+    logger.debug("DATABASE DEBUG: Creating database functions");
     
     // Create execute_sql function to run arbitrary SQL
     const createExecuteSqlFunction = `
@@ -35,20 +36,20 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       
       if (sqlFunctionError) {
         // Function might not exist yet, try direct SQL
-        console.error("DATABASE DEBUG: Failed to create execute_sql function:", sqlFunctionError);
-        console.log("DATABASE DEBUG: Function might not exist yet. Please create it manually in the Supabase SQL editor");
+        logger.error("DATABASE DEBUG: Failed to create execute_sql function:", sqlFunctionError);
+        logger.debug("DATABASE DEBUG: Function might not exist yet. Please create it manually in the Supabase SQL editor");
         
         // We can't use direct SQL execution in the client, so we'll just log an error
         return false;
       }
     } catch (error) {
-      console.error("DATABASE DEBUG: Exception creating execute_sql function:", error);
+      logger.error("DATABASE DEBUG: Exception creating execute_sql function:", error);
       // Continue with other function creation attempts
     }
     
-    // Create check_table_exists function with improved query
+    // Create check_table_exists function with improved parameter name to avoid ambiguity
     const createCheckTableExistsFunction = `
-      CREATE OR REPLACE FUNCTION check_table_exists(table_name TEXT)
+      CREATE OR REPLACE FUNCTION check_table_exists(p_table_name TEXT)
       RETURNS BOOLEAN
       LANGUAGE plpgsql
       AS $$
@@ -58,7 +59,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public'
-          AND table_name = $1
+          AND table_name = p_table_name
         ) INTO table_exists;
         
         RETURN table_exists;
@@ -73,12 +74,50 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       );
       
       if (tableCheckFunctionError) {
-        console.error("DATABASE DEBUG: Failed to create check_table_exists function:", tableCheckFunctionError);
+        logger.error("DATABASE DEBUG: Failed to create check_table_exists function:", tableCheckFunctionError);
       } else {
-        console.log("DATABASE DEBUG: Successfully created/updated check_table_exists function");
+        logger.debug("DATABASE DEBUG: Successfully created/updated check_table_exists function");
       }
     } catch (error) {
-      console.error("DATABASE DEBUG: Exception creating check_table_exists function:", error);
+      logger.error("DATABASE DEBUG: Exception creating check_table_exists function:", error);
+    }
+    
+    // Create update_tour_guide_assignment function
+    const createUpdateTourGuideFunction = `
+      CREATE OR REPLACE FUNCTION update_tour_guide_assignment(
+        p_tour_id uuid,
+        p_guide_field text,
+        p_guide_id uuid
+      ) 
+      RETURNS void
+      LANGUAGE plpgsql
+      AS $$
+      BEGIN
+        -- Dynamically construct and execute SQL to update the correct guide field
+        IF p_guide_field = 'guide1_id' THEN
+          UPDATE public.tours SET guide1_id = p_guide_id WHERE id = p_tour_id;
+        ELSIF p_guide_field = 'guide2_id' THEN
+          UPDATE public.tours SET guide2_id = p_guide_id WHERE id = p_tour_id;
+        ELSIF p_guide_field = 'guide3_id' THEN
+          UPDATE public.tours SET guide3_id = p_guide_id WHERE id = p_tour_id;
+        END IF;
+      END;
+      $$;
+    `;
+    
+    try {
+      const { error: updateGuideFunctionError } = await supabase.rpc(
+        'execute_sql',
+        { sql_query: createUpdateTourGuideFunction } as ExecuteSqlParams
+      );
+      
+      if (updateGuideFunctionError) {
+        logger.error("DATABASE DEBUG: Failed to create update_tour_guide_assignment function:", updateGuideFunctionError);
+      } else {
+        logger.debug("DATABASE DEBUG: Successfully created/updated update_tour_guide_assignment function");
+      }
+    } catch (error) {
+      logger.error("DATABASE DEBUG: Exception creating update_tour_guide_assignment function:", error);
     }
     
     // Create debug_check_participants function
@@ -113,17 +152,17 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       );
       
       if (debugFunctionError) {
-        console.error("DATABASE DEBUG: Failed to create debug_check_participants function:", debugFunctionError);
+        logger.error("DATABASE DEBUG: Failed to create debug_check_participants function:", debugFunctionError);
       } else {
-        console.log("DATABASE DEBUG: Successfully created/updated debug_check_participants function");
+        logger.debug("DATABASE DEBUG: Successfully created/updated debug_check_participants function");
       }
     } catch (error) {
-      console.error("DATABASE DEBUG: Exception creating debug_check_participants function:", error);
+      logger.error("DATABASE DEBUG: Exception creating debug_check_participants function:", error);
     }
     
     return true;
   } catch (error) {
-    console.error("DATABASE DEBUG: Error creating database functions:", error);
+    logger.error("DATABASE DEBUG: Error creating database functions:", error);
     return false;
   }
 };

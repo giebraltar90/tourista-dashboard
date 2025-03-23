@@ -6,6 +6,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { processGuideIdForAssignment } from "./utils/guideAssignmentUtils";
 import { logger } from "@/utils/logger";
+import { updateTourGuidesInDatabase } from "@/services/api/guideAssignmentService";
 
 export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () => void) => {
   const [isAssigning, setIsAssigning] = useState(false);
@@ -155,6 +156,25 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         setAssignmentError(error.message);
         toast.error("Error assigning guide: " + error.message);
         return false;
+      }
+      
+      // Now update the guide reference in the tours table if this is a main guide
+      if (guideId.startsWith("guide")) {
+        // Determine which guide we're updating (guide1, guide2, guide3)
+        const guideNumber = guideId.replace("guide", "");
+        const guideField = `guide${guideNumber}_id`;
+        
+        // Update tour guides in database using our new function
+        let guide1Id = undefined;
+        let guide2Id = undefined;
+        let guide3Id = undefined;
+        
+        // Only set the specific guide we're updating
+        if (guideNumber === "1") guide1Id = finalGuideId;
+        if (guideNumber === "2") guide2Id = finalGuideId;
+        if (guideNumber === "3") guide3Id = finalGuideId;
+        
+        await updateTourGuidesInDatabase(tourId, guide1Id, guide2Id, guide3Id);
       }
 
       // Call onSuccess callback if provided
