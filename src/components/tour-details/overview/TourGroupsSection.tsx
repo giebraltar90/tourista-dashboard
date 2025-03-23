@@ -113,12 +113,12 @@ export const TourGroupsSection = ({
         ) : (
           <div className="space-y-4">
             {tourGroups.map((group, index) => {
-              const { name: guideName } = getGuideNameAndInfo(group.guideId);
+              const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
               const isExpanded = expandedGroup === group.id;
               
-              // Create group display name with guide in parentheses if assigned
+              // Create group display name with guide in parentheses if assigned, including guide type
               const displayName = guideName && guideName !== "Unassigned" 
-                ? `Group ${index + 1} (${guideName})`
+                ? `Group ${index + 1} (${guideName}${guideInfo?.guideType ? ` - ${guideInfo.guideType}` : ''})`
                 : `Group ${index + 1}`;
                 
               // Log each group's guide info for debugging

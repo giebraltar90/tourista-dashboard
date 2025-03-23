@@ -33,7 +33,20 @@ export const TicketsCard = ({
 }: TicketsCardProps) => {
   // Calculate guide ticket requirements
   const { locationNeedsGuideTickets, guideTickets } = useGuideTicketRequirements(
-    { location, id: tourId, tourGroups: tourGroups || [] },
+    { 
+      location, 
+      id: tourId, 
+      tourGroups: tourGroups || [],
+      // Add required fields for TourCardProps
+      date: "",
+      tourName: "",
+      tourType: "",
+      startTime: "",
+      endTime: "",
+      capacity: 0,
+      status: "",
+      guide1: guide1Info?.name || ""
+    },
     guide1Info,
     guide2Info,
     guide3Info
@@ -61,8 +74,6 @@ export const TicketsCard = ({
       </CardHeader>
       <CardContent className="text-sm space-y-4">
         <ParticipantTicketsSection 
-          adultTickets={adultTickets}
-          childTickets={childTickets}
           formattedAdultTickets={formattedAdultTickets} 
           formattedChildTickets={formattedChildTickets}
         />
@@ -71,8 +82,9 @@ export const TicketsCard = ({
           <>
             <Separator className="my-2" />
             <GuideTicketsSection 
-              guideTickets={guideTickets}
-              location={location}
+              guides={guideTickets.guides}
+              adultTickets={guideTickets.adultTickets}
+              childTickets={guideTickets.childTickets}
             />
           </>
         )}
