@@ -7,7 +7,7 @@ import { resolveGroupId } from "./resolveGroupId";
 import { processGuideId } from "./processGuideId";
 import { prepareGroupName } from "./createGroupName";
 import { updateDatabase } from "./updateDatabase";
-import { EventEmitter } from "@/utils/eventEmitter";
+import { EventEmitter, EVENTS } from "@/utils/eventEmitter";
 import { logger } from "@/utils/logger";
 
 export const useAssignGuide = (tourId: string) => {
@@ -64,12 +64,34 @@ export const useAssignGuide = (tourId: string) => {
           }
         });
         
-        // Notify of guide change to trigger ticket recalculation - important!
-        EventEmitter.emit(`guide-change:${tourId}`);
-        logger.debug(`🔧 [useAssignGuide] Emitted guide-change:${tourId} event`);
+        // Emit multiple events to ensure all components update
+        // This is critical for ensuring the UI stays in sync with the database
         
-        // Refetch tour data to update UI
-        await refetch();
+        // 1. Notify of guide change to trigger ticket recalculation
+        EventEmitter.emit(EVENTS.GUIDE_CHANGED(tourId));
+        logger.debug(`🔧 [useAssignGuide] Emitted ${EVENTS.GUIDE_CHANGED(tourId)} event`);
+        
+        // 2. Explicitly trigger ticket recalculation
+        EventEmitter.emit(EVENTS.RECALCULATE_TICKETS(tourId), {
+          source: 'guide_assignment',
+          tourId,
+          groupId,
+          guideId: processedGuideId
+        });
+        
+        // 3. Emit guide assignment updated event with detailed data
+        EventEmitter.emit(EVENTS.GUIDE_ASSIGNMENT_UPDATED(tourId), {
+          tourId,
+          groupId,
+          groupIndex,
+          guideId: processedGuideId
+        });
+        
+        // Refetch tour data to update UI after a small delay
+        // This ensures the database has time to process the update
+        setTimeout(async () => {
+          await refetch();
+        }, 500);
         
         return true;
       } catch (error) {

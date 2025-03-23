@@ -3,7 +3,8 @@ import { useState, useCallback } from "react";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { moveParticipant } from "./services/participantService/movementService";
 import { toast } from "sonner";
-import { EventEmitter } from "@/utils/eventEmitter";
+import { EventEmitter, EVENTS } from "@/utils/eventEmitter";
+import { logger } from "@/utils/logger";
 
 export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourGroup[]) => {
   const [selectedParticipant, setSelectedParticipant] = useState<{
@@ -42,12 +43,14 @@ export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourG
     try {
       setIsMovePending(true);
       
-      console.log("PARTICIPANTS DEBUG: Moving participant:", {
+      logger.debug("PARTICIPANTS DEBUG: Moving participant:", {
         participantId: participant.id,
         fromGroup: sourceGroup.id,
         toGroup: targetGroup.id,
         fromIndex: fromGroupIndex,
-        toIndex: toGroupIndex
+        toIndex: toGroupIndex,
+        participantName: participant.name,
+        participantCount: participant.count
       });
       
       // Move the participant using the service
@@ -61,8 +64,27 @@ export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourG
         // Clear the selected participant
         setSelectedParticipant(null);
         
-        // Notify of participant change to trigger ticket recalculation
-        EventEmitter.emit(`participant-change:${tourId}`);
+        // Emit multiple events to ensure all components update
+        
+        // 1. Notify of participant change to trigger ticket recalculation
+        EventEmitter.emit(EVENTS.PARTICIPANT_CHANGED(tourId), {
+          moved: true,
+          participantId: participant.id,
+          fromGroupId: sourceGroup.id,
+          toGroupId: targetGroup.id
+        });
+        logger.debug(`Emitted ${EVENTS.PARTICIPANT_CHANGED(tourId)} event`);
+        
+        // 2. Explicitly trigger ticket recalculation
+        EventEmitter.emit(EVENTS.RECALCULATE_TICKETS(tourId), {
+          source: 'participant_movement',
+          participantId: participant.id,
+          fromGroupId: sourceGroup.id,
+          toGroupId: targetGroup.id
+        });
+        
+        // 3. Request a refresh of participant data
+        EventEmitter.emit(EVENTS.REFRESH_PARTICIPANTS, { tourId });
         
         return true;
       } else {
@@ -70,7 +92,7 @@ export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourG
         return false;
       }
     } catch (error) {
-      console.error("PARTICIPANTS DEBUG: Error moving participant:", error);
+      logger.error("PARTICIPANTS DEBUG: Error moving participant:", error);
       toast.error("An error occurred while moving the participant");
       return false;
     } finally {
