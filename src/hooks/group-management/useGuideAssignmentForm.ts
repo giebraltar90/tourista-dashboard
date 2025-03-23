@@ -11,7 +11,6 @@ import {
   UseGuideAssignmentFormProps, 
   UseGuideAssignmentFormResult 
 } from "./types";
-import { processGuideIdForAssignment } from "./utils/guideAssignmentUtils";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -73,39 +72,30 @@ export const useGuideAssignmentForm = ({
     try {
       setIsSubmitting(true);
       
-      // Process guide ID for assignment
-      const guideIdToAssign = processGuideIdForAssignment(
-        values.guideId as string,
-        guides,
-        allGuides,
-        tour
-      );
-      
-      // If mapping failed, show an error
-      if (values.guideId !== "_none" && guideIdToAssign === null) {
-        console.error(`Failed to map guide ID "${values.guideId}" to a valid UUID`);
-        toast.error("Cannot assign guide: Could not map to a valid guide ID");
-        setIsSubmitting(false);
-        return;
-      }
+      const selectedGuideId = values.guideId as string;
       
       console.log("Assigning guide:", { 
         groupIndex, 
-        guideId: guideIdToAssign,
-        originalGuideId: values.guideId,
+        guideId: selectedGuideId,
         currentGuideId,
         selectedGuide: guides.find(g => g.id === values.guideId)?.name
       });
       
-      // Get the actual group ID if available, otherwise fall back to index
-      const groupId = String(groupIndex); // Convert to string to ensure consistency
+      // Call the assign guide function with the selected ID
+      const success = await assignGuide(groupIndex, selectedGuideId);
       
-      // Call the assign guide function
-      const success = await assignGuide(groupId, guideIdToAssign || "_none");
-      
-      handleAssignmentResult(success, values.guideId);
+      if (success) {
+        // Update the current value to match the form
+        setCurrentValue(selectedGuideId);
+        onSuccess();
+      } else {
+        toast.error("Failed to assign guide. Please try again.");
+      }
     } catch (error) {
-      handleAssignmentError(error);
+      console.error("Error assigning guide:", error);
+      toast.error("Failed to assign guide");
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -117,39 +107,22 @@ export const useGuideAssignmentForm = ({
       setIsSubmitting(true);
       console.log("Removing guide from group:", { groupIndex });
       
-      // Convert the groupIndex to a string for consistency
-      const groupId = String(groupIndex);
-      
       // Use "_none" as special value to remove the guide
-      const success = await assignGuide(groupId, "_none");
+      const success = await assignGuide(groupIndex, "_none");
       
-      handleAssignmentResult(success, "_none");
+      if (success) {
+        // Update the current value to match the form
+        setCurrentValue("_none");
+        onSuccess();
+      } else {
+        toast.error("Failed to remove guide. Please try again.");
+      }
     } catch (error) {
-      handleAssignmentError(error);
+      console.error("Error removing guide:", error);
+      toast.error("Failed to remove guide");
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-  
-  /**
-   * Handle the result of guide assignment operation
-   */
-  const handleAssignmentResult = (success: boolean, newValue?: string | null) => {
-    if (success) {
-      // Update the current value to match the form
-      setCurrentValue(newValue || "_none");
-      onSuccess();
-    } else {
-      toast.error("Failed to assign guide. Please try again.");
-    }
-    setIsSubmitting(false);
-  };
-  
-  /**
-   * Handle errors during guide assignment
-   */
-  const handleAssignmentError = (error: unknown) => {
-    console.error("Error assigning guide:", error);
-    toast.error("Failed to assign guide");
-    setIsSubmitting(false);
   };
   
   // Derived state

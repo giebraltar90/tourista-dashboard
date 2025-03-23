@@ -22,33 +22,18 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // First, fetch the current group to ensure we have all data
-    const { data: currentGroup, error: fetchError } = await supabase
-      .from('tour_groups')
-      .select('*')
-      .eq('id', groupId)
-      .single();
-      
-    if (fetchError) {
-      console.error("Error fetching current group data:", fetchError);
-      // Continue with update anyway
-    }
-    
     // Build update object based on what data is provided
     const updateData: any = {};
     
-    // Only add guide_id to update if it's valid
+    // Add guide_id to update
     if (guideId === null || guideId === "_none") {
       // Set to null to unassign
       updateData.guide_id = null;
       console.log("Setting guide_id to null (unassigning)");
-    } else if (isValidUuid(guideId)) {
-      // Only add valid UUIDs
-      updateData.guide_id = guideId;
-      console.log(`Setting guide_id to UUID: ${guideId}`);
     } else {
-      console.error("Invalid UUID format for guide_id:", guideId);
-      return false;
+      // Add the guide ID
+      updateData.guide_id = guideId;
+      console.log(`Setting guide_id to: ${guideId}`);
     }
     
     // Only add name to update if it's provided
@@ -73,8 +58,6 @@ export const updateGuideInSupabase = async (
     }
     
     console.log("Successfully updated guide assignment in Supabase. Response:", data);
-    // Add a small delay to let database update propagate
-    await new Promise(resolve => setTimeout(resolve, 300));
     return true;
   } catch (error) {
     console.error("Error updating guide assignment:", error);

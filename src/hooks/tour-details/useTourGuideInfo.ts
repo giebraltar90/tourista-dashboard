@@ -50,11 +50,6 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
   const [guide3Info, setGuide3Info] = useState<GuideInfo | null>(null);
   const [tourWithGuideIds, setTourWithGuideIds] = useState<TourCardProps>(safeTour);
   
-  // Helper to check if a guide is Sophie Miller
-  const isSophieMiller = (name: string = ''): boolean => {
-    return name?.toLowerCase().includes('sophie miller');
-  };
-  
   // Process guide info and map guide IDs
   useEffect(() => {
     console.log("🔄 [useTourGuideInfo] Processing guide info for tour:", id);
@@ -73,41 +68,14 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       } : 'none'
     });
     
-    // Process guide1Info
-    let processedGuide1Info = rawGuide1Info;
-    if (rawGuide1Info && isSophieMiller(rawGuide1Info.name)) {
-      // Ensure Sophie Miller is always GC
-      processedGuide1Info = {
-        ...rawGuide1Info,
-        guideType: 'GC'
-      };
-      console.log("🔄 [useTourGuideInfo] Set Sophie Miller (guide1) as GC");
-    }
-    setGuide1Info(processedGuide1Info);
+    // Process guide1Info - simply use the raw data
+    setGuide1Info(rawGuide1Info);
     
-    // Process guide2Info
-    let processedGuide2Info = rawGuide2Info;
-    if (rawGuide2Info && isSophieMiller(rawGuide2Info.name)) {
-      // Ensure Sophie Miller is always GC
-      processedGuide2Info = {
-        ...rawGuide2Info,
-        guideType: 'GC'
-      };
-      console.log("🔄 [useTourGuideInfo] Set Sophie Miller (guide2) as GC");
-    }
-    setGuide2Info(processedGuide2Info);
+    // Process guide2Info - simply use the raw data
+    setGuide2Info(rawGuide2Info);
     
-    // Process guide3Info
-    let processedGuide3Info = rawGuide3Info;
-    if (rawGuide3Info && isSophieMiller(rawGuide3Info.name)) {
-      // Ensure Sophie Miller is always GC
-      processedGuide3Info = {
-        ...rawGuide3Info,
-        guideType: 'GC'
-      };
-      console.log("🔄 [useTourGuideInfo] Set Sophie Miller (guide3) as GC");
-    }
-    setGuide3Info(processedGuide3Info);
+    // Process guide3Info - simply use the raw data
+    setGuide3Info(rawGuide3Info);
     
     // Map guide UUIDs to guide1, guide2, guide3 in tourGroups for easier reference
     if (Array.isArray(tourGroups) && tourGroups.length > 0) {
