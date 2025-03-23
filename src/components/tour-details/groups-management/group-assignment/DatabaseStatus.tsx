@@ -42,7 +42,7 @@ export const DatabaseStatus = ({ dbCheckResult }: DatabaseStatusProps) => {
   // Show success if table exists and has participants
   if (dbCheckResult.participantCount > 0) {
     return (
-      <Alert variant="success">
+      <Alert variant="default" className="border-green-200 bg-green-50">
         <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
         <AlertDescription>
           Database connected with {dbCheckResult.participantCount} participants.

@@ -82,6 +82,11 @@ export const GroupsManagement = ({
     dialogUtils.openAssignGuideDialog(groupIndex);
   };
 
+  // Fix: Wrap handleDragEnd to match the expected signature
+  const handleDragEndWrapper = () => {
+    handleDragEnd();
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -108,7 +113,7 @@ export const GroupsManagement = ({
               selectedParticipant={selectedParticipant}
               setSelectedParticipant={setSelectedParticipant}
               handleDragStart={handleDragStart}
-              handleDragEnd={handleDragEnd}
+              handleDragEnd={handleDragEndWrapper}
               handleDragOver={handleDragOver}
               handleDragLeave={handleDragLeave}
               handleDrop={handleDrop}
