@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -67,9 +67,9 @@ export const AssignBucketDialog = ({
         reference: b.reference_number,
         date: b.date.toISOString(),
         maxTickets: b.max_tickets,
-        allocatedTickets: b.allocated_tickets,
+        allocatedTickets: b.allocated_tickets || 0,
         assignedTours: b.assigned_tours?.length || 0,
-        availableTickets: b.max_tickets - b.allocated_tickets,
+        availableTickets: b.max_tickets - (b.allocated_tickets || 0),
         dateComponents: {
           year: b.date.getFullYear(),
           month: b.date.getMonth() + 1,
@@ -81,16 +81,22 @@ export const AssignBucketDialog = ({
   }, [availableBuckets]);
 
   // Filter buckets that can accommodate this tour's tickets
+  // Fixed filtering logic to prevent UI freeze
   const availableBucketsForTour = availableBuckets.filter(bucket => {
-    // Get total allocated tickets for existing tours
-    const totalAllocated = bucket.tour_allocations ? 
-      bucket.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
-      bucket.allocated_tickets || 0;
+    // Skip filtering if no tickets are needed - all buckets are valid
+    if (requiredTickets <= 0) {
+      // Don't show buckets that already have this tour assigned
+      return !(bucket.assigned_tours && bucket.assigned_tours.includes(tourId));
+    }
     
-    // Check if this bucket has enough remaining tickets for this tour
-    const remainingTickets = bucket.max_tickets - totalAllocated;
+    // Calculate available tickets more safely
+    const allocatedTickets = typeof bucket.allocated_tickets === 'number' 
+      ? bucket.allocated_tickets 
+      : 0;
     
-    // Also check if this tour isn't already assigned to this bucket
+    const remainingTickets = bucket.max_tickets - allocatedTickets;
+    
+    // Check if this tour isn't already assigned to this bucket
     const tourIsAlreadyAssigned = bucket.assigned_tours && bucket.assigned_tours.includes(tourId);
     
     // Return true if there are enough remaining tickets and tour isn't already assigned
@@ -104,13 +110,9 @@ export const AssignBucketDialog = ({
         id: b.id,
         reference: b.reference_number,
         maxTickets: b.max_tickets,
-        totalAllocated: b.tour_allocations ? 
-          b.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
-          b.allocated_tickets || 0,
+        totalAllocated: b.allocated_tickets || 0,
         requiredTickets,
-        available: b.max_tickets - (b.tour_allocations ? 
-          b.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
-          b.allocated_tickets || 0)
+        available: b.max_tickets - (b.allocated_tickets || 0)
       }))
     );
   }, [availableBucketsForTour, requiredTickets]);
@@ -141,16 +143,26 @@ export const AssignBucketDialog = ({
     }
   };
 
+  // Reset selected bucket when dialog opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedBucketId("");
+    }
+  }, [isOpen]);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Assign Ticket Bucket</DialogTitle>
+          <DialogDescription>
+            Select a ticket bucket for this tour on {format(displayDate, 'MMM d, yyyy')}
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="bucket">Select a ticket bucket for {format(displayDate, 'MMM d, yyyy')}</Label>
+            <Label htmlFor="bucket">Select a ticket bucket</Label>
             <Select
               value={selectedBucketId}
               onValueChange={setSelectedBucketId}
@@ -160,16 +172,20 @@ export const AssignBucketDialog = ({
                 <SelectValue placeholder="Select a ticket bucket" />
               </SelectTrigger>
               <SelectContent>
-                {availableBucketsForTour.length === 0 ? (
+                {isLoading ? (
+                  <SelectItem value="loading" disabled>
+                    Loading buckets...
+                  </SelectItem>
+                ) : availableBucketsForTour.length === 0 ? (
                   <SelectItem value="none" disabled>
-                    No buckets with enough capacity available
+                    No buckets available for this tour
                   </SelectItem>
                 ) : (
                   availableBucketsForTour.map((bucket) => {
                     // Calculate remaining capacity
-                    const allocatedTotal = bucket.tour_allocations ? 
-                      bucket.tour_allocations.reduce((sum, alloc) => sum + alloc.tickets_required, 0) : 
-                      bucket.allocated_tickets || 0;
+                    const allocatedTotal = typeof bucket.allocated_tickets === 'number' 
+                      ? bucket.allocated_tickets 
+                      : 0;
                     
                     const remainingCapacity = bucket.max_tickets - allocatedTotal;
                     
