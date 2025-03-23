@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { DatabaseStatus } from "./DatabaseStatus";
 import { RefreshControls } from "./RefreshControls";
 import { FormActions } from "./FormActions";
-import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
+import { AssignGuideForm } from "./AssignGuideForm";
 import { useDatabaseData } from "./hooks/useDatabaseData";
 import { useGuideData } from "@/hooks/guides";
+import { GuideOption } from "@/hooks/group-management/types";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
@@ -29,7 +30,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     : undefined;
     
   // Format guides for the form
-  const formattedGuides = guides.map(guide => ({
+  const formattedGuides: GuideOption[] = guides.map(guide => ({
     id: guide.id || '', // Ensure ID is never undefined
     name: guide.name,
     info: guide
@@ -97,11 +98,8 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
                     hasCurrentGuide={false}
                     hasChanges={false}
                   >
-                    <Button type="button" variant="outline" onClick={handleRefresh}>
+                    <Button type="button" variant="outline" size="sm" onClick={handleRefresh}>
                       Reset
-                    </Button>
-                    <Button type="button">
-                      Update Capacity
                     </Button>
                   </FormActions>
                 </div>

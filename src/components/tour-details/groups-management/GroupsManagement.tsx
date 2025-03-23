@@ -61,7 +61,7 @@ export const GroupsManagement = ({
     if (tourId) {
       console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
       // Pass false to prevent showing toast during initial load
-      loadParticipants(tourId, false);
+      loadParticipants();
     }
   }, [tourId, loadParticipants]);
   
@@ -82,9 +82,9 @@ export const GroupsManagement = ({
     dialogUtils.openAssignGuideDialog(groupIndex);
   };
 
-  // Fix: Create a wrapper that properly handles the event parameter
+  // Fix: Create a wrapper that properly handles the event parameter and call handleDragEnd inside it
   const handleDragEndWrapper = (e: React.DragEvent<Element>) => {
-    handleDragEnd();
+    handleDragEnd(e);
   };
 
   return (

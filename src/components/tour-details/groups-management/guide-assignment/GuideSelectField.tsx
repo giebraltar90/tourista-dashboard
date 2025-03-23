@@ -15,59 +15,31 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { GuideInfo } from "@/types/ventrata";
-import { useEffect, useState } from "react";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { GuideOption } from "@/hooks/group-management/types";
 
 interface GuideSelectFieldProps {
   form: any;
-  guides: Array<{
-    id: string;
-    name: string;
-    info: GuideInfo | null;
-  }>;
+  guides: GuideOption[];
   defaultValue: string;
 }
 
 export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFieldProps) => {
-  const [uniqueGuides, setUniqueGuides] = useState(guides);
+  // Ensure all guides have readable names
+  const processedGuides = guides.map(guide => {
+    // If guide has a UUID as name or name with "..." in it, try to give it a better name
+    if (!guide.name || guide.name.includes('...')) {
+      return {
+        ...guide,
+        name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
+      };
+    }
+    return guide;
+  });
   
-  // Process guides when component mounts or guides change
-  useEffect(() => {
-    // Log input for debugging
-    console.log("GuideSelectField rendering with:", {
-      defaultValue,
-      guidesCount: guides.length,
-      guides: guides.map(g => ({ id: g.id, name: g.name }))
-    });
-    
-    // Filter out invalid guides and ensure no duplicates
-    const seen = new Set<string>();
-    const processed = guides.filter(guide => {
-      // Skip if missing required fields
-      if (!guide || !guide.id || guide.id.trim() === "") return false;
-      
-      // Skip duplicates by ID or name
-      const key = `${guide.id}-${guide.name}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      
-      return true;
-    }).map(guide => {
-      // Clean up guide names
-      if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
-        return {
-          ...guide,
-          name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
-        };
-      }
-      return guide;
-    });
-    
-    // Sort alphabetically by name
-    processed.sort((a, b) => a.name.localeCompare(b.name));
-    
-    setUniqueGuides(processed);
-  }, [guides, defaultValue]);
+  // Filter out any invalid guides
+  const validGuides = processedGuides.filter(guide => 
+    guide && guide.id && guide.id.trim() !== ""
+  );
   
   return (
     <FormField
@@ -87,18 +59,13 @@ export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFiel
             </FormControl>
             <SelectContent>
               <SelectItem value="_none">None (Unassign Guide)</SelectItem>
-              {uniqueGuides.map((guide) => (
+              {validGuides.map((guide) => (
                 <SelectItem key={guide.id} value={guide.id}>
                   <div className="flex items-center gap-2">
                     <span>{guide.name}</span>
                     {guide.info?.guideType && (
                       <Badge variant="outline" className="text-xs">
                         {guide.info.guideType}
-                      </Badge>
-                    )}
-                    {!isValidUuid(guide.id) && (
-                      <Badge variant="destructive" className="text-xs">
-                        Invalid ID
                       </Badge>
                     )}
                   </div>
