@@ -1,36 +1,29 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, PlusCircle } from "lucide-react";
+import { RefreshCw, Database } from "lucide-react";
 
 interface RefreshControlsProps {
+  isLoading: boolean;
   isRefreshing: boolean;
   onRefresh: () => void;
-  onAddTestParticipants: () => void;
 }
 
 export const RefreshControls = ({ 
+  isLoading, 
   isRefreshing, 
-  onRefresh, 
-  onAddTestParticipants 
+  onRefresh 
 }: RefreshControlsProps) => {
   return (
-    <div className="flex gap-2">
-      <Button 
-        size="sm" 
-        variant="outline" 
-        onClick={onAddTestParticipants}
-      >
-        <PlusCircle className="h-4 w-4 mr-2" />
-        Add Test Participants
-      </Button>
-      <Button 
-        size="sm" 
-        variant="outline" 
+    <div className="flex justify-end">
+      <Button
+        variant="outline"
+        size="sm"
         onClick={onRefresh}
-        disabled={isRefreshing}
+        disabled={isLoading || isRefreshing}
+        className="text-xs"
       >
-        <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-        {isRefreshing ? 'Refreshing...' : 'Refresh Participants'}
+        <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+        {isRefreshing ? 'Refreshing...' : 'Refresh Database'}
       </Button>
     </div>
   );

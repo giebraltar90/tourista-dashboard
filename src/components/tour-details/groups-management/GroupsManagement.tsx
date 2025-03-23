@@ -30,7 +30,6 @@ export const GroupsManagement = ({
 }: GroupsManagementProps) => {
   console.log("GroupsManagement rendering with tourId:", tourId);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
-  const [renderGroupAssignment, setRenderGroupAssignment] = useState(true);
 
   // Get group management hooks and functions
   const {
@@ -78,6 +77,11 @@ export const GroupsManagement = ({
 
   const { dialogsComponent } = dialogUtils;
 
+  const handleOpenAssignGuide = (groupIndex: number) => {
+    setSelectedGroupIndex(groupIndex);
+    dialogUtils.openAssignGuideDialog(groupIndex);
+  };
+
   return (
     <Card>
       <GroupsHeader 
@@ -94,15 +98,30 @@ export const GroupsManagement = ({
             onFixDatabase={handleFixDatabase}
           />
           
-          {/* Always render GroupAssignment as the primary interface */}
-          <GroupAssignment tour={tour} />
-          
-          {/* Only render the legacy GroupsGrid as a fallback if needed */}
-          {(!localTourGroups || localTourGroups.length === 0) && (
+          {/* Display the group grid for participant management */}
+          {localTourGroups && localTourGroups.length > 0 ? (
+            <GroupsGrid 
+              tour={tour}
+              localTourGroups={localTourGroups}
+              selectedParticipant={selectedParticipant}
+              setSelectedParticipant={setSelectedParticipant}
+              handleDragStart={handleDragStart}
+              handleDragEnd={handleDragEnd}
+              handleDragOver={handleDragOver}
+              handleDragLeave={handleDragLeave}
+              handleDrop={handleDrop}
+              handleMoveParticipant={handleMoveParticipant}
+              isMovePending={isMovePending}
+              onRefreshParticipants={refreshParticipants}
+            />
+          ) : (
             <div className="text-center p-6 text-muted-foreground">
               No tour groups available. Try using the "Add Test Participants" button above.
             </div>
           )}
+          
+          {/* Group assignment section for guide assignment */}
+          <GroupAssignment tour={tour} />
         </div>
       </CardContent>
       

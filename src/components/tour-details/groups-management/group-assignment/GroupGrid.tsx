@@ -41,12 +41,13 @@ export const GroupGrid = ({
   const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
   const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
+  console.log("DATABASE DEBUG: GroupGrid rendering with", {
+    localTourGroupsLength: localTourGroups?.length || 0,
+    tourGroupsLength: tour?.tourGroups?.length || 0,
+    hasParticipants: localTourGroups?.some(g => g.participants?.length > 0)
+  });
+  
   const stableTourGroups = useMemo(() => {
-    console.log("DATABASE DEBUG: Creating stable tour groups from:", {
-      localTourGroupsLength: localTourGroups?.length || 0,
-      tourGroupsLength: tour?.tourGroups?.length || 0
-    });
-    
     if (!localTourGroups || localTourGroups.length === 0) {
       console.log("DATABASE DEBUG: Using tour.tourGroups as fallback");
       if (!tour?.tourGroups) return [];
@@ -65,12 +66,6 @@ export const GroupGrid = ({
     }));
   }, [localTourGroups, tour?.tourGroups]);
   
-  console.log("DATABASE DEBUG: Stable tour groups:", stableTourGroups.map(g => ({
-    id: g.id,
-    name: g.displayName,
-    participantsCount: g.participants?.length || 0
-  })));
-
   if (!stableTourGroups || stableTourGroups.length === 0) {
     return (
       <Alert variant="warning">
@@ -87,11 +82,6 @@ export const GroupGrid = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {stableTourGroups.map((group) => {
           const index = group.originalIndex !== undefined ? group.originalIndex : 0;
-          
-          console.log(`DATABASE DEBUG: Rendering group ${index} (${group.displayName}):`, {
-            id: group.id,
-            participantsCount: Array.isArray(group.participants) ? group.participants.length : 0
-          });
           
           return (
             <GroupCard
