@@ -41,7 +41,9 @@ export const NormalizedTourContent = ({
     );
   }
 
-  const participantCounts = useParticipantCounts(tour.tourGroups);
+  // Ensure tourGroups is an array before passing to useParticipantCounts
+  const tourGroups = tour.tourGroups || [];
+  const participantCounts = useParticipantCounts(tourGroups);
   
   return (
     <div className="container mx-auto py-6 space-y-8">

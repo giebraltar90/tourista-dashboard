@@ -11,6 +11,8 @@ import { GroupsHeader } from "./components/GroupsHeader";
 import { DatabaseErrorAlert } from "./components/DatabaseErrorAlert";
 import { GroupsFooter } from "./components/GroupsFooter";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
+import { group } from "console";
+import { GroupAssignment } from "./group-assignment/GroupAssignment";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -82,6 +84,7 @@ export const GroupsManagement = ({
         isFixingDatabase={isFixingDatabase}
         onManualRefresh={handleManualRefresh}
       />
+      
       <CardContent>
         <div className="space-y-6">
           <DatabaseErrorAlert 
@@ -90,25 +93,36 @@ export const GroupsManagement = ({
             onFixDatabase={handleFixDatabase}
           />
           
-          <GroupsGrid
-            tourGroups={localTourGroups}
-            tour={tour}
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            guide3Info={guide3Info}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd} 
-            onMoveClick={setSelectedParticipant}
-            selectedParticipant={selectedParticipant}
-            handleMoveParticipant={handleMoveParticipant}
-            isMovePending={isMovePending}
-            onRefreshParticipants={refreshParticipants} 
-          />
+          {/* Add the GroupAssignment component for the main group management UI */}
+          <GroupAssignment tour={tour} />
+          
+          {/* Fallback to GroupsGrid if needed */}
+          {!tour.tourGroups || tour.tourGroups.length === 0 ? (
+            <div className="text-center p-6 text-muted-foreground">
+              No tour groups available. Try adding test participants.
+            </div>
+          ) : (
+            <GroupsGrid
+              tourGroups={localTourGroups}
+              tour={tour}
+              guide1Info={guide1Info}
+              guide2Info={guide2Info}
+              guide3Info={guide3Info}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd} 
+              onMoveClick={setSelectedParticipant}
+              selectedParticipant={selectedParticipant}
+              handleMoveParticipant={handleMoveParticipant}
+              isMovePending={isMovePending}
+              onRefreshParticipants={refreshParticipants} 
+            />
+          )}
         </div>
       </CardContent>
+      
       <GroupsFooter />
 
       {/* Render all dialogs */}

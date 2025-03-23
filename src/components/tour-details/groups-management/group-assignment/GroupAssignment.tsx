@@ -13,6 +13,7 @@ import { AssignGuideDialog } from "../dialogs/AssignGuideDialog";
 import { MoveParticipantSheet } from "../MoveParticipantSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { addTestParticipants } from "@/hooks/testData/createTestData";
+import { Button } from "@/components/ui/button";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
@@ -117,18 +118,18 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     try {
       console.log("DATABASE DEBUG: Manually refreshing participants for tour:", tour.id);
       
-      const { error: tableCheckError } = await supabase
+      const { error: tableCheck } = await supabase
         .from('participants')
         .select('id')
         .limit(1);
         
-      if (tableCheckError) {
-        console.error("DATABASE DEBUG: Error checking participants table:", tableCheckError);
+      if (tableCheck) {
+        console.error("DATABASE DEBUG: Error checking participants table:", tableCheck);
         toast.error("Participants table not found in database");
         setDbCheckResult({
           hasTable: false,
           participantCount: 0,
-          error: tableCheckError.message
+          error: tableCheck.message
         });
         return;
       }
@@ -161,11 +162,25 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Group & Participant Management</CardTitle>
-          <RefreshControls 
-            isRefreshing={isRefreshing}
-            onRefresh={handleRefreshParticipants}
-            onAddTestParticipants={handleAddTestParticipants}
-          />
+          <div className="flex gap-2">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleAddTestParticipants}
+            >
+              <PlusCircle className="h-4 w-4 mr-2" />
+              Add Test Participants
+            </Button>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={handleRefreshParticipants}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh Participants'}
+            </Button>
+          </div>
         </div>
       </CardHeader>
       

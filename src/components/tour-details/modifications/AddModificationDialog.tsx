@@ -1,8 +1,17 @@
+
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useModifications } from "@/hooks/modifications/useModifications";
 
 interface AddModificationDialogProps {
@@ -11,66 +20,77 @@ interface AddModificationDialogProps {
   tourId: string;
 }
 
-export const AddModificationDialog = ({
-  isOpen,
-  setIsOpen,
-  tourId
-}: AddModificationDialogProps) => {
+export const AddModificationDialog = ({ isOpen, setIsOpen, tourId }: AddModificationDialogProps) => {
   const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("pending");
   const { addModification, isAddingModification } = useModifications(tourId);
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+
+  const handleSubmit = async () => {
+    if (!description) return;
     
-    if (!description.trim()) return;
-    
-    const success = await addModification(description);
-    if (success) {
+    try {
+      await addModification({
+        tourId,
+        description,
+        status,
+        details: { source: "user_input" }
+      });
+      
       setDescription("");
+      setStatus("pending");
       setIsOpen(false);
+    } catch (error) {
+      console.error("Error adding modification:", error);
     }
   };
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Modification</DialogTitle>
+          <DialogTitle>Add Tour Modification</DialogTitle>
           <DialogDescription>
-            Record a new modification or change to this tour
+            Record a modification or change to this tour's details.
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description"
-              placeholder="Describe the modification..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[120px]"
-              required
-            />
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="status">Modification Status</Label>
+            <Select value={status} onValueChange={setStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           
-          <div className="flex justify-end space-x-2">
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setIsOpen(false)}
-              disabled={isAddingModification}
-            >
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              disabled={isAddingModification || !description.trim()}
-            >
-              {isAddingModification ? "Saving..." : "Save Modification"}
-            </Button>
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe the modification in detail..."
+              rows={4}
+            />
           </div>
-        </form>
+        </div>
+        
+        <DialogFooter>
+          <Button
+            type="submit"
+            onClick={handleSubmit}
+            disabled={!description || isAddingModification}
+          >
+            {isAddingModification ? "Saving..." : "Save Modification"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

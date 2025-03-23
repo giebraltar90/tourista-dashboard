@@ -1,6 +1,6 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 interface DatabaseStatusProps {
   dbCheckResult: {
@@ -11,29 +11,38 @@ interface DatabaseStatusProps {
 }
 
 export const DatabaseStatus = ({ dbCheckResult }: DatabaseStatusProps) => {
-  if (!dbCheckResult) return null;
-  
+  if (!dbCheckResult) {
+    return null;
+  }
+
   if (!dbCheckResult.hasTable) {
     return (
       <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
+        <AlertCircle className="h-4 w-4 mr-2" />
         <AlertDescription>
-          Participants table not found in database. Please check your database setup.
+          The participants table is missing from the database. {dbCheckResult.error && `Error: ${dbCheckResult.error}`}
         </AlertDescription>
       </Alert>
     );
   }
-  
-  if (dbCheckResult.hasTable && dbCheckResult.participantCount === 0) {
+
+  if (dbCheckResult.participantCount === 0) {
     return (
-      <Alert className="bg-amber-50 border-amber-200">
-        <AlertCircle className="h-4 w-4 text-amber-600" />
-        <AlertDescription className="text-amber-800">
-          Participants table exists but contains no records. You need to add participants to the database.
+      <Alert variant="warning">
+        <AlertCircle className="h-4 w-4 mr-2" />
+        <AlertDescription>
+          The participants table exists but is empty. Try adding some test participants.
         </AlertDescription>
       </Alert>
     );
   }
-  
-  return null;
+
+  return (
+    <Alert variant="success" className="bg-green-50 text-green-800 border-green-200">
+      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+      <AlertDescription>
+        Database is ready with {dbCheckResult.participantCount} participants.
+      </AlertDescription>
+    </Alert>
+  );
 };
