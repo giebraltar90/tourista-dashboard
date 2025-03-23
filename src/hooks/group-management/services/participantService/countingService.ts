@@ -1,4 +1,3 @@
-
 import { VentrataTourGroup } from "@/types/ventrata";
 
 /**
@@ -24,13 +23,6 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
 };
 
 /**
- * Check if a guide name is Sophie Miller
- */
-const isSophieMiller = (guideName: string = ""): boolean => {
-  return guideName.toLowerCase().includes('sophie miller');
-};
-
-/**
  * Calculate guide adult tickets needed based on guide info
  * Each GA Ticket guide needs one adult ticket in locations requiring tickets
  */
@@ -51,37 +43,28 @@ export const calculateGuideAdultTickets = (
     location.toLowerCase().includes('montmartre');
   
   if (!requiresGuideTickets) {
+    console.log(`🔍 [calculateGuideAdultTickets] Location "${location}" doesn't require guide tickets`);
     return 0;
   }
   
   // Count how many GA Ticket guides we have (they need adult tickets)
   // Keep track of processed guides by name to avoid duplicates
-  const processedGuideNames = new Set<string>();
+  const processedGuideIds = new Set<string>();
   let gaTicketGuideCount = 0;
   
   guides.forEach(guide => {
     // Skip if no info
     if (!guide?.info) return;
     
-    // Get the guide name in lowercase for consistent comparison
-    const guideName = (guide.info.name || guide.name || '').toLowerCase();
-    
-    // Skip if already processed this guide (by name to avoid duplicates)
-    if (processedGuideNames.has(guideName)) return;
-    
-    // Skip Sophie Miller - she is always treated as a GC guide (never needs a ticket)
-    if (isSophieMiller(guideName)) {
-      console.log("🔍 [calculateGuideAdultTickets] Skipping Sophie Miller (always GC)");
-      processedGuideNames.add(guideName);
-      return;
-    }
+    // Skip if already processed this guide by ID
+    if (processedGuideIds.has(guide.id)) return;
     
     // Add to processed list
-    processedGuideNames.add(guideName);
+    processedGuideIds.add(guide.id);
     
     // Check guide type
     if (guide.info.guideType === 'GA Ticket') {
-      console.log(`🔍 [calculateGuideAdultTickets] ${guideName} (GA Ticket) needs adult ticket`);
+      console.log(`🔍 [calculateGuideAdultTickets] Guide ${guide.id} (${guide.name}) with type GA Ticket needs adult ticket`);
       gaTicketGuideCount++;
     }
   });
@@ -111,37 +94,28 @@ export const calculateGuideChildTickets = (
     location.toLowerCase().includes('montmartre');
   
   if (!requiresGuideTickets) {
+    console.log(`🔍 [calculateGuideChildTickets] Location "${location}" doesn't require guide tickets`);
     return 0;
   }
   
   // Count how many GA Free guides we have (they need child tickets)
-  // Keep track of processed guides by name to avoid duplicates
-  const processedGuideNames = new Set<string>();
+  // Keep track of processed guides by ID to avoid duplicates
+  const processedGuideIds = new Set<string>();
   let gaFreeGuideCount = 0;
   
   guides.forEach(guide => {
     // Skip if no info
     if (!guide?.info) return;
     
-    // Get the guide name in lowercase for consistent comparison
-    const guideName = (guide.info.name || guide.name || '').toLowerCase();
-    
-    // Skip if already processed this guide (by name to avoid duplicates)
-    if (processedGuideNames.has(guideName)) return;
-    
-    // Skip Sophie Miller - she is always treated as a GC guide (never needs a ticket)
-    if (isSophieMiller(guideName)) {
-      console.log("🔍 [calculateGuideChildTickets] Skipping Sophie Miller (always GC)");
-      processedGuideNames.add(guideName);
-      return;
-    }
+    // Skip if already processed this guide
+    if (processedGuideIds.has(guide.id)) return;
     
     // Add to processed list
-    processedGuideNames.add(guideName);
+    processedGuideIds.add(guide.id);
     
     // Check guide type
     if (guide.info.guideType === 'GA Free') {
-      console.log(`🔍 [calculateGuideChildTickets] ${guideName} (GA Free) needs child ticket`);
+      console.log(`🔍 [calculateGuideChildTickets] Guide ${guide.id} (${guide.name}) with type GA Free needs child ticket`);
       gaFreeGuideCount++;
     }
   });

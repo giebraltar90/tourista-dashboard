@@ -31,30 +31,23 @@ export const doesGuideNeedTicket = (
     return false;
   }
   
-  // Check if guide is Sophie Miller (always GC, never needs ticket)
-  const name = guideInfo?.name || '';
-  if (isSophieMiller(name)) {
-    console.log('🎫 [doesGuideNeedTicket] Sophie Miller (GC) never needs a ticket');
-    return false;
-  }
-  
   // Check guide type
   const guideType = guideInfo?.guideType || '';
   
   // GC guides don't need tickets
   if (guideType === 'GC') {
-    console.log(`🎫 [doesGuideNeedTicket] ${name} (GC) doesn't need a ticket`);
+    console.log(`🎫 [doesGuideNeedTicket] Guide with type GC doesn't need a ticket`);
     return false;
   }
   
   // GA Ticket and GA Free guides need tickets
   if (guideType === 'GA Ticket' || guideType === 'GA Free') {
-    console.log(`🎫 [doesGuideNeedTicket] ${name} (${guideType}) needs a ticket`);
+    console.log(`🎫 [doesGuideNeedTicket] Guide with type ${guideType} needs a ticket`);
     return true;
   }
   
   // Default assumption: guide needs a ticket if we can't determine
-  console.log(`🎫 [doesGuideNeedTicket] ${name} (unknown type "${guideType}") defaulting to needing a ticket`);
+  console.log(`🎫 [doesGuideNeedTicket] Guide with unknown type "${guideType}" defaulting to needing a ticket`);
   return true;
 };
 
@@ -64,13 +57,6 @@ export const doesGuideNeedTicket = (
 export const getGuideTicketType = (guideInfo: GuideInfo | null): 'adult' | 'child' | null => {
   // No guide info, no ticket
   if (!guideInfo) {
-    return null;
-  }
-  
-  // Check if guide is Sophie Miller (always GC, never needs ticket)
-  const name = guideInfo?.name || '';
-  if (isSophieMiller(name)) {
-    console.log('🎫 [getGuideTicketType] Sophie Miller (GC) never needs a ticket');
     return null;
   }
   

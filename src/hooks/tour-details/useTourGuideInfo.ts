@@ -78,14 +78,14 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
         // Log the original guide ID for debugging
         console.log(`🔍 [useTourGuideInfo] Group ${group.id} has guide: ${group.guideId}`);
         
-        // Map DB UUIDs to guide1, guide2, guide3 if they match
-        if (tour.guide1_id && group.guideId === tour.guide1_id) {
+        // Map guide IDs based on direct comparison with guide1, guide2, guide3
+        if (group.guideId === guide1) {
           mappedGuideId = 'guide1';
           console.log(`🔍 [useTourGuideInfo] Mapped ${group.guideId} to guide1`);
-        } else if (tour.guide2_id && group.guideId === tour.guide2_id) {
+        } else if (group.guideId === guide2) {
           mappedGuideId = 'guide2';
           console.log(`🔍 [useTourGuideInfo] Mapped ${group.guideId} to guide2`);
-        } else if (tour.guide3_id && group.guideId === tour.guide3_id) {
+        } else if (group.guideId === guide3) {
           mappedGuideId = 'guide3';
           console.log(`🔍 [useTourGuideInfo] Mapped ${group.guideId} to guide3`);
         }
