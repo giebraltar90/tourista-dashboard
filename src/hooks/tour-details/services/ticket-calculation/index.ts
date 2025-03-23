@@ -5,4 +5,19 @@ export { guideTypeNeedsTicket, determineTicketTypeForGuide } from './guideTypeUt
 export { getGuideTicketRequirement } from './guideRequirementUtils';
 export { findAssignedGuides } from './guideAssignmentUtils';
 export { processGuideTicketRequirement, calculateGuideTickets } from './guideTicketProcessor';
-export { calculateGuideTicketsNeeded, calculateCompleteGuideTicketRequirements } from './ticketCalculator';
+
+// New core module exports
+export { 
+  isDefaultGuide, 
+  processDefaultGuide,
+  countTicketsByType,
+  mapGuidesToResultFormat,
+  calculateBasicGuideTickets,
+  calculateCompleteTicketRequirements
+} from './core';
+
+// Main calculator functions (now thin wrappers)
+export { 
+  calculateGuideTicketsNeeded, 
+  calculateCompleteGuideTicketRequirements 
+} from './ticketCalculator';
