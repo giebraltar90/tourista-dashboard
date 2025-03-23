@@ -186,7 +186,7 @@ export const moveParticipant = async (
         child_count: newTargetChildCount,
         updated_at: new Date().toISOString()
       })
-      .eq('id', targetGroupId);
+      .eq('id', newGroupId);
       
     if (targetUpdateError) {
       logger.error("🔄 [PARTICIPANT_MOVE] Error updating target group:", targetUpdateError);
