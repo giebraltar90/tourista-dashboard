@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { GuideInfo } from '@/types/ventrata';
@@ -13,6 +14,14 @@ interface UseTourGuideInfoResult {
 export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult => {
   // Extract relevant data from tour
   const { id, guide1, guide2, guide3, tourGroups = [] } = tour || {};
+  
+  console.log("🔄 [useTourGuideInfo] Starting with tour:", {
+    id,
+    guide1: guide1 || 'none',
+    guide2: guide2 || 'none',
+    guide3: guide3 || 'none',
+    groupCount: tourGroups?.length || 0
+  });
   
   // Direct hook calls to get guide info
   const rawGuide1Info = useGuideInfo(guide1);
@@ -32,7 +41,21 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
   
   // Process guide info and map guide IDs
   useEffect(() => {
-    console.log("🔍 [useTourGuideInfo] Processing guide info for tour:", id);
+    console.log("🔄 [useTourGuideInfo] Processing guide info for tour:", id);
+    console.log("🔄 [useTourGuideInfo] Raw guide info:", {
+      guide1: rawGuide1Info ? {
+        name: rawGuide1Info.name,
+        type: rawGuide1Info.guideType
+      } : 'none',
+      guide2: rawGuide2Info ? {
+        name: rawGuide2Info.name,
+        type: rawGuide2Info.guideType
+      } : 'none',
+      guide3: rawGuide3Info ? {
+        name: rawGuide3Info.name,
+        type: rawGuide3Info.guideType
+      } : 'none'
+    });
     
     // Process guide1Info
     let processedGuide1Info = rawGuide1Info;
@@ -42,7 +65,7 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
         ...rawGuide1Info,
         guideType: 'GC'
       };
-      console.log("🔍 [useTourGuideInfo] Set Sophie Miller (guide1) as GC");
+      console.log("🔄 [useTourGuideInfo] Set Sophie Miller (guide1) as GC");
     }
     setGuide1Info(processedGuide1Info);
     
@@ -54,7 +77,7 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
         ...rawGuide2Info,
         guideType: 'GC'
       };
-      console.log("🔍 [useTourGuideInfo] Set Sophie Miller (guide2) as GC");
+      console.log("🔄 [useTourGuideInfo] Set Sophie Miller (guide2) as GC");
     }
     setGuide2Info(processedGuide2Info);
     
@@ -66,7 +89,7 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
         ...rawGuide3Info,
         guideType: 'GC'
       };
-      console.log("🔍 [useTourGuideInfo] Set Sophie Miller (guide3) as GC");
+      console.log("🔄 [useTourGuideInfo] Set Sophie Miller (guide3) as GC");
     }
     setGuide3Info(processedGuide3Info);
     
@@ -76,18 +99,18 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
         let mappedGuideId = group.guideId;
         
         // Log the original guide ID for debugging
-        console.log(`🔍 [useTourGuideInfo] Group ${group.id} has guide: ${group.guideId}`);
+        console.log(`🔄 [useTourGuideInfo] Group ${group.id} has guide: ${group.guideId}`);
         
         // Map guide IDs based on direct comparison with guide1, guide2, guide3
-        if (group.guideId === guide1) {
+        if (group.guideId && guide1 && group.guideId === guide1) {
           mappedGuideId = 'guide1';
-          console.log(`🔍 [useTourGuideInfo] Mapped ${group.guideId} to guide1`);
-        } else if (group.guideId === guide2) {
+          console.log(`🔄 [useTourGuideInfo] Mapped ${group.guideId} to guide1`);
+        } else if (group.guideId && guide2 && group.guideId === guide2) {
           mappedGuideId = 'guide2';
-          console.log(`🔍 [useTourGuideInfo] Mapped ${group.guideId} to guide2`);
-        } else if (group.guideId === guide3) {
+          console.log(`🔄 [useTourGuideInfo] Mapped ${group.guideId} to guide2`);
+        } else if (group.guideId && guide3 && group.guideId === guide3) {
           mappedGuideId = 'guide3';
-          console.log(`🔍 [useTourGuideInfo] Mapped ${group.guideId} to guide3`);
+          console.log(`🔄 [useTourGuideInfo] Mapped ${group.guideId} to guide3`);
         }
         
         return {
@@ -104,6 +127,22 @@ export const useTourGuideInfo = (tour: TourCardProps): UseTourGuideInfoResult =>
       setTourWithGuideIds(tour);
     }
   }, [id, rawGuide1Info, rawGuide2Info, rawGuide3Info, guide1, guide2, guide3, tour, tourGroups]);
+  
+  console.log("🔄 [useTourGuideInfo] Returning processed guide info:", {
+    guide1Info: guide1Info ? {
+      name: guide1Info.name,
+      type: guide1Info.guideType
+    } : 'none',
+    guide2Info: guide2Info ? {
+      name: guide2Info.name,
+      type: guide2Info.guideType
+    } : 'none',
+    guide3Info: guide3Info ? {
+      name: guide3Info.name,
+      type: guide3Info.guideType
+    } : 'none',
+    groupCount: tourWithGuideIds.tourGroups?.length || 0
+  });
   
   return {
     guide1Info,
