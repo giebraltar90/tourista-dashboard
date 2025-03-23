@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { GuideInfo, GuideType } from '@/types/ventrata';
@@ -31,7 +30,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
   };
   
   // Extract relevant data from tour with null safety
-  const { id, guide1, guide2, guide3, tourGroups = [] } = safeTour;
+  const { id, guide1, guide2, guide3, tourGroups = [], location = '' } = safeTour;
   
   logger.debug("🔄 [useTourGuideInfo] Starting with tour:", {
     id,
@@ -39,6 +38,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     guide1: guide1 || 'none',
     guide2: guide2 || 'none',
     guide3: guide3 || 'none',
+    location: location || 'none',
     groupCount: tourGroups?.length || 0
   });
   
@@ -52,6 +52,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     logger.debug("🔄 [useTourGuideInfo] Raw guide info:", {
       tourId: id,
       tourRef: safeTour.referenceCode || 'none',
+      location: location || 'none',
       guide1: rawGuide1Info ? {
         name: rawGuide1Info.name,
         type: rawGuide1Info.guideType
@@ -65,7 +66,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
         type: rawGuide3Info.guideType
       } : 'none'
     });
-  }, [id, rawGuide1Info, rawGuide2Info, rawGuide3Info, safeTour.referenceCode]);
+  }, [id, rawGuide1Info, rawGuide2Info, rawGuide3Info, safeTour.referenceCode, location]);
   
   // Keep track of processed guide info
   const [guide1Info, setGuide1Info] = useState<GuideInfo | null>(null);
@@ -84,6 +85,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       // Special case: Sophie Miller is always a GC guide
       if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
         updatedInfo.guideType = 'GC' as GuideType;
+      }
+      
+      // Make sure ID exists
+      if (!updatedInfo.id) {
+        updatedInfo.id = "guide1";
       }
       
       setGuide1Info(updatedInfo);
@@ -113,6 +119,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
         updatedInfo.guideType = 'GC' as GuideType;
       }
       
+      // Make sure ID exists
+      if (!updatedInfo.id) {
+        updatedInfo.id = "guide2";
+      }
+      
       setGuide2Info(updatedInfo);
       logger.debug(`🔄 [useTourGuideInfo] Processed guide2: ${updatedInfo.name} (${updatedInfo.guideType})`);
     } else if (guide2) {
@@ -138,6 +149,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       // Special case: Sophie Miller is always a GC guide
       if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
         updatedInfo.guideType = 'GC' as GuideType;
+      }
+      
+      // Make sure ID exists
+      if (!updatedInfo.id) {
+        updatedInfo.id = "guide3";
       }
       
       setGuide3Info(updatedInfo);
@@ -198,6 +214,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     logger.debug("🔄 [useTourGuideInfo] Final guide info for tour:", {
       id,
       referenceCode: safeTour.referenceCode,
+      location: location || 'none',
       guide1Info: guide1Info ? {
         name: guide1Info.name,
         type: guide1Info.guideType,
@@ -214,7 +231,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
         id: guide3Info.id
       } : 'none',
     });
-  }, [id, guide1Info, guide2Info, guide3Info, safeTour.referenceCode]);
+  }, [id, guide1Info, guide2Info, guide3Info, safeTour.referenceCode, location]);
   
   return {
     guide1Info,

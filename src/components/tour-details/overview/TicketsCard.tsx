@@ -127,14 +127,14 @@ export const TicketsCard = ({
 
           {guideAdultTickets > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground pl-4">GA Ticket (adult tickets):</span>
+              <span className="text-muted-foreground">GA Ticket (adult tickets):</span>
               <span className="font-medium">{guideAdultTickets}</span>
             </div>
           )}
 
           {guideChildTickets > 0 && (
             <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground pl-4">GA Free (child tickets):</span>
+              <span className="text-muted-foreground">GA Free (child tickets):</span>
               <span className="font-medium">{guideChildTickets}</span>
             </div>
           )}
@@ -149,8 +149,8 @@ export const TicketsCard = ({
             </Badge>
           </div>
           
-          {/* Guide ticket breakdown section - always show if there are guides, even if no tickets needed */}
-          {(guide1Info || guide2Info || guide3Info) && guidesWithTickets.length > 0 ? (
+          {/* Guide ticket breakdown section - only show if guides need tickets */}
+          {guidesWithTickets.length > 0 ? (
             <div className="mt-3 border-t pt-3">
               <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
               <div className="space-y-1 text-xs">
@@ -162,10 +162,7 @@ export const TicketsCard = ({
                 ))}
               </div>
             </div>
-          ) : null}
-          
-          {/* Show all guides for debugging when no guides need tickets */}
-          {(guide1Info || guide2Info || guide3Info) && guidesWithTickets.length === 0 && (
+          ) : (guide1Info || guide2Info || guide3Info) ? (
             <div className="mt-3 border-t pt-3">
               <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
               <div className="text-muted-foreground italic text-xs">No guide tickets required</div>
@@ -182,7 +179,7 @@ export const TicketsCard = ({
                 )}
               </div>
             </div>
-          )}
+          ) : null}
         </div>
       </CardContent>
     </Card>

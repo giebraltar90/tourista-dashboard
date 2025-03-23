@@ -35,7 +35,7 @@ export const TicketCountCard = ({
                   <Badge variant={guide.guideType === 'GC' ? 'outline' : 'secondary'} className="text-xs">
                     {guide.guideType === 'GC' 
                       ? 'No Ticket' 
-                      : guide.guideType === 'GA Free' 
+                      : guide.guideType.includes('Free') || guide.guideType.includes('FREE')
                         ? 'Child Ticket' 
                         : 'Adult Ticket'}
                   </Badge>
