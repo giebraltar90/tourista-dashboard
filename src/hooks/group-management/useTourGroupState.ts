@@ -1,139 +1,90 @@
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { VentrataTourGroup } from "@/types/ventrata";
+import { useState, useEffect } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
+import { VentrataTourGroup } from "@/types/ventrata";
+import { logger } from "@/utils/logger";
 
-/**
- * Hook for managing tour group state and calculations
- */
 export const useTourGroupState = (tour: TourCardProps) => {
-  const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>(() => {
-    console.log("PARTICIPANTS DEBUG: Initial localTourGroups setup from tour.tourGroups:", {
-      tourGroupsCount: Array.isArray(tour.tourGroups) ? tour.tourGroups.length : 0,
-      hasTourGroups: Array.isArray(tour.tourGroups)
-    });
-    
-    // Create a deep copy of tour groups with participants
-    const groups = Array.isArray(tour.tourGroups) ? JSON.parse(JSON.stringify(tour.tourGroups)) : [];
-    
-    // Ensure each group has a participants array
-    return groups.map((group: VentrataTourGroup) => ({
-      ...group,
-      participants: Array.isArray(group.participants) ? group.participants : []
-    }));
-  });
+  const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>([]);
   
-  // Add a debounce ref to prevent too frequent updates
-  const updateTimeoutRef = useRef<number | null>(null);
-  
-  // Update local groups when tour groups change
+  // Effect to initialize local tour groups state from the tour prop
   useEffect(() => {
-    if (Array.isArray(tour.tourGroups)) {
-      console.log("PARTICIPANTS DEBUG: Tour groups changed, updating localTourGroups:", {
-        tourGroupsCount: tour.tourGroups.length,
-        firstGroupHasParticipants: tour.tourGroups.length > 0 ? 
-          !!tour.tourGroups[0].participants : false
-      });
+    // Only update if the tour has groups and the length or IDs are different
+    if (tour?.tourGroups) {
+      logger.debug(`🔄 [useTourGroupState] Checking if we need to update local tour groups for tour ${tour.id}:`);
       
-      // Prevent too frequent updates by debouncing
-      if (updateTimeoutRef.current) {
-        window.clearTimeout(updateTimeoutRef.current);
-      }
+      // Create a deep copy of tour groups to avoid reference issues
+      const copiedGroups = JSON.parse(JSON.stringify(tour.tourGroups || []));
       
-      updateTimeoutRef.current = window.setTimeout(() => {
-        // Create a deep copy to ensure we don't get reference issues
-        const updatedGroups = JSON.parse(JSON.stringify(tour.tourGroups));
+      // Check if we have different arrays by comparing IDs
+      const needsUpdate = 
+        localTourGroups.length !== copiedGroups.length || 
+        JSON.stringify(localTourGroups.map(g => g.id)) !== JSON.stringify(copiedGroups.map(g => g.id));
         
-        // Ensure each group has a participants array and correct size calculations
-        const normalizedGroups = updatedGroups.map((group: VentrataTourGroup) => {
-          // Always ensure participants is an array
-          const participants = Array.isArray(group.participants) ? group.participants : [];
-          
-          // Calculate size and childCount from participants
-          let calculatedSize = 0;
-          let calculatedChildCount = 0;
-          
-          for (const participant of participants) {
-            calculatedSize += participant.count || 1;
-            calculatedChildCount += participant.childCount || 0;
-          }
-          
-          // Return an updated group with the calculated values
+      logger.debug(`🔄 [useTourGroupState] Groups state check:`, {
+        localLength: localTourGroups.length, 
+        tourLength: copiedGroups.length,
+        needsUpdate,
+        localIds: localTourGroups.map(g => g.id),
+        tourIds: copiedGroups.map(g => g.id)
+      });
+        
+      if (needsUpdate) {
+        logger.debug(`🔄 [useTourGroupState] Updating local tour groups:`, {
+          tourId: tour.id,
+          groupCount: copiedGroups.length,
+          groupData: copiedGroups.map(g => ({
+            id: g.id,
+            name: g.name,
+            size: g.size,
+            guideId: g.guideId
+          }))
+        });
+        
+        // Preserve any expanded state from previous groups
+        const updatedGroups = copiedGroups.map((group: VentrataTourGroup) => {
+          const existingGroup = localTourGroups.find(g => g.id === group.id);
           return {
             ...group,
-            participants,
-            // Override size and childCount with calculated values
-            size: calculatedSize,
-            childCount: calculatedChildCount
+            // Important: Maintain the original order as in tour.tourGroups
+            // Preserve expanded state if it exists in the previous state
+            isExpanded: existingGroup?.isExpanded !== undefined 
+              ? existingGroup.isExpanded 
+              : true
           };
         });
         
-        console.log("PARTICIPANTS DEBUG: Updated normalized tour groups:", normalizedGroups.map(g => ({
-          id: g.id,
-          name: g.name || 'Unnamed',
-          calculatedSize: g.size,
-          calculatedChildCount: g.childCount,
-          participantsCount: g.participants.length
-        })));
-        
-        setLocalTourGroups(normalizedGroups);
-        updateTimeoutRef.current = null;
-      }, 300);
-      
-      return () => {
-        if (updateTimeoutRef.current) {
-          window.clearTimeout(updateTimeoutRef.current);
-        }
-      };
-    }
-  }, [tour.tourGroups]);
-
-  // Recalculate group sizes from participants
-  const recalculateGroupSizes = useCallback(() => {
-    // Create a deep copy to avoid mutation issues
-    const updatedGroups = JSON.parse(JSON.stringify(localTourGroups));
-    const recalculatedGroups: VentrataTourGroup[] = [];
-    
-    // Process each group individually
-    for (const group of updatedGroups) {
-      // Calculate directly from participants array if it exists
-      if (Array.isArray(group.participants) && group.participants.length > 0) {
-        let totalSize = 0;
-        let totalChildCount = 0;
-        
-        for (const p of group.participants) {
-          totalSize += p.count || 1;
-          totalChildCount += p.childCount || 0;
-        }
-        
-        console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" recalculated:`, {
-          size: totalSize,
-          childCount: totalChildCount,
-          participantsCount: group.participants.length
-        });
-        
-        // Add updated group to the new array
-        recalculatedGroups.push({
-          ...group,
-          size: totalSize,
-          childCount: totalChildCount
-        });
-      } else {
-        // If no participants, size should be 0
-        console.log(`PARTICIPANTS DEBUG: Group "${group.name || 'Unnamed'}" has no participants, setting counts to 0`);
-        recalculatedGroups.push({
-          ...group,
-          size: 0,
-          childCount: 0
-        });
+        setLocalTourGroups(updatedGroups);
       }
     }
-    
-    // Set the state with the new array directly
-    setLocalTourGroups(recalculatedGroups);
-    return recalculatedGroups;
-  }, [localTourGroups]);
-
+  }, [tour.id, tour.tourGroups]);
+  
+  // Function to recalculate group sizes
+  const recalculateGroupSizes = () => {
+    setLocalTourGroups(prevGroups => {
+      return prevGroups.map(group => {
+        // Calculate size and childCount from participants
+        const participants = group.participants || [];
+        let size = 0;
+        let childCount = 0;
+        
+        participants.forEach(p => {
+          const count = p.count || 1;
+          const pChildCount = p.childCount || 0;
+          size += count;
+          childCount += pChildCount;
+        });
+        
+        // Update group with calculated totals
+        return {
+          ...group,
+          size,
+          childCount
+        };
+      });
+    });
+  };
+  
   return {
     localTourGroups,
     setLocalTourGroups,
