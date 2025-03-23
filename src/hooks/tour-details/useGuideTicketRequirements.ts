@@ -21,35 +21,44 @@ export const useGuideTicketRequirements = (
   // Special monitoring for specific tour ID
   const isSpecialMonitoringTour = tour.id === '324598820';
   
+  // ENHANCED LOGGING: Log initial tour data for special monitoring tour
   if (isSpecialMonitoringTour) {
-    logger.debug(`🔍 [TOUR #324598820 MONITORING] Detailed tracking for guide tickets`, {
+    logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] Tour data received:`, {
       tourId: tour.id,
       tourLocation: tour.location,
       tourName: tour.tourName || 'Unknown Tour',
-      guide1: guide1Info?.name || 'None',
-      guide1Type: guide1Info?.guideType || 'None',
-      guide2: guide2Info?.name || 'None', 
-      guide2Type: guide2Info?.guideType || 'None',
-      guide3: guide3Info?.name || 'None',
-      guide3Type: guide3Info?.guideType || 'None',
-      tourGroups: tour.tourGroups?.length || 0
+      tourDate: tour.date,
+      referenceCode: tour.referenceCode,
+      guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'None',
+      guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'None', 
+      guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'None',
+      tourGroups: tour.tourGroups ? JSON.stringify(tour.tourGroups) : 'No groups'
     });
   }
   
   // Check if location needs tickets (now always true)
   const location = tour.location || '';
   const locationNeedsGuideTickets = useMemo(() => {
-    return locationRequiresGuideTickets(location);
-  }, [location]);
+    const result = locationRequiresGuideTickets(location);
+    if (isSpecialMonitoringTour) {
+      logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] Location check:`, {
+        location,
+        locationNeedsGuideTickets: result,
+        note: "Location check is now always TRUE per requirements"
+      });
+    }
+    return result;
+  }, [location, isSpecialMonitoringTour]);
   
   // Calculate guide tickets using the calculation service
   const { adultTickets, childTickets, guides } = useMemo(() => {
     if (isSpecialMonitoringTour) {
-      logger.debug(`🔍 [TOUR #324598820 MONITORING] Starting ticket calculation`, {
-        guide1Type: guide1Info?.guideType || 'none',
-        guide2Type: guide2Info?.guideType || 'none',
-        guide3Type: guide3Info?.guideType || 'none',
-        locationNeedsTickets: locationNeedsGuideTickets
+      logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] Starting ticket calculation with:`, {
+        guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'None',
+        guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'None',
+        guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'None',
+        locationNeedsTickets: locationNeedsGuideTickets,
+        tourGroups: tour.tourGroups ? `${tour.tourGroups.length} groups` : 'No groups'
       });
     } else {
       logger.debug(`🎟️ [useGuideTicketRequirements] Calculating tickets for tour ${tour.id} at location "${location}"`, {
@@ -74,7 +83,7 @@ export const useGuideTicketRequirements = (
     );
     
     if (isSpecialMonitoringTour) {
-      logger.debug(`🔍 [TOUR #324598820 MONITORING] Calculation result:`, {
+      logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] FINAL TICKET CALCULATION:`, {
         adultTickets: result.adultTickets,
         childTickets: result.childTickets,
         totalTickets: result.adultTickets + result.childTickets,
@@ -84,9 +93,21 @@ export const useGuideTicketRequirements = (
           ticketType: g.ticketType
         })),
         calculationDetails: {
-          guide1RequiresTicket: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'No Guide 1',
-          guide2RequiresTicket: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'No Guide 2',
-          guide3RequiresTicket: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'No Guide 3',
+          guide1: guide1Info ? {
+            name: guide1Info.name,
+            type: guide1Info.guideType,
+            needsTicket: result.guides.some(g => g.guideName === guide1Info.name && g.ticketType !== null)
+          } : 'No Guide 1',
+          guide2: guide2Info ? {
+            name: guide2Info.name,
+            type: guide2Info.guideType,
+            needsTicket: result.guides.some(g => g.guideName === guide2Info.name && g.ticketType !== null)
+          } : 'No Guide 2',
+          guide3: guide3Info ? {
+            name: guide3Info.name,
+            type: guide3Info.guideType,
+            needsTicket: result.guides.some(g => g.guideName === guide3Info.name && g.ticketType !== null)
+          } : 'No Guide 3',
         }
       });
     }
@@ -101,19 +122,15 @@ export const useGuideTicketRequirements = (
     
     if (shouldLogDetailed) {
       if (isSpecialMonitoringTour) {
-        logger.debug(`🔍 [TOUR #324598820 MONITORING] Final guide ticket requirements:`, {
-          tourLocation: tour.location,
-          locationNeedsGuideTickets,
-          guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
-          guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
-          guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
-          guideAdultTickets: adultTickets,
-          guideChildTickets: childTickets,
+        logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] SUMMARY: Tour ${tour.id} requires:`, {
+          adultGuideTickets: adultTickets,
+          childGuideTickets: childTickets,
           totalGuideTickets: adultTickets + childTickets,
-          guidesWithTickets: guides.map(g => ({
+          hasAssignedGuides: guides.length > 0,
+          guidesDetails: guides.map(g => ({
             name: g.guideName,
             type: g.guideType,
-            ticketType: g.ticketType
+            ticketType: g.ticketType ? g.ticketType : 'No ticket needed'
           }))
         });
       } else {
