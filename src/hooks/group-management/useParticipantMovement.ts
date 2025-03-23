@@ -1,7 +1,7 @@
 
 import { useState, useCallback } from "react";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
-import { moveParticipant } from "./services/participantService";
+import { moveParticipant } from "./services/participantService/movementService";
 import { toast } from "sonner";
 import { EventEmitter } from "@/utils/eventEmitter";
 
