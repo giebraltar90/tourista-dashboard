@@ -35,8 +35,9 @@ export const useDatabaseData = () => {
             console.error(`Error checking if ${tableName} exists:`, checkError);
             
             // Fallback check by attempting to query the table
+            // Use type assertion to satisfy TypeScript
             const { data: fallbackCheck, error: fallbackError } = await supabase
-              .from(tableName)
+              .from(tableName as any)
               .select('*', { count: 'exact', head: true })
               .limit(1);
               
@@ -68,7 +69,7 @@ export const useDatabaseData = () => {
       let participantsCount = 0;
 
       try {
-        // Count tours
+        // Count tours - using a hard-coded table name as required by TypeScript
         const { count: tourCount, error: tourCountError } = await supabase
           .from('tours')
           .select('*', { count: 'exact', head: true });
@@ -81,7 +82,7 @@ export const useDatabaseData = () => {
       }
 
       try {
-        // Count tour groups
+        // Count tour groups - using a hard-coded table name
         const { count: groupCount, error: groupCountError } = await supabase
           .from('tour_groups')
           .select('*', { count: 'exact', head: true });
@@ -94,7 +95,7 @@ export const useDatabaseData = () => {
       }
 
       try {
-        // Count participants
+        // Count participants - using a hard-coded table name
         const { count: partCount, error: partCountError } = await supabase
           .from('participants')
           .select('*', { count: 'exact', head: true });
