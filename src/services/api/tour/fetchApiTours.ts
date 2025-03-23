@@ -1,7 +1,7 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { mockTours } from "@/data/mockData";
-import { API_BASE_URL, headers } from "../apiConfig";
+import { API_BASE_URL, headers, buildApiUrl, handleApiError } from "../apiConfig";
 import { transformTours } from "@/hooks/tourData/helpers";
 
 /**
@@ -12,22 +12,17 @@ export const fetchToursFromAPI = async (params?: {
   endDate?: string;
   location?: string;
 }): Promise<TourCardProps[]> => {
-  // Build query parameters
-  const queryParams = new URLSearchParams();
-  if (params?.startDate) queryParams.append("startDate", params.startDate);
-  if (params?.endDate) queryParams.append("endDate", params.endDate);
-  if (params?.location) queryParams.append("location", params.location);
-  
-  const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
-  
   try {
-    const response = await fetch(`${API_BASE_URL}/tours${queryString}`, {
+    // Use the buildApiUrl helper to create the URL
+    const url = buildApiUrl('tours', params as Record<string, string>);
+    
+    const response = await fetch(url, {
       method: "GET",
       headers,
     });
     
     if (!response.ok) {
-      console.log("API error, using mock data instead");
+      console.log(`API error (${response.status}) fetching tours, using mock data instead`);
       return mockTours;
     }
     
@@ -36,7 +31,8 @@ export const fetchToursFromAPI = async (params?: {
     // Transform the API response to match our TourCardProps structure
     return transformTours(data);
   } catch (error) {
-    console.error("Error fetching tours from API:", error);
+    handleApiError(error, 'tours');
+    console.log("Falling back to mock data due to API error");
     // In case of API failure, return mock data as fallback
     return mockTours;
   }

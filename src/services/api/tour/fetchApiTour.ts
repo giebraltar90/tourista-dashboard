@@ -2,20 +2,28 @@
 import { VentrataTour } from "@/types/ventrata";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { mockTours } from "@/data/mockData";
-import { API_BASE_URL, headers } from "../apiConfig";
+import { headers, buildApiUrl, handleApiError } from "../apiConfig";
 
 /**
  * Fetch a single tour from API
  */
 export const fetchTourFromAPI = async (tourId: string): Promise<TourCardProps | null> => {
+  if (!tourId) {
+    console.error("fetchTourFromAPI called with empty tourId");
+    return null;
+  }
+
   try {
-    const response = await fetch(`${API_BASE_URL}/tours/${tourId}`, {
+    // Use the buildApiUrl helper to create the URL
+    const url = buildApiUrl(`tours/${tourId}`);
+    
+    const response = await fetch(url, {
       method: "GET",
       headers,
     });
     
     if (!response.ok) {
-      console.log(`API error for tour ${tourId}, using mock data instead`);
+      console.log(`API error (${response.status}) for tour ${tourId}, using mock data instead`);
       const mockTour = mockTours.find(tour => tour.id === tourId);
       
       if (mockTour && !mockTour.modifications) {
@@ -44,7 +52,9 @@ export const fetchTourFromAPI = async (tourId: string): Promise<TourCardProps | 
       modifications: tour.modifications || [] // Ensure modifications is included
     };
   } catch (error) {
-    console.error(`Error fetching tour ${tourId} from API:`, error);
+    handleApiError(error, `tours/${tourId}`);
+    console.log("Falling back to mock data due to API error");
+    
     // Return mock data as fallback
     const mockTour = mockTours.find(tour => tour.id === tourId);
       
