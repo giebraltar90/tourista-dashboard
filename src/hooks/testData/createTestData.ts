@@ -7,6 +7,7 @@ import { createTestTourGroups } from "./createTourGroups";
 import { createTestModifications } from "./createModifications";
 import { createTestTickets } from "./createTickets";
 import { createTestParticipants } from "./createParticipants";
+import { createTestTicketBuckets } from "./createTicketBuckets";
 
 /**
  * Creates test data for a specific tour
@@ -131,13 +132,17 @@ export const createCompleteTestData = async () => {
     const tickets = await createTestTickets(tours);
     const modifications = await createTestModifications(tours);
     
+    // Step 6: Create ticket buckets for all tours
+    const buckets = await createTestTicketBuckets(tours);
+    
     return {
       guides,
       tours,
       groups,
       participants,
       tickets,
-      modifications
+      modifications,
+      buckets
     };
   } catch (error) {
     console.error("Error creating complete test data:", error);

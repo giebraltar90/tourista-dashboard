@@ -21,7 +21,7 @@ class Logger {
   // Store original console methods
   private originalConsole: Record<LogLevel, (...args: any[]) => void>;
   private debugEnabled: boolean = false;
-  private forceDebug: boolean = true; // Force debug logs on for troubleshooting
+  private forceDebug: boolean = false; // Changed to false to disable excessive logging
 
   constructor() {
     // Save original console methods
@@ -79,13 +79,17 @@ class Logger {
   }
 
   log(...args: any[]) {
-    // Always show logs
-    this.originalConsole.log(...this.formatArgs(args));
+    // Only show important logs
+    if (this.debugEnabled) {
+      this.originalConsole.log(...this.formatArgs(args));
+    }
   }
 
   info(...args: any[]) {
-    // Always show info messages
-    this.originalConsole.info(...this.formatArgs(args));
+    // Only show important info messages
+    if (this.debugEnabled) {
+      this.originalConsole.info(...this.formatArgs(args));
+    }
   }
 
   warn(...args: any[]) {
@@ -100,8 +104,10 @@ class Logger {
   }
 
   debug(...args: any[]) {
-    // Force debug logs for troubleshooting
-    this.originalConsole.debug(...this.formatArgs(args));
+    // Only show debug logs when explicitly enabled
+    if (this.debugEnabled) {
+      this.originalConsole.debug(...this.formatArgs(args));
+    }
   }
 }
 

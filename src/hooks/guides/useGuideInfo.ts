@@ -11,8 +11,26 @@ export function useGuideInfo(guideName: string) {
     queryFn: async (): Promise<GuideInfo | null> => {
       if (!guideName) return null;
       
+      // Handle potential UUIDs
       if (isValidUuid(guideName)) {
         try {
+          // First, try to get the guide directly from the database
+          const { data, error } = await supabase
+            .from('guides')
+            .select('*')
+            .eq('id', guideName)
+            .single();
+            
+          if (!error && data) {
+            return {
+              id: data.id,
+              name: data.name,
+              birthday: data.birthday ? new Date(data.birthday) : new Date(),
+              guideType: data.guide_type
+            };
+          }
+          
+          // If not found in database, try the API
           return await fetchGuideById(guideName);
         } catch (error) {
           console.error(`Error fetching guide info for ID ${guideName}:`, error);
@@ -20,6 +38,7 @@ export function useGuideInfo(guideName: string) {
         }
       }
       
+      // Handle guide name lookups
       try {
         const { data, error } = await supabase
           .from('guides')

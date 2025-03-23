@@ -11,116 +11,112 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
   // Use current year (2025) for test data
   const currentYear = 2025;
   
-  // Generate dates for the tours
-  const today = new Date();
-  today.setFullYear(currentYear);
+  // Generate dates for the tours - all in current month
+  const currentDate = new Date();
+  currentDate.setFullYear(currentYear);
   
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
+  const date1 = new Date(currentDate);
+  date1.setDate(currentDate.getDate() + 1);
   
-  const dayAfterTomorrow = new Date(today);
-  dayAfterTomorrow.setDate(today.getDate() + 2);
+  const date2 = new Date(currentDate);
+  date2.setDate(currentDate.getDate() + 3);
   
-  const threeDaysLater = new Date(today);
-  threeDaysLater.setDate(today.getDate() + 3);
+  const date3 = new Date(currentDate);
+  date3.setDate(currentDate.getDate() + 5);
   
-  const fourDaysLater = new Date(today);
-  fourDaysLater.setDate(today.getDate() + 4);
+  const date4 = new Date(currentDate);
+  date4.setDate(currentDate.getDate() + 7);
   
-  // Format today's date
-  const todayFormatted = today.toISOString().split('T')[0];
+  // Format dates
+  const date1Formatted = date1.toISOString().split('T')[0];
+  const date2Formatted = date2.toISOString().split('T')[0];
+  const date3Formatted = date3.toISOString().split('T')[0];
+  const date4Formatted = date4.toISOString().split('T')[0];
   
-  // Create tour data - using proper UUID references for guides
+  // Get all guide IDs
+  const guideIds = Object.values(guideMap);
+  
+  // Create tour data - each with different guides
   const tours = [
     {
-      date: todayFormatted,
+      date: date1Formatted,
       location: "Versailles",
       tour_name: "Food & Palace Bike Tour",
-      tour_type: "food" as "food" | "private" | "default", // Explicitly cast to allowed types
+      tour_type: "food" as TourType,
       start_time: "08:00",
       reference_code: "313911645",
-      guide1_id: guideMap["Noéma Weber"], // GA Free guide
-      guide2_id: null,
+      guide1_id: guideIds[0], // First guide
+      guide2_id: guideIds[1], // Second guide
       num_tickets: 10,
       is_high_season: false
     },
     {
-      date: todayFormatted,
-      location: "Versailles",
-      tour_name: "Private Versailles Tour",
-      tour_type: "private" as "food" | "private" | "default",
+      date: date2Formatted,
+      location: "Louvre",
+      tour_name: "Private Louvre Tour",
+      tour_type: "private" as TourType,
       start_time: "09:00",
       reference_code: "313911867",
-      guide1_id: guideMap["Carlos Martinez"], // GA Ticket guide
-      guide2_id: null,
-      num_tickets: 4,
+      guide1_id: guideIds[2], // Third guide
+      guide2_id: guideIds[3], // Fourth guide
+      num_tickets: 12,
       is_high_season: false
     },
     {
-      date: todayFormatted,
+      date: date3Formatted,
       location: "Montmartre",
       tour_name: "Montmartre Walking Tour", 
-      tour_type: "default" as "food" | "private" | "default",
+      tour_type: "default" as TourType,
       start_time: "14:00",
       reference_code: "313922567",
-      guide1_id: guideMap["Sophie Miller"], // GC guide (no ticket)
-      guide2_id: guideMap["Maria Garcia"], // GA Free guide (child ticket)
+      guide1_id: guideIds[4], // Fifth guide
+      guide2_id: guideIds[5], // Sixth guide
+      guide3_id: guideIds[6], // Seventh guide
       num_tickets: 15,
-      is_high_season: false
-    },
-    {
-      date: tomorrow.toISOString().split('T')[0],
-      location: "Louvre Museum",
-      tour_name: "Private Louvre Tour",
-      tour_type: "private" as "food" | "private" | "default",
-      start_time: "10:00",
-      reference_code: "324598761",
-      guide1_id: guideMap["Sophie Miller"],
-      guide2_id: null,
-      num_tickets: 4,
-      is_high_season: false
-    },
-    {
-      date: dayAfterTomorrow.toISOString().split('T')[0],
-      location: "Montmartre",
-      tour_name: "Montmartre Walking Tour",
-      tour_type: "default" as "food" | "private" | "default",
-      start_time: "14:00",
-      reference_code: "324598799",
-      guide1_id: guideMap["Jean Dupont"],
-      guide2_id: null,
-      num_tickets: 22,
-      is_high_season: false
-    },
-    {
-      date: threeDaysLater.toISOString().split('T')[0],
-      location: "Versailles",
-      tour_name: "Food & Palace Bike Tour",
-      tour_type: "food" as "food" | "private" | "default",
-      start_time: "08:00",
-      reference_code: "324598820",
-      guide1_id: guideMap["Maria Garcia"],
-      guide2_id: guideMap["Tobias Schmidt"],
-      num_tickets: 24,
       is_high_season: true
     },
     {
-      date: fourDaysLater.toISOString().split('T')[0],
+      date: date4Formatted,
       location: "Eiffel Tower",
-      tour_name: "Eiffel Tower & Seine River Cruise",
-      tour_type: "default" as "food" | "private" | "default",
-      start_time: "16:00",
-      reference_code: "324598850",
-      guide1_id: guideMap["Maria Garcia"],
-      guide2_id: guideMap["Sophie Miller"],
-      num_tickets: 3,
-      is_high_season: false
+      tour_name: "Eiffel Tower Tour",
+      tour_type: "default" as TourType,
+      start_time: "10:00",
+      reference_code: "324598761",
+      guide1_id: guideIds[6], // Seventh guide
+      guide2_id: guideIds[7], // Eighth guide
+      guide3_id: guideIds[0], // First guide again
+      num_tickets: 20,
+      is_high_season: true
     }
   ];
   
+  // First check if tours already exist
+  for (const tour of tours) {
+    const { data: existingTour } = await supabase
+      .from('tours')
+      .select('id')
+      .eq('reference_code', tour.reference_code)
+      .single();
+      
+    if (existingTour) {
+      // Update the existing tour
+      await supabase
+        .from('tours')
+        .update({
+          guide1_id: tour.guide1_id,
+          guide2_id: tour.guide2_id,
+          guide3_id: tour.guide3_id,
+          is_high_season: tour.is_high_season,
+          num_tickets: tour.num_tickets
+        })
+        .eq('id', existingTour.id);
+    }
+  }
+  
+  // Create new tours or get existing ones
   const { data: tourData, error: tourError } = await supabase
     .from('tours')
-    .insert(tours)
+    .upsert(tours, { onConflict: 'reference_code' })
     .select();
     
   if (tourError) {
@@ -128,6 +124,6 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
     throw tourError;
   }
   
-  console.log("Created test tours with proper UUID references:", tourData);
+  console.log("Created/updated test tours with proper guide references:", tourData);
   return tourData || [];
 };
