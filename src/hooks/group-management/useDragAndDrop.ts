@@ -1,3 +1,4 @@
+
 import { useCallback, useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { 
@@ -35,9 +36,11 @@ export const useDragAndDrop = (
     setFromGroupIndex(dragData.fromGroupIndex);
   }, []);
   
-  // Handler for drag end
-  const handleDragEnd = useCallback((e: React.DragEvent) => {
-    handleDragEndEvent(e);
+  // Handler for drag end - modified to accept optional event parameter
+  const handleDragEnd = useCallback((e?: React.DragEvent) => {
+    if (e) {
+      handleDragEndEvent(e);
+    }
     
     // Only clear drag state on successful drops
     if (!isDragPending) {

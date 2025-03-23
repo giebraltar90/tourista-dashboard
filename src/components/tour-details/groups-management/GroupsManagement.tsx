@@ -60,7 +60,7 @@ export const GroupsManagement = ({
   useEffect(() => {
     if (tourId) {
       console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
-      // Fixed: Pass a string instead of a boolean (false)
+      // Load participants with the tour ID
       loadParticipants(tourId); 
     }
   }, [tourId, loadParticipants]);
@@ -82,10 +82,10 @@ export const GroupsManagement = ({
     dialogUtils.openAssignGuideDialog(groupIndex);
   };
 
-  // Properly handle the event parameter for drag end
-  // Fixed: Create a compatible wrapper function that adapts the signatures
-  const handleDragEndWrapper = (e: React.DragEvent<Element>) => {
-    handleDragEnd(e);
+  // Fix: Create a compatible wrapper function without parameters for handleDragEnd
+  const handleDragEndWrapper = () => {
+    // Call the original handler with a dummy event or no parameters
+    handleDragEnd();
   };
 
   return (
