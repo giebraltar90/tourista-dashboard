@@ -1,64 +1,57 @@
 
 import { Button } from "@/components/ui/button";
-import { Loader2, Trash2 } from "lucide-react";
+import { ReactNode } from "react";
 
 interface FormActionsProps {
   isSubmitting: boolean;
   onCancel: () => void;
-  onRemove: () => void;
+  onRemove?: () => void;
   hasCurrentGuide: boolean;
   hasChanges: boolean;
+  children?: ReactNode;
 }
 
-export const FormActions = ({
-  isSubmitting,
-  onCancel,
-  onRemove,
+export const FormActions = ({ 
+  isSubmitting, 
+  onCancel, 
+  onRemove, 
   hasCurrentGuide,
-  hasChanges
+  hasChanges,
+  children
 }: FormActionsProps) => {
   return (
-    <div className="flex justify-between">
-      <div>
-        {hasCurrentGuide && (
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={onRemove}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Trash2 className="h-4 w-4 mr-2" />
-            )}
-            Remove Guide
-          </Button>
-        )}
-      </div>
-      <div className="flex gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
+    <div className="flex justify-between pt-2">
+      {hasCurrentGuide && onRemove && (
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={onRemove}
           disabled={isSubmitting}
         >
-          Cancel
+          Remove Guide
         </Button>
-        <Button
-          type="submit"
-          disabled={isSubmitting || !hasChanges}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              Saving...
-            </>
-          ) : (
-            "Save Changes"
-          )}
-        </Button>
+      )}
+      <div className="flex space-x-2 ml-auto">
+        {children ? (
+          children
+        ) : (
+          <>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={onCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || !hasChanges}
+            >
+              {isSubmitting ? "Saving..." : "Assign Guide"}
+            </Button>
+          </>
+        )}
       </div>
     </div>
   );

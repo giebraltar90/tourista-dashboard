@@ -25,6 +25,10 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     }
   }, [dbCheckResult]);
 
+  const handleFormComplete = () => {
+    handleRefresh();
+  };
+
   return (
     <div className="space-y-4">
       <Card className="bg-muted/10">
@@ -48,8 +52,10 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
               
               <TabsContent value="guides" className="pt-4">
                 <AssignGuideForm 
-                  tour={tour}
-                  onComplete={() => { handleRefresh(); }}
+                  tourId={tour.id}
+                  groupIndex={0}
+                  guides={[]}
+                  onSuccess={handleFormComplete}
                 />
               </TabsContent>
               
@@ -59,7 +65,12 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
                     Configure capacity settings for each group in this tour.
                   </p>
                   
-                  <FormActions>
+                  <FormActions 
+                    isSubmitting={false}
+                    onCancel={() => {}}
+                    hasCurrentGuide={false}
+                    hasChanges={false}
+                  >
                     <Button type="button" variant="outline" onClick={handleRefresh}>
                       Reset
                     </Button>

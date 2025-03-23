@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Database } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 
 interface RefreshControlsProps {
   isLoading: boolean;

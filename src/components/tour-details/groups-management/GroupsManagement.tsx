@@ -84,14 +84,16 @@ export const GroupsManagement = ({
 
   return (
     <Card>
-      <GroupsHeader 
-        isManualRefreshing={isManualRefreshing}
-        isFixingDatabase={isFixingDatabase}
-        onManualRefresh={handleManualRefresh}
-      />
-      
-      <CardContent>
+      <CardContent className="p-6">
+        <h2 className="text-2xl font-semibold mb-6">Group & Participant Management</h2>
+        
         <div className="space-y-6">
+          <GroupsHeader 
+            isManualRefreshing={isManualRefreshing}
+            isFixingDatabase={isFixingDatabase}
+            onManualRefresh={handleManualRefresh}
+          />
+          
           <DatabaseErrorAlert 
             error={databaseError}
             isFixingDatabase={isFixingDatabase}
@@ -113,6 +115,7 @@ export const GroupsManagement = ({
               handleMoveParticipant={handleMoveParticipant}
               isMovePending={isMovePending}
               onRefreshParticipants={refreshParticipants}
+              onOpenAssignGuide={handleOpenAssignGuide}
             />
           ) : (
             <div className="text-center p-6 text-muted-foreground">

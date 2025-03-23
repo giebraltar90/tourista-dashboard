@@ -16,6 +16,7 @@ interface GroupsGridProps {
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
   onRefreshParticipants: () => void;
+  onOpenAssignGuide: (groupIndex: number) => void;
 }
 
 export const GroupsGrid = ({
@@ -30,15 +31,10 @@ export const GroupsGrid = ({
   handleDrop,
   handleMoveParticipant,
   isMovePending,
-  onRefreshParticipants
+  onRefreshParticipants,
+  onOpenAssignGuide
 }: GroupsGridProps) => {
   console.log("GroupsGrid rendering with localTourGroups:", localTourGroups?.length || 0);
-  
-  // Default handler for assign guide
-  const handleOpenAssignGuide = (groupIndex: number) => {
-    console.log("Open assign guide for group:", groupIndex);
-    // This is just a placeholder as the actual implementation happens in the parent
-  };
 
   return (
     <GroupGrid
@@ -48,7 +44,7 @@ export const GroupsGrid = ({
       handleDragOver={handleDragOver}
       handleDragLeave={handleDragLeave}
       handleDrop={handleDrop}
-      onOpenAssignGuide={handleOpenAssignGuide}
+      onOpenAssignGuide={onOpenAssignGuide}
       selectedParticipant={selectedParticipant}
       setSelectedParticipant={setSelectedParticipant}
       handleMoveParticipant={handleMoveParticipant}
