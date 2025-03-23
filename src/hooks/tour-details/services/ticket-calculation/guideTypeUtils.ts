@@ -22,18 +22,6 @@ export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
     "guide intern"
   ];
   
-  // Guide types that need tickets
-  const needsTicketTypes = [
-    "ga ticket",
-    "ga free",
-    "guide", 
-    "guide assistant",
-    "assistant",
-    "ga",
-    "standard",
-    "regular"
-  ];
-  
   // If the type explicitly doesn't need a ticket
   for (const type of noTicketTypes) {
     if (normalizedType.includes(type)) {
@@ -42,16 +30,8 @@ export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
     }
   }
   
-  // If the type explicitly needs a ticket
-  for (const type of needsTicketTypes) {
-    if (normalizedType.includes(type)) {
-      logger.debug(`🎟️ [guideTypeNeedsTicket] Type "${guideType}" matched ticket-needed type "${type}"`);
-      return true;
-    }
-  }
-  
-  // Default case - log the unknown type and return conservative true (needs ticket)
-  logger.debug(`🎟️ [guideTypeNeedsTicket] Unknown guide type "${guideType}", defaulting to needs ticket`);
+  // If it's not a no-ticket type, it needs a ticket (either adult or child)
+  logger.debug(`🎟️ [guideTypeNeedsTicket] Type "${guideType}" needs a ticket`);
   return true;
 };
 

@@ -52,6 +52,24 @@ export const calculateGuideTicketsNeeded = (
   logger.debug(`🎟️ [CalculateTickets] Found ${assignedGuideIds.size} assigned guides: ${Array.from(assignedGuideIds).join(', ') || 'none'}`);
   
   if (assignedGuideIds.size === 0) {
+    // Check if we have guide1 (default guide) that needs to be included
+    if (guide1Info && locationRequiresGuideTickets(location)) {
+      logger.debug(`🎟️ [CalculateTickets] No assigned guides, but default guide1 exists:`, {
+        guide1Name: guide1Info.name,
+        guide1Type: guide1Info.guideType
+      });
+      
+      // Process the default guide
+      const guide1Result = processGuideTicketRequirement(
+        guide1Info, 
+        location, 
+        new Set(["guide1"]), // Mark guide1 as "assigned" for this calculation
+        "guide1"
+      );
+      
+      return calculateGuideTickets([guide1Result]);
+    }
+    
     logger.debug(`🎟️ [CalculateTickets] No assigned guides found, returning zero tickets`);
     return { adultTickets: 0, childTickets: 0, guides: [] };
   }
@@ -135,6 +153,40 @@ export const calculateCompleteGuideTicketRequirements = (
   logger.debug(`🎟️ [GuideRequirements] Found ${assignedGuideIds.size} assigned guides: ${Array.from(assignedGuideIds).join(', ')}`);
   
   if (assignedGuideIds.size === 0) {
+    // Check if we have guide1 (default guide) that needs to be included
+    if (guide1Info && locationRequiresGuideTickets(location)) {
+      logger.debug(`🎟️ [GuideRequirements] No assigned guides, but default guide1 exists:`, {
+        guide1Name: guide1Info.name,
+        guide1Type: guide1Info.guideType
+      });
+      
+      // Process the default guide
+      const guide1Req = processGuideTicketRequirement(
+        guide1Info, 
+        location, 
+        new Set(["guide1"]), // Mark guide1 as "assigned" for this calculation
+        "guide1"
+      );
+      
+      // If the guide needs a ticket, return that information
+      if (guide1Req.needsTicket) {
+        let adultTickets = guide1Req.ticketType === 'adult' ? 1 : 0;
+        let childTickets = guide1Req.ticketType === 'child' ? 1 : 0;
+        
+        return {
+          adultTickets,
+          childTickets,
+          totalTickets: adultTickets + childTickets,
+          guides: [{
+            guideName: guide1Req.guideName,
+            guideInfo: guide1Req.guideInfo,
+            needsTicket: true,
+            ticketType: guide1Req.ticketType
+          }]
+        };
+      }
+    }
+    
     logger.debug(`🎟️ [GuideRequirements] No assigned guides found, returning zero tickets`);
     return {
       adultTickets: 0,
