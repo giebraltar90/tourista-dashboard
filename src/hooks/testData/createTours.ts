@@ -8,8 +8,13 @@ import { TourType } from "./helpers";
 export const createTestTours = async (guideMap: Record<string, string>) => {
   console.log("Creating test tours with proper UUID guide references:", guideMap);
   
+  // Use current year (2025) for test data
+  const currentYear = 2025;
+  
   // Generate dates for the tours
   const today = new Date();
+  today.setFullYear(currentYear);
+  
   const tomorrow = new Date(today);
   tomorrow.setDate(today.getDate() + 1);
   
@@ -22,42 +27,45 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
   const fourDaysLater = new Date(today);
   fourDaysLater.setDate(today.getDate() + 4);
   
+  // Format today's date
+  const todayFormatted = today.toISOString().split('T')[0];
+  
   // Create tour data - using proper UUID references for guides
   const tours = [
     {
-      date: "2023-05-07",
+      date: todayFormatted,
       location: "Versailles",
       tour_name: "Food & Palace Bike Tour",
       tour_type: "food" as "food" | "private" | "default", // Explicitly cast to allowed types
       start_time: "08:00",
       reference_code: "313911645",
-      guide1_id: guideMap["Noéma Weber"],
-      guide2_id: guideMap["Jean Dupont"],
+      guide1_id: guideMap["Noéma Weber"], // GA Free guide
+      guide2_id: null,
       num_tickets: 10,
       is_high_season: false
     },
     {
-      date: "2023-05-07",
+      date: todayFormatted,
       location: "Versailles",
       tour_name: "Private Versailles Tour",
       tour_type: "private" as "food" | "private" | "default",
       start_time: "09:00",
       reference_code: "313911867",
-      guide1_id: guideMap["Carlos Martinez"],
-      guide2_id: guideMap["Jean Dupont"],
+      guide1_id: guideMap["Carlos Martinez"], // GA Ticket guide
+      guide2_id: null,
       num_tickets: 4,
       is_high_season: false
     },
     {
-      date: "2023-05-07",
-      location: "Versailles",
-      tour_name: "Food & Palace Bike Tour",
-      tour_type: "food" as "food" | "private" | "default",
-      start_time: "09:00",
-      reference_code: "313911867",
-      guide1_id: guideMap["Sophie Miller"],
-      guide2_id: guideMap["Maria Garcia"],
-      num_tickets: 9,
+      date: todayFormatted,
+      location: "Montmartre",
+      tour_name: "Montmartre Walking Tour", 
+      tour_type: "default" as "food" | "private" | "default",
+      start_time: "14:00",
+      reference_code: "313922567",
+      guide1_id: guideMap["Sophie Miller"], // GC guide (no ticket)
+      guide2_id: guideMap["Maria Garcia"], // GA Free guide (child ticket)
+      num_tickets: 15,
       is_high_season: false
     },
     {
@@ -68,7 +76,7 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       start_time: "10:00",
       reference_code: "324598761",
       guide1_id: guideMap["Sophie Miller"],
-      guide2_id: guideMap["Carlos Martinez"],
+      guide2_id: null,
       num_tickets: 4,
       is_high_season: false
     },
@@ -80,6 +88,7 @@ export const createTestTours = async (guideMap: Record<string, string>) => {
       start_time: "14:00",
       reference_code: "324598799",
       guide1_id: guideMap["Jean Dupont"],
+      guide2_id: null,
       num_tickets: 22,
       is_high_season: false
     },
