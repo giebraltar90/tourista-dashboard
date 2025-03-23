@@ -48,8 +48,7 @@ export const useTicketRecalculation = (tourId: string, onRecalculate: () => void
     });
 
     return () => {
-      // Fix: The off method doesn't return a callable function
-      // Instead, directly call off for each event
+      // Properly cleanup all event listeners 
       EventEmitter.off(EVENTS.RECALCULATE_TICKETS(tourId));
       EventEmitter.off(EVENTS.GUIDE_CHANGED(tourId));
       EventEmitter.off(EVENTS.GUIDE_ASSIGNMENT_UPDATED(tourId));

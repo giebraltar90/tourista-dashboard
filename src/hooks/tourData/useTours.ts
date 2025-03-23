@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { toast } from "sonner";
 
 // Define the options type for the useTours hook
 interface UseToursOptions {
@@ -15,6 +16,12 @@ export const useTours = (options: UseToursOptions = {}) => {
     queryFn: async (): Promise<TourCardProps[]> => {
       try {
         console.log("Fetching tours from Supabase");
+        
+        // Log the Supabase URL and key (partially masked for security)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hznwikjmwmskvoqgkvjk.supabase.co';
+        const keyPrefix = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').substring(0, 10);
+        console.log(`Using Supabase URL: ${supabaseUrl}, Key prefix: ${keyPrefix}...`);
+        
         const { data: supabaseTours, error } = await supabase
           .from('tours')
           .select(`
@@ -29,6 +36,7 @@ export const useTours = (options: UseToursOptions = {}) => {
           
         if (error) {
           console.error("Error fetching tours:", error);
+          toast.error(`Error fetching tours: ${error.message}`);
           throw error;
         }
         
@@ -66,15 +74,16 @@ export const useTours = (options: UseToursOptions = {}) => {
             .select('id, name')
             .in('id', guideIdsArray);
             
-          if (!guidesError && guides) {
+          if (guidesError) {
+            console.error("Error fetching guides:", guidesError);
+          } else if (guides) {
             guideMap = guides.reduce((map, guide) => {
               map[guide.id] = guide.name;
               return map;
             }, {});
+            console.log("Guide map for resolving names:", guideMap);
           }
         }
-        
-        console.log("Guide map for resolving names:", guideMap);
         
         // Transform the Supabase data to match our TourCardProps structure
         return supabaseTours.map(tour => {
@@ -119,9 +128,12 @@ export const useTours = (options: UseToursOptions = {}) => {
         });
       } catch (error) {
         console.error("Error fetching tours:", error);
-        return [];
+        toast.error("Failed to load tours. Please try again.");
+        throw error;
       }
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     // Pass through any options provided
     ...options,
   });

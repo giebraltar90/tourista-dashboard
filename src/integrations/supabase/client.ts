@@ -9,14 +9,17 @@ export const supabase = createSupabaseClient(
     global: {
       // Improved fetch options with longer timeout and better error handling
       fetch: (url, options) => {
+        // Build proper headers
+        const headers = {
+          ...options?.headers,
+          'x-client-info': 'tour-management-app',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
+        };
+
         return fetch(url, {
           ...options,
+          headers,
           signal: AbortSignal.timeout(30000), // Increase timeout to 30 seconds
-          // Add custom headers for better tracing
-          headers: {
-            ...options?.headers,
-            'x-client-info': 'tour-management-app',
-          }
         });
       },
     },
