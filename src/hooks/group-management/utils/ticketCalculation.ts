@@ -110,6 +110,16 @@ export const calculateGuideTicketsNeeded = (
   });
   
   logger.debug(`🎟️ [CalculateTickets] Assigned guide IDs: ${Array.from(assignedGuideIds).join(', ')}`);
+
+  // Log all assigned guides for clear debugging
+  tourGroups.forEach((group, index) => {
+    logger.debug(`🎟️ [CalculateTickets] Group ${index + 1} assignment:`, {
+      groupId: group.id,
+      groupName: group.name,
+      guideId: group.guideId,
+      isAssigned: group.guideId && group.guideId !== "unassigned"
+    });
+  });
   
   // Process guide1 only if they're actually assigned to a group
   if (guide1Info && guide1Info.id) {

@@ -39,8 +39,14 @@ export const TicketsCard = ({
   const locationNeedsGuideTickets = location && 
     (location.toLowerCase().includes('versailles') || location.toLowerCase().includes('montmartre'));
   
-  // Check if there are assigned guides to any groups
-  const hasAssignedGuides = tourGroups?.some(g => g.guideId && g.guideId !== "unassigned") || false;
+  // Check if there are assigned guides in any groups
+  const hasAssignedGuides = tourGroups?.some(g => {
+    const hasGuide = g.guideId && g.guideId !== "unassigned";
+    logger.debug(`🎟️ [TicketsCard] Group guide check: ${g.name || 'Group'} - guideId: ${g.guideId}, hasGuide: ${hasGuide}`);
+    return hasGuide;
+  }) || false;
+  
+  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} has assigned guides: ${hasAssignedGuides}, requires tickets: ${locationNeedsGuideTickets}`);
   
   // Calculate guide tickets only if needed and there are assigned guides
   const { 
@@ -101,6 +107,14 @@ export const TicketsCard = ({
         needsTicket: guidesWithTickets.some(g => g.guideName === guide3Info.name)
       });
     }
+    
+    // Log the actual guides assigned to groups
+    logger.debug(`🎟️ [TicketsCard] Guides assigned to groups:`, {
+      assignments: tourGroups?.map(g => ({
+        groupName: g.name || `Group ${g.id}`,
+        guideId: g.guideId || 'none'
+      })) || []
+    });
   }, [validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets, 
       guide1Info, guide2Info, guide3Info, location, guidesWithTickets, tourGroups, tourId, 
       locationNeedsGuideTickets, hasAssignedGuides]);
@@ -159,8 +173,8 @@ export const TicketsCard = ({
             </Badge>
           </div>
           
-          {/* Guide ticket breakdown section - only show if guides need tickets */}
-          {guidesWithTickets.length > 0 ? (
+          {/* Only show guide ticket breakdown if there are actually guides with tickets */}
+          {guidesWithTickets.length > 0 && (
             <div className="mt-3 border-t pt-3">
               <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
               <div className="space-y-1 text-xs">
@@ -172,24 +186,7 @@ export const TicketsCard = ({
                 ))}
               </div>
             </div>
-          ) : (locationNeedsGuideTickets && hasAssignedGuides && (guide1Info || guide2Info || guide3Info)) ? (
-            <div className="mt-3 border-t pt-3">
-              <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
-              <div className="text-muted-foreground italic text-xs">No guide tickets required</div>
-              
-              <div className="mt-1 text-xs text-gray-400">
-                {guide1Info && (
-                  <div>{guide1Info.name}: {guide1Info.guideType}</div>
-                )}
-                {guide2Info && (
-                  <div>{guide2Info.name}: {guide2Info.guideType}</div>
-                )}
-                {guide3Info && (
-                  <div>{guide3Info.name}: {guide3Info.guideType}</div>
-                )}
-              </div>
-            </div>
-          ) : null}
+          )}
         </div>
       </CardContent>
     </Card>
