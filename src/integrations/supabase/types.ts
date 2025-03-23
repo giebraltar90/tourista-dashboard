@@ -403,7 +403,7 @@ export type Database = {
     Functions: {
       check_table_exists: {
         Args: {
-          table_name: string
+          table_name_param: string
         }
         Returns: boolean
       }

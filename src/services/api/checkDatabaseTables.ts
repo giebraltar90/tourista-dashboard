@@ -15,10 +15,10 @@ export const createParticipantsTableIfNeeded = async (): Promise<boolean> => {
   try {
     console.log("DATABASE DEBUG: Checking if participants table needs to be created");
     
-    // First check if the table exists
+    // First check if the table exists using the updated parameter name
     const { data: tableExists, error: tableCheckError } = await supabase
       .rpc('check_table_exists', { 
-        table_name: 'participants' 
+        table_name_param: 'participants' 
       });
       
     // If there's no error and tableExists is true, the table exists

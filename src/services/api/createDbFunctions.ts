@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
@@ -47,9 +46,9 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
       // Continue with other function creation attempts
     }
     
-    // Create check_table_exists function with improved parameter name to avoid ambiguity
+    // Create check_table_exists function with proper parameter naming
     const createCheckTableExistsFunction = `
-      CREATE OR REPLACE FUNCTION check_table_exists(p_table_name TEXT)
+      CREATE OR REPLACE FUNCTION check_table_exists(table_name_param TEXT)
       RETURNS BOOLEAN
       LANGUAGE plpgsql
       AS $$
@@ -59,7 +58,7 @@ export const createDatabaseFunctions = async (): Promise<boolean> => {
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
           WHERE table_schema = 'public'
-          AND table_name = p_table_name
+          AND table_name = table_name_param
         ) INTO table_exists;
         
         RETURN table_exists;

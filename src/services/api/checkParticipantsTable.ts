@@ -9,10 +9,10 @@ export const checkParticipantsTable = async () => {
   
   try {
     // Use the database function to check if the table exists
-    // Fix parameter name to match the function's expected parameter
+    // Update parameter name to match the function's updated parameter
     const { data: tableExists, error: tableCheckError } = await supabase
       .rpc('check_table_exists', { 
-        table_name: 'participants'
+        table_name_param: 'participants'
       });
       
     if (tableCheckError) {
