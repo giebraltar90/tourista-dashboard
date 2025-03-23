@@ -172,21 +172,6 @@ export const TicketsCard = ({
               {formattedTotalTickets}
             </Badge>
           </div>
-          
-          {/* Only show guide ticket breakdown if there are actually guides with tickets */}
-          {guidesWithTickets.length > 0 && (
-            <div className="mt-3 border-t pt-3">
-              <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
-              <div className="space-y-1 text-xs">
-                {guidesWithTickets.map((guide, index) => (
-                  <div key={index} className="flex justify-between">
-                    <span className="text-muted-foreground">{guide.guideName}:</span>
-                    <span>{guide.ticketType === 'adult' ? 'Adult ticket' : 'Child ticket'}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>
