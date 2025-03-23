@@ -1,5 +1,5 @@
 
-export * from './GuideTicketsList';
-export * from './GuideTicketsSection';
 export * from './ParticipantTicketsSection';
+export * from './GuideTicketsSection';
+export * from './GuideTicketsList';
 export * from './TotalTicketsSection';
