@@ -15,6 +15,9 @@ export const GuideTicketsList = ({ guides }: GuideTicketsListProps) => {
       {guides.map((guide, idx) => (
         <div key={idx} className="flex justify-between items-center py-0.5">
           <span className="truncate max-w-[65%]">{guide.guideName}</span>
+          <span className="text-xs text-muted-foreground">
+            {guide.ticketType ? `${guide.ticketType} ticket` : "No ticket"}
+          </span>
         </div>
       ))}
     </div>

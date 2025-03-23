@@ -17,9 +17,9 @@ interface GuideTicketRequirementsProps {
   guide1NeedsTicket: boolean;
   guide2NeedsTicket: boolean;
   guide3NeedsTicket: boolean;
-  guide1TicketType: string | null;
-  guide2TicketType: string | null;
-  guide3TicketType: string | null;
+  guide1TicketType: "adult" | "child" | null;
+  guide2TicketType: "adult" | "child" | null;
+  guide3TicketType: "adult" | "child" | null;
   hasEnoughTickets: boolean;
   availableTickets: number;
   requiredTickets: number;
