@@ -1,7 +1,6 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
-import { Set } from "typescript";
 
 /**
  * Helper function to detect if a guide is the default guide for a tour
