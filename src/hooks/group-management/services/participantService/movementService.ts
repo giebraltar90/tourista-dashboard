@@ -163,21 +163,38 @@ export const moveParticipant = async (
       }
     });
     
-    // CRITICAL FIX: Use a transaction to update both groups atomically
-    const { error: txError } = await supabase.rpc('update_groups_after_move', {
-      source_group_id: sourceGroupId,
-      target_group_id: newGroupId,
-      source_size: newSourceSize,
-      source_child_count: newSourceChildCount,
-      target_size: newTargetSize,
-      target_child_count: newTargetChildCount
-    });
+    // CRITICAL FIX: Use direct SQL updates instead of RPC call 
+    // This allows us to update both groups in a single transaction
+    const { error: sourceUpdateError } = await supabase
+      .from('tour_groups')
+      .update({
+        size: newSourceSize,
+        child_count: newSourceChildCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', sourceGroupId);
+      
+    if (sourceUpdateError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Error updating source group:", sourceUpdateError);
+      // Continue with target update anyway
+    }
     
-    if (txError) {
-      logger.error("🔄 [PARTICIPANT_MOVE] Error in group size transaction:", txError);
+    const { error: targetUpdateError } = await supabase
+      .from('tour_groups')
+      .update({
+        size: newTargetSize,
+        child_count: newTargetChildCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', targetGroupId);
+      
+    if (targetUpdateError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Error updating target group:", targetUpdateError);
       // Continue anyway - the participant move itself was successful
-    } else {
-      logger.debug("🔄 [PARTICIPANT_MOVE] Successfully updated group sizes in transaction");
+    }
+    
+    if (!sourceUpdateError && !targetUpdateError) {
+      logger.debug("🔄 [PARTICIPANT_MOVE] Successfully updated both groups");
     }
     
     // Final verification

@@ -1,12 +1,12 @@
 
 import { Routes, Route } from "react-router-dom";
-import HomePage from "./pages/home";
+import HomePage from "./pages/Index";
 import AboutPage from "./pages/about";
-import ToursPage from "./pages/tours";
+import ToursPage from "./pages/ToursPage";
 import TourDetails from "./pages/TourDetails";
 import GuidesPage from "./pages/guides";
-import SettingsPage from "./pages/settings";
-import NotFound from "./pages/not-found";
+import SettingsPage from "./pages/SettingsPage";
+import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "./components/theme-provider";
 import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
