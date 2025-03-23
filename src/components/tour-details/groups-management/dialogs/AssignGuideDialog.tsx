@@ -29,6 +29,7 @@ export const AssignGuideDialog = ({
 }: AssignGuideDialogProps) => {
   // Process guide data to ensure readable names
   const [processedGuides, setProcessedGuides] = useState(inputGuides);
+  const [isClosing, setIsClosing] = useState(false);
   
   useEffect(() => {
     // Ensure all guides have readable names
@@ -61,14 +62,25 @@ export const AssignGuideDialog = ({
 
   const handleSuccess = () => {
     toast.success("Guide assignment updated successfully");
-    onOpenChange(false);
+    // Set a small delay to allow UI to update before closing
+    setIsClosing(true);
+    setTimeout(() => {
+      onOpenChange(false);
+      setIsClosing(false);
+    }, 100);
   };
 
   // Ensure dialog can be closed properly
   const handleOpenChange = (open: boolean) => {
+    if (isClosing) return;
+    
     if (!open) {
       // When closing, make sure we call the parent's onOpenChange
-      onOpenChange(false);
+      setIsClosing(true);
+      setTimeout(() => {
+        onOpenChange(false);
+        setIsClosing(false);
+      }, 100);
     } else {
       onOpenChange(true);
     }

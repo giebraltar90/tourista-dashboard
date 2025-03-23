@@ -47,20 +47,27 @@ export function AssignGuideProvider({
   const queryClient = useQueryClient();
   
   // Track local selected guide for immediate UI updates
-  const [localGuideId, setLocalGuideId] = useState(guideId);
+  const [localGuideId, setLocalGuideId] = useState(guideId || "_none");
   
   // Update local state when props change
   useEffect(() => {
-    if (guideId !== localGuideId) {
-      setLocalGuideId(guideId);
+    if (guideId !== localGuideId && !isAssigning) {
+      setLocalGuideId(guideId || "_none");
     }
-  }, [guideId]);
+  }, [guideId, localGuideId, isAssigning]);
   
   const isGuideAssigned = !!guideName && guideName !== "Unassigned";
   
   const handleAssignGuide = async (selectedGuideId: string) => {
     // If selecting the same guide, just return
     if (selectedGuideId === localGuideId) return;
+    
+    // Validate input
+    if (!tourId || groupIndex === undefined || groupIndex === null) {
+      console.error("Missing required parameters for guide assignment", { tourId, groupIndex });
+      toast.error("Cannot assign guide: Missing required data");
+      return;
+    }
     
     try {
       setIsAssigning(true);
@@ -86,16 +93,19 @@ export function AssignGuideProvider({
         }, 500);
       } else {
         // If failed, revert the local state
-        setLocalGuideId(guideId);
+        setLocalGuideId(guideId || "_none");
         toast.error("Failed to assign guide");
       }
     } catch (error) {
       console.error("Error assigning guide:", error);
       // Revert local state on error
-      setLocalGuideId(guideId);
-      toast.error("Failed to assign guide");
+      setLocalGuideId(guideId || "_none");
+      toast.error("Failed to assign guide: " + (error instanceof Error ? error.message : "Unknown error"));
     } finally {
-      setIsAssigning(false);
+      // Add a small delay before setting isAssigning to false to allow UI to update
+      setTimeout(() => {
+        setIsAssigning(false);
+      }, 300);
     }
   };
 

@@ -23,6 +23,21 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
   const assignGuide = async (groupIdOrIndex: string | number, guideId: string) => {
     const tourId = getTourId();
     
+    // Validation
+    if (!tourId) {
+      logger.error("🔄 [AssignGuide] Missing tour ID");
+      setAssignmentError("Missing tour ID");
+      toast.error("Error: Missing tour ID");
+      return false;
+    }
+
+    if (groupIdOrIndex === undefined || groupIdOrIndex === null) {
+      logger.error("🔄 [AssignGuide] Missing group ID/index");
+      setAssignmentError("Missing group ID/index");
+      toast.error("Error: Missing group information");
+      return false;
+    }
+    
     // Reset state
     setIsAssigning(true);
     setAssignmentError(null);
@@ -78,11 +93,33 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         logger.debug(`🔄 [AssignGuide] Using provided group ID directly: ${actualGroupId}`);
       }
       
+      // Verify that the group ID exists before proceeding
+      const { data: groupCheck, error: groupCheckError } = await supabase
+        .from("tour_groups")
+        .select("id")
+        .eq("id", actualGroupId)
+        .eq("tour_id", tourId)
+        .single();
+        
+      if (groupCheckError || !groupCheck) {
+        logger.error("🔄 [AssignGuide] Invalid group ID:", groupCheckError || "Group not found");
+        setAssignmentError("Group not found or does not belong to this tour");
+        toast.error("Error: Group not found");
+        return false;
+      }
+      
       // Fetch all available guides to ensure we can map special IDs to proper UUIDs
-      const { data: availableGuides } = await supabase
+      const { data: availableGuides, error: guidesError } = await supabase
         .from("guides")
         .select("id, name")
         .limit(50);
+        
+      if (guidesError) {
+        logger.error("🔄 [AssignGuide] Error fetching guides:", guidesError);
+        setAssignmentError("Error fetching guides: " + guidesError.message);
+        toast.error("Error fetching guides");
+        return false;
+      }
       
       const guides = availableGuides || [];
       
@@ -106,11 +143,18 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
       });
       
       // Fetch current group data to prepare the name
-      const { data: currentGroup } = await supabase
+      const { data: currentGroup, error: currentGroupError } = await supabase
         .from("tour_groups")
         .select("name, participants(*)")
         .eq("id", actualGroupId)
         .single();
+        
+      if (currentGroupError) {
+        logger.error("🔄 [AssignGuide] Error fetching current group data:", currentGroupError);
+        setAssignmentError("Error fetching group data: " + currentGroupError.message);
+        toast.error("Error fetching group data");
+        return false;
+      }
       
       // Prepare group name
       let baseGroupName = currentGroup?.name || "";
@@ -160,21 +204,26 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
       
       // Now update the guide reference in the tours table if this is a main guide
       if (guideId.startsWith("guide")) {
-        // Determine which guide we're updating (guide1, guide2, guide3)
-        const guideNumber = guideId.replace("guide", "");
-        const guideField = `guide${guideNumber}_id`;
-        
-        // Update tour guides in database using our new function
-        let guide1Id = undefined;
-        let guide2Id = undefined;
-        let guide3Id = undefined;
-        
-        // Only set the specific guide we're updating
-        if (guideNumber === "1") guide1Id = finalGuideId;
-        if (guideNumber === "2") guide2Id = finalGuideId;
-        if (guideNumber === "3") guide3Id = finalGuideId;
-        
-        await updateTourGuidesInDatabase(tourId, guide1Id, guide2Id, guide3Id);
+        try {
+          // Determine which guide we're updating (guide1, guide2, guide3)
+          const guideNumber = guideId.replace("guide", "");
+          
+          // Only set the specific guide we're updating
+          let guide1Id = undefined;
+          let guide2Id = undefined;
+          let guide3Id = undefined;
+          
+          // Only set the specific guide we're updating
+          if (guideNumber === "1") guide1Id = finalGuideId;
+          if (guideNumber === "2") guide2Id = finalGuideId;
+          if (guideNumber === "3") guide3Id = finalGuideId;
+          
+          await updateTourGuidesInDatabase(tourId, guide1Id, guide2Id, guide3Id);
+        } catch (updateError) {
+          logger.error("🔄 [AssignGuide] Error updating tour guides:", updateError);
+          // Don't fail the whole operation if this part fails
+          toast.warning("Guide assigned to group but failed to update main guide reference");
+        }
       }
 
       // Call onSuccess callback if provided
@@ -204,7 +253,10 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
       toast.error("Error assigning guide: " + error.message);
       return false;
     } finally {
-      setIsAssigning(false);
+      // Add a small delay before setting isAssigning to false to prevent UI glitches
+      setTimeout(() => {
+        setIsAssigning(false);
+      }, 300);
     }
   };
 

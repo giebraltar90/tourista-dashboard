@@ -32,15 +32,17 @@ export const GuideSelectionPopover = ({
   const [isOpen, setIsOpen] = useState(false);
   const [localSelectedGuide, setLocalSelectedGuide] = useState(selectedGuide);
   const [isSelectInteracted, setIsSelectInteracted] = useState(false);
+  const [isInternalAssigning, setIsInternalAssigning] = useState(false);
 
   // Update local state when props change
   useEffect(() => {
-    if (selectedGuide !== localSelectedGuide) {
+    if (selectedGuide !== localSelectedGuide && !isInternalAssigning) {
       setLocalSelectedGuide(selectedGuide);
     }
-  }, [selectedGuide]);
+  }, [selectedGuide, localSelectedGuide, isInternalAssigning]);
 
   const handleAssignGuide = async (guideId: string) => {
+    // If selecting the same guide, just close the popover
     if (guideId === selectedGuide) {
       setIsOpen(false);
       return;
@@ -48,6 +50,9 @@ export const GuideSelectionPopover = ({
     
     try {
       console.log(`Selecting guide ${guideId} for ${displayName}`);
+      
+      // Set internal state to prevent conflicts during assignment
+      setIsInternalAssigning(true);
       
       // Update local state first for immediate UI feedback
       setLocalSelectedGuide(guideId);
@@ -64,11 +69,19 @@ export const GuideSelectionPopover = ({
       console.error("Error in GuideSelectionPopover:", error);
       // Revert local state if there was an error
       setLocalSelectedGuide(selectedGuide);
+    } finally {
+      // Reset the internal assigning state
+      setIsInternalAssigning(false);
     }
   };
 
   // Handle close without selection
   const handleOpenChange = (open: boolean) => {
+    // Prevent opening if already assigning
+    if (open && (isAssigning || isInternalAssigning)) {
+      return;
+    }
+    
     // If closing without making a selection, reset state
     if (!open && !isSelectInteracted) {
       setLocalSelectedGuide(selectedGuide);
@@ -103,8 +116,8 @@ export const GuideSelectionPopover = ({
   return (
     <Popover open={isOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
-        <Button size="sm" variant="outline" disabled={isAssigning}>
-          {isAssigning ? (
+        <Button size="sm" variant="outline" disabled={isAssigning || isInternalAssigning}>
+          {isAssigning || isInternalAssigning ? (
             <>
               <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
               Assigning...
@@ -122,7 +135,7 @@ export const GuideSelectionPopover = ({
           <Select 
             onValueChange={(value) => handleAssignGuide(value)}
             value={localSelectedGuide}
-            disabled={isAssigning}
+            disabled={isAssigning || isInternalAssigning}
             onOpenChange={() => setIsSelectInteracted(true)}
           >
             <SelectTrigger>
