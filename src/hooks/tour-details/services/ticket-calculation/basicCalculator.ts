@@ -1,11 +1,11 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
-import { processGuideTicketRequirement } from "../guideTicketProcessor";
-import { countTicketsByType, mapGuidesToResultFormat } from "./ticketAggregation";
-import { isDefaultGuide, processDefaultGuide } from "./assignmentDetection";
-import { findAssignedGuides } from "../guideAssignmentUtils";
-import { locationRequiresGuideTickets } from "../locationUtils";
+import { processGuideTicketRequirement } from "./guideTicketProcessor";
+import { countTicketsByType, mapGuidesToResultFormat } from "./core/ticketAggregation";
+import { isDefaultGuide, processDefaultGuide } from "./core/assignmentDetection";
+import { findAssignedGuides } from "./guideAssignmentUtils";
+import { locationRequiresGuideTickets } from "./locationUtils";
 
 /**
  * Basic calculation of guide tickets needed for a tour
