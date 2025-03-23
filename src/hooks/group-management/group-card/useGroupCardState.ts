@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { VentrataParticipant } from "@/types/ventrata";
-import { formatParticipantCount } from "@/hooks/group-management/utils/countingService";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
 import { logger } from "@/utils/logger";
 
 /**
@@ -16,7 +16,7 @@ export const useGroupCardState = (
   childCount: number = 0,
   onRefreshCallback?: () => void
 ) => {
-  // Start expanded by default
+  // Start expanded by default - setting to true so groups are expanded by default
   const [isExpanded, setIsExpanded] = useState(true);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);

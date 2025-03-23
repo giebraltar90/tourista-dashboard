@@ -1,6 +1,7 @@
+
 import { useEffect, useState } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
-import { GuideInfo } from '@/types/ventrata';
+import { GuideInfo, GuideType } from '@/types/ventrata';
 import { useGuideInfo } from '@/hooks/guides';
 import { logger } from '@/utils/logger';
 
@@ -82,7 +83,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       
       // Special case: Sophie Miller is always a GC guide
       if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
-        updatedInfo.guideType = 'GC';
+        updatedInfo.guideType = 'GC' as GuideType;
       }
       
       setGuide1Info(updatedInfo);
@@ -90,11 +91,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     } else if (guide1) {
       // Create a fallback guide info
       const isSophieMiller = guide1.toLowerCase().includes('sophie miller');
-      const fallbackInfo = {
+      const fallbackInfo: GuideInfo = {
         id: "guide1",
         name: guide1,
         birthday: new Date(),
-        guideType: isSophieMiller ? 'GC' : 'GA Ticket' as const
+        guideType: (isSophieMiller ? 'GC' : 'GA Ticket') as GuideType
       };
       setGuide1Info(fallbackInfo);
       logger.debug(`🔄 [useTourGuideInfo] Created fallback guide1: ${guide1} (${fallbackInfo.guideType})`);
@@ -109,7 +110,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       
       // Special case: Sophie Miller is always a GC guide
       if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
-        updatedInfo.guideType = 'GC';
+        updatedInfo.guideType = 'GC' as GuideType;
       }
       
       setGuide2Info(updatedInfo);
@@ -117,11 +118,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     } else if (guide2) {
       // Create a fallback guide info
       const isSophieMiller = guide2.toLowerCase().includes('sophie miller');
-      const fallbackInfo = {
+      const fallbackInfo: GuideInfo = {
         id: "guide2",
         name: guide2,
         birthday: new Date(),
-        guideType: isSophieMiller ? 'GC' : 'GA Free' as const
+        guideType: (isSophieMiller ? 'GC' : 'GA Free') as GuideType
       };
       setGuide2Info(fallbackInfo);
       logger.debug(`🔄 [useTourGuideInfo] Created fallback guide2: ${guide2} (${fallbackInfo.guideType})`);
@@ -136,7 +137,7 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       
       // Special case: Sophie Miller is always a GC guide
       if (updatedInfo.name && updatedInfo.name.toLowerCase().includes('sophie miller')) {
-        updatedInfo.guideType = 'GC';
+        updatedInfo.guideType = 'GC' as GuideType;
       }
       
       setGuide3Info(updatedInfo);
@@ -144,11 +145,11 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     } else if (guide3) {
       // Create a fallback guide info
       const isSophieMiller = guide3.toLowerCase().includes('sophie miller');
-      const fallbackInfo = {
+      const fallbackInfo: GuideInfo = {
         id: "guide3",
         name: guide3,
         birthday: new Date(),
-        guideType: isSophieMiller ? 'GC' : 'GA Ticket' as const
+        guideType: (isSophieMiller ? 'GC' : 'GA Ticket') as GuideType
       };
       setGuide3Info(fallbackInfo);
       logger.debug(`🔄 [useTourGuideInfo] Created fallback guide3: ${guide3} (${fallbackInfo.guideType})`);
