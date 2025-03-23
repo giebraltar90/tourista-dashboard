@@ -8,7 +8,7 @@ import GuidesPage from "./pages/guides";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "./components/theme-provider";
 import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
 import { useEffect } from "react";
 
