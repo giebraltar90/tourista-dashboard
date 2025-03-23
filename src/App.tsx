@@ -18,13 +18,13 @@ import { RoleProvider } from "@/contexts/RoleContext";
 // Create a query client instance
 const queryClient = new QueryClient();
 
+// Execute DB functions initialization outside of component
+console.log("Ensuring database functions exist");
+ensureDbFunctionsExist().catch(error => {
+  console.error("Failed to initialize DB functions:", error);
+});
+
 function App() {
-  // Initialize DB functions on app startup
-  useEffect(() => {
-    console.log("Ensuring database functions exist");
-    ensureDbFunctionsExist();
-  }, []);
-  
   return (
     <QueryClientProvider client={queryClient}>
       <RoleProvider>
