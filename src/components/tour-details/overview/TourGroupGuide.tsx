@@ -1,146 +1,76 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { TourCardProps } from "@/components/tours/tour-card/types";
-import { GuideBadge } from "./GuideBadge";
-import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
-import { AssignGuideButton } from "./AssignGuideButton";
-import { User, Users } from "lucide-react";
-import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
-import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
+import { Button } from "@/components/ui/button";
+import { UserRound, UserPlus } from "lucide-react";
+import { useState } from "react";
+import { AssignGuideDialog } from "../groups-management/dialogs";
+import { useGuides } from "@/hooks/useGuides";
+import { GuideInfo } from "@/types/ventrata";
 
 interface TourGroupGuideProps {
-  tour: TourCardProps;
-  group: VentrataTourGroup;
+  tourId: string;
   groupIndex: number;
-  guideName: string;
-  guideInfo: GuideInfo | null;
-  guideOptions: any[];
+  guideId?: string;
+  guideName?: string;
+  isSmall?: boolean;
+  guideInfo?: GuideInfo | null;
 }
 
 export const TourGroupGuide = ({ 
-  tour, 
-  group, 
+  tourId, 
   groupIndex, 
-  guideName, 
-  guideInfo, 
-  guideOptions 
+  guideId, 
+  guideName,
+  isSmall = false,
+  guideInfo
 }: TourGroupGuideProps) => {
-  const { assignGuide } = useAssignGuide(tour.id);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { data: guides = [] } = useGuides();
   
-  // Critical debug output to track data coming in
-  console.log(`TourGroupGuide(${groupIndex}) rendering with:`, {
-    groupId: group.id,
-    groupName: group.name || `Group ${groupIndex + 1}`,
-    hasParticipantsArray: Array.isArray(group.participants),
-    participantsLength: Array.isArray(group.participants) ? group.participants.length : 0,
-    sizeProp: group.size,
-    childCountProp: group.childCount,
-    rawGroup: group
-  });
+  const handleOpenDialog = () => {
+    setIsDialogOpen(true);
+  };
   
-  // Calculate participant count directly from participants array if available
-  let participantCount = 0;
-  let childCount = 0;
-  
-  if (Array.isArray(group.participants) && group.participants.length > 0) {
-    // Count from participants array
-    participantCount = group.participants.reduce((sum, p) => {
-      const count = typeof p.count === 'number' ? p.count : (p.count ? parseInt(String(p.count)) : 1);
-      return sum + count;
-    }, 0);
+  // Determine guide type badge
+  const guideTypeBadge = guideInfo?.guideType ? 
+    <span className="text-xs bg-blue-100 text-blue-800 rounded px-1.5 py-0.5 ml-1">
+      {guideInfo.guideType}
+    </span> : null;
     
-    childCount = group.participants.reduce((sum, p) => {
-      const childCount = typeof p.childCount === 'number' ? p.childCount : (p.childCount ? parseInt(String(p.childCount)) : 0);
-      return sum + childCount;
-    }, 0);
-    
-    console.log(`TourGroupGuide(${groupIndex}) calculated from participants:`, {
-      participantCount,
-      childCount
-    });
-  } else if (typeof group.size === 'number' && group.size > 0) {
-    // Fallback to size property if it's a number
-    participantCount = group.size;
-    childCount = typeof group.childCount === 'number' ? group.childCount : 0;
-    
-    console.log(`TourGroupGuide(${groupIndex}) using size property:`, {
-      participantCount,
-      childCount
-    });
-  } else {
-    // Final fallback - parse from strings if needed
-    try {
-      participantCount = group.size ? parseInt(String(group.size)) : 0;
-      childCount = group.childCount ? parseInt(String(group.childCount)) : 0;
-      
-      console.log(`TourGroupGuide(${groupIndex}) parsed from strings:`, {
-        participantCount,
-        childCount
-      });
-    } catch (e) {
-      console.error(`TourGroupGuide(${groupIndex}) error parsing size:`, e);
-      participantCount = 0;
-      childCount = 0;
-    }
-  }
-  
-  // Ensure we have valid non-negative numbers
-  participantCount = Math.max(0, participantCount);
-  childCount = Math.max(0, childCount);
-  
-  // Calculate adult count (total minus children)
-  const adultCount = Math.max(0, participantCount - childCount);
-  
-  // Format participant count to show adults + children if there are children
-  const displayParticipants = formatParticipantCount(participantCount, childCount);
-  
-  console.log(`TourGroupGuide(${groupIndex}) final display values:`, {
-    participantCount,
-    childCount,
-    adultCount,
-    displayParticipants
-  });
-  
   return (
-    <Card>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-medium">
-            {group.name || `Group ${groupIndex + 1}`}
-          </CardTitle>
-          <div className="flex items-center bg-muted/50 px-2 py-1 rounded-md">
-            <Users className="h-4 w-4 mr-1 text-muted-foreground" />
-            <span className="text-sm font-medium">{displayParticipants}</span>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-1">
-        <div className="space-y-4">
-          <div className="flex items-center space-x-2">
-            <User className="h-5 w-5 text-muted-foreground" />
-            <span className="text-sm font-medium">Guide:</span>
-            {guideName ? (
-              <div className="flex-1">
-                <GuideBadge 
-                  guideName={guideName} 
-                  guideInfo={guideInfo} 
-                  isAssigned={!!guideName} 
-                />
-              </div>
-            ) : (
-              <span className="text-sm text-muted-foreground">No guide assigned</span>
-            )}
-          </div>
-          <AssignGuideButton 
-            tourId={tour.id}
-            guideId={group.guideId || ""}
-            guideName={guideName}
-            groupIndex={groupIndex}
-            guides={guideOptions}
-            displayName={group.name || `Group ${groupIndex + 1}`}
-          />
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      {guideId ? (
+        <Button
+          variant="outline"
+          size={isSmall ? "sm" : "default"}
+          className="flex items-center gap-1.5 w-full justify-start"
+          onClick={handleOpenDialog}
+        >
+          <UserRound className={`${isSmall ? "h-3.5 w-3.5" : "h-4 w-4"} text-primary`} />
+          <span className="truncate">{guideName || "Unknown Guide"}</span>
+          {guideTypeBadge}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size={isSmall ? "sm" : "default"}
+          className="flex items-center gap-1.5 w-full justify-start text-muted-foreground"
+          onClick={handleOpenDialog}
+        >
+          <UserPlus className={`${isSmall ? "h-3.5 w-3.5" : "h-4 w-4"} text-muted-foreground`} />
+          Assign Guide
+        </Button>
+      )}
+      
+      {isDialogOpen && (
+        <AssignGuideDialog
+          isOpen={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          tourId={tourId}
+          groupIndex={groupIndex}
+          guides={guides}
+          currentGuideId={guideId}
+        />
+      )}
+    </>
   );
 };

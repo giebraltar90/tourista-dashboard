@@ -14,7 +14,7 @@ export interface ModificationsTabProps {
 
 export const ModificationsTab = ({ tour, tourId }: ModificationsTabProps) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const { modifications, addModification, isAddingModification } = useModifications(tourId);
+  const { modifications, isAddingModification } = useModifications(tourId);
   
   const handleOpenDialog = () => {
     setIsDialogOpen(true);

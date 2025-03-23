@@ -8,6 +8,7 @@ import {
 import { VentrataTourGroup } from "@/types/ventrata";
 import { ParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 import { GuideInfo } from "@/types/ventrata";
+import { useEffect } from "react";
 
 interface InformationCardsSectionProps {
   tour: TourCardProps;
@@ -37,6 +38,29 @@ export const InformationCardsSection = ({
   } = participantCounts;
   
   const requiredTickets = tour.numTickets || 0;
+  
+  // Debug log to track changes in participants and guides
+  useEffect(() => {
+    console.log("InformationCardsSection: Re-rendering with updated data", {
+      totalParticipants,
+      adultTickets,
+      childTickets,
+      totalTickets,
+      requiredTickets,
+      guide1: guide1Info?.name || 'None',
+      guide2: guide2Info?.name || 'None',
+      guide3: guide3Info?.name || 'None'
+    });
+  }, [
+    totalParticipants, 
+    adultTickets, 
+    childTickets, 
+    totalTickets, 
+    requiredTickets,
+    guide1Info,
+    guide2Info,
+    guide3Info
+  ]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

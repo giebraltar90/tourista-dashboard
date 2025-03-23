@@ -73,7 +73,7 @@ export const useModifications = (tourId: string) => {
     isLoading,
     error,
     refetch,
-    addModification: modificationMutation.mutate,
+    addModification: (params: { description: string, details?: any }) => modificationMutation.mutate(params),
     isAddingModification: modificationMutation.isPending
   };
 };

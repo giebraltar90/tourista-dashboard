@@ -5,6 +5,8 @@ import { GuideInfo } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { Separator } from "@/components/ui/separator";
 import { ParticipantTicketsSection, GuideTicketsSection, TotalTicketsSection } from "./tickets";
+import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -53,6 +55,39 @@ export const TicketsCard = ({
     guide2Info,
     guide3Info
   );
+  
+  // Log changes to participant counts or guides to help with debugging
+  useEffect(() => {
+    logger.debug("🎟️ [TicketsCard] Recalculating tickets:", {
+      tourId,
+      adultTickets,
+      childTickets,
+      totalTickets,
+      locationNeedsGuideTickets,
+      guideTickets: {
+        adults: guideTickets.adultTickets,
+        children: guideTickets.childTickets,
+        guides: guideTickets.guides.map(g => g.guideName)
+      },
+      participantsCount: tourGroups?.reduce((total, group) => total + group.size, 0) || 0,
+      guidesAssigned: [
+        guide1Info?.name, 
+        guide2Info?.name, 
+        guide3Info?.name
+      ].filter(Boolean).join(', ') || 'None'
+    });
+  }, [
+    tourId,
+    adultTickets, 
+    childTickets, 
+    totalTickets,
+    guideTickets,
+    tourGroups,
+    guide1Info, 
+    guide2Info, 
+    guide3Info,
+    locationNeedsGuideTickets
+  ]);
   
   // Check if we have enough tickets
   const hasEnoughTickets = totalTickets >= requiredTickets;

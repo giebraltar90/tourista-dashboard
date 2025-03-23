@@ -1,96 +1,81 @@
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { VentrataTour } from "@/types/ventrata";
-import { updateTourCapacity as updateTourCapacityApi } from "@/services/ventrataApi";
+import { useTourById } from "./useTourData";
+import { updateTourCapacity } from "@/services/ventrataApi";
 import { toast } from "sonner";
 import { useModifications } from "./useModifications";
 
-export const useUpdateTourCapacity = (tourId: string) => {
-  const queryClient = useQueryClient();
+/**
+ * Hook for managing tour capacity
+ */
+export const useTourCapacity = (tourId: string) => {
+  const { data: tour, refetch } = useTourById(tourId);
   const { addModification } = useModifications(tourId);
   
-  const mutation = useMutation({
-    mutationFn: async (updatedTour: VentrataTour) => {
-      console.log("Updating tour capacity for tour", tourId, updatedTour);
-      console.log("New high season value:", updatedTour.isHighSeason);
+  /**
+   * Update the capacity of a tour
+   */
+  const updateCapacity = async (newCapacity: number) => {
+    try {
+      if (!tour) {
+        toast.error("Tour not found");
+        return false;
+      }
       
-      // Convert to boolean explicitly to ensure correct type
-      const highSeasonValue = Boolean(updatedTour.isHighSeason);
+      if (newCapacity < 0) {
+        toast.error("Capacity cannot be negative");
+        return false;
+      }
       
-      // Use simplified API for now
-      return await updateTourCapacityApi(tourId, highSeasonValue);
-    },
-    onMutate: async (variables) => {
-      // Cancel any outgoing refetches to avoid overwriting our optimistic update
-      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
-
-      // Snapshot the previous value
-      const previousTour = queryClient.getQueryData(['tour', tourId]);
-
-      // Optimistically update the cache with the new value
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return oldData;
-        
-        // Create a new deep copy to ensure React detects the change
-        const newData = JSON.parse(JSON.stringify(oldData));
-        
-        // Explicitly and clearly set the isHighSeason boolean value
-        newData.isHighSeason = Boolean(variables.isHighSeason);
-        
-        console.log("Optimistically updating tour data:", newData);
-        return newData;
-      });
-
-      // Return the snapshot so we can rollback in case of failure
-      return { previousTour };
-    },
-    onSuccess: (_, variables) => {
-      // Update the cache directly for consistent UI
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return oldData;
-        
-        // Create a fresh copy with the updated value explicitly set
-        const updatedData = JSON.parse(JSON.stringify(oldData));
-        updatedData.isHighSeason = Boolean(variables.isHighSeason);
-        
-        console.log("Confirmed tour data update:", updatedData);
-        return updatedData;
-      });
+      const oldCapacity = tour.capacity || 0;
       
-      // Add a modification record AFTER the update is confirmed successful
-      const isHighSeason = Boolean(variables.isHighSeason);
-      const modeText = isHighSeason ? 'high season' : 'standard';
+      // Check if there's any actual change
+      if (oldCapacity === newCapacity) {
+        toast.info("Capacity is already set to this value");
+        return true;
+      }
       
+      // Update the capacity on the server
+      await updateTourCapacity(tourId, newCapacity);
+      
+      // Record the modification
       addModification({
-        description: `Tour capacity mode changed to ${modeText}`,
+        description: `Tour capacity changed from ${oldCapacity} to ${newCapacity}`,
         details: {
           type: "capacity_update",
-          oldMode: !isHighSeason ? 'high season' : 'standard',
-          newMode: modeText
+          oldCapacity,
+          newCapacity,
+          updatedAt: new Date().toISOString()
         }
       });
       
-      toast.success(`Tour capacity updated to ${modeText} mode`);
+      // Refetch tour data to update UI
+      await refetch();
       
-      // Schedule a delayed background refresh to sync with server
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 3000);
-    },
-    onError: (error, _, context) => {
+      toast.success(`Tour capacity updated to ${newCapacity}`);
+      return true;
+    } catch (error) {
       console.error("Error updating tour capacity:", error);
       toast.error("Failed to update tour capacity");
-      
-      // Roll back to the previous value
-      if (context?.previousTour) {
-        queryClient.setQueryData(['tour', tourId], context.previousTour);
-      }
+      return false;
     }
-  });
+  };
+  
+  /**
+   * Calculate current capacity usage for a tour
+   */
+  const calculateCapacityUsage = () => {
+    if (!tour || !tour.tourGroups) return { total: 0, percentage: 0 };
+    
+    const total = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
+    const capacity = tour.capacity || 0;
+    const percentage = capacity > 0 ? Math.round((total / capacity) * 100) : 0;
+    
+    return { total, capacity, percentage };
+  };
   
   return {
-    updateTourCapacity: mutation.mutate,
-    isUpdating: mutation.isPending,
-    error: mutation.error
+    updateCapacity,
+    calculateCapacityUsage,
+    tourCapacity: tour?.capacity || 0
   };
 };
