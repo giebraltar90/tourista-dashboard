@@ -27,7 +27,7 @@ export const moveParticipant = async (
     console.log("PARTICIPANTS DEBUG: Participant moved successfully in database");
     
     // Add a delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     return true;
   } catch (error) {
@@ -56,6 +56,9 @@ export const updateParticipantGroupInDatabase = async (
       console.error("Error updating participant's group:", error);
       return false;
     }
+    
+    // Add a delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     return true;
   } catch (error) {

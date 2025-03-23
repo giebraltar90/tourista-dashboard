@@ -52,6 +52,11 @@ export const TicketsCard = ({
   // Determine if we have enough tickets
   const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
 
+  // Format the displayed total tickets
+  const formattedTotalTickets = totalRequiredAdultTickets > 0 && totalRequiredChildTickets > 0 ? 
+    `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}` : 
+    `${totalRequiredTickets}`;
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -60,28 +65,26 @@ export const TicketsCard = ({
       <CardContent>
         <div className="grid gap-2">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Adult (18+):</span>
+            <span className="text-muted-foreground">Adult tickets:</span>
             <span className="font-medium">
-              {totalRequiredAdultTickets}
+              {validAdultTickets} {guideAdultTickets > 0 && `+ ${guideAdultTickets} guides`}
             </span>
           </div>
           
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Child (Under 18):</span>
+            <span className="text-muted-foreground">Child tickets:</span>
             <span className="font-medium">
-              {totalRequiredChildTickets}
+              {validChildTickets} {guideChildTickets > 0 && `+ ${guideChildTickets} guides`}
             </span>
           </div>
           
           <div className="flex justify-between pt-2 border-t">
-            <span className="text-muted-foreground">Total required:</span>
+            <span className="text-muted-foreground">Total tickets needed:</span>
             <Badge 
               variant="outline" 
               className="font-medium bg-green-100 text-green-800 border-green-300"
             >
-              {totalRequiredAdultTickets > 0 && totalRequiredChildTickets > 0 ? 
-                `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}` :
-                totalRequiredTickets}
+              {formattedTotalTickets}
             </Badge>
           </div>
           
