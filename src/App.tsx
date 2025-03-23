@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
 import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RoleProvider } from "@/contexts/RoleContext";
 
 // Create a query client instance
 const queryClient = new QueryClient();
@@ -25,18 +26,20 @@ function App() {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/tours" element={<ToursPage />} />
-          <Route path="/tours/:id" element={<TourDetails />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/guides" element={<GuidesPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <Toaster position="top-right" />
-      </ThemeProvider>
+      <RoleProvider>
+        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/tours" element={<ToursPage />} />
+            <Route path="/tours/:id" element={<TourDetails />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/guides" element={<GuidesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster position="top-right" />
+        </ThemeProvider>
+      </RoleProvider>
     </QueryClientProvider>
   );
 }
