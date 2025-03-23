@@ -66,13 +66,28 @@ export const useParticipantRefresh = (
     // Set the refresh in progress flag
     refreshInProgressRef.current = true;
     
+    if (showToast) {
+      toastIdRef.current = toast.loading("Loading participants...");
+    }
+    
     return loadParticipantsInner(tourId, (loadedGroups) => {
       console.log(`PARTICIPANTS DEBUG: Participants loaded, processing groups:`, loadedGroups);
+      
+      if (showToast && toastIdRef.current) {
+        toast.dismiss(toastIdRef.current);
+        toast.success("Participants loaded successfully");
+        toastIdRef.current = null;
+      }
       
       // Ensure we received an array of groups
       if (!Array.isArray(loadedGroups)) {
         console.error("PARTICIPANTS DEBUG: Invalid groups data received:", loadedGroups);
         refreshInProgressRef.current = false;
+        
+        if (showToast) {
+          toast.error("Failed to load participants: Invalid data received");
+        }
+        
         return;
       }
       
@@ -143,6 +158,7 @@ export const useParticipantRefresh = (
     // Prevent manual refresh if already refreshing
     if (refreshInProgressRef.current) {
       console.log(`PARTICIPANTS DEBUG: Skipping manual refresh, already in progress`);
+      toast.info("Refresh already in progress");
       return;
     }
     
@@ -152,6 +168,7 @@ export const useParticipantRefresh = (
     
     if (timeSinceLastRefresh < 5000 && lastRefreshTimeRef.current > 0) {
       console.log(`PARTICIPANTS DEBUG: Skipping manual refresh, too soon (${timeSinceLastRefresh}ms since last refresh)`);
+      toast.info("Please wait a few seconds before refreshing again");
       return;
     }
     
@@ -162,7 +179,7 @@ export const useParticipantRefresh = (
     
     console.log(`PARTICIPANTS DEBUG: Manually refreshing participants for tour ${tourId}`);
     // Show only one toast at the beginning
-    toastIdRef.current = toast.info("Refreshing participants...");
+    toastIdRef.current = toast.loading("Refreshing participants...");
     
     // Set refreshing flag
     refreshInProgressRef.current = true;

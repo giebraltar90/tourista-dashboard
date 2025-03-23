@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsGrid } from "./GroupsGrid";
@@ -28,7 +28,9 @@ export const GroupsManagement = ({
   guide2Info = null,
   guide3Info = null
 }: GroupsManagementProps) => {
+  console.log("GroupsManagement rendering with tourId:", tourId);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+  const [renderGroupAssignment, setRenderGroupAssignment] = useState(true);
 
   // Get group management hooks and functions
   const {
@@ -56,13 +58,13 @@ export const GroupsManagement = ({
   const { isManualRefreshing, handleManualRefresh } = useManualRefresh(refreshParticipants);
   
   // Initial load of participants
-  useState(() => {
+  useEffect(() => {
     if (tourId) {
       console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
       // Pass false to prevent showing toast during initial load
       loadParticipants(tourId, false);
     }
-  });
+  }, [tourId, loadParticipants]);
   
   // Get dialog management - pass the tour object
   const dialogUtils = GroupDialogsContainer({
@@ -92,32 +94,14 @@ export const GroupsManagement = ({
             onFixDatabase={handleFixDatabase}
           />
           
-          {/* Add the GroupAssignment component for the main group management UI */}
+          {/* Always render GroupAssignment as the primary interface */}
           <GroupAssignment tour={tour} />
           
-          {/* Fallback to GroupsGrid if needed */}
-          {!tour.tourGroups || tour.tourGroups.length === 0 ? (
+          {/* Only render the legacy GroupsGrid as a fallback if needed */}
+          {(!localTourGroups || localTourGroups.length === 0) && (
             <div className="text-center p-6 text-muted-foreground">
-              No tour groups available. Try adding test participants.
+              No tour groups available. Try using the "Add Test Participants" button above.
             </div>
-          ) : (
-            <GroupsGrid
-              tourGroups={localTourGroups}
-              tour={tour}
-              guide1Info={guide1Info}
-              guide2Info={guide2Info}
-              guide3Info={guide3Info}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd} 
-              onMoveClick={setSelectedParticipant}
-              selectedParticipant={selectedParticipant}
-              handleMoveParticipant={handleMoveParticipant}
-              isMovePending={isMovePending}
-              onRefreshParticipants={refreshParticipants} 
-            />
           )}
         </div>
       </CardContent>

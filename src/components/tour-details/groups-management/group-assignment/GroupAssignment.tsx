@@ -20,7 +20,7 @@ interface GroupAssignmentProps {
 }
 
 export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
-  console.log("DATABASE DEBUG: GroupAssignment rendering with tour:", tour);
+  console.log("GROUP ASSIGNMENT: Rendering with tour ID:", tour.id);
   
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
@@ -49,7 +49,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   useEffect(() => {
     const checkDatabase = async () => {
       try {
-        console.log("DATABASE DEBUG: Checking database structure");
+        console.log("DATABASE DEBUG: Checking database structure for tour:", tour.id);
         
         const { count, error } = await supabase
           .from('participants')
@@ -146,16 +146,33 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   
   const handleAddTestParticipants = async () => {
     if (!tour.id) return;
-    await addTestParticipants(tour.id);
-    setTimeout(() => {
-      refreshParticipants();
-    }, 500);
+    
+    setIsRefreshing(true);
+    try {
+      await addTestParticipants(tour.id);
+      toast.success("Test participants added successfully");
+      
+      // Force refresh after adding test participants
+      setTimeout(() => {
+        refreshParticipants();
+      }, 500);
+    } catch (error) {
+      console.error("Error adding test participants:", error);
+      toast.error("Failed to add test participants");
+    } finally {
+      setIsRefreshing(false);
+    }
   };
   
   const handleOpenAssignGuide = (groupIndex: number) => {
     setSelectedGroupIndex(groupIndex);
     setIsAssignGuideOpen(true);
   };
+
+  console.log("GROUP ASSIGNMENT: Tour groups available:", {
+    localGroupsCount: localTourGroups?.length || 0,
+    tourGroupsCount: tour.tourGroups?.length || 0
+  });
   
   return (
     <Card>
@@ -167,6 +184,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
               size="sm" 
               variant="outline" 
               onClick={handleAddTestParticipants}
+              disabled={isRefreshing}
             >
               <PlusCircle className="h-4 w-4 mr-2" />
               Add Test Participants
@@ -188,20 +206,29 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
         <div className="space-y-6">
           <DatabaseStatus dbCheckResult={dbCheckResult} />
           
-          <GroupGrid
-            tour={tour}
-            localTourGroups={localTourGroups}
-            handleDragStart={handleDragStart}
-            handleDragOver={handleDragOver}
-            handleDragLeave={handleDragLeave}
-            handleDrop={handleDrop}
-            onOpenAssignGuide={handleOpenAssignGuide}
-            selectedParticipant={selectedParticipant}
-            setSelectedParticipant={setSelectedParticipant}
-            handleMoveParticipant={handleMoveParticipant}
-            isMovePending={isMovePending}
-            onRefreshParticipants={handleRefreshParticipants}
-          />
+          {localTourGroups && localTourGroups.length > 0 ? (
+            <GroupGrid
+              tour={tour}
+              localTourGroups={localTourGroups}
+              handleDragStart={handleDragStart}
+              handleDragOver={handleDragOver}
+              handleDragLeave={handleDragLeave}
+              handleDrop={handleDrop}
+              onOpenAssignGuide={handleOpenAssignGuide}
+              selectedParticipant={selectedParticipant}
+              setSelectedParticipant={setSelectedParticipant}
+              handleMoveParticipant={handleMoveParticipant}
+              isMovePending={isMovePending}
+              onRefreshParticipants={handleRefreshParticipants}
+            />
+          ) : (
+            <Alert>
+              <AlertCircle className="h-4 w-4 mr-2" />
+              <AlertDescription>
+                No tour groups or participants found. Click "Add Test Participants" to create sample data.
+              </AlertDescription>
+            </Alert>
+          )}
         </div>
       </CardContent>
 
@@ -212,14 +239,14 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
           tourId={tour.id}
           groupIndex={selectedGroupIndex}
           guides={availableGuides}
-          currentGuideId={localTourGroups[selectedGroupIndex]?.guideId}
+          currentGuideId={localTourGroups?.[selectedGroupIndex]?.guideId}
         />
       )}
 
       {selectedParticipant && (
         <MoveParticipantSheet
           selectedParticipant={selectedParticipant}
-          tourGroups={localTourGroups}
+          tourGroups={localTourGroups || []}
           onClose={() => setSelectedParticipant(null)}
           onMove={handleMoveParticipant}
           isMovePending={isMovePending}

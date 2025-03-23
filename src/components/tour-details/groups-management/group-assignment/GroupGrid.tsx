@@ -4,6 +4,8 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { useGuideInfo } from "@/hooks/guides";
 import { GroupCard } from "../GroupCard";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface GroupGridProps {
   tour: TourCardProps;
@@ -35,19 +37,19 @@ export const GroupGrid = ({
   onRefreshParticipants
 }: GroupGridProps) => {
   // Get guide information
-  const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
+  const guide1Info = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
+  const guide2Info = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Info = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
   
   const stableTourGroups = useMemo(() => {
     console.log("DATABASE DEBUG: Creating stable tour groups from:", {
       localTourGroupsLength: localTourGroups?.length || 0,
-      tourGroupsLength: tour.tourGroups?.length || 0
+      tourGroupsLength: tour?.tourGroups?.length || 0
     });
     
     if (!localTourGroups || localTourGroups.length === 0) {
       console.log("DATABASE DEBUG: Using tour.tourGroups as fallback");
-      if (!tour.tourGroups) return [];
+      if (!tour?.tourGroups) return [];
       
       return tour.tourGroups.map((group, index) => ({
         ...group,
@@ -61,13 +63,24 @@ export const GroupGrid = ({
       originalIndex: index,
       displayName: group.name || `Group ${index + 1}`
     }));
-  }, [localTourGroups, tour.tourGroups]);
+  }, [localTourGroups, tour?.tourGroups]);
   
   console.log("DATABASE DEBUG: Stable tour groups:", stableTourGroups.map(g => ({
     id: g.id,
     name: g.displayName,
     participantsCount: g.participants?.length || 0
   })));
+
+  if (!stableTourGroups || stableTourGroups.length === 0) {
+    return (
+      <Alert variant="warning">
+        <AlertTriangle className="h-4 w-4 mr-2" />
+        <AlertDescription>
+          No tour groups available. Please try adding test participants.
+        </AlertDescription>
+      </Alert>
+    );
+  }
   
   return (
     <div className="space-y-4 pt-2">
@@ -106,4 +119,4 @@ export const GroupGrid = ({
       </div>
     </div>
   );
-}
+};

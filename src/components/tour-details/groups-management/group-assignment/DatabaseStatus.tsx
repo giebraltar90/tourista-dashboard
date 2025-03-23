@@ -1,6 +1,7 @@
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2, Database } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface DatabaseStatusProps {
   dbCheckResult: {
@@ -14,34 +15,49 @@ export const DatabaseStatus = ({ dbCheckResult }: DatabaseStatusProps) => {
   if (!dbCheckResult) {
     return null;
   }
-
-  if (!dbCheckResult.hasTable) {
+  
+  // Show error if something went wrong
+  if (dbCheckResult.error) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4 mr-2" />
         <AlertDescription>
-          The participants table is missing from the database. {dbCheckResult.error && `Error: ${dbCheckResult.error}`}
+          Database error: {dbCheckResult.error}
         </AlertDescription>
       </Alert>
     );
   }
-
-  if (dbCheckResult.participantCount === 0) {
+  
+  // Show warning if table doesn't exist
+  if (!dbCheckResult.hasTable) {
     return (
       <Alert variant="warning">
-        <AlertCircle className="h-4 w-4 mr-2" />
-        <AlertDescription>
-          The participants table exists but is empty. Try adding some test participants.
+        <Database className="h-4 w-4 mr-2" />
+        <AlertDescription className="flex justify-between items-center">
+          <span>Participants table not found in database.</span>
         </AlertDescription>
       </Alert>
     );
   }
-
+  
+  // Show success if table exists and has participants
+  if (dbCheckResult.participantCount > 0) {
+    return (
+      <Alert variant="default">
+        <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
+        <AlertDescription>
+          Database connected with {dbCheckResult.participantCount} participants.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+  
+  // Show info if table exists but has no participants
   return (
-    <Alert variant="default" className="bg-green-50 text-green-800 border-green-200">
-      <CheckCircle className="h-4 w-4 mr-2 text-green-600" />
+    <Alert variant="default">
+      <Database className="h-4 w-4 mr-2" />
       <AlertDescription>
-        Database is ready with {dbCheckResult.participantCount} participants.
+        Database ready, but no participants found.
       </AlertDescription>
     </Alert>
   );
