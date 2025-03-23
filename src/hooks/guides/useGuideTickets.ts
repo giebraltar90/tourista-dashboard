@@ -1,72 +1,97 @@
 
-import { GuideInfo } from "@/types/ventrata";
+import { GuideInfo } from '@/types/ventrata';
 
 /**
- * Determines if a guide needs a ticket based on tour location and guide type
- * Rules:
- * - GA Free guides need a child ticket at Versailles/Montmartre
- * - GA Ticket guides need an adult ticket at Versailles/Montmartre
- * - GC guides never need a ticket
- * - Sophie Miller is always treated as a GC guide (never needs a ticket)
+ * Determines if a guide name is Sophie Miller
  */
-export function doesGuideNeedTicket(guide: GuideInfo | null, tourLocation: string): boolean {
-  // No guide or no location means no ticket
-  if (!guide || !guide.guideType || !tourLocation) {
-    return false;
-  }
-  
-  // Special case for Sophie Miller - always GC guide, never needs a ticket
-  if (guide.name && guide.name.toLowerCase().includes('sophie miller')) {
-    return false;
-  }
-  
-  // Check if this is a location requiring guide tickets
-  const requiresGuideTickets = 
-    tourLocation.toLowerCase().includes('versailles') || 
-    tourLocation.toLowerCase().includes('montmartre');
-  
-  if (!requiresGuideTickets) {
-    return false;
-  }
-  
-  // Based on guide type
-  if (guide.guideType === 'GA Ticket') {
-    return true; // Needs an adult ticket
-  } else if (guide.guideType === 'GA Free') {
-    return true; // Needs a child ticket
-  } else if (guide.guideType === 'GC') {
-    return false; // No ticket needed
-  }
-  
-  // Default case
-  return false;
-}
+export const isSophieMiller = (name: string = ''): boolean => {
+  return name?.toLowerCase().includes('sophie miller');
+};
 
 /**
- * Gets the type of ticket needed for a guide
- * Returns:
- * - 'adult' for GA Ticket guides
- * - 'child' for GA Free guides
- * - null for GC guides or guides not needing tickets
+ * Determines if a guide needs a ticket based on guide type and location
  */
-export function getGuideTicketType(guide: GuideInfo | null): 'adult' | 'child' | null {
-  // No guide or no guide type means no ticket
-  if (!guide || !guide.guideType) {
+export const doesGuideNeedTicket = (
+  guideInfo: GuideInfo | null, 
+  location: string = ''
+): boolean => {
+  // Only need tickets for Versailles and Montmartre
+  const requiresTickets = 
+    location?.toLowerCase().includes('versailles') || 
+    location?.toLowerCase().includes('montmartre');
+    
+  if (!requiresTickets) {
+    console.log(`🎫 [doesGuideNeedTicket] Location "${location}" doesn't require guide tickets`);
+    return false;
+  }
+  
+  // No guide info, no ticket
+  if (!guideInfo) {
+    console.log('🎫 [doesGuideNeedTicket] No guide info, no ticket needed');
+    return false;
+  }
+  
+  // Check if guide is Sophie Miller (always GC, never needs ticket)
+  const name = guideInfo?.name || '';
+  if (isSophieMiller(name)) {
+    console.log('🎫 [doesGuideNeedTicket] Sophie Miller (GC) never needs a ticket');
+    return false;
+  }
+  
+  // Check guide type
+  const guideType = guideInfo?.guideType || '';
+  
+  // GC guides don't need tickets
+  if (guideType === 'GC') {
+    console.log(`🎫 [doesGuideNeedTicket] ${name} (GC) doesn't need a ticket`);
+    return false;
+  }
+  
+  // GA Ticket and GA Free guides need tickets
+  if (guideType === 'GA Ticket' || guideType === 'GA Free') {
+    console.log(`🎫 [doesGuideNeedTicket] ${name} (${guideType}) needs a ticket`);
+    return true;
+  }
+  
+  // Default assumption: guide needs a ticket if we can't determine
+  console.log(`🎫 [doesGuideNeedTicket] ${name} (unknown type "${guideType}") defaulting to needing a ticket`);
+  return true;
+};
+
+/**
+ * Get the type of ticket a guide needs (adult or child)
+ */
+export const getGuideTicketType = (guideInfo: GuideInfo | null): 'adult' | 'child' | null => {
+  // No guide info, no ticket
+  if (!guideInfo) {
     return null;
   }
   
-  // Special case for Sophie Miller - always GC guide, never needs a ticket
-  if (guide.name && guide.name.toLowerCase().includes('sophie miller')) {
+  // Check if guide is Sophie Miller (always GC, never needs ticket)
+  const name = guideInfo?.name || '';
+  if (isSophieMiller(name)) {
+    console.log('🎫 [getGuideTicketType] Sophie Miller (GC) never needs a ticket');
     return null;
   }
   
-  // Based on guide type
-  if (guide.guideType === 'GA Ticket') {
-    return 'adult'; // Needs an adult ticket
-  } else if (guide.guideType === 'GA Free') {
-    return 'child'; // Needs a child ticket
+  // Check guide type
+  const guideType = guideInfo?.guideType || '';
+  
+  // GC guides don't need tickets
+  if (guideType === 'GC') {
+    return null;
   }
   
-  // Default case (GC guides or unknown types)
-  return null;
-}
+  // GA Ticket guides need adult tickets
+  if (guideType === 'GA Ticket') {
+    return 'adult';
+  }
+  
+  // GA Free guides need child tickets
+  if (guideType === 'GA Free') {
+    return 'child';
+  }
+  
+  // Default to adult ticket if we can't determine
+  return 'adult';
+};

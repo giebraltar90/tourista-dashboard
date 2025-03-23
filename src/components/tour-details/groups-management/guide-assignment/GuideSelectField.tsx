@@ -37,9 +37,21 @@ export const GuideSelectField = ({
 }: GuideSelectFieldProps) => {
   const [processedGuides, setProcessedGuides] = useState<GuideOption[]>([]);
   
+  // Helper function to check if a guide is Sophie Miller
+  const isSophieMiller = (name: string): boolean => {
+    return name.toLowerCase().includes('sophie miller');
+  };
+  
   useEffect(() => {
     // Log guides data to help with debugging
-    console.log("GuideSelectField guides data:", guides);
+    console.log("🔍 [GuideSelectField] Received guides data:", guides.map(g => ({
+      id: g.id,
+      name: g.name, 
+      info: g.info ? {
+        name: g.info.name,
+        guideType: g.info.guideType
+      } : null
+    })));
     
     // Process guides to ensure all have readable names
     const processed = guides.map(guide => {
@@ -56,6 +68,12 @@ export const GuideSelectField = ({
         }
       }
       
+      // Special handling for Sophie Miller - always mark as GC
+      if (guide.info && isSophieMiller(displayName)) {
+        console.log("🔍 [GuideSelectField] Found Sophie Miller - ensuring GC type");
+        guide.info.guideType = 'GC';
+      }
+      
       return {
         ...guide,
         name: displayName
@@ -68,7 +86,12 @@ export const GuideSelectField = ({
     );
     
     // Log the processed guides
-    console.log("GuideSelectField processed guides:", valid);
+    console.log("🔍 [GuideSelectField] Processed guides:", valid.map(g => ({
+      id: g.id,
+      name: g.name,
+      guideType: g.info?.guideType,
+      isSophieMiller: isSophieMiller(g.name)
+    })));
     
     setProcessedGuides(valid);
   }, [guides]);
@@ -80,7 +103,13 @@ export const GuideSelectField = ({
       render={({ field }) => (
         <FormItem>
           <FormLabel>Select Guide</FormLabel>
-          <Select onValueChange={field.onChange} defaultValue={field.value || defaultValue}>
+          <Select 
+            onValueChange={(value) => {
+              console.log("🔍 [GuideSelectField] Selected guide:", value);
+              field.onChange(value);
+            }} 
+            defaultValue={field.value || defaultValue}
+          >
             <FormControl>
               <SelectTrigger>
                 <SelectValue placeholder="Choose a guide" />
@@ -93,8 +122,19 @@ export const GuideSelectField = ({
                   <div className="flex items-center">
                     <span>{guide.name}</span>
                     {guide.info && guide.info.guideType && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        {guide.info.guideType}
+                      <Badge 
+                        variant="outline" 
+                        className={`ml-2 text-xs ${
+                          isSophieMiller(guide.name) 
+                            ? "bg-purple-50 text-purple-800 border-purple-300" 
+                            : guide.info.guideType === 'GA Ticket'
+                              ? "bg-blue-50 text-blue-800 border-blue-300"
+                              : guide.info.guideType === 'GA Free'
+                                ? "bg-green-50 text-green-800 border-green-300"
+                                : "bg-gray-50 text-gray-800 border-gray-300"
+                        }`}
+                      >
+                        {isSophieMiller(guide.name) ? 'GC' : guide.info.guideType}
                       </Badge>
                     )}
                   </div>

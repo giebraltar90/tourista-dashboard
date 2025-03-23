@@ -1,3 +1,4 @@
+
 import { VentrataTourGroup } from "@/types/ventrata";
 
 /**
@@ -20,6 +21,13 @@ export const calculateTotalChildCount = (groups: VentrataTourGroup[]): number =>
   return groups.reduce((sum, group) => {
     return sum + (group.childCount || 0);
   }, 0);
+};
+
+/**
+ * Check if a guide name is Sophie Miller
+ */
+const isSophieMiller = (guideName: string = ""): boolean => {
+  return guideName.toLowerCase().includes('sophie miller');
 };
 
 /**
@@ -62,17 +70,23 @@ export const calculateGuideAdultTickets = (
     if (processedGuideNames.has(guideName)) return;
     
     // Skip Sophie Miller - she is always treated as a GC guide (never needs a ticket)
-    if (guideName.includes('sophie miller')) return;
+    if (isSophieMiller(guideName)) {
+      console.log("🔍 [calculateGuideAdultTickets] Skipping Sophie Miller (always GC)");
+      processedGuideNames.add(guideName);
+      return;
+    }
     
     // Add to processed list
     processedGuideNames.add(guideName);
     
     // Check guide type
     if (guide.info.guideType === 'GA Ticket') {
+      console.log(`🔍 [calculateGuideAdultTickets] ${guideName} (GA Ticket) needs adult ticket`);
       gaTicketGuideCount++;
     }
   });
   
+  console.log(`🔍 [calculateGuideAdultTickets] Total adult guide tickets: ${gaTicketGuideCount}`);
   return gaTicketGuideCount;
 };
 
@@ -116,16 +130,37 @@ export const calculateGuideChildTickets = (
     if (processedGuideNames.has(guideName)) return;
     
     // Skip Sophie Miller - she is always treated as a GC guide (never needs a ticket)
-    if (guideName.includes('sophie miller')) return;
+    if (isSophieMiller(guideName)) {
+      console.log("🔍 [calculateGuideChildTickets] Skipping Sophie Miller (always GC)");
+      processedGuideNames.add(guideName);
+      return;
+    }
     
     // Add to processed list
     processedGuideNames.add(guideName);
     
     // Check guide type
     if (guide.info.guideType === 'GA Free') {
+      console.log(`🔍 [calculateGuideChildTickets] ${guideName} (GA Free) needs child ticket`);
       gaFreeGuideCount++;
     }
   });
   
+  console.log(`🔍 [calculateGuideChildTickets] Total child guide tickets: ${gaFreeGuideCount}`);
   return gaFreeGuideCount;
+};
+
+/**
+ * Format a participant count to show adults + children
+ */
+export const formatParticipantCount = (
+  totalCount: number, 
+  childCount: number
+): string => {
+  if (childCount <= 0) {
+    return `${totalCount}`;
+  }
+  
+  const adultCount = totalCount - childCount;
+  return `${adultCount} + ${childCount}`;
 };
