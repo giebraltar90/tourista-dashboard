@@ -63,18 +63,23 @@ export const updateGuideInSupabase = async (
       // Determine which guide field we're updating (guide1_id, guide2_id, guide3_id)
       const guideField = `${guideId}_id`.replace('guide', 'guide');
       
-      // Call the new function to update the guide in the tours table
-      const { error: tourUpdateError } = await supabase.rpc('update_tour_guide_assignment', {
-        p_tour_id: tourId,
-        p_guide_field: guideField,
-        p_guide_id: isValidUuid(guideId) ? guideId : null
-      });
-      
-      if (tourUpdateError) {
-        logger.error("Error updating guide in tours table:", tourUpdateError);
-        // Not returning false here as the group update succeeded
-      } else {
-        logger.debug(`Successfully updated ${guideField} in tours table`);
+      // Use a direct SQL update instead of the RPC function since TypeScript doesn't recognize it
+      // We're using a manual update to the tours table for the appropriate guide field
+      if (guideField === 'guide1_id' || guideField === 'guide2_id' || guideField === 'guide3_id') {
+        const updateObj: any = {};
+        updateObj[guideField] = isValidUuid(guideId) ? guideId : null;
+        
+        const { error: tourUpdateError } = await supabase
+          .from('tours')
+          .update(updateObj)
+          .eq('id', tourId);
+        
+        if (tourUpdateError) {
+          logger.error(`Error updating ${guideField} in tours table:`, tourUpdateError);
+          // Not returning false here as the group update succeeded
+        } else {
+          logger.debug(`Successfully updated ${guideField} in tours table`);
+        }
       }
     }
     

@@ -27,9 +27,9 @@ export const useDatabaseData = () => {
       // Check each table individually
       for (const tableName of tables) {
         try {
-          // Fix SQL ambiguity by using parameter name that won't conflict
+          // Fix parameter name to match the function's expected parameter
           const { data: exists, error: checkError } = await supabase.rpc('check_table_exists', {
-            "p_table_name": tableName
+            table_name: tableName
           });
           
           if (checkError) {
