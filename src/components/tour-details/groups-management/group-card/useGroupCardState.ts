@@ -15,7 +15,7 @@ export const useGroupCardState = (
   childCount?: number,
   onRefreshParticipants?: () => void
 ) => {
-  // Start expanded by default - changed from false to true
+  // IMPORTANT: Always start expanded by default to show participants immediately
   const [isExpanded, setIsExpanded] = useState(true);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -26,7 +26,8 @@ export const useGroupCardState = (
       hasParticipantsArray: Array.isArray(participants),
       participantsLength: Array.isArray(participants) ? participants.length : 0,
       firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null,
-      isExpandedInitialValue: true // Log that we're initializing with expanded state
+      isExpandedInitialValue: true, // Confirm that we're initializing with expanded state
+      groupIndex
     });
   }, []);
   
@@ -37,7 +38,8 @@ export const useGroupCardState = (
       hasParticipantsArray: Array.isArray(participants),
       participantsLength: Array.isArray(participants) ? participants.length : 0,
       size,
-      childCount
+      childCount,
+      isExpanded // Log current expanded state
     });
     
     if (Array.isArray(participants) && participants.length > 0) {
@@ -105,7 +107,8 @@ export const useGroupCardState = (
     adultCount,
     displayParticipants,
     rawParticipants: Array.isArray(participants) ? participants.length : 0,
-    visibleParticipants: localParticipants.length
+    visibleParticipants: localParticipants.length,
+    isExpanded // Log the current expanded state
   });
   
   return {

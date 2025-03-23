@@ -1,23 +1,55 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
 import { toast } from "sonner";
+import { logger } from "@/utils/logger";
 
+/**
+ * Hook to update tour groups with improved state persistence
+ */
 export const useUpdateTourGroups = (tourId: string) => {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (updatedGroups: VentrataTourGroup[]) => {
-      console.log("Updating tour groups for:", tourId, updatedGroups);
+      logger.debug("Updating tour groups for:", tourId, {
+        groupCount: updatedGroups.length,
+        groups: updatedGroups.map(g => ({
+          id: g.id,
+          name: g.name,
+          participantsCount: g.participants?.length || 0
+        }))
+      });
+      
       try {
         // Make a deep copy of the updated groups to avoid reference issues
         const groupsToUpdate = JSON.parse(JSON.stringify(updatedGroups));
         
-        // Use the simplified API for now
+        // Ensure each group has valid, safe references
+        groupsToUpdate.forEach((group: VentrataTourGroup) => {
+          // Make sure participants array exists
+          if (!Array.isArray(group.participants)) {
+            group.participants = [];
+          }
+          
+          // Calculate size and childCount directly from participants
+          let size = 0;
+          let childCount = 0;
+          
+          group.participants.forEach(p => {
+            size += p.count || 1;
+            childCount += p.childCount || 0;
+          });
+          
+          // Update size and childCount based on actual participants
+          group.size = size;
+          group.childCount = childCount;
+        });
+        
+        // Use the simplified API call
         return await updateTourGroups(tourId, groupsToUpdate);
       } catch (error) {
-        console.error("Error updating tour groups:", error);
+        logger.error("Error updating tour groups:", error);
         throw error;
       }
     },
@@ -35,7 +67,33 @@ export const useUpdateTourGroups = (tourId: string) => {
         
         // Create a deep copy to avoid mutation issues
         const newData = JSON.parse(JSON.stringify(oldData));
-        newData.tourGroups = JSON.parse(JSON.stringify(updatedGroups));
+        
+        // IMPORTANT: Preserve all participant references during this update
+        const updatedGroupsWithParticipants = updatedGroups.map((updatedGroup: VentrataTourGroup) => {
+          // Find matching group in old data to preserve its participants
+          const oldGroup = newData.tourGroups?.find((g: any) => g.id === updatedGroup.id);
+          const participants = Array.isArray(updatedGroup.participants) && updatedGroup.participants.length > 0
+            ? updatedGroup.participants  // Use the updated participants if they exist
+            : (Array.isArray(oldGroup?.participants) ? oldGroup.participants : []); // Fall back to old participants
+            
+          // Create a safe copy
+          return {
+            ...updatedGroup,
+            participants: JSON.parse(JSON.stringify(participants))
+          };
+        });
+        
+        newData.tourGroups = updatedGroupsWithParticipants;
+        
+        logger.debug("Optimistic update applied to tour data", {
+          tourId,
+          groupCount: newData.tourGroups.length,
+          withParticipants: newData.tourGroups.map((g: any) => ({
+            id: g.id,
+            name: g.name,
+            participantsCount: g.participants?.length || 0
+          }))
+        });
         
         return newData;
       });
@@ -43,25 +101,20 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      // CRITICAL: Permanently disable query invalidation
+      // CRITICAL: Keep the optimistic update but still allow normal background revalidation
       // This prevents the UI from reverting to previous state after tab switches
+      // while still allowing for future data refreshes
       
-      // This silently confirms the update in the background without triggering a refetch
-      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
-        if (!oldData) return null;
-        return oldData; // Keep our optimistic update instead of refetching
-      });
-      
-      // Disable the automatic background refetches that React Query does
-      // This is the key to preventing the UI from refreshing and losing our changes
-      queryClient.cancelQueries({ queryKey: ['tour', tourId] });
-      queryClient.cancelQueries({ queryKey: ['tours'] });
-      
-      console.log("Successfully updated tour groups - permanently disabled revalidation");
+      logger.debug("Successfully updated tour groups - keeping optimistic update");
       toast.success("Changes saved successfully");
+      
+      // Invalidate the query after a delay to ensure our optimistic update gets rendered first
+      setTimeout(() => {
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      }, 5000);
     },
     onError: (error, _, context) => {
-      console.error("Error updating tour groups:", error);
+      logger.error("Error updating tour groups:", error);
       toast.error("Failed to update tour groups on the server.");
       
       // Revert to previous state on error

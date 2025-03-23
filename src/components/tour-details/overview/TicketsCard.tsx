@@ -36,8 +36,11 @@ export const TicketsCard = ({
   const validChildTickets = Math.max(0, childTickets || 0);
   
   // Check if location needs guide tickets - normalize location to lowercase for case-insensitive comparison
-  const locationLower = location.toLowerCase();
-  const locationNeedsGuideTickets = locationLower.includes('versailles') || locationLower.includes('montmartre');
+  const locationLower = (location || '').toLowerCase().trim();
+  const locationNeedsGuideTickets = 
+    locationLower.includes('versailles') || 
+    locationLower.includes('montmartre') ||
+    locationLower.includes('versaille');  // Common misspelling
   
   // Check if there are assigned guides in any groups
   const hasAssignedGuides = tourGroups?.some(g => {

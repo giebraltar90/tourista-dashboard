@@ -23,11 +23,12 @@ export const getGuideTicketRequirement = (
   });
 
   // Normalize location to lowercase for case-insensitive comparison
-  const locationLower = location.toLowerCase();
+  const locationLower = (location || '').toLowerCase().trim();
   
   // Check if location requires tickets (only Versailles and Montmartre need tickets)
-  if (!location || 
+  if (!locationLower || 
       (!locationLower.includes('versailles') && 
+       !locationLower.includes('versaille') && 
        !locationLower.includes('montmartre'))) {
     logger.debug(`🎟️ [TicketRequirement] Location "${location}" doesn't require guide tickets`);
     return { needsTicket: false, ticketType: null };
@@ -74,7 +75,7 @@ export const calculateGuideTicketsNeeded = (
   const guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> = [];
   
   // Normalize location to lowercase for case-insensitive comparison
-  const locationLower = location.toLowerCase();
+  const locationLower = (location || '').toLowerCase().trim();
   
   logger.debug("🎟️ [CalculateTickets] Starting guide ticket calculation", {
     tourId: tourGroups[0]?.tourId || 'unknown',
@@ -83,12 +84,16 @@ export const calculateGuideTicketsNeeded = (
     guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
     location,
     locationLower,
-    tourGroupsCount: tourGroups?.length || 0
+    tourGroupsCount: tourGroups?.length || 0,
+    requiresTickets: locationLower.includes('versailles') || 
+                    locationLower.includes('versaille') || 
+                    locationLower.includes('montmartre')
   });
 
   // Skip ticket calculation if location doesn't require tickets
-  if (!location || 
+  if (!locationLower || 
       (!locationLower.includes('versailles') && 
+       !locationLower.includes('versaille') && 
        !locationLower.includes('montmartre'))) {
     logger.debug(`🎟️ [CalculateTickets] Location "${location}" doesn't require guide tickets`);
     return { adultTickets: 0, childTickets: 0, guides: [] };
@@ -98,7 +103,12 @@ export const calculateGuideTicketsNeeded = (
   const processedGuideIds = new Set<string>();
   
   // Check if there are any assigned guides in the tour groups
-  const hasAssignedGuides = tourGroups.some(group => group.guideId && group.guideId !== "unassigned");
+  const hasAssignedGuides = tourGroups.some(group => {
+    const isAssigned = group.guideId && group.guideId !== "unassigned";
+    logger.debug(`🎟️ [CalculateTickets] Group ${group.name || 'unnamed'} guide assignment check: ${isAssigned ? 'assigned' : 'not assigned'}, guideId: ${group.guideId || 'none'}`);
+    return isAssigned;
+  });
+  
   logger.debug(`🎟️ [CalculateTickets] Has assigned guides: ${hasAssignedGuides}`);
   
   // If no guides are assigned, don't count any guide tickets

@@ -95,21 +95,49 @@ export const moveParticipant = async (
       }
     });
     
-    // Begin transaction for atomicity
-    const { error: updateError } = await supabase
+    // CRITICAL FIX: Use a more reliable update with return values to confirm changes
+    const { data: updatedParticipant, error: updateError } = await supabase
       .from('participants')
       .update({ 
         group_id: newGroupId,
         updated_at: new Date().toISOString() // Force timestamp update to avoid caching issues
       })
-      .eq('id', participantId);
+      .eq('id', participantId)
+      .select()
+      .single();
       
     if (updateError) {
       logger.error("🔄 [PARTICIPANT_MOVE] Database error moving participant:", updateError);
       return false;
     }
     
-    logger.debug("🔄 [PARTICIPANT_MOVE] Successfully updated participant's group in database");
+    if (!updatedParticipant || updatedParticipant.group_id !== newGroupId) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Participant didn't update correctly:", {
+        participant: updatedParticipant,
+        expectedGroupId: newGroupId
+      });
+      
+      // Attempt one more direct update as a fallback
+      const { error: fallbackError } = await supabase
+        .from('participants')
+        .update({ 
+          group_id: newGroupId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', participantId);
+        
+      if (fallbackError) {
+        logger.error("🔄 [PARTICIPANT_MOVE] Fallback update failed:", fallbackError);
+        return false;
+      }
+      
+      logger.debug("🔄 [PARTICIPANT_MOVE] Fallback update attempted");
+    } else {
+      logger.debug("🔄 [PARTICIPANT_MOVE] Successfully updated participant's group in database", {
+        newGroupId: updatedParticipant.group_id,
+        participantName: updatedParticipant.name
+      });
+    }
     
     // Add a significant delay to ensure database consistency before verification
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -135,34 +163,21 @@ export const moveParticipant = async (
       }
     });
     
-    // Update source group
-    const { error: sourceUpdateError } = await supabase
-      .from('tour_groups')
-      .update({ 
-        size: newSourceSize,
-        child_count: newSourceChildCount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', sourceGroupId);
-      
-    if (sourceUpdateError) {
-      logger.error("🔄 [PARTICIPANT_MOVE] Error updating source group size:", sourceUpdateError);
-      // Continue anyway to update target group
-    }
+    // CRITICAL FIX: Use a transaction to update both groups atomically
+    const { error: txError } = await supabase.rpc('update_groups_after_move', {
+      source_group_id: sourceGroupId,
+      target_group_id: newGroupId,
+      source_size: newSourceSize,
+      source_child_count: newSourceChildCount,
+      target_size: newTargetSize,
+      target_child_count: newTargetChildCount
+    });
     
-    // Update target group
-    const { error: targetUpdateError } = await supabase
-      .from('tour_groups')
-      .update({ 
-        size: newTargetSize,
-        child_count: newTargetChildCount,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', newGroupId);
-      
-    if (targetUpdateError) {
-      logger.error("🔄 [PARTICIPANT_MOVE] Error updating target group size:", targetUpdateError);
-      // Continue anyway for final verification
+    if (txError) {
+      logger.error("🔄 [PARTICIPANT_MOVE] Error in group size transaction:", txError);
+      // Continue anyway - the participant move itself was successful
+    } else {
+      logger.debug("🔄 [PARTICIPANT_MOVE] Successfully updated group sizes in transaction");
     }
     
     // Final verification

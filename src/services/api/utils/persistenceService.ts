@@ -1,7 +1,9 @@
+
 import { toast } from "sonner";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { logger } from "@/utils/logger";
 
 /**
  * Attempts to persist guide assignment changes through multiple strategies
@@ -17,7 +19,7 @@ export const persistGuideAssignmentChanges = async (
   let updateSuccess = false;
   
   // Log all parameters for debugging
-  console.log("BUGFIX: persistGuideAssignmentChanges called with:", { 
+  logger.debug("BUGFIX: persistGuideAssignmentChanges called with:", { 
     tourId, 
     groupId, 
     actualGuideId, 
@@ -35,14 +37,14 @@ export const persistGuideAssignmentChanges = async (
   
   // Validate inputs
   if (!tourId || !groupId) {
-    console.error("Cannot persist guide assignment: Missing tour or group ID");
+    logger.error("Cannot persist guide assignment: Missing tour or group ID");
     return false;
   }
   
   // Find the target group in the updated groups
   const targetGroup = updatedGroups.find(group => group.id === groupId);
   if (!targetGroup) {
-    console.error(`Cannot find target group with ID ${groupId} in updatedGroups`);
+    logger.error(`Cannot find target group with ID ${groupId} in updatedGroups`);
     return false;
   }
   
@@ -51,7 +53,7 @@ export const persistGuideAssignmentChanges = async (
     ? targetGroup.participants 
     : [];
     
-  console.log("BUGFIX: Participants to preserve:", {
+  logger.debug("BUGFIX: Participants to preserve:", {
     groupId,
     count: participantsToPreserve.length,
     details: participantsToPreserve
@@ -59,7 +61,7 @@ export const persistGuideAssignmentChanges = async (
   
   // IMPORTANT: Pass the guide ID directly without sanitization
   // This is critical to ensure database consistency
-  console.log(`Persisting guide assignment: ${actualGuideId} for group ${groupId} in tour ${tourId}`);
+  logger.debug(`Persisting guide assignment: ${actualGuideId} for group ${groupId} in tour ${tourId}`);
   
   // First attempt: direct Supabase update with the most reliable method
   try {
@@ -71,14 +73,14 @@ export const persistGuideAssignmentChanges = async (
       groupName
     );
     
-    console.log(`Direct Supabase update result: ${updateSuccess ? 'Success' : 'Failed'}`);
+    logger.debug(`Direct Supabase update result: ${updateSuccess ? 'Success' : 'Failed'}`);
     
     // If the direct update succeeded, we're done
     if (updateSuccess) {
       return true;
     }
   } catch (error) {
-    console.error("Error with direct Supabase update:", error);
+    logger.error("Error with direct Supabase update:", error);
   }
   
   // Second attempt: try direct Supabase update without using a helper function
@@ -87,7 +89,7 @@ export const persistGuideAssignmentChanges = async (
       // Import and use supabase client directly for this attempt
       const { supabase } = await import("@/integrations/supabase/client");
       
-      console.log(`Trying direct database update for group ${groupId}`);
+      logger.debug(`Trying direct database update for group ${groupId}`);
       
       const { error } = await supabase
         .from('tour_groups')
@@ -99,34 +101,35 @@ export const persistGuideAssignmentChanges = async (
         .eq('tour_id', tourId);
         
       if (!error) {
-        console.log("Successfully updated guide assignment with direct query");
+        logger.debug("Successfully updated guide assignment with direct query");
         updateSuccess = true;
         return true;
       } else {
-        console.error("Error updating via direct query:", error);
+        logger.error("Error updating via direct query:", error);
       }
     } catch (error) {
-      console.error("Error with direct database update:", error);
+      logger.error("Error with direct database update:", error);
     }
   }
   
   // Third attempt: if all direct updates failed, try updating all groups at once
   if (!updateSuccess) {
-    console.log("Falling back to updateTourGroups API as last resort");
+    logger.debug("Falling back to updateTourGroups API as last resort");
     try {
       // Prepare tour groups for database update
       const sanitizedGroups = updatedGroups.map(group => {
         // Create a deep copy to avoid mutating the original
-        const sanitizedGroup = {...group};
+        const sanitizedGroup = JSON.parse(JSON.stringify(group));
         
         // If this is the group we're updating, ensure it has the new guide ID
         if (sanitizedGroup.id === groupId) {
           sanitizedGroup.guideId = actualGuideId;
           sanitizedGroup.name = groupName;
           
-          // BUGFIX: Ensure the group maintains its original participants
+          // CRITICAL FIX: Ensure the group maintains its original participants
           if (!Array.isArray(sanitizedGroup.participants) || sanitizedGroup.participants.length === 0) {
-            sanitizedGroup.participants = participantsToPreserve;
+            sanitizedGroup.participants = JSON.parse(JSON.stringify(participantsToPreserve));
+            logger.debug(`BUGFIX: Restoring ${participantsToPreserve.length} participants to group ${groupId}`);
           }
         }
         
@@ -158,7 +161,7 @@ export const persistGuideAssignmentChanges = async (
           sanitizedGroup.childCount = 0;
         }
         
-        console.log(`BUGFIX: Group ${sanitizedGroup.id} after sanitization:`, {
+        logger.debug(`BUGFIX: Group ${sanitizedGroup.id} after sanitization:`, {
           name: sanitizedGroup.name,
           participantsCount: Array.isArray(sanitizedGroup.participants) 
             ? sanitizedGroup.participants.length 
@@ -173,9 +176,9 @@ export const persistGuideAssignmentChanges = async (
       });
       
       updateSuccess = await updateTourGroups(tourId, sanitizedGroups);
-      console.log(`Full groups update result: ${updateSuccess ? 'Success' : 'Failed'}`);
+      logger.debug(`Full groups update result: ${updateSuccess ? 'Success' : 'Failed'}`);
     } catch (error) {
-      console.error("Error with updateTourGroups API:", error);
+      logger.error("Error with updateTourGroups API:", error);
     }
   }
   
