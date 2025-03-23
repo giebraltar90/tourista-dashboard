@@ -2,84 +2,110 @@
 import { useState, useEffect, useCallback } from "react";
 import { VentrataParticipant } from "@/types/ventrata";
 import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
-import { logger } from "@/utils/logger";
 
 /**
- * Custom hook to manage state for a group card
+ * Custom hook to manage group card state
  */
 export const useGroupCardState = (
   participants: VentrataParticipant[] | undefined,
   groupId: string,
   groupName: string,
   groupIndex: number,
-  totalParticipants: number = 0,
-  childCount: number = 0,
-  onRefreshCallback?: () => void
+  size?: number,
+  childCount?: number,
+  onRefreshParticipants?: () => void
 ) => {
-  // Start expanded by default - setting to true so groups are expanded by default
+  // Start expanded by default - changed from false to true
   const [isExpanded, setIsExpanded] = useState(true);
   const [localParticipants, setLocalParticipants] = useState<VentrataParticipant[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Format the participant count for display
-  const displayParticipants = formatParticipantCount(totalParticipants, childCount);
-  
-  // Calculate adult count
-  const adultCount = totalParticipants - childCount;
-  
-  // Log the debug info for group content
+  // Debug log on initial render
   useEffect(() => {
-    logger.debug(`DATABASE DEBUG: Calculated from participants for ${groupName}:`, {
-      totalParticipants,
-      childCount,
-      participantsCount: Array.isArray(participants) ? participants.length : 0
+    console.log(`DATABASE DEBUG: useGroupCardState initialized for group ${groupName} (ID: ${groupId})`, {
+      hasParticipantsArray: Array.isArray(participants),
+      participantsLength: Array.isArray(participants) ? participants.length : 0,
+      firstParticipant: Array.isArray(participants) && participants.length > 0 ? participants[0] : null
     });
-    
-    // Log formatting
-    logger.debug(`PARTICIPANTS DEBUG: formatParticipantCount called with`, {
-      totalParticipants,
+  }, []);
+  
+  // Initialize local participants state
+  useEffect(() => {
+    console.log(`DATABASE DEBUG: Setting participants for ${groupName} (${groupId}):`, {
+      rawParticipants: participants,
+      hasParticipantsArray: Array.isArray(participants),
+      participantsLength: Array.isArray(participants) ? participants.length : 0,
+      size,
       childCount
     });
     
-    if (childCount > 0) {
-      logger.debug(`PARTICIPANTS DEBUG: Formatting as adults+children: ${adultCount}+${childCount}`);
-    } else {
-      logger.debug(`PARTICIPANTS DEBUG: Formatting as just total: ${totalParticipants}`);
-    }
-    
-    logger.debug(`DATABASE DEBUG: Final calculations for ${groupName}:`, {
-      totalParticipants,
-      childCount,
-      adultCount,
-      displayParticipants,
-      rawParticipants: Array.isArray(participants) ? participants.length : 0,
-      visibleParticipants: Array.isArray(localParticipants) ? localParticipants.length : 0
-    });
-  }, [groupName, totalParticipants, childCount, adultCount, displayParticipants, participants, localParticipants]);
-  
-  // Set the local participants from props
-  useEffect(() => {
-    if (Array.isArray(participants)) {
+    if (Array.isArray(participants) && participants.length > 0) {
+      console.log(`DATABASE DEBUG: Using actual participants for ${groupName}`);
       setLocalParticipants(participants);
     } else {
+      // If no participants are available, set an empty array - do NOT create placeholders
+      console.log(`DATABASE DEBUG: No participants available for ${groupName}, using empty array`);
       setLocalParticipants([]);
     }
-  }, [participants]);
+  }, [participants, groupId, groupName, size, childCount]);
   
   // Handle refreshing participants
   const handleRefreshParticipants = useCallback(() => {
-    if (onRefreshCallback) {
-      setIsRefreshing(true);
-      
-      // Call the refresh callback
-      onRefreshCallback();
-      
-      // Set a timeout to end the refreshing state
-      setTimeout(() => {
-        setIsRefreshing(false);
-      }, 1500);
+    if (!onRefreshParticipants) {
+      console.log(`DATABASE DEBUG: No refresh function available for ${groupName}`);
+      return;
     }
-  }, [onRefreshCallback]);
+    
+    console.log(`DATABASE DEBUG: Refreshing participants for ${groupName} (${groupId})`);
+    setIsRefreshing(true);
+    
+    // Call the refresh function
+    onRefreshParticipants();
+    
+    // Set a timeout to remove the refreshing state
+    setTimeout(() => {
+      setIsRefreshing(false);
+    }, 1500);
+  }, [onRefreshParticipants, groupId, groupName]);
+  
+  // Calculate totals from participants
+  let totalParticipants = 0;
+  let childCount1 = 0;
+  
+  if (Array.isArray(localParticipants) && localParticipants.length > 0) {
+    // Count directly from participants array
+    for (const participant of localParticipants) {
+      totalParticipants += participant.count || 1;
+      childCount1 += participant.childCount || 0;
+    }
+    
+    console.log(`DATABASE DEBUG: Calculated from participants for ${groupName}:`, {
+      totalParticipants,
+      childCount: childCount1,
+      participantsCount: localParticipants.length
+    });
+  } else {
+    // We don't use placeholders anymore - set to 0
+    totalParticipants = 0;
+    childCount1 = 0;
+    
+    console.log(`DATABASE DEBUG: No participants for ${groupName}, showing 0`);
+  }
+  
+  // Calculate adult count
+  const adultCount = Math.max(0, totalParticipants - childCount1);
+  
+  // Format the participant count for display
+  const displayParticipants = formatParticipantCount(totalParticipants, childCount1);
+  
+  console.log(`DATABASE DEBUG: Final calculations for ${groupName}:`, {
+    totalParticipants,
+    childCount: childCount1,
+    adultCount,
+    displayParticipants,
+    rawParticipants: Array.isArray(participants) ? participants.length : 0,
+    visibleParticipants: localParticipants.length
+  });
   
   return {
     isExpanded,
@@ -88,7 +114,7 @@ export const useGroupCardState = (
     isRefreshing,
     handleRefreshParticipants,
     totalParticipants,
-    childCount,
+    childCount: childCount1,
     adultCount,
     displayParticipants
   };

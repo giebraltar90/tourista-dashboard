@@ -46,7 +46,7 @@ export const TicketsCard = ({
     return hasGuide;
   }) || false;
   
-  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} has assigned guides: ${hasAssignedGuides}, requires tickets: ${locationNeedsGuideTickets}`);
+  logger.debug(`🎟️ [TicketsCard] Tour ${tourId} has assigned guides: ${hasAssignedGuides}, requires tickets: ${locationNeedsGuideTickets}, location: ${location}`);
   
   // Calculate guide tickets only if needed and there are assigned guides
   const { 
