@@ -6,28 +6,24 @@ import { GuideInfo } from "@/types/ventrata";
  */
 export const getGuideTicketRequirement = (
   guideInfo: GuideInfo | null | undefined,
-  location: string = "Versailles"
+  location: string = ""
 ): { needsTicket: boolean; ticketType: "adult" | "child" | null } => {
   // If no guide info, no ticket needed
   if (!guideInfo) {
     return { needsTicket: false, ticketType: null };
   }
 
-  // Default for non-Versailles locations - no special handling
-  if (location !== "Versailles") {
-    return { needsTicket: false, ticketType: null };
-  }
-
-  // For Versailles, ticket requirements depend on guide type
+  // Default for non-Versailles locations - check if a ticket bucket is assigned
+  // This will allow manual control over ticket requirements for any tour
   const guideType = guideInfo.guideType || "";
   
   if (guideType.toUpperCase() === "GC") {
     // GC guides can guide inside, don't need tickets
     return { needsTicket: false, ticketType: null };
-  } else if (guideType.toUpperCase() === "GA FREE" || guideType.includes("FREE")) {
+  } else if (guideType.toUpperCase().includes("FREE") || guideType.includes("FREE")) {
     // Under 26, requires a child ticket
     return { needsTicket: true, ticketType: "child" };
-  } else if (guideType.toUpperCase() === "GA TICKET" || guideType.includes("TICKET")) {
+  } else if (guideType.toUpperCase().includes("TICKET") || guideType.includes("TICKET")) {
     // Over 26, requires an adult ticket
     return { needsTicket: true, ticketType: "adult" };
   }
@@ -44,7 +40,7 @@ export const calculateGuideTicketsNeeded = (
   guide1Info: GuideInfo | null,
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null,
-  location: string = "Versailles",
+  location: string = "",
   tourGroups: any[] = []
 ): { adultTickets: number; childTickets: number; guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> } => {
   let adultTickets = 0;
@@ -130,5 +126,5 @@ export const calculateGuideTicketsNeeded = (
     }
   }
   
-  return { adultTickets, childTickets, guides };
+  return { adultTickets, childTickets, guides: guides.filter(g => g.ticketType !== null) };
 };

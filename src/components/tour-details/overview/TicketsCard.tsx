@@ -52,10 +52,19 @@ export const TicketsCard = ({
   // Determine if we have enough tickets
   const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
 
-  // Format the displayed total tickets
-  const formattedTotalTickets = totalRequiredAdultTickets > 0 && totalRequiredChildTickets > 0 ? 
-    `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}` : 
-    `${totalRequiredTickets}`;
+  // Format the display strings for clarity
+  const adultTicketsDisplay = guideAdultTickets > 0 
+    ? `${validAdultTickets} + ${guideAdultTickets} guides` 
+    : `${validAdultTickets}`;
+    
+  const childTicketsDisplay = guideChildTickets > 0 
+    ? `${validChildTickets} + ${guideChildTickets} guides` 
+    : `${validChildTickets}`;
+    
+  // Format the total tickets display
+  const formattedTotalTickets = totalRequiredChildTickets > 0 && totalRequiredAdultTickets > 0
+    ? `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}`
+    : `${totalRequiredTickets}`;
 
   return (
     <Card>
@@ -66,16 +75,12 @@ export const TicketsCard = ({
         <div className="grid gap-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Adult tickets:</span>
-            <span className="font-medium">
-              {validAdultTickets} {guideAdultTickets > 0 && `+ ${guideAdultTickets} guides`}
-            </span>
+            <span className="font-medium">{adultTicketsDisplay}</span>
           </div>
           
           <div className="flex justify-between">
             <span className="text-muted-foreground">Child tickets:</span>
-            <span className="font-medium">
-              {validChildTickets} {guideChildTickets > 0 && `+ ${guideChildTickets} guides`}
-            </span>
+            <span className="font-medium">{childTicketsDisplay}</span>
           </div>
           
           <div className="flex justify-between pt-2 border-t">

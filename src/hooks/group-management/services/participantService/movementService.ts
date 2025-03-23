@@ -26,8 +26,39 @@ export const moveParticipant = async (
     
     console.log("PARTICIPANTS DEBUG: Participant moved successfully in database");
     
-    // Add a delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Add a longer delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    // Double-check that the participant is in the correct group
+    const { data: participant, error: checkError } = await supabase
+      .from('participants')
+      .select('group_id')
+      .eq('id', participantId)
+      .single();
+      
+    if (checkError) {
+      console.error("PARTICIPANTS DEBUG: Error verifying participant move:", checkError);
+      return true; // Assume it worked since we don't have evidence it didn't
+    }
+    
+    // If participant is not in the expected group, try again
+    if (participant && participant.group_id !== newGroupId) {
+      console.warn(`PARTICIPANTS DEBUG: Participant ${participantId} not in expected group. Retrying...`);
+      
+      // Retry update with higher priority
+      const { error: retryError } = await supabase
+        .from('participants')
+        .update({ group_id: newGroupId })
+        .eq('id', participantId);
+        
+      if (retryError) {
+        console.error("PARTICIPANTS DEBUG: Error in retry move:", retryError);
+        return false;
+      }
+      
+      // Additional delay after retry
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
     
     return true;
   } catch (error) {
@@ -57,8 +88,35 @@ export const updateParticipantGroupInDatabase = async (
       return false;
     }
     
-    // Add a delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // Add a longer delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Verify the update took effect
+    const { data, error: checkError } = await supabase
+      .from('participants')
+      .select('group_id')
+      .eq('id', participantId)
+      .single();
+      
+    if (checkError) {
+      console.error("Error verifying participant move:", checkError);
+      return true; // Assume it worked since we don't have evidence it didn't
+    }
+    
+    // If not updated, try again
+    if (data && data.group_id !== newGroupId) {
+      console.warn(`Participant ${participantId} not in the expected group. Retrying...`);
+      
+      const { error: retryError } = await supabase
+        .from('participants')
+        .update({ group_id: newGroupId })
+        .eq('id', participantId);
+        
+      if (retryError) {
+        console.error("Error in retry update:", retryError);
+        return false;
+      }
+    }
     
     return true;
   } catch (error) {

@@ -95,10 +95,10 @@ export const useParticipantMovement = (
         onSuccess: () => {
           toast.success(`Moved ${participant.name} to ${toGroup.name || `Group ${toGroupIndex + 1}`}`);
           
-          // Force a full refresh after a short delay
+          // Force a full refresh after a longer delay to ensure DB consistency
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-          }, 1000);
+          }, 1500);
         },
         onError: (error: any) => {
           console.error("Error updating tour groups:", error);

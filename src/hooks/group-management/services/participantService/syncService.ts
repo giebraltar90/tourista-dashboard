@@ -56,6 +56,9 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
       }
     }
     
+    // Add a delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
     return true;
   } catch (error) {
     console.error("Error synchronizing tour group sizes:", error);
