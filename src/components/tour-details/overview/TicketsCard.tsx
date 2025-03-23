@@ -1,189 +1,87 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGuideTicketRequirements } from "@/hooks/tour-details/useGuideTicketRequirements";
 import { GuideInfo } from "@/types/ventrata";
-import { useEffect } from "react";
-import { logger } from "@/utils/logger";
-import { 
-  ParticipantTicketsSection, 
-  GuideTicketsSection,
-  TotalTicketsSection 
-} from "./tickets";
+import { VentrataTourGroup } from "@/types/ventrata";
+import { Separator } from "@/components/ui/separator";
+import { ParticipantTicketsSection, GuideTicketsSection, TotalTicketsSection } from "./tickets";
 
 interface TicketsCardProps {
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
-  requiredTickets?: number;
+  requiredTickets: number;
   location?: string;
   guide1Info?: GuideInfo | null;
   guide2Info?: GuideInfo | null;
   guide3Info?: GuideInfo | null;
-  tourGroups?: any[];
+  tourGroups?: VentrataTourGroup[];
   tourId?: string;
 }
 
-export const TicketsCard = ({ 
-  adultTickets, 
-  childTickets, 
+export const TicketsCard = ({
+  adultTickets,
+  childTickets,
   totalTickets,
   requiredTickets,
-  location = '',
+  location = "",
   guide1Info = null,
   guide2Info = null,
   guide3Info = null,
   tourGroups = [],
-  tourId = ''
+  tourId = ""
 }: TicketsCardProps) => {
-  // Ensure counts are non-negative numbers
-  const validAdultTickets = Math.max(0, adultTickets || 0);
-  const validChildTickets = Math.max(0, childTickets || 0);
-  
-  // Special monitoring for specific tour ID
-  const isSpecialMonitoringTour = tourId === '324598820';
-  
-  // Special logging for monitored tour
-  if (isSpecialMonitoringTour) {
-    logger.debug(`🔍 [TOUR #324598820 MONITORING] TicketsCard initializing`, {
-      tourId,
-      location,
-      guide1: guide1Info?.name || 'None',
-      guide1Type: guide1Info?.guideType || 'None',
-      guide2: guide2Info?.name || 'None',
-      guide2Type: guide2Info?.guideType || 'None',
-      guide3: guide3Info?.name || 'None',
-      guide3Type: guide3Info?.guideType || 'None',
-      participantTickets: {
-        adult: validAdultTickets,
-        child: validChildTickets,
-        total: validAdultTickets + validChildTickets
-      }
-    });
-  }
-  
-  // Create a simplified mock tour for the guide requirements hook
-  const mockTour = {
-    id: tourId,
-    location: location || '',
-    tourGroups: tourGroups || [],
-    date: new Date(),
-    tourName: '',
-    tourType: 'default' as 'default' | 'food' | 'private',
-    startTime: '',
-    referenceCode: '',
-    guide1: guide1Info?.name || '',
-    guide2: guide2Info?.name || '',
-    guide3: guide3Info?.name || '',
-    numTickets: 0,
-    isHighSeason: false
-  };
-  
-  // Get guide ticket requirements
-  const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
-    mockTour, guide1Info, guide2Info, guide3Info
+  // Calculate guide ticket requirements
+  const { locationNeedsGuideTickets, guideTickets } = useGuideTicketRequirements(
+    { location, id: tourId, tourGroups: tourGroups || [] },
+    guide1Info,
+    guide2Info,
+    guide3Info
   );
   
-  const { 
-    adultTickets: guideAdultTickets, 
-    childTickets: guideChildTickets,
-    guides: guidesWithTickets
-  } = guideTickets;
+  // Format ticket counts
+  const formattedAdultTickets = `${adultTickets}`;
+  const formattedChildTickets = `${childTickets}`;
+  const formattedTotalTickets = `${totalTickets}`;
   
-  // Log detailed debug information for guide tickets
-  useEffect(() => {
-    // Always log for special monitoring tour
-    if (isSpecialMonitoringTour) {
-      logger.debug(`🔍 [TOUR #324598820 MONITORING] Ticket data summary:`, {
-        location,
-        locationNeedsGuideTickets,
-        hasAssignedGuides,
-        guideDetails: {
-          guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
-          guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
-          guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
-        },
-        tickets: {
-          participantAdults: validAdultTickets,
-          participantChildren: validChildTickets,
-          guideAdultTickets,
-          guideChildTickets,
-          totalGuideTickets: guideAdultTickets + guideChildTickets,
-          overallTotal: validAdultTickets + validChildTickets + guideAdultTickets + guideChildTickets
-        },
-        guides: guidesWithTickets.map(g => ({
-          name: g.guideName,
-          type: g.guideType,
-          ticketType: g.ticketType
-        }))
-      });
-    } else if (guideAdultTickets > 0 || guideChildTickets > 0) {
-      // Only log for other tours if they have guide tickets
-      logger.debug(`🎟️ [TicketsCard] Tour ${tourId} ticket data:`, {
-        location,
-        locationNeedsGuideTickets,
-        hasAssignedGuides,
-        guideDetails: {
-          guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
-          guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
-          guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
-        },
-        tickets: {
-          participantAdults: validAdultTickets,
-          participantChildren: validChildTickets,
-          guideAdultTickets,
-          guideChildTickets,
-          totalGuideTickets: guideAdultTickets + guideChildTickets,
-        },
-        guides: guidesWithTickets.map(g => ({
-          name: g.guideName,
-          type: g.guideType,
-          ticketType: g.ticketType
-        }))
-      });
-    }
-  }, [
-    tourId, location, locationNeedsGuideTickets, hasAssignedGuides, 
-    validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets,
-    guide1Info, guide2Info, guide3Info, guidesWithTickets, isSpecialMonitoringTour
-  ]);
+  // Check if we have enough tickets
+  const hasEnoughTickets = totalTickets >= requiredTickets;
   
-  // Total required tickets calculations
-  const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
-  const totalRequiredChildTickets = validChildTickets + guideChildTickets;
-  const totalRequiredTickets = totalRequiredAdultTickets + totalRequiredChildTickets;
+  // Calculate total tickets needed (participants + guide tickets)
+  const totalTicketsNeeded = totalTickets + guideTickets.adultTickets + guideTickets.childTickets;
   
-  // Determine if we have enough tickets
-  const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
-
-  // Format the total tickets display
-  const formattedTotalTickets = totalRequiredChildTickets > 0 && totalRequiredAdultTickets > 0
-    ? `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}`
-    : `${totalRequiredTickets}`;
-
+  // Calculate the actual total required tickets including guides
+  const actualRequiredTickets = requiredTickets > 0 ? 
+    requiredTickets : totalTicketsNeeded;
+  
   return (
     <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium">Tickets</CardTitle>
+        <CardTitle className="text-base font-medium">Tickets</CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-2">
-          <ParticipantTicketsSection 
-            validAdultTickets={validAdultTickets}
-            validChildTickets={validChildTickets}
-          />
-
-          <GuideTicketsSection 
-            locationNeedsGuideTickets={locationNeedsGuideTickets}
-            guideAdultTickets={guideAdultTickets}
-            guideChildTickets={guideChildTickets}
-            guidesWithTickets={guidesWithTickets}
-          />
-          
-          <TotalTicketsSection
-            hasEnoughTickets={hasEnoughTickets}
-            formattedTotalTickets={formattedTotalTickets}
-          />
-        </div>
+      <CardContent className="text-sm space-y-4">
+        <ParticipantTicketsSection 
+          adultTickets={adultTickets}
+          childTickets={childTickets}
+          formattedAdultTickets={formattedAdultTickets} 
+          formattedChildTickets={formattedChildTickets}
+        />
+        
+        {locationNeedsGuideTickets && (
+          <>
+            <Separator className="my-2" />
+            <GuideTicketsSection 
+              guideTickets={guideTickets}
+              location={location}
+            />
+          </>
+        )}
+        
+        <TotalTicketsSection 
+          hasEnoughTickets={hasEnoughTickets} 
+          formattedTotalTickets={formattedTotalTickets}
+          requiredTickets={actualRequiredTickets} // Pass the required tickets value
+        />
       </CardContent>
     </Card>
   );
