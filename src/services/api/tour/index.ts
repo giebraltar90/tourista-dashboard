@@ -1,4 +1,3 @@
-
 export { fetchTourFromSupabase } from './fetchSupabaseTour';
 export { fetchToursFromSupabase } from './fetchSupabaseTours';
 export { fetchTourFromAPI } from './fetchApiTour';
@@ -13,3 +12,5 @@ export { fetchModificationsForTour } from './fetchers/fetchModifications';
 export { fetchParticipantsForGroups } from './fetchers/fetchParticipants';
 export { checkParticipantsTable } from './fetchers/checkParticipantsTable';
 export { transformTourData, transformTourDataWithoutParticipants } from './transformers/tourDataTransformer';
+
+export * from './groupGuideService';
