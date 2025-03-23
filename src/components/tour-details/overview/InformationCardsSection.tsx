@@ -62,6 +62,7 @@ export const InformationCardsSection = ({
         guide2Info={guide2Info}
         guide3Info={guide3Info}
         tourGroups={tourGroups}
+        tourId={tour.id}
       />
     </div>
   );
