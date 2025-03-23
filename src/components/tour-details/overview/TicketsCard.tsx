@@ -97,6 +97,27 @@ export const TicketsCard = ({
     guide1Info, guide2Info, guide3Info, guidesWithTickets
   ]);
   
+  // Enhanced logging for specific tours with issues
+  useEffect(() => {
+    // Log extra details for problematic tours
+    if (['313911645', '313922567', '324598761'].includes(tourId)) {
+      logger.debug(`🚨 [TicketsCard] SPECIAL TOUR MONITORING: ${tourId}`, {
+        location,
+        needsGuideTickets: locationNeedsGuideTickets,
+        guideTickets: {
+          adult: guideAdultTickets,
+          child: guideChildTickets, 
+          total: guideAdultTickets + guideChildTickets
+        },
+        guides: guidesWithTickets.map(g => ({
+          name: g.guideName,
+          type: g.guideType,
+          ticketType: g.ticketType
+        }))
+      });
+    }
+  }, [tourId, location, locationNeedsGuideTickets, guideAdultTickets, guideChildTickets, guidesWithTickets]);
+  
   // Total required tickets calculations
   const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
   const totalRequiredChildTickets = validChildTickets + guideChildTickets;

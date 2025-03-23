@@ -17,7 +17,11 @@ export const locationRequiresGuideTickets = (location: string = ""): boolean => 
     'rome',
     'versailles',
     'vatican',
-    'sistine chapel'
+    'sistine chapel',
+    'tour eiffel',  // Adding more common locations that shouldn't need guide tickets
+    'eiffel',
+    'notre dame',
+    'montmartre'
   ];
   
   const requiresTickets = !excludedLocations.some(
@@ -31,4 +35,23 @@ export const locationRequiresGuideTickets = (location: string = ""): boolean => 
   });
   
   return requiresTickets;
+};
+
+/**
+ * Special override function to handle problematic tour IDs
+ * This is used to fix specific tour tickets issues
+ */
+export const shouldOverrideGuideTickets = (tourId: string): boolean => {
+  // List of tour IDs that should never have guide tickets regardless of location
+  const noTicketsTourIds = [
+    '313922567',  // Specified as not needing guide tickets
+    '324598761'   // Specified as not needing guide tickets
+  ];
+  
+  if (noTicketsTourIds.includes(tourId)) {
+    logger.debug(`🎟️ [TicketOverride] Tour ${tourId} has a manual override: NO GUIDE TICKETS`);
+    return true;
+  }
+  
+  return false;
 };

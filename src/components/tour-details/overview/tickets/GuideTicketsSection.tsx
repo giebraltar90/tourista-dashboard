@@ -42,36 +42,29 @@ export const GuideTicketsSection = ({
         Guide Tickets
       </div>
       
-      {guidesWithTickets.length > 0 ? (
-        <>
-          {guideAdultTickets > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Guide adult tickets:</span>
-              <span className="font-medium">{guideAdultTickets}</span>
-            </div>
-          )}
-          
-          {guideChildTickets > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Guide child tickets:</span>
-              <span className="font-medium">{guideChildTickets}</span>
-            </div>
-          )}
-          
-          {guideAdultTickets === 0 && guideChildTickets === 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Guide tickets:</span>
-              <span className="font-medium">0</span>
-            </div>
-          )}
-          
-          <GuideTicketsList guides={guidesWithTickets} />
-        </>
-      ) : (
-        <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Guide tickets:</span>
-          <span className="font-medium">0</span>
+      {/* Display guide adult tickets - always show this row */}
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Guide adult tickets:</span>
+        <span className="font-medium">{guideAdultTickets}</span>
+      </div>
+      
+      {/* Display guide child tickets - always show this row */}
+      <div className="flex justify-between text-sm">
+        <span className="text-muted-foreground">Guide child tickets:</span>
+        <span className="font-medium">{guideChildTickets}</span>
+      </div>
+      
+      {/* Show total if there are any guide tickets */}
+      {(guideAdultTickets > 0 || guideChildTickets > 0) && (
+        <div className="flex justify-between text-sm mt-1 pt-1 border-t border-border">
+          <span className="text-muted-foreground">Total guide tickets:</span>
+          <span className="font-medium">{guideAdultTickets + guideChildTickets}</span>
         </div>
+      )}
+      
+      {/* Show guide details if there are any */}
+      {guidesWithTickets.length > 0 && (
+        <GuideTicketsList guides={guidesWithTickets} />
       )}
     </div>
   );
