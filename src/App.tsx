@@ -7,6 +7,7 @@ import TourDetails from "./pages/tour-details/TourDetailsPage";
 import GuidesPage from "./pages/guides";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
+import TicketsPage from "./pages/TicketsPage";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
@@ -34,6 +35,7 @@ function App() {
             <Route path="/tours/:id" element={<TourDetails />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/guides" element={<GuidesPage />} />
+            <Route path="/tickets" element={<TicketsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

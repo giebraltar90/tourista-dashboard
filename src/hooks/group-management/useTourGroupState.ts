@@ -17,16 +17,19 @@ export const useTourGroupState = (tour: TourCardProps) => {
       const copiedGroups = JSON.parse(JSON.stringify(tour.tourGroups || []));
       
       // Check if we have different arrays by comparing IDs
+      const localIds = localTourGroups.map(g => g.id);
+      const tourIds = copiedGroups.map(g => g.id);
+      
       const needsUpdate = 
         localTourGroups.length !== copiedGroups.length || 
-        JSON.stringify(localTourGroups.map(g => g.id)) !== JSON.stringify(copiedGroups.map(g => g.id));
+        JSON.stringify(localIds) !== JSON.stringify(tourIds);
         
       logger.debug(`🔄 [useTourGroupState] Groups state check:`, {
         localLength: localTourGroups.length, 
         tourLength: copiedGroups.length,
         needsUpdate,
-        localIds: localTourGroups.map(g => g.id),
-        tourIds: copiedGroups.map(g => g.id)
+        localIds,
+        tourIds
       });
         
       if (needsUpdate) {
@@ -48,7 +51,7 @@ export const useTourGroupState = (tour: TourCardProps) => {
             ...group,
             // Important: Maintain the original order as in tour.tourGroups
             // Preserve expanded state if it exists in the previous state
-            // Type-safe way to handle this property
+            // Type-safe way to handle this property using 'in' operator
             isExpanded: existingGroup && 'isExpanded' in existingGroup
               ? existingGroup.isExpanded 
               : true

@@ -33,7 +33,7 @@ export const findAssignedGuides = (
   
   logger.debug(`🔎 [FindAssignedGuides] Available guide IDs for matching:`, allGuideIds);
   
-  // Log all groups
+  // Log all groups' guide information
   tourGroups.forEach((group, index) => {
     logger.debug(`🔎 [FindAssignedGuides] Checking group ${index}:`, {
       groupId: group.id,
@@ -44,6 +44,7 @@ export const findAssignedGuides = (
     });
   });
   
+  // Enhanced matching logic
   tourGroups.forEach(group => {
     if (group.guideId && group.guideId !== "unassigned") {
       // Check if this guide matches one of our main guides
@@ -55,7 +56,7 @@ export const findAssignedGuides = (
              (group.guideName && group.guideName === guide1Info.name)))
         )) {
         assignedGuideIds.add("guide1");
-        logger.debug(`🔎 [FindAssignedGuides] Found guide1 (${guide1Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
+        logger.debug(`✅ [FindAssignedGuides] Found guide1 (${guide1Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
       }
       else if (guide2Info && (
           group.guideId === guide2Info.id ||
@@ -65,7 +66,7 @@ export const findAssignedGuides = (
              (group.guideName && group.guideName === guide2Info.name)))
         )) {
         assignedGuideIds.add("guide2");
-        logger.debug(`🔎 [FindAssignedGuides] Found guide2 (${guide2Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
+        logger.debug(`✅ [FindAssignedGuides] Found guide2 (${guide2Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
       }
       else if (guide3Info && (
           group.guideId === guide3Info.id ||
@@ -75,27 +76,48 @@ export const findAssignedGuides = (
              (group.guideName && group.guideName === guide3Info.name)))
         )) {
         assignedGuideIds.add("guide3");
-        logger.debug(`🔎 [FindAssignedGuides] Found guide3 (${guide3Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
+        logger.debug(`✅ [FindAssignedGuides] Found guide3 (${guide3Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
       } else {
-        logger.debug(`🔎 [FindAssignedGuides] Found unrecognized guide ${group.guideId} in group ${group.name || 'Unnamed'}`);
+        logger.debug(`❓ [FindAssignedGuides] Found unrecognized guide ${group.guideId} in group ${group.name || 'Unnamed'}`);
         
         // Additional check: try to match by name comparison if guideName is present
         if (group.guideName) {
           if (guide1Info && typeof guide1Info.name === 'string' && 
-              group.guideName.toLowerCase().includes(guide1Info.name.toLowerCase())) {
+              (group.guideName.toLowerCase().includes(guide1Info.name.toLowerCase()) ||
+               (guide1Info.name.toLowerCase().includes(group.guideName.toLowerCase())))) {
             assignedGuideIds.add("guide1");
-            logger.debug(`🔎 [FindAssignedGuides] Matched guide1 by name similarity to ${group.guideName}`);
+            logger.debug(`✅ [FindAssignedGuides] Matched guide1 by name similarity: '${group.guideName}' contains/is contained in '${guide1Info.name}'`);
           }
           else if (guide2Info && typeof guide2Info.name === 'string' && 
-                  group.guideName.toLowerCase().includes(guide2Info.name.toLowerCase())) {
+                  (group.guideName.toLowerCase().includes(guide2Info.name.toLowerCase()) ||
+                   (guide2Info.name.toLowerCase().includes(group.guideName.toLowerCase())))) {
             assignedGuideIds.add("guide2");
-            logger.debug(`🔎 [FindAssignedGuides] Matched guide2 by name similarity to ${group.guideName}`);
+            logger.debug(`✅ [FindAssignedGuides] Matched guide2 by name similarity: '${group.guideName}' contains/is contained in '${guide2Info.name}'`);
           }
           else if (guide3Info && typeof guide3Info.name === 'string' && 
-                  group.guideName.toLowerCase().includes(guide3Info.name.toLowerCase())) {
+                  (group.guideName.toLowerCase().includes(guide3Info.name.toLowerCase()) ||
+                   (guide3Info.name.toLowerCase().includes(group.guideName.toLowerCase())))) {
             assignedGuideIds.add("guide3");
-            logger.debug(`🔎 [FindAssignedGuides] Matched guide3 by name similarity to ${group.guideName}`);
+            logger.debug(`✅ [FindAssignedGuides] Matched guide3 by name similarity: '${group.guideName}' contains/is contained in '${guide3Info.name}'`);
           }
+        }
+        
+        // Another attempt: try to match by direct name comparison against guide objects
+        // This helps when guideId is set to something like a UUID but doesn't match our known guide IDs
+        if (guide1Info && guide1Info.name && group.guideName && 
+            guide1Info.name.toLowerCase() === group.guideName.toLowerCase()) {
+          assignedGuideIds.add("guide1");
+          logger.debug(`✅ [FindAssignedGuides] Matched guide1 by exact name: '${group.guideName}' equals '${guide1Info.name}'`);
+        }
+        else if (guide2Info && guide2Info.name && group.guideName && 
+                 guide2Info.name.toLowerCase() === group.guideName.toLowerCase()) {
+          assignedGuideIds.add("guide2");
+          logger.debug(`✅ [FindAssignedGuides] Matched guide2 by exact name: '${group.guideName}' equals '${guide2Info.name}'`);
+        }
+        else if (guide3Info && guide3Info.name && group.guideName && 
+                 guide3Info.name.toLowerCase() === group.guideName.toLowerCase()) {
+          assignedGuideIds.add("guide3");
+          logger.debug(`✅ [FindAssignedGuides] Matched guide3 by exact name: '${group.guideName}' equals '${guide3Info.name}'`);
         }
       }
     }

@@ -1,9 +1,10 @@
+
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
 import { GuideInfo } from "@/types/ventrata";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { logger } from "@/utils/logger";
 
 interface AssignGuideDialogProps {
   isOpen: boolean;
@@ -47,15 +48,15 @@ export const AssignGuideDialog = ({
       index === self.findIndex(g => g.id === guide.id)
     );
     
-    setProcessedGuides(uniqueGuides);
-    
-    console.log('AssignGuideDialog processing guides:', {
+    logger.debug('🔍 [AssignGuideDialog] Processing guides:', {
       tourId,
       groupIndex,
       guidesCount: uniqueGuides.length,
       currentGuideId,
-      guides: uniqueGuides.map(g => ({ id: g.id, name: g.name }))
+      guides: uniqueGuides.map(g => ({ id: g.id, name: g.name, type: g.info?.guideType }))
     });
+    
+    setProcessedGuides(uniqueGuides);
   }, [inputGuides, tourId, groupIndex, currentGuideId]);
 
   const handleSuccess = () => {

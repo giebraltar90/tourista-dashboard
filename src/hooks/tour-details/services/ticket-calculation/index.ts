@@ -1,5 +1,5 @@
 
-// Re-export all functions from modules
+// Re-export all ticket calculation utilities from one central file
 export { locationRequiresGuideTickets } from './locationUtils';
 export { guideTypeNeedsTicket, determineTicketTypeForGuide } from './guideTypeUtils';
 export { getGuideTicketRequirement } from './guideRequirementUtils';

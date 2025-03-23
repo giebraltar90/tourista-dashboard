@@ -47,9 +47,14 @@ export const mapTourGroupGuideIds = (
     return [];
   }
   
-  logger.debug(`🔄 [mapTourGroupGuideIds] Mapping guide IDs in ${tourGroups.length} groups`);
+  logger.debug(`🔄 [mapTourGroupGuideIds] Mapping guide IDs in ${tourGroups.length} groups`, {
+    guide1, guide2, guide3, 
+    groupIds: tourGroups.map(g => g.id)
+  });
   
   return tourGroups.map(group => {
+    // Important: Create a new object to avoid reference issues
+    let mappedGroup = { ...group };
     let mappedGuideId = group.guideId;
     let guideName = group.guideName;
     
@@ -68,8 +73,9 @@ export const mapTourGroupGuideIds = (
       logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide3 in group ${group.name || 'unnamed'}`);
     }
     
+    // Important: Preserve any isExpanded property if it exists
     return {
-      ...group,
+      ...mappedGroup,
       guideId: mappedGuideId,
       guideName: guideName || group.guideName
     };

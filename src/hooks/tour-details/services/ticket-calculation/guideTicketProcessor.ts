@@ -1,91 +1,135 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
-import { GuideTicketRequirement } from "../../utils/guideTicketTypes";
-import { getGuideTicketRequirement } from "./guideRequirementUtils";
+import { locationRequiresGuideTickets } from "./locationUtils";
+import { guideTypeNeedsTicket, determineTicketTypeForGuide } from "./guideTypeUtils";
 
 /**
- * Process a single guide's ticket requirements
+ * Process whether a guide needs a ticket
  */
 export const processGuideTicketRequirement = (
   guideInfo: GuideInfo | null,
-  location: string,
+  location: string = "",
   assignedGuideIds: Set<string>,
   guideKey: string
-): GuideTicketRequirement & { needsTicket: boolean; ticketType: "adult" | "child" | null } => {
-  // Skip if guide info is missing
+): {
+  guideInfo: GuideInfo | null;
+  guideName: string;
+  needsTicket: boolean;
+  ticketType: "adult" | "child" | null;
+} => {
+  // If no guide info, no ticket needed
   if (!guideInfo) {
-    logger.debug(`🎟️ [ProcessGuide] ${guideKey} has no guide info, skipping`);
-    return { 
-      needsTicket: false, 
-      ticketType: null, 
-      guideName: "",
-      guideInfo: null
+    logger.debug(`🎟️ [ProcessGuide] No guide info for ${guideKey}, no ticket needed`);
+    return {
+      guideInfo: null,
+      guideName: `Unknown ${guideKey}`,
+      needsTicket: false,
+      ticketType: null
+    };
+  }
+
+  // Extract guide name for logging
+  const guideName = guideInfo.name || guideKey;
+  
+  // Check if this guide is assigned to any groups
+  const isAssigned = assignedGuideIds.has(guideKey);
+  
+  // If guide is not assigned to any groups, no ticket needed
+  if (!isAssigned) {
+    logger.debug(`🎟️ [ProcessGuide] Guide ${guideName} (${guideKey}) is not assigned to any groups`);
+    return {
+      guideInfo,
+      guideName,
+      needsTicket: false,
+      ticketType: null
     };
   }
   
-  // Skip if guide is not assigned to any group
-  if (!assignedGuideIds.has(guideKey)) {
-    logger.debug(`🎟️ [ProcessGuide] ${guideKey} (${guideInfo.name}) is not assigned to any group, skipping`);
-    return { 
-      needsTicket: false, 
-      ticketType: null, 
-      guideName: guideInfo.name || "",
-      guideInfo: null
+  // Check if location requires tickets
+  if (!locationRequiresGuideTickets(location)) {
+    logger.debug(`🎟️ [ProcessGuide] Location "${location}" doesn't require guide tickets`);
+    return {
+      guideInfo,
+      guideName,
+      needsTicket: false,
+      ticketType: null
     };
   }
+
+  // Log guide type for debugging
+  logger.debug(`🎟️ [ProcessGuide] Checking ticket requirement for ${guideName} with type: ${guideInfo.guideType}`);
   
-  logger.debug(`🎟️ [ProcessGuide] Processing assigned ${guideKey} (${guideInfo.name}) with type ${guideInfo.guideType}`);
+  // Determine if guide needs a ticket based on type
+  const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
+  let ticketType = null;
   
-  const { needsTicket, ticketType } = getGuideTicketRequirement(guideInfo, location);
+  if (needsTicket) {
+    ticketType = determineTicketTypeForGuide(guideInfo.guideType);
+    logger.debug(`🎟️ [ProcessGuide] ✅ Guide ${guideName} (${guideKey}) needs a ${ticketType} ticket`);
+  } else {
+    logger.debug(`🎟️ [ProcessGuide] ❌ Guide ${guideName} (${guideKey}) doesn't need a ticket due to guide type ${guideInfo.guideType}`);
+  }
   
-  logger.debug(`🎟️ [ProcessGuide] ${guideKey} (${guideInfo.name}): ` + 
-    (needsTicket ? `Needs ${ticketType} ticket` : `Doesn't need a ticket`));
-  
-  return { 
-    needsTicket, 
-    ticketType,
-    guideName: guideInfo.name || `Guide ${guideKey.replace('guide', '')}`,
+  return {
     guideInfo,
+    guideName,
+    needsTicket,
+    ticketType
   };
 };
 
 /**
- * Calculate total tickets needed for assigned guides
+ * Calculate total tickets needed from guide requirements
  */
 export const calculateGuideTickets = (
-  guideRequirements: Array<GuideTicketRequirement & { needsTicket: boolean; ticketType: "adult" | "child" | null }>
-): { adultTickets: number; childTickets: number; guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> } => {
+  guideRequirements: Array<{
+    guideInfo: GuideInfo | null;
+    guideName: string;
+    needsTicket: boolean;
+    ticketType: "adult" | "child" | null;
+  }>
+): {
+  adultTickets: number;
+  childTickets: number;
+  guides: Array<{
+    guideName: string;
+    guideType: string;
+    ticketType: string | null;
+  }>;
+} => {
+  // Count tickets by type
   let adultTickets = 0;
   let childTickets = 0;
-  const guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> = [];
   
-  logger.debug(`🎟️ [CalculateGuideTickets] Processing ${guideRequirements.length} guide requirements`);
-  
-  guideRequirements.forEach(guide => {
-    if (guide.needsTicket) {
+  // Process each guide that needs a ticket for the result
+  const guidesWithTickets = guideRequirements
+    .filter(guide => guide.needsTicket && guide.guideInfo)
+    .map(guide => {
       if (guide.ticketType === "adult") {
         adultTickets++;
-        logger.debug(`🎟️ [CalculateGuideTickets] Adding adult ticket for ${guide.guideName}`);
-      }
-      if (guide.ticketType === "child") {
+      } else if (guide.ticketType === "child") {
         childTickets++;
-        logger.debug(`🎟️ [CalculateGuideTickets] Adding child ticket for ${guide.guideName}`);
       }
       
-      if (guide.guideInfo) {
-        guides.push({
-          guideName: guide.guideName,
-          guideType: String(guide.guideInfo.guideType) || "Unknown",
-          ticketType: guide.ticketType
-        });
-      }
-    } else {
-      logger.debug(`🎟️ [CalculateGuideTickets] No ticket needed for ${guide.guideName}`);
-    }
+      return {
+        guideName: guide.guideName,
+        guideType: guide.guideInfo?.guideType || "Unknown",
+        ticketType: guide.ticketType
+      };
+    });
+    
+  // Log the result
+  logger.debug(`🎟️ [CalculateTickets] Final guide ticket counts:`, {
+    adultTickets,
+    childTickets,
+    guidesWithTickets: guidesWithTickets.length,
+    guideDetails: guidesWithTickets.map(g => `${g.guideName} (${g.guideType}): ${g.ticketType || 'No ticket'}`)
   });
   
-  logger.debug(`🎟️ [CalculateGuideTickets] Final count: ${adultTickets} adult, ${childTickets} child tickets`);
-  
-  return { adultTickets, childTickets, guides };
+  return {
+    adultTickets,
+    childTickets,
+    guides: guidesWithTickets
+  };
 };
