@@ -35,7 +35,8 @@ export const TicketsCard = ({
   // Calculate guide tickets
   const { 
     adultTickets: guideAdultTickets, 
-    childTickets: guideChildTickets 
+    childTickets: guideChildTickets,
+    guides: guidesWithTickets
   } = calculateGuideTicketsNeeded(
     guide1Info,
     guide2Info,
@@ -98,12 +99,14 @@ export const TicketsCard = ({
           )}
           
           <div className="flex justify-between pt-2 border-t">
-            <span className="text-muted-foreground">Total:</span>
+            <span className="text-muted-foreground">Total required:</span>
             <Badge 
               variant="outline" 
               className="font-medium bg-green-100 text-green-800 border-green-300"
             >
-              {totalRequiredTickets}
+              {totalRequiredAdultTickets > 0 && totalRequiredChildTickets > 0 ? 
+                `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}` :
+                totalRequiredTickets}
             </Badge>
           </div>
           
@@ -114,6 +117,21 @@ export const TicketsCard = ({
                 <Check className="h-3 w-3 mr-1" />
                 Tickets sufficient
               </Badge>
+            </div>
+          )}
+          
+          {/* Guide ticket breakdown section */}
+          {guidesWithTickets.length > 0 && (
+            <div className="mt-3 border-t pt-3">
+              <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
+              <div className="space-y-1 text-xs">
+                {guidesWithTickets.map((guide, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span className="text-muted-foreground">{guide.guideName}:</span>
+                    <span>{guide.ticketType === 'adult' ? 'Adult ticket' : 'Child ticket'}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

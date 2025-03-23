@@ -12,7 +12,7 @@ export const TourTabs = ({
 }: TourTabsProps) => {
   return (
     <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-      <TabsList className="grid w-full md:w-auto grid-cols-4 h-auto p-1">
+      <TabsList className="grid w-full md:w-auto grid-cols-3 h-auto p-1">
         <TabsTrigger 
           value="overview" 
           className="py-2 px-4 data-[state=active]:bg-background rounded-md"
@@ -25,13 +25,6 @@ export const TourTabs = ({
           className="py-2 px-4 data-[state=active]:bg-background rounded-md"
         >
           Tickets
-        </TabsTrigger>
-        
-        <TabsTrigger 
-          value="groups" 
-          className="py-2 px-4 data-[state=active]:bg-background rounded-md"
-        >
-          Groups
         </TabsTrigger>
         
         <TabsTrigger 

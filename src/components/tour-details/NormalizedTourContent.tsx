@@ -4,7 +4,6 @@ import { TourHeader } from "./TourHeader";
 import { TourTabs } from "./TourTabs";
 import { TourOverview } from "./TourOverview";
 import { TicketsManagement } from "./ticket-management";
-import { GroupsManagement } from "./groups-management";
 import { ModificationsTab } from "./ModificationsTab";
 import { GuideInfo } from "@/types/ventrata";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
@@ -76,16 +75,6 @@ export const NormalizedTourContent = ({
         {activeTab === "tickets" && (
           <TicketsManagement 
             tour={tour} 
-            guide1Info={guide1Info}
-            guide2Info={guide2Info}
-            guide3Info={guide3Info}
-          />
-        )}
-        
-        {activeTab === "groups" && (
-          <GroupsManagement 
-            tour={tour}
-            tourId={tourId}
             guide1Info={guide1Info}
             guide2Info={guide2Info}
             guide3Info={guide3Info}
