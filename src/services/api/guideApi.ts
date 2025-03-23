@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { isUuid } from "@/services/api/utils/guidesUtils";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { updateTourModification } from "./modificationApi";
 import { Json } from "@/integrations/supabase/types";
@@ -37,7 +37,7 @@ export const fetchGuides = async (): Promise<GuideInfo[]> => {
  * Fetch a specific guide by ID
  */
 export const fetchGuideById = async (guideId: string): Promise<GuideInfo | null> => {
-  if (!guideId || !isUuid(guideId)) {
+  if (!guideId || !isValidUuid(guideId)) {
     console.warn(`Invalid guide ID format: ${guideId}`);
     return null;
   }
@@ -79,7 +79,7 @@ export const assignGuideToGroup = async (
 ): Promise<boolean> => {
   try {
     // Check if this is a UUID tour ID for direct database updates
-    const tourIsUuid = isUuid(tourId);
+    const tourIsUuid = isValidUuid(tourId);
     
     // Track if any persistence method succeeded
     let updateSuccess = false;
@@ -153,7 +153,7 @@ export const assignGuideToGroup = async (
 export const getGuideNames = async (guideIds: string[]) => {
   if (!guideIds.length) return {};
   
-  const validIds = guideIds.filter(id => id && isUuid(id));
+  const validIds = guideIds.filter(id => id && isValidUuid(id));
   
   if (!validIds.length) return {};
   

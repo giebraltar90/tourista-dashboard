@@ -102,3 +102,4 @@ export const mapGuideIdToUuid = (
   console.error(`Failed to map guide ID "${guideId}" to a valid UUID`);
   return null;
 };
+

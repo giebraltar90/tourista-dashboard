@@ -1,14 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-
-/**
- * UUID validation helper
- * Used to determine whether a value is a UUID
- */
-export const isUuid = (id: string): boolean => {
-  if (!id) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
-};
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Get guide names from their IDs
@@ -16,7 +8,7 @@ export const isUuid = (id: string): boolean => {
 export const getGuideNames = async (guideIds: string[]) => {
   if (!guideIds.length) return {};
   
-  const validIds = guideIds.filter(id => id && isUuid(id));
+  const validIds = guideIds.filter(id => id && isValidUuid(id));
   
   if (!validIds.length) return {};
   
@@ -46,14 +38,14 @@ export const enrichToursWithGuideNames = async (tours) => {
   const guideIds = new Set<string>();
   tours.forEach(tour => {
     // Handle standard guide references
-    if (tour.guide1 && isUuid(tour.guide1)) guideIds.add(tour.guide1);
-    if (tour.guide2 && isUuid(tour.guide2)) guideIds.add(tour.guide2);
-    if (tour.guide3 && isUuid(tour.guide3)) guideIds.add(tour.guide3);
+    if (tour.guide1 && isValidUuid(tour.guide1)) guideIds.add(tour.guide1);
+    if (tour.guide2 && isValidUuid(tour.guide2)) guideIds.add(tour.guide2);
+    if (tour.guide3 && isValidUuid(tour.guide3)) guideIds.add(tour.guide3);
     
     // Also collect guide IDs from tour groups
     if (tour.tourGroups && Array.isArray(tour.tourGroups)) {
       tour.tourGroups.forEach(group => {
-        if (group.guideId && isUuid(group.guideId)) {
+        if (group.guideId && isValidUuid(group.guideId)) {
           guideIds.add(group.guideId);
         }
       });
@@ -75,7 +67,7 @@ export const enrichToursWithGuideNames = async (tours) => {
     // Also enrich tour groups if they exist
     if (enrichedTour.tourGroups && Array.isArray(enrichedTour.tourGroups)) {
       enrichedTour.tourGroups = enrichedTour.tourGroups.map(group => {
-        if (group.guideId && isUuid(group.guideId) && guideNames[group.guideId]) {
+        if (group.guideId && isValidUuid(group.guideId) && guideNames[group.guideId]) {
           // Create a new object to avoid mutation
           return {
             ...group,
@@ -89,3 +81,4 @@ export const enrichToursWithGuideNames = async (tours) => {
     return enrichedTour;
   });
 };
+

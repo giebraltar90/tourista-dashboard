@@ -1,6 +1,7 @@
 
 import { toast } from "sonner";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
 
 /**
  * Validates guide assignment parameters
@@ -31,7 +32,7 @@ export const validateGuideAssignment = (tour: any, groupIndex: number, guideId?:
  */
 export const validateUuid = (id: string | undefined): boolean => {
   if (!id) return false;
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  return isValidUuid(id);
 };
 
 /**
@@ -84,3 +85,4 @@ export const validateParticipantMove = (
   // If validation passes
   return { valid: true };
 };
+

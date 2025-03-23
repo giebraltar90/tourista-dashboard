@@ -8,6 +8,11 @@ export const isValidUuid = (id: string | undefined): boolean => {
 };
 
 /**
+ * Alias for isValidUuid for backward compatibility
+ */
+export const isUuid = isValidUuid;
+
+/**
  * Check if a guide ID is one of the special IDs (guide1, guide2, guide3, _none)
  * These are no longer supported in the database but kept for backward compatibility
  */
@@ -120,3 +125,4 @@ export const formatGuideId = (id: string | undefined): string => {
   }
   return id;
 };
+
