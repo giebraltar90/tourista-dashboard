@@ -1,37 +1,43 @@
 
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+
+interface GuideWithTicket {
+  guideName: string;
+  guideType: string;
+  ticketType: "adult" | "child" | null;
+}
 
 interface GuideTicketsListProps {
-  guides: {
-    guideName: string;
-    guideType: string;
-    ticketType: "adult" | "child" | null;
-  }[];
+  guides: GuideWithTicket[];
 }
 
 export const GuideTicketsList = ({ guides }: GuideTicketsListProps) => {
-  // Don't render if no guides need tickets
-  const guidesNeedingTickets = guides.filter(g => g.ticketType !== null);
-  if (guidesNeedingTickets.length === 0) {
+  // Only show guides that need tickets
+  const guidesWithTickets = guides.filter(g => g.ticketType !== null);
+  
+  if (guidesWithTickets.length === 0) {
     return null;
   }
   
   return (
-    <div className="space-y-2">
-      <span className="text-sm font-medium">Guide Tickets</span>
+    <div className="mt-2 space-y-1 pt-1 border-t border-border">
+      <p className="text-xs text-muted-foreground mb-1">Guide details:</p>
       
-      <div className="space-y-2">
-        {guidesNeedingTickets.map((guide, index) => (
-          <div key={index} className="flex justify-between items-center text-xs">
-            <span>{guide.guideName}</span>
-            <span className="text-muted-foreground">
-              {guide.ticketType === "adult" ? "Adult ticket" : "Child ticket"}
-            </span>
-          </div>
-        ))}
-      </div>
-      
-      <Separator className="my-2" />
+      {guidesWithTickets.map((guide, index) => (
+        <div key={index} className="flex justify-between items-center text-xs">
+          <span className="truncate">{guide.guideName}</span>
+          <Badge 
+            variant="outline" 
+            className={`text-xs ${
+              guide.ticketType === 'adult' 
+                ? 'bg-blue-50 text-blue-800 border-blue-200' 
+                : 'bg-indigo-50 text-indigo-800 border-indigo-200'
+            }`}
+          >
+            {guide.ticketType === 'adult' ? 'Adult' : 'Child'} ticket
+          </Badge>
+        </div>
+      ))}
     </div>
   );
 };

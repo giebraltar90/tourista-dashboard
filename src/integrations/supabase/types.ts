@@ -152,9 +152,8 @@ export type Database = {
           created_at: string | null
           date: string
           id: string
-          max_tickets: number | null
+          max_tickets: number
           reference_number: string
-          tickets_ordered: number | null
           tickets_range: string
           tour_allocations: Json | null
           tour_id: string | null
@@ -169,9 +168,8 @@ export type Database = {
           created_at?: string | null
           date: string
           id?: string
-          max_tickets?: number | null
+          max_tickets: number
           reference_number: string
-          tickets_ordered?: number | null
           tickets_range: string
           tour_allocations?: Json | null
           tour_id?: string | null
@@ -186,9 +184,8 @@ export type Database = {
           created_at?: string | null
           date?: string
           id?: string
-          max_tickets?: number | null
+          max_tickets?: number
           reference_number?: string
-          tickets_ordered?: number | null
           tickets_range?: string
           tour_allocations?: Json | null
           tour_id?: string | null
@@ -401,21 +398,7 @@ export type Database = {
       }
     }
     Views: {
-      bucket_tour_assignments: {
-        Row: {
-          access_time: string | null
-          bucket_id: string | null
-          bucket_type: string | null
-          date: string | null
-          reference_number: string | null
-          tickets_ordered: number | null
-          tickets_required: number | null
-          tour_id: string | null
-          tour_name: string | null
-          tour_reference: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_table_exists: {
