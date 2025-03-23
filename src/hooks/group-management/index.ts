@@ -1,41 +1,16 @@
 
-// Re-export all files from their sources
+// Export hook components
 export * from './useAddGroup';
-export * from './useDeleteGroup';
-export * from './useDragAndDrop';
-export * from './useGroupManagement';
-export * from './useParticipantMovement';
-export * from './useUpdateGroup';
 export * from './useAssignGuide';
+export * from './useDeleteGroup';
+export * from './useDropTarget';
+export * from './useGroupManagement';
+export * from './useGuideAssignmentForm';
 export * from './useGuideNameInfo';
-
-// Explicitly re-export useGuideAssignmentForm with named exports
-export { 
-  useGuideAssignmentForm, 
-  type FormValues,  
-  type UseGuideAssignmentFormProps,
-  type UseGuideAssignmentFormResult
-} from './useGuideAssignmentForm';
-
-export * from './types';
-
-// Newly refactored hooks
-export * from './useTourGroupState';
-export * from './useParticipantRefresh';
+export * from './useParticipantLoading';
+export * from './useParticipantMovement';
 export * from './useParticipantOperations';
-
-// Explicitly re-export from utils to avoid ambiguity with similarly named functions
-export { processGuideIdForAssignment } from './utils/guideAssignmentUtils';
-
-// Re-export services
-export * from './services/guideAssignmentService';
-export * from './services/utils/validationService';
-export * from './services/utils/namingService';
-export * from './services/utils/optimisticUpdateService';
-export * from './services/utils/persistenceUtils';
-export * from './services/utils/notificationService';
-export * from './services/utils/guideMappingService';
-
-// Import from tour-details modules
-import { useDatabaseData } from '@/components/tour-details/groups-management/group-assignment/hooks/useDatabaseData';
-export { useDatabaseData };
+export * from './useParticipantRefresh';
+export * from './useTourGroupState';
+export * from './useUpdateGroup';
+export * from './useProcessGuides';
