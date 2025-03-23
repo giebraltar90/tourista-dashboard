@@ -30,16 +30,19 @@ export const GroupGuideCard = ({
   useEffect(() => {
     logger.debug(`GroupGuideCard[${index}]: Guide assignment info:`, {
       groupId: group.id,
-      guideId: group.guideId,
-      guideName: guideName,
-      guideType: guideInfo?.guideType || 'unknown'
+      groupIndex: index,
+      groupName: group.name || `Group ${index + 1}`,
+      guideId: group.guideId || 'unassigned',
+      guideName: guideName || 'Unassigned',
+      guideType: guideInfo?.guideType || 'unknown',
+      totalParticipants
     });
-  }, [index, group.id, group.guideId, guideName, guideInfo]);
+  }, [index, group.id, group.guideId, guideName, guideInfo, group.name, totalParticipants]);
   
   return (
     <div key={index} className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
       <div className="flex justify-between items-center mb-2">
-        <h4 className="font-medium">Group {index + 1}</h4>
+        <h4 className="font-medium">{group.name || `Group ${index + 1}`}</h4>
         <Badge variant="outline" className="bg-blue-50">
           {totalParticipants} participants
         </Badge>

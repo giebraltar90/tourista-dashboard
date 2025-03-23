@@ -1,83 +1,105 @@
 
-import { GuideInfo } from "@/types/ventrata";
-import { VentrataTourGroup } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
+import { GuideInfo } from "@/types/ventrata";
 
 /**
- * Process guide info from data 
+ * Process guide information from raw data or fallback to default values
  */
 export const processGuideInfo = (
-  rawGuideInfo: any, 
-  guideName: string | undefined,
-  guideKey: string
+  rawGuideInfo: GuideInfo | null,
+  guideName: string | undefined, 
+  guidePosition: string
 ): GuideInfo | null => {
-  // If there's no raw info or name, return null
-  if (!rawGuideInfo && !guideName) {
+  // If no guide name, return null
+  if (!guideName) {
+    logger.debug(`🔄 [processGuideInfo] No guide name for ${guidePosition}, returning null`);
     return null;
   }
   
-  // Create a standardized guide info object
-  const processedGuide: GuideInfo = {
-    id: rawGuideInfo?.id || guideKey,
-    name: rawGuideInfo?.name || guideName || guideKey,
-    guideType: rawGuideInfo?.guideType || 'GA Ticket', // Default to GA Ticket if no type specified
-    birthday: rawGuideInfo?.birthday || undefined
+  // If we have guide data from the API, use it
+  if (rawGuideInfo) {
+    // Create a copy to avoid mutating the original
+    const processedGuide = { ...rawGuideInfo };
+    
+    // Special case: Sophie Miller is always a GC guide
+    if (processedGuide.name && processedGuide.name.toLowerCase().includes('sophie miller')) {
+      processedGuide.guideType = 'GC';
+      logger.debug(`🔄 [processGuideInfo] Special case: ${processedGuide.name} set as GC`);
+    }
+    
+    logger.debug(`🔄 [processGuideInfo] Processed ${guidePosition}: ${processedGuide.name}, type: ${processedGuide.guideType}`);
+    return processedGuide;
+  } 
+  
+  // Create fallback guide info
+  const isSophieMiller = guideName.toLowerCase().includes('sophie miller');
+  const fallbackGuide: GuideInfo = {
+    id: guidePosition,
+    name: guideName,
+    birthday: new Date(),
+    guideType: isSophieMiller ? 'GC' : 'GA Ticket'
   };
   
-  logger.debug(`🔄 [processGuideInfo] Processed ${guideKey}:`, {
-    id: processedGuide.id,
-    name: processedGuide.name,
-    type: processedGuide.guideType,
-    hasRawInfo: !!rawGuideInfo
-  });
-  
-  return processedGuide;
+  logger.debug(`🔄 [processGuideInfo] Created fallback for ${guidePosition}: ${fallbackGuide.name}, type: ${fallbackGuide.guideType}`);
+  return fallbackGuide;
 };
 
 /**
- * Map guide IDs in tour groups for consistency
+ * Map guide IDs in tour groups to ensure consistent guide assignments
  */
 export const mapTourGroupGuideIds = (
-  tourGroups: VentrataTourGroup[],
+  tourGroups: any[] = [],
   guide1: string | undefined,
   guide2: string | undefined,
   guide3: string | undefined
-): VentrataTourGroup[] => {
+): any[] => {
   if (!Array.isArray(tourGroups) || tourGroups.length === 0) {
     return [];
   }
   
-  logger.debug(`🔄 [mapTourGroupGuideIds] Mapping guide IDs in ${tourGroups.length} groups`, {
-    guide1, guide2, guide3, 
-    groupIds: tourGroups.map(g => g.id)
+  // Create a map of guides by name for quick lookup
+  const guideMap = new Map<string, string>();
+  if (guide1) guideMap.set(guide1.toLowerCase(), "guide1");
+  if (guide2) guideMap.set(guide2.toLowerCase(), "guide2");
+  if (guide3) guideMap.set(guide3.toLowerCase(), "guide3");
+  
+  logger.debug(`🔄 [mapTourGroupGuideIds] Mapping ${tourGroups.length} groups with guides:`, {
+    guide1: guide1 || 'none',
+    guide2: guide2 || 'none',
+    guide3: guide3 || 'none'
   });
   
-  return tourGroups.map(group => {
-    // Important: Create a new object to avoid reference issues
-    let mappedGroup = { ...group };
-    let mappedGuideId = group.guideId;
-    let guideName = group.guideName;
+  // Map each group to ensure consistent guide IDs
+  const mappedGroups = tourGroups.map((group, index) => {
+    const groupCopy = { ...group };
     
-    // If the guideId matches a guide name, map it to the guide key
-    if (guide1 && (group.guideId === guide1 || group.guideName === guide1)) {
-      mappedGuideId = 'guide1';
-      guideName = guide1;
-      logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide1 in group ${group.name || 'unnamed'}`);
-    } else if (guide2 && (group.guideId === guide2 || group.guideName === guide2)) {
-      mappedGuideId = 'guide2';
-      guideName = guide2;
-      logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide2 in group ${group.name || 'unnamed'}`);
-    } else if (guide3 && (group.guideId === guide3 || group.guideName === guide3)) {
-      mappedGuideId = 'guide3';
-      guideName = guide3;
-      logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide3 in group ${group.name || 'unnamed'}`);
+    // If the group has a guideName but no guideId, try to map it
+    if (groupCopy.guideName && (!groupCopy.guideId || groupCopy.guideId === 'unassigned')) {
+      const normalizedName = groupCopy.guideName.toLowerCase();
+      const guideId = guideMap.get(normalizedName);
+      
+      if (guideId) {
+        groupCopy.guideId = guideId;
+        logger.debug(`🔄 [mapTourGroupGuideIds] Group ${index} mapped guide name "${groupCopy.guideName}" to ID "${guideId}"`);
+      }
     }
     
-    // Important: Preserve any isExpanded property if it exists
-    return {
-      ...mappedGroup,
-      guideId: mappedGuideId,
-      guideName: guideName || group.guideName
-    };
+    // If the group has a guideId but no guideName, set the guideName
+    if (groupCopy.guideId && !groupCopy.guideName) {
+      if (groupCopy.guideId === "guide1" && guide1) {
+        groupCopy.guideName = guide1;
+      } else if (groupCopy.guideId === "guide2" && guide2) {
+        groupCopy.guideName = guide2;
+      } else if (groupCopy.guideId === "guide3" && guide3) {
+        groupCopy.guideName = guide3;
+      }
+      
+      logger.debug(`🔄 [mapTourGroupGuideIds] Group ${index} set guide name "${groupCopy.guideName}" from ID "${groupCopy.guideId}"`);
+    }
+    
+    return groupCopy;
   });
+  
+  logger.debug(`🔄 [mapTourGroupGuideIds] Finished mapping ${mappedGroups.length} groups`);
+  return mappedGroups;
 };

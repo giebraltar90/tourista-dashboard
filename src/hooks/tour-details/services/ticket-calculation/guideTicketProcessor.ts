@@ -48,19 +48,7 @@ export const processGuideTicketRequirement = (
   
   // If guide is not assigned to any groups, no ticket needed
   if (!isAssigned) {
-    logger.debug(`🎟️ [ProcessGuide] Guide ${guideName} (${guideKey}) is not assigned to any groups`);
-    return {
-      guideInfo,
-      guideName,
-      guideType,
-      needsTicket: false,
-      ticketType: null
-    };
-  }
-  
-  // Check if location requires tickets
-  if (!locationRequiresGuideTickets(location)) {
-    logger.debug(`🎟️ [ProcessGuide] Location "${location}" doesn't require guide tickets`);
+    logger.debug(`🎟️ [ProcessGuide] Guide ${guideName} (${guideKey}) is not assigned to any groups, no ticket needed`);
     return {
       guideInfo,
       guideName,
@@ -124,22 +112,22 @@ export const calculateGuideTickets = (
   let adultTickets = 0;
   let childTickets = 0;
   
-  // Process each guide that needs a ticket for the result
-  const guidesWithTickets = guideRequirements
-    .filter(guide => guide.needsTicket)
-    .map(guide => {
+  // Process each guide for the result (include all guides)
+  const guidesWithTickets = guideRequirements.map(guide => {
+    if (guide.needsTicket) {
       if (guide.ticketType === "adult") {
         adultTickets++;
       } else if (guide.ticketType === "child") {
         childTickets++;
       }
-      
-      return {
-        guideName: guide.guideName,
-        guideType: guide.guideType || "Unknown",
-        ticketType: guide.ticketType
-      };
-    });
+    }
+    
+    return {
+      guideName: guide.guideName,
+      guideType: guide.guideType || "Unknown",
+      ticketType: guide.ticketType
+    };
+  });
     
   // Log the result
   logger.debug(`🎟️ [CalculateTickets] Final guide ticket counts:`, {

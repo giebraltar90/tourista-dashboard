@@ -6,8 +6,7 @@ import { logger } from "@/utils/logger";
  * Based on updated requirements: location no longer matters for guide tickets
  */
 export const locationRequiresGuideTickets = (location: string = ""): boolean => {
-  // No need to check location per updated requirements
-  // Always return true since now we only check the guide type
-  logger.debug(`🎟️ [locationUtils] Location no longer determines ticket requirements, always returning true`);
+  // Always return true since location doesn't matter anymore, we only check the guide type
+  logger.debug(`🎟️ [locationUtils] Location no longer affects ticket requirements, always returning true`);
   return true;
 };

@@ -1,6 +1,7 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
+import { determineTicketTypeForGuide } from "./guideTypeUtils";
 
 /**
  * Find which guides are assigned to groups for this tour
@@ -18,6 +19,13 @@ export const findAssignedGuides = (
     logger.debug(`🎟️ [findAssignedGuides] tourGroups is not an array, skipping assignment check`);
     return assignedGuideIds;
   }
+  
+  // Log input data for debugging
+  logger.debug(`🎟️ [findAssignedGuides] Checking ${tourGroups.length} groups for assigned guides`, {
+    guide1: guide1Info?.name || 'none',
+    guide2: guide2Info?.name || 'none',
+    guide3: guide3Info?.name || 'none'
+  });
   
   // Build a map of guide IDs to their position (guide1, guide2, guide3)
   const guideMap = new Map<string, string>();
@@ -37,9 +45,10 @@ export const findAssignedGuides = (
     
     if (guideId && guideId !== "unassigned") {
       // Is this a guide we know about?
-      const guidePosition = guideMap.get(guideId);
+      const guidePosition = guideMap.get(guideId) || guideId;
       
-      if (guidePosition) {
+      // Direct match for guide1, guide2, guide3
+      if (guidePosition === "guide1" || guidePosition === "guide2" || guidePosition === "guide3") {
         assignedGuideIds.add(guidePosition);
         
         // Add to our logging collection
@@ -48,14 +57,11 @@ export const findAssignedGuides = (
           position: guidePosition,
           name: group.guideName || "Unknown"
         });
-      } else {
-        // This is a guide we don't know about, but they're still assigned
-        logger.debug(`🎟️ [findAssignedGuides] Found guide ID assigned to a group: ${guideId}`);
         
-        // If this is guide1, guide2, or guide3 by ID string, add it
-        if (guideId === "guide1") assignedGuideIds.add("guide1");
-        if (guideId === "guide2") assignedGuideIds.add("guide2");
-        if (guideId === "guide3") assignedGuideIds.add("guide3");
+        logger.debug(`🎟️ [findAssignedGuides] Found assigned guide: ${guidePosition} (${group.guideName || 'Unknown'}) in group ${group.id || 'unknown'}`);
+      } else {
+        // This might be another type of ID
+        logger.debug(`🎟️ [findAssignedGuides] Found unrecognized guide ID: ${guideId} in group ${group.id || 'unknown'}`);
       }
     }
   }
@@ -91,31 +97,13 @@ export const getGuideTicketRequirement = (
   
   // If we don't have guide info, return null ticket type
   if (!guideInfo) {
+    logger.debug(`🎟️ [getGuideTicketRequirement] No guide info for ${guidePosition}, returning null ticket type`);
     return { ticketType: null, guideInfo: null };
   }
   
-  // Get the guide type from the guide info
-  const guideType = guideInfo.guideType || "";
-  
   // Determine ticket type based on guide type
-  const ticketType = determineTicketTypeForGuide(guideType);
+  const ticketType = determineTicketTypeForGuide(guideInfo.guideType);
   
+  logger.debug(`🎟️ [getGuideTicketRequirement] Guide ${guideInfo.name} (${guidePosition}) needs ${ticketType ? `a ${ticketType} ticket` : 'no ticket'}`);
   return { ticketType, guideInfo };
-};
-
-// Import the ticket determination function to avoid circular dependencies
-const determineTicketTypeForGuide = (guideType: string = ""): "adult" | "child" | null => {
-  // Simple implementation for this utility
-  const normalizedType = guideType?.toLowerCase().trim() || "";
-  
-  if (normalizedType.includes("gc")) {
-    return null; // No ticket for GC
-  } else if (normalizedType.includes("ga free")) {
-    return "child"; // Child ticket for GA Free
-  } else if (normalizedType.includes("ga ticket")) {
-    return "adult"; // Adult ticket for GA Ticket
-  }
-  
-  // Default is no ticket if we don't recognize the type
-  return null;
 };

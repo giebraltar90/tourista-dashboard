@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TicketsManagementProps } from "./types";
 import { useEffect } from "react";
@@ -24,7 +25,7 @@ export const TicketsManagement = ({
   
   const adultParticipants = totalParticipants - totalChildCount;
   
-  // Use the new hook to determine guide requirements
+  // Use the hook to determine guide requirements
   const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
     tour, guide1Info, guide2Info, guide3Info
   );
@@ -44,20 +45,26 @@ export const TicketsManagement = ({
   // Log the total tickets needed for debugging
   useEffect(() => {
     logger.debug(`🎟️ [TicketsManagement] Tour ${tour.id} ticket requirements:`, {
-      location: tour.location,
-      locationNeedsGuideTickets,
+      tourName: tour.tourName || 'Unknown Tour',
+      referenceCode: tour.referenceCode || 'Unknown Ref',
+      location: tour.location || 'Unknown Location',
       hasAssignedGuides,
       adultParticipants,
       totalChildCount,
       guideAdultTickets,
       guideChildTickets,
       totalTicketsNeeded,
-      guidesWithTicketsCount: guidesWithTickets.length
+      guidesWithTicketsCount: guidesWithTickets.length,
+      guideDetails: guidesWithTickets.map(g => ({
+        name: g.guideName,
+        type: g.guideType,
+        ticketType: g.ticketType
+      }))
     });
   }, [
-    tour.id, tour.location, locationNeedsGuideTickets, hasAssignedGuides,
+    tour.id, tour.tourName, tour.referenceCode, tour.location, hasAssignedGuides,
     adultParticipants, totalChildCount, guideAdultTickets, guideChildTickets,
-    totalTicketsNeeded, guidesWithTickets.length
+    totalTicketsNeeded, guidesWithTickets
   ]);
   
   return (

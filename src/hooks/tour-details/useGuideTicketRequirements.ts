@@ -3,7 +3,6 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { useEffect, useMemo } from "react";
 import { logger } from "@/utils/logger";
-import { locationRequiresGuideTickets } from "./services/ticket-calculation/locationUtils";
 import { findAssignedGuides, getGuideTicketRequirement } from "./services/ticket-calculation/guideAssignmentUtils";
 
 /**
@@ -15,10 +14,8 @@ export const useGuideTicketRequirements = (
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null
 ) => {
-  // Check if the tour location requires guide tickets
-  const locationNeedsGuideTickets = useMemo(() => {
-    return locationRequiresGuideTickets(tour.location);
-  }, [tour.location]);
+  // Always handle the case of location requiring guide tickets (simplified requirement)
+  const locationNeedsGuideTickets = true;
   
   // Find assigned guides from tour groups
   const assignedGuidePositions = useMemo(() => {
@@ -77,7 +74,6 @@ export const useGuideTicketRequirements = (
   useEffect(() => {
     logger.debug(`🎟️ [useGuideTicketRequirements] Guide ticket requirements for tour ${tour.id}:`, {
       location: tour.location,
-      locationNeedsGuideTickets,
       hasAssignedGuides: assignedGuidePositions.size > 0,
       assignedGuidePositions: Array.from(assignedGuidePositions),
       guideAdultTickets: adultTickets,
@@ -89,8 +85,7 @@ export const useGuideTicketRequirements = (
       }))
     });
   }, [
-    tour.id, tour.location, locationNeedsGuideTickets, 
-    assignedGuidePositions, adultTickets, childTickets, guidesWithTickets
+    tour.id, tour.location, assignedGuidePositions, adultTickets, childTickets, guidesWithTickets
   ]);
   
   return {
