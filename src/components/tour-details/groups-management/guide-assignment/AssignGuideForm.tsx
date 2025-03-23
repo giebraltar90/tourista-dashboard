@@ -24,52 +24,36 @@ export const AssignGuideForm = ({
   currentGuideId, 
   onSuccess 
 }: AssignGuideFormProps) => {
+  // Use the useGuideData hook to fetch all guides
+  const { guides: allGuides = [] } = useGuideData() || { guides: [] };
+  const { data: tour } = useTourById(tourId);
+  
   // Store processed guides in state to prevent re-processing on every render
   const [processedGuides, setProcessedGuides] = useState<GuideOption[]>([]);
-  const { data: tour } = useTourById(tourId);
-  const { guides: allDatabaseGuides = [] } = useGuideData() || { guides: [] };
   
   // Process guides only once when the component mounts or guides change
   useEffect(() => {
-    // Filter out duplicate guides by name
-    const uniqueGuides: GuideOption[] = [];
-    const processedGuideNames = new Set<string>();
+    // Map all guides to the GuideOption format
+    const allProcessedGuides = allGuides.map(guide => ({
+      id: guide.id,
+      name: guide.name,
+      info: guide
+    }));
     
-    // Debug the incoming guide data
-    console.log("Processing guides in AssignGuideForm:", 
-      guides.map(g => ({ id: g.id, name: g.name }))
-    );
-    
-    // First process all database guides to ensure they're available
-    allDatabaseGuides.forEach(dbGuide => {
-      if (dbGuide.name && !processedGuideNames.has(dbGuide.name)) {
-        uniqueGuides.push({
-          id: dbGuide.id,
-          name: dbGuide.name,
-          info: dbGuide
-        });
-        processedGuideNames.add(dbGuide.name);
-      }
-    });
-    
-    // Then process any special guides that weren't in the database
+    // Add any provided guides that aren't in allGuides
     guides.forEach(guide => {
-      if (guide && guide.name && !processedGuideNames.has(guide.name)) {
-        uniqueGuides.push(guide);
-        processedGuideNames.add(guide.name);
-        console.log(`Added guide: ${guide.name} with ID: ${guide.id}`);
+      if (!allProcessedGuides.some(g => g.id === guide.id)) {
+        allProcessedGuides.push(guide);
       }
     });
     
     // Sort guides by name for better UX
-    uniqueGuides.sort((a, b) => a.name.localeCompare(b.name));
+    allProcessedGuides.sort((a, b) => a.name.localeCompare(b.name));
     
-    console.log("Final processed guides:", 
-      uniqueGuides.map(g => ({ id: g.id, name: g.name }))
-    );
+    setProcessedGuides(allProcessedGuides);
     
-    setProcessedGuides(uniqueGuides);
-  }, [guides, allDatabaseGuides]);
+    console.log("AssignGuideForm - processed guides:", allProcessedGuides.length);
+  }, [allGuides, guides]);
   
   // Use our custom hook to get form logic
   const {
@@ -82,7 +66,7 @@ export const AssignGuideForm = ({
   } = useGuideAssignmentForm({
     tourId,
     groupIndex,
-    guides: processedGuides, // Use processed guides for form handling
+    guides: processedGuides,
     currentGuideId,
     onSuccess,
     tour
@@ -93,7 +77,7 @@ export const AssignGuideForm = ({
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
         <GuideSelectField 
           form={form} 
-          guides={processedGuides} // Use processed guides for select options
+          guides={processedGuides} 
           defaultValue={currentGuideId || "_none"} 
         />
         

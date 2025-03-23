@@ -9,6 +9,7 @@ import { RefreshControls } from "./RefreshControls";
 import { FormActions } from "./FormActions";
 import { AssignGuideForm } from "./AssignGuideForm";
 import { useDatabaseData } from "./hooks/useDatabaseData";
+import { useGuideData } from "@/hooks/guides";
 
 interface GroupAssignmentProps {
   tour: TourCardProps;
@@ -17,6 +18,22 @@ interface GroupAssignmentProps {
 export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const [activeTab, setActiveTab] = useState("guides");
   const { dbCheckResult, isLoading, isRefreshing, handleRefresh } = useDatabaseData(tour.id);
+  const { guides = [] } = useGuideData() || { guides: [] };
+  
+  // Get the current group index (default to 0 for first group)
+  const currentGroupIndex = tour.tourGroups && tour.tourGroups.length > 0 ? 0 : 0;
+  
+  // Get the current guide ID from the first group
+  const currentGuideId = tour.tourGroups && tour.tourGroups.length > 0 
+    ? tour.tourGroups[currentGroupIndex].guideId 
+    : undefined;
+    
+  // Format guides for the form
+  const formattedGuides = guides.map(guide => ({
+    id: guide.id,
+    name: guide.name,
+    info: guide
+  }));
 
   useEffect(() => {
     // Log the database check results
@@ -51,12 +68,19 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
               </TabsList>
               
               <TabsContent value="guides" className="pt-4">
-                <AssignGuideForm 
-                  tourId={tour.id}
-                  groupIndex={0}
-                  guides={[]}
-                  onSuccess={handleFormComplete}
-                />
+                {tour.tourGroups && tour.tourGroups.length > 0 ? (
+                  <AssignGuideForm 
+                    tourId={tour.id}
+                    groupIndex={currentGroupIndex}
+                    guides={formattedGuides}
+                    currentGuideId={currentGuideId}
+                    onSuccess={handleFormComplete}
+                  />
+                ) : (
+                  <div className="text-center p-4 text-muted-foreground">
+                    No tour groups available to assign guides to.
+                  </div>
+                )}
               </TabsContent>
               
               <TabsContent value="capacity" className="pt-4">

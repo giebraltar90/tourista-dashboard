@@ -83,7 +83,7 @@ export const GroupsManagement = ({
   };
 
   // Fix: Wrap handleDragEnd to match the expected signature
-  const handleDragEndWrapper = () => {
+  const handleDragEndWrapper = (e?: React.DragEvent) => {
     handleDragEnd();
   };
 
