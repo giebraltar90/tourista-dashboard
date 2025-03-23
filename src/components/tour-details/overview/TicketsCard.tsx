@@ -1,7 +1,6 @@
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Users } from "lucide-react";
 import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils";
 import { GuideInfo } from "@/types/ventrata";
 
@@ -63,40 +62,16 @@ export const TicketsCard = ({
           <div className="flex justify-between">
             <span className="text-muted-foreground">Adult (18+):</span>
             <span className="font-medium">
-              {validAdultTickets} 
-              {guideAdultTickets > 0 && 
-                <span className="text-xs text-muted-foreground ml-1">
-                  (+{guideAdultTickets} guide)
-                </span>
-              }
+              {totalRequiredAdultTickets}
             </span>
           </div>
           
           <div className="flex justify-between">
             <span className="text-muted-foreground">Child (Under 18):</span>
             <span className="font-medium">
-              {validChildTickets}
-              {guideChildTickets > 0 && 
-                <span className="text-xs text-muted-foreground ml-1">
-                  (+{guideChildTickets} guide)
-                </span>
-              }
+              {totalRequiredChildTickets}
             </span>
           </div>
-          
-          {(guideAdultTickets > 0 || guideChildTickets > 0) && (
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground flex items-center">
-                <Users className="h-3 w-3 mr-1" />
-                Guide tickets:
-              </span>
-              <span>
-                {guideAdultTickets > 0 && `${guideAdultTickets} adult`}
-                {guideAdultTickets > 0 && guideChildTickets > 0 && ', '}
-                {guideChildTickets > 0 && `${guideChildTickets} child`}
-              </span>
-            </div>
-          )}
           
           <div className="flex justify-between pt-2 border-t">
             <span className="text-muted-foreground">Total required:</span>
@@ -109,16 +84,6 @@ export const TicketsCard = ({
                 totalRequiredTickets}
             </Badge>
           </div>
-          
-          {hasEnoughTickets && (
-            <div className="flex justify-between items-center mt-2 pt-2 border-t">
-              <span className="text-muted-foreground">Status:</span>
-              <Badge className="bg-green-100 text-green-800 border-green-300">
-                <Check className="h-3 w-3 mr-1" />
-                Tickets sufficient
-              </Badge>
-            </div>
-          )}
           
           {/* Guide ticket breakdown section */}
           {guidesWithTickets.length > 0 && (

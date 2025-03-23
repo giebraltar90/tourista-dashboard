@@ -1,9 +1,11 @@
+
 import { useCallback, useState } from "react";
 import { VentrataParticipant, VentrataTourGroup } from "@/types/ventrata";
 import { toast } from "sonner";
-import { updateParticipantGroupInDatabase } from "./services/participantService";
+import { moveParticipant } from "./services/participantService/movementService";
 import { useUpdateTourGroups } from "@/hooks/tourData/useUpdateTourGroups";
 import { useQueryClient } from "@tanstack/react-query";
+import { recalculateAllTourGroupSizes } from "./services/participantService/recalculationService";
 
 export const useParticipantMovement = (
   tourId: string, 
@@ -42,15 +44,8 @@ export const useParticipantMovement = (
       
       console.log(`Moving participant ${participant.id} from group ${fromGroup.id} to group ${toGroup.id}`);
       
-      // Clone the tourGroups to avoid state mutation
-      const updatedGroups = JSON.parse(JSON.stringify(tourGroups));
-      
-      // Get participant count values, defaulting to 1 if not specified
-      const participantCount = participant.count || 1;
-      const childCount = participant.childCount || 0;
-      
-      // 1. Update database first
-      const dbUpdateSuccess = await updateParticipantGroupInDatabase(participant.id, toGroup.id);
+      // First update the database - CRITICAL: Do this before state updates
+      const dbUpdateSuccess = await moveParticipant(participant.id, fromGroup.id, toGroup.id);
       
       if (!dbUpdateSuccess) {
         toast.error("Failed to update participant's group in the database");
@@ -58,27 +53,13 @@ export const useParticipantMovement = (
         return;
       }
       
-      // Cancel any in-flight queries to avoid race conditions
-      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
+      // Clone the tourGroups to avoid state mutation
+      const updatedGroups = JSON.parse(JSON.stringify(tourGroups));
       
-      // 2. Update local state with modified groups
-      // First remove from the source group
+      // Remove from the source group
       if (Array.isArray(updatedGroups[fromGroupIndex].participants)) {
         updatedGroups[fromGroupIndex].participants = 
           updatedGroups[fromGroupIndex].participants.filter((p: any) => p.id !== participant.id);
-          
-        // CRITICAL FIX: Always recalculate the group size and childCount directly from participants
-        let fromGroupTotal = 0;
-        let fromGroupChildCount = 0;
-        
-        for (const p of updatedGroups[fromGroupIndex].participants) {
-          fromGroupTotal += p.count || 1;
-          fromGroupChildCount += p.childCount || 0;
-        }
-        
-        // Always set the size directly from calculated values, never keep old values
-        updatedGroups[fromGroupIndex].size = fromGroupTotal;
-        updatedGroups[fromGroupIndex].childCount = fromGroupChildCount;
       }
       
       // Then add to the destination group
@@ -90,18 +71,11 @@ export const useParticipantMovement = (
       const updatedParticipant = {...participant, group_id: toGroup.id};
       updatedGroups[toGroupIndex].participants.push(updatedParticipant);
       
-      // CRITICAL FIX: Always recalculate the target group size and childCount directly from participants
-      let toGroupTotal = 0;
-      let toGroupChildCount = 0;
+      // CRITICAL FIX: Recalculate all group sizes based on participants
+      const recalculatedGroups = recalculateAllTourGroupSizes(updatedGroups);
       
-      for (const p of updatedGroups[toGroupIndex].participants) {
-        toGroupTotal += p.count || 1;
-        toGroupChildCount += p.childCount || 0;
-      }
-      
-      // Always set the size directly from calculated values
-      updatedGroups[toGroupIndex].size = toGroupTotal;
-      updatedGroups[toGroupIndex].childCount = toGroupChildCount;
+      // Cancel any in-flight queries to avoid race conditions
+      await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
       
       // Apply optimistic update to the query cache
       queryClient.setQueryData(['tour', tourId], (oldData: any) => {
@@ -110,21 +84,20 @@ export const useParticipantMovement = (
         // Deep clone the tour data
         const newData = JSON.parse(JSON.stringify(oldData));
         
-        // Update tourGroups with our changed values
-        newData.tourGroups = updatedGroups;
+        // Update tourGroups with our recalculated values
+        newData.tourGroups = recalculatedGroups;
         
         return newData;
       });
       
-      // 3. Call updateTourGroups to persist changes
-      updateTourGroups(updatedGroups, {
+      // Call updateTourGroups to persist changes
+      updateTourGroups(recalculatedGroups, {
         onSuccess: () => {
           toast.success(`Moved ${participant.name} to ${toGroup.name || `Group ${toGroupIndex + 1}`}`);
           
           // Force a full refresh after a short delay
           setTimeout(() => {
             queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-            queryClient.invalidateQueries({ queryKey: ['tours'] });
           }, 1000);
         },
         onError: (error: any) => {

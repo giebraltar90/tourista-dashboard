@@ -13,24 +13,25 @@ export const moveParticipant = async (
   console.log("PARTICIPANTS DEBUG: Moving participant", { participantId, currentGroupId, newGroupId });
   
   try {
-    const { data, error } = await supabase
+    // First try direct database update - most reliable approach
+    const { error } = await supabase
       .from('participants')
       .update({ group_id: newGroupId })
-      .eq('id', participantId)
-      .select();
+      .eq('id', participantId);
       
     if (error) {
       console.error("PARTICIPANTS DEBUG: Error moving participant:", error);
-      toast.error("Failed to move participant");
       return false;
     }
     
-    console.log("PARTICIPANTS DEBUG: Participant moved successfully:", data);
-    toast.success("Participant moved successfully");
+    console.log("PARTICIPANTS DEBUG: Participant moved successfully in database");
+    
+    // Add a delay to ensure database consistency
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
     return true;
   } catch (error) {
     console.error("PARTICIPANTS DEBUG: Error in moveParticipant:", error);
-    toast.error("Error moving participant");
     return false;
   }
 };
@@ -59,7 +60,6 @@ export const updateParticipantGroupInDatabase = async (
     return true;
   } catch (error) {
     console.error("Error updating participant group:", error);
-    toast.error("Database error while updating participant group");
     return false;
   }
 };
