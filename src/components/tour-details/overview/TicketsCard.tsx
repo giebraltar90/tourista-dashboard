@@ -124,7 +124,7 @@ export const TicketsCard = ({
   const hasEnoughTickets = totalTickets >= requiredTickets;
   
   // Calculate total tickets needed (participants + guide tickets)
-  const totalTicketsNeeded = totalTickets + guideTickets.adultTickets + guideTickets.childTickets;
+  const totalTicketsNeeded = adultTickets + childTickets + guideTickets.adultTickets + guideTickets.childTickets;
   
   // Calculate the actual total required tickets including guides
   const actualRequiredTickets = requiredTickets > 0 ? 

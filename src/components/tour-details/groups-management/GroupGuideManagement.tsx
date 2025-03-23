@@ -1,126 +1,149 @@
 
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
-import { TourCardProps } from "@/components/tours/tour-card/types";
-import { useGuideInfo, useGuideData } from "@/hooks/guides";
-import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
-import { GroupCapacityAlert } from "./GroupCapacityAlert";
-import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { useState } from "react";
-import { GroupGuideCard } from "./GroupGuideCard";
-import { GuideAssignmentDialog } from "./GuideAssignmentDialog";
-import { getValidGuides } from "./GuideOptionsList";
+import { Button } from "@/components/ui/button";
+import { Check, X } from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle
+} from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { updateGroupGuide } from "@/services/api/tour/groupGuideService";
+import { toast } from "sonner";
+import { VentrataTourGroup } from "@/types/ventrata";
+import { GuideInfo } from "@/types/ventrata";
+import { EventEmitter } from "@/utils/eventEmitter";
 
 interface GroupGuideManagementProps {
-  tour: TourCardProps;
+  isOpen: boolean;
+  onClose: () => void;
+  tourId: string;
+  group: VentrataTourGroup;
+  groupIndex: number;
+  guide1Info: GuideInfo | null;
+  guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
+  guide1: string;
+  guide2?: string;
+  guide3?: string;
+  onGroupsUpdated: () => void;
 }
 
-export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
-  const guide1Query = useGuideInfo(tour.guide1 || '');
-  const guide2Query = useGuideInfo(tour.guide2 || '');
-  const guide3Query = useGuideInfo(tour.guide3 || '');
+export const GroupGuideManagement = ({
+  isOpen,
+  onClose,
+  tourId,
+  group,
+  groupIndex,
+  guide1Info,
+  guide2Info,
+  guide3Info,
+  guide1,
+  guide2,
+  guide3,
+  onGroupsUpdated
+}: GroupGuideManagementProps) => {
+  // Get current guide ID from the group, or undefined if no guide is assigned
+  const currentGuideId = group.guideId;
   
-  // Extract the data from the query results
-  const guide1Info = guide1Query.data;
-  const guide2Info = guide2Query.data;
-  const guide3Info = guide3Query.data;
+  // State to track selected guide
+  const [selectedGuideId, setSelectedGuideId] = useState<string | undefined>(currentGuideId);
   
-  const { guides = [] } = useGuideData();
-  
-  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
-  const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
-  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
-  
-  const isHighSeason = !!tour.isHighSeason;
-  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
-  
-  const requiredGroups = isHighSeason ? 
-    DEFAULT_CAPACITY_SETTINGS.highSeasonGroups : 
-    DEFAULT_CAPACITY_SETTINGS.standardGroups;
-  
-  const handleOpenAssignGuide = (groupIndex: number) => {
-    setSelectedGroupIndex(groupIndex);
-    setIsAssignGuideOpen(true);
+  // Handle saving the guide assignment
+  const handleSaveGuide = async () => {
+    try {
+      // Call API to update the guide for this group
+      const success = await updateGroupGuide(tourId, group.id, selectedGuideId);
+      
+      if (success) {
+        toast.success(`Guide ${selectedGuideId ? 'assigned' : 'removed'} successfully`);
+        
+        // Notify that guides have changed
+        EventEmitter.emit(`guide-change:${tourId}`);
+        
+        // Call the callback to update the parent component
+        onGroupsUpdated();
+        
+        // Close the dialog
+        onClose();
+      } else {
+        toast.error("Failed to update guide assignment");
+      }
+    } catch (error) {
+      console.error("Error updating guide:", error);
+      toast.error("Error assigning guide");
+    }
   };
-
-  // Get valid guides for guide selection
-  const validGuides = getValidGuides({
-    tour,
-    guide1Info,
-    guide2Info,
-    guide3Info,
-    guides
-  });
+  
+  // Function to get guide display name with type
+  const getGuideDisplay = (guideId: string, guideInfo: GuideInfo | null) => {
+    if (!guideInfo) return guideId;
+    return `${guideInfo.name} (${guideInfo.guideType})`;
+  };
   
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <h3 className="text-lg font-medium">Guide Assignments</h3>
-      </CardHeader>
-      
-      <CardContent>
-        <div className="space-y-6">
-          {/* Add the GroupCapacityAlert component */}
-          <GroupCapacityAlert 
-            tourGroups={tourGroups} 
-            isHighSeason={isHighSeason} 
-          />
-          
-          {tourGroups.length < requiredGroups && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                {isHighSeason
-                  ? `High season requires ${requiredGroups} groups, but you only have ${tourGroups.length}. Please add more groups.`
-                  : `Standard capacity requires ${requiredGroups} groups, but you only have ${tourGroups.length}. Please add more groups.`
-                }
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <Separator />
-          
-          {/* Display tour groups with their assigned guides */}
-          <div className="space-y-4 pt-2">
-            <h3 className="text-sm font-medium">Current Guide Assignments</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tourGroups.map((group, index) => {
-                const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
-                
-                return (
-                  <GroupGuideCard
-                    key={index}
-                    index={index}
-                    group={group}
-                    guideName={guideName}
-                    guideInfo={guideInfo}
-                    onAssignGuide={handleOpenAssignGuide}
-                  />
-                );
-              })}
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Assign Guide to Group</DialogTitle>
+          <DialogDescription>
+            Select a guide to assign to {group.name || `Group ${groupIndex + 1}`}
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="py-4">
+          <RadioGroup 
+            value={selectedGuideId || "none"} 
+            onValueChange={(value) => setSelectedGuideId(value === "none" ? undefined : value)}
+            className="space-y-3"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="none" id="none" />
+              <Label htmlFor="none" className="font-normal">No Guide</Label>
             </div>
-          </div>
+            
+            {guide1 && (
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={guide1} id="guide1" />
+                <Label htmlFor="guide1" className="font-normal">
+                  {getGuideDisplay(guide1, guide1Info)}
+                </Label>
+              </div>
+            )}
+            
+            {guide2 && (
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={guide2} id="guide2" />
+                <Label htmlFor="guide2" className="font-normal">
+                  {getGuideDisplay(guide2, guide2Info)}
+                </Label>
+              </div>
+            )}
+            
+            {guide3 && (
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value={guide3} id="guide3" />
+                <Label htmlFor="guide3" className="font-normal">
+                  {getGuideDisplay(guide3, guide3Info)}
+                </Label>
+              </div>
+            )}
+          </RadioGroup>
         </div>
-      </CardContent>
-      
-      <CardFooter className="border-t p-4">
-        <div className="text-sm text-muted-foreground">
-          Groups should be balanced and guides assigned based on capacity requirements.
-        </div>
-      </CardFooter>
-
-      {isAssignGuideOpen && selectedGroupIndex !== null && (
-        <GuideAssignmentDialog
-          isOpen={isAssignGuideOpen}
-          onOpenChange={setIsAssignGuideOpen}
-          selectedGroupIndex={selectedGroupIndex}
-          tourId={tour.id}
-          tourGroups={tourGroups}
-          validGuides={validGuides}
-        />
-      )}
-    </Card>
+        
+        <DialogFooter className="flex justify-between sm:justify-between">
+          <Button variant="outline" onClick={onClose}>
+            <X className="mr-2 h-4 w-4" /> Cancel
+          </Button>
+          <Button onClick={handleSaveGuide}>
+            <Check className="mr-2 h-4 w-4" /> Save
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
