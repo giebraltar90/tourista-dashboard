@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { processGuideIdForAssignment } from "./utils/guideAssignmentUtils";
 
 export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () => void) => {
   const [isAssigning, setIsAssigning] = useState(false);
@@ -64,16 +65,23 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         actualGroupId = groupIdOrIndex;
       }
       
+      // Fetch all available guides to ensure we can map special IDs to proper UUIDs
+      const { data: availableGuides } = await supabase
+        .from("guides")
+        .select("id, name")
+        .limit(50);
+      
+      const guides = availableGuides || [];
+      
       // Process the guide ID - special handling for the "unassign" case
-      let finalGuideId = null; // Default to null for unassign
+      let finalGuideId: string | null = null;
       
       if (guideId !== "_none") {
-        if (isValidUuid(guideId)) {
-          finalGuideId = guideId;
-        } else {
-          console.warn(`Non-UUID guide ID provided: ${guideId}. This might cause issues.`);
-          // We'll try to use it anyway, but log a warning
-          finalGuideId = guideId;
+        // Use our utility function to find the correct UUID
+        finalGuideId = processGuideIdForAssignment(guideId, guides);
+        
+        if (!finalGuideId && guideId !== "_none") {
+          console.warn("Could not map guide ID to a valid UUID:", guideId);
         }
       }
       
@@ -83,11 +91,21 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         guideId: finalGuideId
       });
       
+      // Prepare group name
+      let groupName = `Group ${(typeof groupIdOrIndex === 'number' ? groupIdOrIndex + 1 : '?')}`;
+      if (finalGuideId) {
+        const guideName = guides.find(g => g.id === finalGuideId)?.name;
+        if (guideName) {
+          groupName = `${groupName} (${guideName})`;
+        }
+      }
+      
       // Update the guide assignment in the database
       const { error } = await supabase
         .from("tour_groups")
         .update({ 
-          guide_id: finalGuideId
+          guide_id: finalGuideId,
+          name: groupName
         })
         .eq("id", actualGroupId)
         .eq("tour_id", tourId);
@@ -97,32 +115,6 @@ export const useAssignGuide = (tourOrId: TourCardProps | string, onSuccess?: () 
         setAssignmentError(error.message);
         toast.error("Error assigning guide: " + error.message);
         return false;
-      }
-      
-      // Update the group name to reflect the guide assignment
-      if (finalGuideId) {
-        // If we're assigning a guide, try to find the guide's name
-        const { data: guideData } = await supabase
-          .from("guides")
-          .select("name")
-          .eq("id", finalGuideId)
-          .maybeSingle();
-          
-        if (guideData?.name) {
-          // If we found the guide's name, update the group name
-          const groupName = `Group ${(typeof groupIdOrIndex === 'number' ? groupIdOrIndex + 1 : '?')} (${guideData.name})`;
-          await supabase
-            .from("tour_groups")
-            .update({ name: groupName })
-            .eq("id", actualGroupId);
-        }
-      } else {
-        // If we're removing a guide, update the group name to the default
-        const groupName = `Group ${(typeof groupIdOrIndex === 'number' ? groupIdOrIndex + 1 : '?')}`;
-        await supabase
-          .from("tour_groups")
-          .update({ name: groupName })
-          .eq("id", actualGroupId);
       }
 
       // Call onSuccess callback if provided

@@ -6,6 +6,8 @@ import { z } from "zod";
 import { useAssignGuide } from "./useAssignGuide";
 import { toast } from "sonner";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { processGuideIdForAssignment } from "./utils/guideAssignmentUtils";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Define form schema with Zod
 const formSchema = z.object({
@@ -46,11 +48,13 @@ export const useGuideAssignmentForm = ({
   groupIndex,
   guides,
   currentGuideId,
-  onSuccess
+  onSuccess,
+  tour
 }: UseGuideAssignmentFormProps): UseGuideAssignmentFormResult => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { assignGuide } = useAssignGuide(tourId);
   const [currentValue, setCurrentValue] = useState(currentGuideId || "_none");
+  const queryClient = useQueryClient();
   
   // Initialize the form
   const form = useForm<FormValues>({
@@ -102,35 +106,57 @@ export const useGuideAssignmentForm = ({
       });
       
       // Process the guide ID to ensure it's a valid UUID if not "_none"
-      let processedGuideId = selectedGuideId;
-      if (selectedGuideId !== "_none" && !isValidUuid(selectedGuideId)) {
-        // Try to find the guide with matching name or id from the guide list
-        const matchingGuide = guides.find(g => 
-          g.id === selectedGuideId || 
-          g.name === selectedGuideId
-        );
-        
-        if (matchingGuide && isValidUuid(matchingGuide.id)) {
-          processedGuideId = matchingGuide.id;
-          console.log(`Mapped guide ID ${selectedGuideId} to UUID ${processedGuideId}`);
-        } else {
-          console.warn(`Could not find valid UUID for guide ID ${selectedGuideId}`);
+      const processedGuideId = processGuideIdForAssignment(selectedGuideId, guides);
+      
+      // Apply optimistic update for a better user experience
+      if (processedGuideId !== undefined) {
+        const updatedData = queryClient.getQueryData(['tour', tourId]);
+        if (updatedData) {
+          queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+            if (!oldData || !oldData.tourGroups) return oldData;
+            
+            const newData = JSON.parse(JSON.stringify(oldData));
+            if (newData.tourGroups[groupIndex]) {
+              newData.tourGroups[groupIndex].guideId = processedGuideId;
+              
+              // Update group name to reflect guide assignment
+              const guideName = guides.find(g => g.id === processedGuideId)?.name || "Unknown";
+              newData.tourGroups[groupIndex].name = processedGuideId 
+                ? `Group ${groupIndex + 1} (${guideName})` 
+                : `Group ${groupIndex + 1}`;
+            }
+            
+            return newData;
+          });
         }
       }
       
       // Call the assign guide function with the selected ID
-      const success = await assignGuide(groupIndex, processedGuideId);
+      const success = await assignGuide(groupIndex, selectedGuideId);
       
       if (success) {
         // Update the current value to match the form
         setCurrentValue(selectedGuideId);
+        
+        // Force a data refresh after a short delay
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+          queryClient.invalidateQueries({ queryKey: ['tours'] });
+        }, 500);
+        
         onSuccess();
       } else {
         toast.error("Failed to assign guide. Please try again.");
+        
+        // Roll back optimistic update on failure
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       }
     } catch (error) {
       console.error("Error assigning guide:", error);
       toast.error("Failed to assign guide");
+      
+      // Roll back optimistic update on error
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
     } finally {
       setIsSubmitting(false);
     }
@@ -144,19 +170,45 @@ export const useGuideAssignmentForm = ({
       setIsSubmitting(true);
       console.log("Removing guide from group:", { groupIndex });
       
+      // Apply optimistic update for a better user experience
+      queryClient.setQueryData(['tour', tourId], (oldData: any) => {
+        if (!oldData || !oldData.tourGroups) return oldData;
+        
+        const newData = JSON.parse(JSON.stringify(oldData));
+        if (newData.tourGroups[groupIndex]) {
+          newData.tourGroups[groupIndex].guideId = null;
+          newData.tourGroups[groupIndex].name = `Group ${groupIndex + 1}`;
+        }
+        
+        return newData;
+      });
+      
       // Use "_none" as special value to remove the guide
       const success = await assignGuide(groupIndex, "_none");
       
       if (success) {
         // Update the current value to match the form
         setCurrentValue("_none");
+        
+        // Force a data refresh after a short delay
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+          queryClient.invalidateQueries({ queryKey: ['tours'] });
+        }, 500);
+        
         onSuccess();
       } else {
         toast.error("Failed to remove guide. Please try again.");
+        
+        // Roll back optimistic update on failure
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       }
     } catch (error) {
       console.error("Error removing guide:", error);
       toast.error("Failed to remove guide");
+      
+      // Roll back optimistic update on error
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
     } finally {
       setIsSubmitting(false);
     }
