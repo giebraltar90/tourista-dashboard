@@ -11,6 +11,11 @@ import { fetchParticipantsForGroups, createTestParticipants } from "./utils/part
  */
 export const loadParticipantsData = async (tourId: string) => {
   try {
+    if (!tourId || typeof tourId !== 'string') {
+      console.error("DATABASE DEBUG: Invalid tourId:", tourId);
+      return { success: false, error: "Invalid tour ID" };
+    }
+    
     // First, check if the participants table exists using our improved function
     const tableCheck = await checkParticipantsTable();
     console.log("DATABASE DEBUG: Participants table check result:", tableCheck);

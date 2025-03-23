@@ -1,196 +1,102 @@
 
-import { useCallback, useRef, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
+import { loadParticipantsData } from "@/services/api/participants/participantDbService";
 import { toast } from "sonner";
-import { useParticipantLoading } from "./useParticipantLoading";
 
 /**
- * Hook for refreshing participant data and calculations
+ * Hook for refreshing and loading participants for a tour
  */
 export const useParticipantRefresh = (
-  tourId: string | undefined,
+  tourId: string,
   localTourGroups: VentrataTourGroup[],
   setLocalTourGroups: (groups: VentrataTourGroup[]) => void,
-  recalculateGroupSizes: () => VentrataTourGroup[]
+  recalculateGroupSizes: () => void
 ) => {
-  // Get participant loading capabilities
-  const { loadParticipants: loadParticipantsInner, isLoading: isLoadingParticipants } = useParticipantLoading();
+  const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
   
-  // Add refs for debouncing and tracking refreshes
-  const refreshTimeoutRef = useRef<number | null>(null);
-  const lastRefreshTimeRef = useRef<number>(0);
-  const isInitialLoadRef = useRef<boolean>(true);
-  const toastIdRef = useRef<string | number | null>(null);
-  const refreshInProgressRef = useRef<boolean>(false);
-  
-  // Auto-refresh when tourId changes, but only once
-  useEffect(() => {
-    if (tourId && isInitialLoadRef.current) {
-      console.log(`PARTICIPANTS DEBUG: Initial load for tour ${tourId}`);
-      
-      // Mark initial load as complete
-      isInitialLoadRef.current = false;
-      
-      // Set a short delay to allow other operations to complete
-      const timer = window.setTimeout(() => {
-        console.log(`PARTICIPANTS DEBUG: Executing delayed initial load for tour ${tourId}`);
-        if (!refreshInProgressRef.current) {
-          loadParticipants(tourId, false); // Don't show toast for auto-load
-          // Update last refresh time
-          lastRefreshTimeRef.current = Date.now();
-        }
-      }, 500);
-      
-      return () => window.clearTimeout(timer);
-    }
-  }, [tourId]);
-  
-  // Wrapper for loadParticipants to include setLocalTourGroups
-  const loadParticipants = useCallback((tourId: string, showToast = false) => {
-    console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
-    
-    // Prevent loading if already in progress
-    if (isLoadingParticipants) {
-      console.log("PARTICIPANTS DEBUG: Skipping loadParticipants, already in progress");
+  /**
+   * Load participants for a tour
+   */
+  const loadParticipants = useCallback(async (tourIdParam: string = tourId, showToast: boolean = true) => {
+    const usedTourId = tourIdParam || tourId;
+    if (!usedTourId) {
+      console.error("DATABASE DEBUG: No tour ID provided for loading participants");
       return;
     }
     
-    // Prevent too frequent refreshes (minimum 5 seconds between refreshes)
-    const now = Date.now();
-    const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
-    if (timeSinceLastRefresh < 5000 && lastRefreshTimeRef.current > 0) {
-      console.log(`PARTICIPANTS DEBUG: Skipping refresh, too soon (${timeSinceLastRefresh}ms since last refresh)`);
-      return;
-    }
+    console.log("DATABASE DEBUG: loadParticipants called for tourId:", usedTourId);
+    setIsLoadingParticipants(true);
+    console.log("DATABASE DEBUG: Checking participants table existence");
     
-    // Set the refresh in progress flag
-    refreshInProgressRef.current = true;
-    
-    if (showToast) {
-      toastIdRef.current = toast.loading("Loading participants...");
-    }
-    
-    return loadParticipantsInner(tourId, (loadedGroups) => {
-      console.log(`PARTICIPANTS DEBUG: Participants loaded, processing groups:`, loadedGroups);
+    try {
+      const result = await loadParticipantsData(usedTourId);
       
-      if (showToast && toastIdRef.current) {
-        toast.dismiss(toastIdRef.current);
-        toast.success("Participants loaded successfully");
-        toastIdRef.current = null;
-      }
-      
-      // Ensure we received an array of groups
-      if (!Array.isArray(loadedGroups)) {
-        console.error("PARTICIPANTS DEBUG: Invalid groups data received:", loadedGroups);
-        refreshInProgressRef.current = false;
+      if (result.success) {
+        console.log("DATABASE DEBUG: Loaded participants successfully");
         
+        // Update the local tour groups with the participants
+        if (result.groups && result.groups.length > 0) {
+          const updatedGroups = [...result.groups].map(group => {
+            // Find participants for this group
+            const groupParticipants = Array.isArray(result.participants) 
+              ? result.participants.filter(p => p.group_id === group.id)
+              : [];
+            
+            // Return the updated group
+            return {
+              ...group,
+              guideId: group.guide_id || undefined,
+              entryTime: group.entry_time || "",
+              childCount: group.child_count || 0,
+              participants: groupParticipants.map(p => ({
+                id: p.id,
+                name: p.name,
+                count: p.count,
+                childCount: p.child_count || 0,
+                bookingRef: p.booking_ref || "",
+                groupId: p.group_id
+              }))
+            };
+          });
+          
+          console.log("DATABASE DEBUG: Updated groups with participants:", updatedGroups);
+          setLocalTourGroups(updatedGroups);
+          
+          // Recalculate group sizes
+          recalculateGroupSizes();
+          
+          // Show success toast if needed
+          if (showToast) {
+            toast.success("Participants loaded successfully");
+          }
+        } else {
+          console.log("DATABASE DEBUG: No groups returned from loadParticipantsData");
+        }
+      } else {
+        console.error("DATABASE DEBUG: Failed to load participant data:", result.error);
         if (showToast) {
-          toast.error("Failed to load participants: Invalid data received");
+          toast.error(`Failed to load participants: ${result.error}`);
         }
-        
-        return;
       }
-      
-      // Ensure each group has a participants array and entryTime
-      const processedGroups = loadedGroups.map(group => ({
-        ...group,
-        entryTime: group.entryTime || "9:00", // Ensure entryTime exists
-        participants: Array.isArray(group.participants) ? group.participants : []
-      }));
-
-      console.log(`PARTICIPANTS DEBUG: Processed groups:`, 
-        processedGroups.map(g => ({
-          id: g.id,
-          name: g.name || 'Unnamed',
-          entryTime: g.entryTime,
-          size: g.size,
-          childCount: g.childCount,
-          participantsCount: g.participants?.length || 0
-        }))
-      );
-      
-      // Set the groups directly without any internal setTimeout
-      setLocalTourGroups(processedGroups);
-      
-      // Update the last refresh time
-      lastRefreshTimeRef.current = Date.now();
-      
-      // Clear any existing recalculation timeout
-      if (refreshTimeoutRef.current) {
-        window.clearTimeout(refreshTimeoutRef.current);
-        refreshTimeoutRef.current = null;
+    } catch (error) {
+      console.error("DATABASE DEBUG: Error loading participants:", error);
+      if (showToast) {
+        toast.error("Error loading participants");
       }
-      
-      // Perform a single recalculation after a short delay
-      refreshTimeoutRef.current = window.setTimeout(() => {
-        // Get the recalculated groups
-        const updatedGroups = recalculateGroupSizes();
-        
-        if (Array.isArray(updatedGroups)) {
-          console.log(`PARTICIPANTS DEBUG: Final recalculated groups:`, 
-            updatedGroups.map(g => ({
-              id: g.id,
-              name: g.name || 'Unnamed',
-              entryTime: g.entryTime,
-              size: g.size,
-              childCount: g.childCount,
-              participantsCount: g.participants?.length || 0
-            }))
-          );
-        }
-        
-        refreshTimeoutRef.current = null;
-        refreshInProgressRef.current = false;
-      }, 200);
-    }, showToast); // Pass the showToast parameter
-  }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes, isLoadingParticipants]);
-
-  // Add a refresh function with improved debounce to manually trigger participant loading
+    } finally {
+      setIsLoadingParticipants(false);
+    }
+  }, [tourId, setLocalTourGroups, recalculateGroupSizes]);
+  
+  /**
+   * Refresh participants for a tour
+   */
   const refreshParticipants = useCallback(() => {
-    if (!tourId) return;
-    
-    // Clear any existing toast first
-    if (toastIdRef.current) {
-      toast.dismiss(toastIdRef.current);
-      toastIdRef.current = null;
-    }
-    
-    // Prevent manual refresh if already refreshing
-    if (refreshInProgressRef.current) {
-      console.log(`PARTICIPANTS DEBUG: Skipping manual refresh, already in progress`);
-      toast.info("Refresh already in progress");
-      return;
-    }
-    
-    // Prevent rapid consecutive refreshes with a minimum time between calls
-    const now = Date.now();
-    const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
-    
-    if (timeSinceLastRefresh < 5000 && lastRefreshTimeRef.current > 0) {
-      console.log(`PARTICIPANTS DEBUG: Skipping manual refresh, too soon (${timeSinceLastRefresh}ms since last refresh)`);
-      toast.info("Please wait a few seconds before refreshing again");
-      return;
-    }
-    
-    // Clear any existing timeout
-    if (refreshTimeoutRef.current) {
-      window.clearTimeout(refreshTimeoutRef.current);
-    }
-    
-    console.log(`PARTICIPANTS DEBUG: Manually refreshing participants for tour ${tourId}`);
-    // Show only one toast at the beginning
-    toastIdRef.current = toast.loading("Refreshing participants...");
-    
-    // Set refreshing flag
-    refreshInProgressRef.current = true;
-    
-    // Set a short timeout to debounce multiple clicks
-    refreshTimeoutRef.current = window.setTimeout(() => {
-      loadParticipants(tourId, true); // Show toast for manual refresh
-      refreshTimeoutRef.current = null;
-    }, 100);
+    console.log("DATABASE DEBUG: Refreshing participants for tour:", tourId);
+    loadParticipants(tourId, true);
   }, [tourId, loadParticipants]);
-
+  
   return {
     loadParticipants,
     refreshParticipants,

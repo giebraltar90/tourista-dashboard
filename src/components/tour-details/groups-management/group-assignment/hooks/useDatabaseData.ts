@@ -15,30 +15,52 @@ export const useDatabaseData = () => {
 
   const checkDatabaseStatus = async () => {
     try {
-      // Check if the necessary tables exist
-      const { data: tourTableExists, error: tourTableError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'tours')
-        .single();
+      // Use a safer approach - direct RPC function call to check tables
+      const { data: checkResult, error: checkError } = await supabase.rpc('check_table_exists', {
+        table_name: 'participants'
+      });
 
-      const { data: tourGroupsTableExists, error: tourGroupsTableError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'tour_groups')
-        .single();
+      if (checkError) {
+        console.error('Error checking table existence:', checkError);
+        setDbCheckResult({
+          tablesExist: false,
+          error: 'Error checking table existence'
+        });
+        return;
+      }
 
-      const { data: participantsTableExists, error: participantsTableError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_schema', 'public')
-        .eq('table_name', 'participants')
-        .single();
+      const participantsExists = checkResult === true;
 
-      // If any of the tables don't exist, return error
-      if (tourTableError || tourGroupsTableError || participantsTableError) {
+      // Check if tour_groups table exists
+      const { data: tourGroupsExists, error: tourGroupsError } = await supabase.rpc('check_table_exists', {
+        table_name: 'tour_groups'
+      });
+
+      if (tourGroupsError) {
+        console.error('Error checking tour_groups table:', tourGroupsError);
+        setDbCheckResult({
+          tablesExist: false,
+          error: 'Error checking tour_groups table'
+        });
+        return;
+      }
+
+      // Check if tours table exists
+      const { data: toursExists, error: toursError } = await supabase.rpc('check_table_exists', {
+        table_name: 'tours'
+      });
+
+      if (toursError) {
+        console.error('Error checking tours table:', toursError);
+        setDbCheckResult({
+          tablesExist: false,
+          error: 'Error checking tours table'
+        });
+        return;
+      }
+
+      // If any tables don't exist, return error
+      if (!participantsExists || !tourGroupsExists || !toursExists) {
         setDbCheckResult({
           tablesExist: false,
           error: 'Required database tables are missing'
@@ -46,33 +68,44 @@ export const useDatabaseData = () => {
         return;
       }
 
-      // Count records in the tables
-      const { data: toursCount, error: toursCountError } = await supabase
+      // Count records in each table
+      let toursCount = 0;
+      let tourGroupsCount = 0;
+      let participantsCount = 0;
+
+      // Count tours
+      const { count: tourCount, error: tourCountError } = await supabase
         .from('tours')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
-      const { data: tourGroupsCount, error: tourGroupsCountError } = await supabase
+      if (!tourCountError && tourCount !== null) {
+        toursCount = tourCount;
+      }
+
+      // Count tour groups
+      const { count: groupCount, error: groupCountError } = await supabase
         .from('tour_groups')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
-      const { data: participantsData, error: participantsCountError } = await supabase
+      if (!groupCountError && groupCount !== null) {
+        tourGroupsCount = groupCount;
+      }
+
+      // Count participants
+      const { count: partCount, error: partCountError } = await supabase
         .from('participants')
-        .select('id', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true });
 
-      if (toursCountError || tourGroupsCountError || participantsCountError) {
-        setDbCheckResult({
-          tablesExist: true,
-          error: 'Could not count records in database tables'
-        });
-        return;
+      if (!partCountError && partCount !== null) {
+        participantsCount = partCount;
       }
 
       setDbCheckResult({
         tablesExist: true,
         error: null,
-        toursCount: toursCount?.length ?? 0,
-        tourGroupsCount: tourGroupsCount?.length ?? 0,
-        participantsCount: participantsData?.length ?? 0
+        toursCount,
+        tourGroupsCount,
+        participantsCount
       });
     } catch (error) {
       console.error('Error checking database status:', error);

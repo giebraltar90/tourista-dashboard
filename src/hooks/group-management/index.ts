@@ -35,3 +35,7 @@ export * from './services/utils/optimisticUpdateService';
 export * from './services/utils/persistenceUtils';
 export * from './services/utils/notificationService';
 export * from './services/utils/guideMappingService';
+
+// Import from tour-details modules
+import { useDatabaseData } from '@/components/tour-details/groups-management/group-assignment/hooks/useDatabaseData';
+export { useDatabaseData };
