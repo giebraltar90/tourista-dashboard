@@ -5,8 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { validateAssignGuideInputs, verifyGroupExists } from "./validation";
 import { fetchAndProcessGuideId } from "./processGuideId";
-import { resolveGroupIdOrIndex } from "./resolveGroupId";
-import { createDisplayNameForGroup } from "./createGroupName";
+import { resolveGroupId } from "./resolveGroupId";
 import { updateDatabaseWithGuideAssignment } from "./updateDatabase";
 import { UseAssignGuideResult, AssignGuideParams } from "./types";
 
@@ -52,7 +51,7 @@ export const useAssignGuide = (tourId?: string): UseAssignGuideResult => {
       }
       
       // Resolve the group ID from a string ID or numeric index
-      const actualGroupId = await resolveGroupIdOrIndex(tourId || "", groupIdOrIndex);
+      const { groupId: actualGroupId } = await resolveGroupId(tourId || "", groupIdOrIndex);
       if (!actualGroupId) {
         throw new Error(`Could not find group with identifier: ${groupIdOrIndex}`);
       }
@@ -69,12 +68,18 @@ export const useAssignGuide = (tourId?: string): UseAssignGuideResult => {
       // Otherwise use the processed guide ID
       const finalGuideId = guideId === "_none" ? null : processedGuideId;
       
-      // Handle the group name update and guide assignment
-      const updatedName = await createDisplayNameForGroup(
-        actualGroupId, 
-        finalGuideId, 
-        guideId === "_none"
-      );
+      // Create updated name for the group based on guide assignment
+      let updatedName = "";
+      
+      // If removing guide, revert to default name format
+      if (guideId === "_none") {
+        // Extract group number from existing name or default to "Group"
+        const groupMatch = /Group\s+(\d+)/.exec(await fetchGroupName(actualGroupId));
+        updatedName = groupMatch ? `Group ${groupMatch[1]}` : "Group";
+      } else if (guideId && guideId !== "_none") {
+        // For guide assignment, include guide name
+        updatedName = `Group (${guideId.split(" ")[0]})`;
+      }
       
       // Update the database
       const success = await updateDatabaseWithGuideAssignment(
@@ -103,6 +108,23 @@ export const useAssignGuide = (tourId?: string): UseAssignGuideResult => {
       setIsAssigning(false);
     }
   }, [tourId, queryClient, clearError]);
+
+  // Helper to fetch a group's current name
+  const fetchGroupName = async (groupId: string): Promise<string> => {
+    try {
+      const { data, error } = await supabase
+        .from('tour_groups')
+        .select('name')
+        .eq('id', groupId)
+        .single();
+        
+      if (error) throw error;
+      return data?.name || "Group";
+    } catch (error) {
+      console.error("Error fetching group name:", error);
+      return "Group";
+    }
+  };
 
   return {
     assignGuide,

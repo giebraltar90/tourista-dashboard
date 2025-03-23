@@ -52,10 +52,13 @@ export const useAddGroup = (tourId: string, existingGroups: VentrataTourGroup[] 
         await updateTourGroups(tourId, updatedGroups);
 
         // Record this modification
-        await addModification(`Added new group: ${newGroup.name}`, {
-          type: "group_management",
-          action: "add_group",
-          groupName: newGroup.name
+        addModification({
+          description: `Added new group: ${newGroup.name}`,
+          details: {
+            type: "group_management",
+            action: "add_group",
+            groupName: newGroup.name
+          }
         });
 
         return true;

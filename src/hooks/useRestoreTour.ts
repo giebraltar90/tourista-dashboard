@@ -31,9 +31,12 @@ export const useRestoreTour = (tourId: string) => {
       await updateTourGroups(tourId, initialTourGroups);
 
       // Record this modification
-      await addModification("Tour restored to initial version", {
-        type: "tour_restore",
-        action: "restore_initial"
+      addModification({
+        description: "Tour restored to initial version",
+        details: {
+          type: "tour_restore",
+          action: "restore_initial"
+        }
       });
 
       // Force invalidate all tour-related queries to ensure UI updates

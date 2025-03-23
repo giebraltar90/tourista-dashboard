@@ -47,7 +47,7 @@ export const ModificationsTab = ({ tour, tourId }: ModificationsTabProps) => {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-medium">{mod.status || "Modified"}</h3>
                     <span className="text-sm text-muted-foreground">
-                      {new Date(mod.date).toLocaleDateString()}
+                      {new Date(mod.created_at).toLocaleDateString()}
                     </span>
                   </div>
                   <p className="text-sm">{mod.description}</p>

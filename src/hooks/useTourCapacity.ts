@@ -61,10 +61,13 @@ export const useUpdateTourCapacity = (tourId: string) => {
       const isHighSeason = Boolean(variables.isHighSeason);
       const modeText = isHighSeason ? 'high season' : 'standard';
       
-      addModification(`Tour capacity mode changed to ${modeText}`, {
-        type: "capacity_update",
-        oldMode: !isHighSeason ? 'high season' : 'standard',
-        newMode: modeText
+      addModification({
+        description: `Tour capacity mode changed to ${modeText}`,
+        details: {
+          type: "capacity_update",
+          oldMode: !isHighSeason ? 'high season' : 'standard',
+          newMode: modeText
+        }
       });
       
       toast.success(`Tour capacity updated to ${modeText} mode`);

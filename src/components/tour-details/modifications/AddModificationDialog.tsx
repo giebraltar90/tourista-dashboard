@@ -29,7 +29,7 @@ export const AddModificationDialog = ({ isOpen, setIsOpen, tourId }: AddModifica
     if (!description) return;
     
     try {
-      await addModification({
+      addModification({
         description,
         details: { 
           source: "user_input",

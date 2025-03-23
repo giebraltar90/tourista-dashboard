@@ -25,7 +25,7 @@ export const TourGroupGuide = ({
   guideInfo, 
   guideOptions 
 }: TourGroupGuideProps) => {
-  const { assignGuide } = useAssignGuide(tour);
+  const { assignGuide } = useAssignGuide(tour.id);
   
   // Critical debug output to track data coming in
   console.log(`TourGroupGuide(${groupIndex}) rendering with:`, {

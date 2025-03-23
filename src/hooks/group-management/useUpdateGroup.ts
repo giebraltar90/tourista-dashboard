@@ -31,15 +31,15 @@ export const useUpdateGroup = (tourId: string) => {
       }
       
       if (changes.length > 0) {
-        await addModification(
-          `Group "${updatedGroup.name}" updated: ${changes.join(", ")}`,
-          {
+        addModification({
+          description: `Group "${updatedGroup.name}" updated: ${changes.join(", ")}`,
+          details: {
             type: "group_update",
             groupIndex,
             originalGroup,
             updatedGroup
           }
-        );
+        });
       }
       
       // Refetch tour data to update UI

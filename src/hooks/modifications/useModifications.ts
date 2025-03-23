@@ -31,14 +31,14 @@ export const useModifications = (tourId: string) => {
     enabled: !!tourId
   });
 
-  const addModification = useMutation({
+  const modificationMutation = useMutation({
     mutationFn: async ({ description, details }: { description: string, details?: any }) => {
       try {
         const newModification = {
           tour_id: tourId,
           description,
           details,
-          status: 'complete',
+          status: 'complete' as const, // TypeScript needs this explicit type
           created_at: new Date().toISOString()
         };
         
@@ -73,6 +73,7 @@ export const useModifications = (tourId: string) => {
     isLoading,
     error,
     refetch,
-    addModification
+    addModification: modificationMutation.mutate,
+    isAddingModification: modificationMutation.isPending
   };
 };
