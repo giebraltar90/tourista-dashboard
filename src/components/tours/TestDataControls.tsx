@@ -14,10 +14,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 export const TestDataControls = () => {
   const { createTestTours, clearTestData, isCreatingTestData, isClearingTestData } = useTestData();
   const debugMode = useDebugMode();
+  
+  const handleClearTestData = async () => {
+    try {
+      await clearTestData();
+      toast.success("Test data cleared successfully. Refresh the page to see the changes.");
+    } catch (error) {
+      toast.error("Error clearing test data. Please try again.");
+    }
+  };
   
   return (
     <div className="flex flex-col gap-3 mt-4">
@@ -53,11 +63,12 @@ export const TestDataControls = () => {
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
                 This will delete all test data from the database. This action cannot be undone.
+                After clearing the data, you may need to refresh the page.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={clearTestData}>
+              <AlertDialogAction onClick={handleClearTestData}>
                 Yes, Clear All Data
               </AlertDialogAction>
             </AlertDialogFooter>

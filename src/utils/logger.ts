@@ -63,6 +63,21 @@ class Logger {
     return args;
   }
 
+  // Make sure error objects are properly captured
+  formatErrorObjects(args: any[]): any[] {
+    return args.map(arg => {
+      if (arg instanceof Error) {
+        return {
+          name: arg.name,
+          message: arg.message,
+          stack: arg.stack,
+          toString: () => arg.toString()
+        };
+      }
+      return arg;
+    });
+  }
+
   log(...args: any[]) {
     // Always show logs
     this.originalConsole.log(...this.formatArgs(args));
@@ -80,7 +95,8 @@ class Logger {
 
   error(...args: any[]) {
     // Always show errors
-    this.originalConsole.error(...this.formatArgs(args));
+    const formattedArgs = this.formatArgs(this.formatErrorObjects(args));
+    this.originalConsole.error(...formattedArgs);
   }
 
   debug(...args: any[]) {

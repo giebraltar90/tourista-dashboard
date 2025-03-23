@@ -16,12 +16,12 @@ export const ParticipantTicketsSection = ({
       
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Adult participants:</span>
-        <span className="font-medium">{validAdultTickets}</span>
+        <span className="font-medium">{validAdultTickets || 0}</span>
       </div>
 
       <div className="flex justify-between text-sm">
         <span className="text-muted-foreground">Child participants:</span>
-        <span className="font-medium">{validChildTickets}</span>
+        <span className="font-medium">{validChildTickets || 0}</span>
       </div>
     </div>
   );

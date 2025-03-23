@@ -83,6 +83,11 @@ export const useTestData = () => {
       queryClient.invalidateQueries({ queryKey: ['participants'] });
       
       toast.success(`Test data created successfully: ${tours.length} tours, ${groups.length} groups, ${participants?.length || 0} participants`);
+      
+      setTimeout(() => {
+        toast.info("Refresh the page to see all the changes if they don't appear automatically.");
+      }, 3000);
+      
       return true;
     } catch (error) {
       logger.error("Error creating test data:", error);
@@ -121,6 +126,11 @@ export const useTestData = () => {
         queryClient.resetQueries({ queryKey: ['participants'] });
         
         toast.success("Test data cleared successfully");
+        
+        setTimeout(() => {
+          toast.info("Refresh the page to see all the changes if they don't appear automatically.");
+        }, 3000);
+        
         return true;
       } else {
         logger.error("Failed to clear test data");

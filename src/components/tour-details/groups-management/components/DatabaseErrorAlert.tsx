@@ -20,14 +20,14 @@ export const DatabaseErrorAlert = ({
     <Alert variant="destructive">
       <AlertTriangle className="h-4 w-4" />
       <AlertDescription className="flex items-center justify-between">
-        <span>Database error: {error}</span>
+        <span>{error.includes('JSON object requested') ? 'Database error: No tour data found' : `Database error: ${error}`}</span>
         <Button 
           onClick={onFixDatabase} 
           disabled={isFixingDatabase}
           size="sm" 
           variant="destructive"
         >
-          Fix Database
+          {isFixingDatabase ? 'Fixing...' : 'Fix Database'}
         </Button>
       </AlertDescription>
     </Alert>
