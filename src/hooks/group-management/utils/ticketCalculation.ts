@@ -7,7 +7,8 @@ import {
   getGuideTicketRequirement,
   findAssignedGuides,
   processGuideTicketRequirement,
-  calculateGuideTicketsNeeded
+  calculateGuideTicketsNeeded,
+  calculateCompleteGuideTicketRequirements
 } from '@/hooks/tour-details/services/ticketCalculationService';
 
 // Re-export all the functions for backward compatibility
@@ -18,5 +19,6 @@ export {
   getGuideTicketRequirement,
   findAssignedGuides,
   processGuideTicketRequirement,
-  calculateGuideTicketsNeeded
+  calculateGuideTicketsNeeded,
+  calculateCompleteGuideTicketRequirements
 };
