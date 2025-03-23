@@ -67,7 +67,6 @@ export const useGuideAssignmentForm = ({
       guidesCount: guides.length,
       currentGuideId,
       currentValue,
-      availableGuideIds: guides.map(g => ({id: g.id, name: g.name}))
     });
   }, [tourId, groupIndex, guides, currentGuideId, currentValue]);
 

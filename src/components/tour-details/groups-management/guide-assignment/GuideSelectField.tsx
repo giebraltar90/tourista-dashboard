@@ -27,9 +27,11 @@ interface GuideSelectFieldProps {
 }
 
 export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFieldProps) => {
-  // Ensure all guides have readable names
+  // Make sure we have a value - defaulting to "_none" if undefined or null
+  const safeDefaultValue = defaultValue || "_none";
+  
+  // Fix any guides with missing name
   const processedGuides = guides.map(guide => {
-    // If guide has a UUID as name or name with "..." in it, try to give it a better name
     if (!guide.name || guide.name.includes('...')) {
       return {
         ...guide,
@@ -44,11 +46,11 @@ export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFiel
     guide && guide.id && guide.id.trim() !== ""
   );
   
-  console.log("🔍 [GuideSelectField] Rendering with guides:", validGuides.map(g => ({
-    id: g.id,
-    name: g.name,
-    guideType: g.info?.guideType
-  })));
+  console.log("GuideSelectField rendering with:", {
+    defaultValue: safeDefaultValue,
+    guidesCount: validGuides.length,
+    guides: validGuides.map(g => ({ id: g.id, name: g.name }))
+  });
   
   return (
     <FormField
@@ -59,10 +61,10 @@ export const GuideSelectField = ({ form, guides, defaultValue }: GuideSelectFiel
           <FormLabel>Select Guide</FormLabel>
           <Select 
             onValueChange={(value) => {
-              console.log(`🔍 [GuideSelectField] Selected guide: ${value}`);
+              console.log(`Selected guide ID: ${value}`);
               field.onChange(value);
             }} 
-            defaultValue={defaultValue}
+            defaultValue={safeDefaultValue}
           >
             <FormControl>
               <SelectTrigger>

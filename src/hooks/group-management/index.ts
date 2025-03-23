@@ -1,4 +1,5 @@
 
+// Re-export all files from their sources
 export * from './useAddGroup';
 export * from './useDeleteGroup';
 export * from './useDragAndDrop';
@@ -7,8 +8,15 @@ export * from './useParticipantMovement';
 export * from './useUpdateGroup';
 export * from './useAssignGuide';
 export * from './useGuideNameInfo';
-// Removed explicit re-export of useGuideAssignmentForm to avoid ambiguity
-export { useGuideAssignmentForm } from './useGuideAssignmentForm';
+
+// Explicitly re-export useGuideAssignmentForm with named exports
+export { 
+  useGuideAssignmentForm, 
+  type FormValues,  
+  type UseGuideAssignmentFormProps,
+  type UseGuideAssignmentFormResult
+} from './useGuideAssignmentForm';
+
 export * from './types';
 
 // Newly refactored hooks
