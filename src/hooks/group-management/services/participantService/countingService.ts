@@ -1,4 +1,3 @@
-
 import { VentrataTourGroup } from "@/types/ventrata";
 
 /**
@@ -48,6 +47,7 @@ export const calculateGuideAdultTickets = (
   }
   
   // Count how many GA Ticket guides we have (they need adult tickets)
+  // Keep track of processed guides by name to avoid duplicates
   const processedGuideNames = new Set<string>();
   let gaTicketGuideCount = 0;
   
@@ -55,11 +55,13 @@ export const calculateGuideAdultTickets = (
     // Skip if no info
     if (!guide?.info) return;
     
+    // Get the guide name in lowercase for consistent comparison
+    const guideName = (guide.info.name || guide.name || '').toLowerCase();
+    
     // Skip if already processed this guide (by name to avoid duplicates)
-    const guideName = guide.info.name?.toLowerCase() || '';
     if (processedGuideNames.has(guideName)) return;
     
-    // Skip Sophie Miller
+    // Skip Sophie Miller - she is always treated as a GC guide (never needs a ticket)
     if (guideName.includes('sophie miller')) return;
     
     // Add to processed list
@@ -99,6 +101,7 @@ export const calculateGuideChildTickets = (
   }
   
   // Count how many GA Free guides we have (they need child tickets)
+  // Keep track of processed guides by name to avoid duplicates
   const processedGuideNames = new Set<string>();
   let gaFreeGuideCount = 0;
   
@@ -106,11 +109,13 @@ export const calculateGuideChildTickets = (
     // Skip if no info
     if (!guide?.info) return;
     
+    // Get the guide name in lowercase for consistent comparison
+    const guideName = (guide.info.name || guide.name || '').toLowerCase();
+    
     // Skip if already processed this guide (by name to avoid duplicates)
-    const guideName = guide.info.name?.toLowerCase() || '';
     if (processedGuideNames.has(guideName)) return;
     
-    // Skip Sophie Miller
+    // Skip Sophie Miller - she is always treated as a GC guide (never needs a ticket)
     if (guideName.includes('sophie miller')) return;
     
     // Add to processed list

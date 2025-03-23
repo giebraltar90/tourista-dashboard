@@ -42,6 +42,18 @@ export const TicketsCard = ({
   
   // Determine if we have enough tickets
   const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
+  
+  // Log current ticket breakdown for debugging
+  console.log("TicketsCard render:", {
+    location,
+    isLocationRequiringTickets,
+    validAdultTickets,
+    validChildTickets,
+    validGuideAdultTickets,
+    validGuideChildTickets,
+    totalRequiredTickets,
+    hasEnoughTickets
+  });
 
   return (
     <Card>

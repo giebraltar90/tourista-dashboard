@@ -38,22 +38,37 @@ export const GuideSelectField = ({
   const [processedGuides, setProcessedGuides] = useState<GuideOption[]>([]);
   
   useEffect(() => {
+    // Log guides data to help with debugging
+    console.log("GuideSelectField guides data:", guides);
+    
     // Process guides to ensure all have readable names
     const processed = guides.map(guide => {
-      // If guide has a UUID as name or name with "..." in it, try to give it a better name
-      if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
-        return {
-          ...guide,
-          name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
-        };
+      // If guide has no name or UUID as name or name with "..." in it, try to give it a better name
+      let displayName = guide.name;
+      
+      if (!displayName || displayName.includes('...') || displayName === guide.id) {
+        // Try to get name from guide info
+        if (guide.info?.name && guide.info.name.trim() !== '') {
+          displayName = guide.info.name;
+        } else {
+          // Fallback to a formatted ID display
+          displayName = `Guide (${guide.id.substring(0, 8)})`;
+        }
       }
-      return guide;
+      
+      return {
+        ...guide,
+        name: displayName
+      };
     });
     
     // Filter out any guides with empty ids to avoid the Select.Item error
     const valid = processed.filter(guide => 
       guide && guide.id && guide.id.trim() !== "" && guide.name
     );
+    
+    // Log the processed guides
+    console.log("GuideSelectField processed guides:", valid);
     
     setProcessedGuides(valid);
   }, [guides]);

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
@@ -57,77 +58,62 @@ export const useParticipantCounts = (
     const totalChildCount = calculateTotalChildCount(groups);
     const adultParticipants = totalParticipants - totalChildCount;
     
-    // Set default guide ticket counts
+    // Prepare processed guide information to avoid duplicate processing
+    // For Sophie Miller, we'll ensure she's always treated as a GC guide who doesn't need a ticket
+    const processedGuides: {[name: string]: {needsTicket: boolean, ticketType: 'adult' | 'child' | null}} = {};
     let guideAdultTickets = 0;
     let guideChildTickets = 0;
     
-    // Keep track of processed guides to avoid duplicates
-    const processedGuides = new Set<string>();
-    
-    // Process guide1
-    if (guide1Info && guide1Name) {
-      const guideName = guide1Name.toLowerCase().trim();
+    // Create a helper function to process a guide
+    const processGuide = (guideName: string, guideInfo: GuideInfo | null) => {
+      // Skip empty guides or those we've already processed
+      if (!guideName || processedGuides[guideName.toLowerCase()]) {
+        return;
+      }
       
-      // Skip if already processed or if it's Sophie Miller
-      if (!processedGuides.has(guideName)) {
-        processedGuides.add(guideName);
-        
-        // Check if this guide needs a ticket
-        const needsTicket = doesGuideNeedTicket(guide1Info, location);
-        const ticketType = getGuideTicketType(guide1Info);
-        
-        if (needsTicket) {
-          if (ticketType === 'adult') {
-            guideAdultTickets++;
-          } else if (ticketType === 'child') {
-            guideChildTickets++;
-          }
+      // For Sophie Miller, force GC guide type
+      if (guideName.toLowerCase().includes('sophie miller')) {
+        if (guideInfo) {
+          guideInfo.guideType = 'GC';
         }
       }
+      
+      // Check if this guide needs a ticket
+      const needsTicket = doesGuideNeedTicket(guideInfo, location);
+      const ticketType = getGuideTicketType(guideInfo);
+      
+      // Add to processed guides to avoid duplicates
+      processedGuides[guideName.toLowerCase()] = { needsTicket, ticketType };
+      
+      // Increment ticket counters if needed
+      if (needsTicket) {
+        if (ticketType === 'adult') {
+          guideAdultTickets++;
+        } else if (ticketType === 'child') {
+          guideChildTickets++;
+        }
+      }
+      
+      // Debug logging
+      console.log(`Guide processed: ${guideName}`, { 
+        needsTicket, 
+        ticketType, 
+        guideType: guideInfo?.guideType,
+        isSophieMiller: guideName.toLowerCase().includes('sophie miller')
+      });
+    };
+    
+    // Process the main guides
+    if (guide1Name && guide1Info) {
+      processGuide(guide1Name, guide1Info);
     }
     
-    // Process guide2
-    if (guide2Info && guide2Name) {
-      const guideName = guide2Name.toLowerCase().trim();
-      
-      // Skip if already processed or if it's Sophie Miller
-      if (!processedGuides.has(guideName)) {
-        processedGuides.add(guideName);
-        
-        // Check if this guide needs a ticket
-        const needsTicket = doesGuideNeedTicket(guide2Info, location);
-        const ticketType = getGuideTicketType(guide2Info);
-        
-        if (needsTicket) {
-          if (ticketType === 'adult') {
-            guideAdultTickets++;
-          } else if (ticketType === 'child') {
-            guideChildTickets++;
-          }
-        }
-      }
+    if (guide2Name && guide2Info) {
+      processGuide(guide2Name, guide2Info);
     }
     
-    // Process guide3
-    if (guide3Info && guide3Name) {
-      const guideName = guide3Name.toLowerCase().trim();
-      
-      // Skip if already processed or if it's Sophie Miller
-      if (!processedGuides.has(guideName)) {
-        processedGuides.add(guideName);
-        
-        // Check if this guide needs a ticket
-        const needsTicket = doesGuideNeedTicket(guide3Info, location);
-        const ticketType = getGuideTicketType(guide3Info);
-        
-        if (needsTicket) {
-          if (ticketType === 'adult') {
-            guideAdultTickets++;
-          } else if (ticketType === 'child') {
-            guideChildTickets++;
-          }
-        }
-      }
+    if (guide3Name && guide3Info) {
+      processGuide(guide3Name, guide3Info);
     }
     
     // Calculate total guide tickets needed
@@ -135,6 +121,23 @@ export const useParticipantCounts = (
     
     // Calculate total tickets (participants + guides)
     const totalTicketsNeeded = totalParticipants + guideTicketsNeeded;
+    
+    // Log complete ticket calculation for debugging
+    console.log("🎫 FINAL TICKET CALCULATION:", {
+      location,
+      totalParticipants,
+      totalChildCount,
+      adultParticipants,
+      guideAdultTickets,
+      guideChildTickets,
+      guideTicketsNeeded,
+      totalTicketsNeeded,
+      guides: {
+        guide1: guide1Name ? { name: guide1Name, type: guide1Info?.guideType, needsTicket: processedGuides[guide1Name.toLowerCase()]?.needsTicket } : null,
+        guide2: guide2Name ? { name: guide2Name, type: guide2Info?.guideType, needsTicket: processedGuides[guide2Name.toLowerCase()]?.needsTicket } : null,
+        guide3: guide3Name ? { name: guide3Name, type: guide3Info?.guideType, needsTicket: processedGuides[guide3Name.toLowerCase()]?.needsTicket } : null,
+      }
+    });
     
     setCounts({
       totalParticipants,
