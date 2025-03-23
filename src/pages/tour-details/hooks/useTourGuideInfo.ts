@@ -13,9 +13,9 @@ export const useTourGuideInfo = (tour: TourCardProps | null) => {
   const [guide3Info, setGuide3Info] = useState<GuideInfo | null>(null);
   
   // Fetch guide info using the useGuideInfo hook
-  const guide1Data = useGuideInfo(tour?.guide1 || "");
-  const guide2Data = useGuideInfo(tour?.guide2 || "");
-  const guide3Data = useGuideInfo(tour?.guide3 || "");
+  const guide1Data = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
+  const guide2Data = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
+  const guide3Data = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
 
   useEffect(() => {
     // Update guide1Info when data changes

@@ -66,10 +66,7 @@ export function useGuideInfo(guideName: string) {
         return null;
       }
     },
-    enabled: !!guideName,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    retry: 1, // Only retry once to prevent excessive requests
-    refetchOnWindowFocus: false, // Prevent refetching on window focus
+    enabled: !!guideName
   });
   
   if (isError) {
