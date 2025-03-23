@@ -30,29 +30,47 @@ export const useGuideTicketRequirements = (
       ticketType: "adult" | "child" | null;
     }> = [];
     
-    // Process each assigned guide
-    assignedGuidePositions.forEach(guidePosition => {
-      // Get ticket requirement for this guide
-      const { ticketType, guideInfo } = getGuideTicketRequirement(
-        guidePosition,
-        guide1Info,
-        guide2Info,
-        guide3Info
+    // Always check guide1 (primary guide) even if not assigned to a group
+    if (guide1Info && guide1Info.name) {
+      const guide1Result = getGuideTicketRequirement(
+        "guide1", guide1Info, guide2Info, guide3Info
       );
       
-      // Skip if no guide info found
-      if (!guideInfo) return;
-      
-      // Add guide to the list
       guides.push({
-        guideName: guideInfo.name || "Unknown Guide",
-        guideType: guideInfo.guideType || "Unknown Type",
-        ticketType: ticketType
+        guideName: guide1Info.name || "Unknown Guide",
+        guideType: guide1Info.guideType || "Unknown Type",
+        ticketType: guide1Result.ticketType
       });
-    });
+    }
+    
+    // Check guide2 if present
+    if (guide2Info && guide2Info.name) {
+      const guide2Result = getGuideTicketRequirement(
+        "guide2", guide1Info, guide2Info, guide3Info
+      );
+      
+      guides.push({
+        guideName: guide2Info.name || "Unknown Guide",
+        guideType: guide2Info.guideType || "Unknown Type",
+        ticketType: guide2Result.ticketType
+      });
+    }
+    
+    // Check guide3 if present
+    if (guide3Info && guide3Info.name) {
+      const guide3Result = getGuideTicketRequirement(
+        "guide3", guide1Info, guide2Info, guide3Info
+      );
+      
+      guides.push({
+        guideName: guide3Info.name || "Unknown Guide",
+        guideType: guide3Info.guideType || "Unknown Type",
+        ticketType: guide3Result.ticketType
+      });
+    }
     
     return guides;
-  }, [assignedGuidePositions, guide1Info, guide2Info, guide3Info]);
+  }, [guide1Info, guide2Info, guide3Info]);
   
   // Count adult and child tickets
   const { adultTickets, childTickets } = useMemo(() => {
@@ -73,7 +91,6 @@ export const useGuideTicketRequirements = (
   // Log detailed debug information
   useEffect(() => {
     logger.debug(`🎟️ [useGuideTicketRequirements] Guide ticket requirements for tour ${tour.id}:`, {
-      location: tour.location,
       hasAssignedGuides: assignedGuidePositions.size > 0,
       assignedGuidePositions: Array.from(assignedGuidePositions),
       guideAdultTickets: adultTickets,
@@ -85,7 +102,7 @@ export const useGuideTicketRequirements = (
       }))
     });
   }, [
-    tour.id, tour.location, assignedGuidePositions, adultTickets, childTickets, guidesWithTickets
+    tour.id, assignedGuidePositions, adultTickets, childTickets, guidesWithTickets
   ]);
   
   return {

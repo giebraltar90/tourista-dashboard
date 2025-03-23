@@ -21,22 +21,16 @@ export const GuideTicketsSection = ({
   guideChildTickets,
   guidesWithTickets
 }: GuideTicketsSectionProps) => {
-  // Only display section if there are assigned guides with tickets
-  const hasGuideTickets = guideAdultTickets > 0 || guideChildTickets > 0 || guidesWithTickets.length > 0;
-  
+  // Log the input props for debugging
   logger.debug(`🎟️ [GuideTicketsSection] Rendering with:`, {
     locationNeedsGuideTickets,
     guideAdultTickets,
     guideChildTickets,
     guidesWithTicketsCount: guidesWithTickets.length,
-    hasGuideTickets
   });
   
-  if (!hasGuideTickets) {
-    logger.debug(`🎟️ [GuideTicketsSection] No guide tickets to display, returning null`);
-    return null;
-  }
-
+  // Always display the section, even if there are no guide tickets
+  // This ensures the section label is always visible
   return (
     <div>
       <div className="text-xs text-muted-foreground mb-1">

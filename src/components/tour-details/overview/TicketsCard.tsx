@@ -95,30 +95,12 @@ export const TicketsCard = ({
         name: g.guideName,
         type: g.guideType,
         ticketType: g.ticketType
-      })),
-      groupCount: Array.isArray(tourGroups) ? tourGroups.length : 0,
-      groupsWithGuides: Array.isArray(tourGroups) ? 
-        tourGroups.filter(g => g.guideId && g.guideId !== 'unassigned').length : 0
+      }))
     });
-    
-    // Log tour groups with assigned guides
-    if (Array.isArray(tourGroups) && tourGroups.length > 0) {
-      const groupsWithGuides = tourGroups.filter(g => g.guideId && g.guideId !== 'unassigned');
-      if (groupsWithGuides.length > 0) {
-        logger.debug(`🎟️ [TicketsCard] Groups with assigned guides:`, 
-          groupsWithGuides.map(g => ({
-            id: g.id,
-            name: g.name || 'Unnamed',
-            guideId: g.guideId,
-            guideName: g.guideName || 'Unknown'
-          }))
-        );
-      }
-    }
   }, [
     tourId, location, locationNeedsGuideTickets, hasAssignedGuides, 
     validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets,
-    guide1Info, guide2Info, guide3Info, guidesWithTickets, tourGroups
+    guide1Info, guide2Info, guide3Info, guidesWithTickets
   ]);
   
   // Total required tickets calculations
