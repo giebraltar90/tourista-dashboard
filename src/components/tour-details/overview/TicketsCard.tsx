@@ -71,8 +71,7 @@ export const TicketsCard = ({
       guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'null',
       guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'null',
       tourGroupsCount: tourGroups?.length || 0,
-      tourGroupGuides: tourGroups?.map(g => g.guideId || 'none') || [],
-      hasAssignedGuides
+      tourGroupGuides: tourGroups?.map(g => g.guideId || 'none') || []
     });
     
     // Print detailed info for each guide
