@@ -14,10 +14,10 @@ export const useGuideTicketRequirements = (
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null
 ) => {
-  // Always handle the case of location requiring guide tickets (simplified requirement)
+  // We always consider guide tickets (no longer location dependent)
   const locationNeedsGuideTickets = true;
   
-  // Find assigned guides from tour groups
+  // Find assigned guides from tour groups (for logging only, we now assume all guides need tickets if present)
   const assignedGuidePositions = useMemo(() => {
     return findAssignedGuides(tour.tourGroups, guide1Info, guide2Info, guide3Info);
   }, [tour.tourGroups, guide1Info, guide2Info, guide3Info]);
@@ -30,17 +30,25 @@ export const useGuideTicketRequirements = (
       ticketType: "adult" | "child" | null;
     }> = [];
     
-    // Always check guide1 (primary guide) even if not assigned to a group
+    logger.debug(`🎟️ [useGuideTicketRequirements] Calculating tickets for guides:`, {
+      guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
+      guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
+      guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
+    });
+    
+    // Always check guide1 (primary guide) if present
     if (guide1Info && guide1Info.name) {
       const guide1Result = getGuideTicketRequirement(
         "guide1", guide1Info, guide2Info, guide3Info
       );
       
       guides.push({
-        guideName: guide1Info.name || "Unknown Guide",
+        guideName: guide1Info.name || "Guide 1",
         guideType: guide1Info.guideType || "Unknown Type",
         ticketType: guide1Result.ticketType
       });
+      
+      logger.debug(`🎟️ [useGuideTicketRequirements] Added guide1: ${guide1Info.name} (${guide1Info.guideType}) - ticket: ${guide1Result.ticketType || 'none'}`);
     }
     
     // Check guide2 if present
@@ -50,10 +58,12 @@ export const useGuideTicketRequirements = (
       );
       
       guides.push({
-        guideName: guide2Info.name || "Unknown Guide",
+        guideName: guide2Info.name || "Guide 2",
         guideType: guide2Info.guideType || "Unknown Type",
         ticketType: guide2Result.ticketType
       });
+      
+      logger.debug(`🎟️ [useGuideTicketRequirements] Added guide2: ${guide2Info.name} (${guide2Info.guideType}) - ticket: ${guide2Result.ticketType || 'none'}`);
     }
     
     // Check guide3 if present
@@ -63,10 +73,12 @@ export const useGuideTicketRequirements = (
       );
       
       guides.push({
-        guideName: guide3Info.name || "Unknown Guide",
+        guideName: guide3Info.name || "Guide 3",
         guideType: guide3Info.guideType || "Unknown Type",
         ticketType: guide3Result.ticketType
       });
+      
+      logger.debug(`🎟️ [useGuideTicketRequirements] Added guide3: ${guide3Info.name} (${guide3Info.guideType}) - ticket: ${guide3Result.ticketType || 'none'}`);
     }
     
     return guides;
@@ -95,6 +107,7 @@ export const useGuideTicketRequirements = (
       assignedGuidePositions: Array.from(assignedGuidePositions),
       guideAdultTickets: adultTickets,
       guideChildTickets: childTickets,
+      totalGuideTickets: adultTickets + childTickets,
       guidesWithTickets: guidesWithTickets.map(g => ({
         name: g.guideName,
         type: g.guideType,

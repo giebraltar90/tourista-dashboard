@@ -1,6 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
+import { GuideTicketsList } from "./GuideTicketsList";
 
 interface GuideWithTicket {
   guideName: string;
@@ -53,19 +54,7 @@ export const GuideTicketsSection = ({
             </div>
           )}
           
-          <div className="mt-1 text-xs text-muted-foreground">
-            {guidesWithTickets.map((guide, index) => (
-              <div key={`${guide.guideName}-${index}`} className="flex justify-between">
-                <span>{guide.guideName} ({guide.guideType}):</span>
-                <span className={cn(
-                  guide.ticketType === 'adult' ? "text-blue-600" :
-                  guide.ticketType === 'child' ? "text-green-600" : "text-gray-400"
-                )}>
-                  {guide.ticketType ? guide.ticketType : "none"}
-                </span>
-              </div>
-            ))}
-          </div>
+          <GuideTicketsList guides={guidesWithTickets} />
         </>
       ) : (
         <div className="flex justify-between text-sm">
