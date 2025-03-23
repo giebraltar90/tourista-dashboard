@@ -25,6 +25,7 @@ export interface VentrataTourGroup {
   guideId?: string;
   guideName?: string;
   participants: VentrataParticipant[];
+  isExpanded?: boolean; // Added this property
   // The following properties are for database compatibility
   child_count?: number; // Snake_case version
   entry_time?: string; // Snake_case version
@@ -38,3 +39,4 @@ export interface GuideInfo {
   birthday: Date;
   guideType: GuideType;
 }
+

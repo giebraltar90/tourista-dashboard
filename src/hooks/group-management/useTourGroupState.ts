@@ -48,7 +48,8 @@ export const useTourGroupState = (tour: TourCardProps) => {
             ...group,
             // Important: Maintain the original order as in tour.tourGroups
             // Preserve expanded state if it exists in the previous state
-            isExpanded: existingGroup?.isExpanded !== undefined 
+            // Type-safe way to handle this property
+            isExpanded: existingGroup && 'isExpanded' in existingGroup
               ? existingGroup.isExpanded 
               : true
           };
@@ -91,3 +92,4 @@ export const useTourGroupState = (tour: TourCardProps) => {
     recalculateGroupSizes
   };
 };
+
