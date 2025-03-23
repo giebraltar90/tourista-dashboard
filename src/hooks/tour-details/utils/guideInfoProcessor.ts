@@ -51,22 +51,27 @@ export const mapTourGroupGuideIds = (
   
   return tourGroups.map(group => {
     let mappedGuideId = group.guideId;
+    let guideName = group.guideName;
     
     // If the guideId matches a guide name, map it to the guide key
-    if (guide1 && group.guideId === guide1) {
+    if (guide1 && (group.guideId === guide1 || group.guideName === guide1)) {
       mappedGuideId = 'guide1';
+      guideName = guide1;
       logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide1 in group ${group.name || 'unnamed'}`);
-    } else if (guide2 && group.guideId === guide2) {
+    } else if (guide2 && (group.guideId === guide2 || group.guideName === guide2)) {
       mappedGuideId = 'guide2';
+      guideName = guide2;
       logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide2 in group ${group.name || 'unnamed'}`);
-    } else if (guide3 && group.guideId === guide3) {
+    } else if (guide3 && (group.guideId === guide3 || group.guideName === guide3)) {
       mappedGuideId = 'guide3';
+      guideName = guide3;
       logger.debug(`🔄 [mapTourGroupGuideIds] Mapped ${group.guideId} to guide3 in group ${group.name || 'unnamed'}`);
     }
     
     return {
       ...group,
-      guideId: mappedGuideId
+      guideId: mappedGuideId,
+      guideName: guideName || group.guideName
     };
   });
 };

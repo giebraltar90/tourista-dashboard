@@ -39,6 +39,7 @@ export const findAssignedGuides = (
       groupId: group.id,
       groupName: group.name,
       guideId: group.guideId,
+      guideName: group.guideName,
       hasGuide: !!group.guideId && group.guideId !== "unassigned"
     });
   });
@@ -49,7 +50,9 @@ export const findAssignedGuides = (
       if (guide1Info && (
           group.guideId === guide1Info.id || 
           group.guideId === 'guide1' || 
-          (typeof guide1Info.name === 'string' && group.guideId === guide1Info.name)
+          (typeof guide1Info.name === 'string' && 
+            (group.guideId === guide1Info.name || 
+             (group.guideName && group.guideName === guide1Info.name)))
         )) {
         assignedGuideIds.add("guide1");
         logger.debug(`🔎 [FindAssignedGuides] Found guide1 (${guide1Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
@@ -57,7 +60,9 @@ export const findAssignedGuides = (
       else if (guide2Info && (
           group.guideId === guide2Info.id ||
           group.guideId === 'guide2' ||
-          (typeof guide2Info.name === 'string' && group.guideId === guide2Info.name)
+          (typeof guide2Info.name === 'string' && 
+            (group.guideId === guide2Info.name || 
+             (group.guideName && group.guideName === guide2Info.name)))
         )) {
         assignedGuideIds.add("guide2");
         logger.debug(`🔎 [FindAssignedGuides] Found guide2 (${guide2Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
@@ -65,12 +70,33 @@ export const findAssignedGuides = (
       else if (guide3Info && (
           group.guideId === guide3Info.id ||
           group.guideId === 'guide3' ||
-          (typeof guide3Info.name === 'string' && group.guideId === guide3Info.name)
+          (typeof guide3Info.name === 'string' && 
+            (group.guideId === guide3Info.name || 
+             (group.guideName && group.guideName === guide3Info.name)))
         )) {
         assignedGuideIds.add("guide3");
         logger.debug(`🔎 [FindAssignedGuides] Found guide3 (${guide3Info.name}) assigned to group ${group.name || 'Unnamed'} with ID ${group.guideId}`);
       } else {
         logger.debug(`🔎 [FindAssignedGuides] Found unrecognized guide ${group.guideId} in group ${group.name || 'Unnamed'}`);
+        
+        // Additional check: try to match by name comparison if guideName is present
+        if (group.guideName) {
+          if (guide1Info && typeof guide1Info.name === 'string' && 
+              group.guideName.toLowerCase().includes(guide1Info.name.toLowerCase())) {
+            assignedGuideIds.add("guide1");
+            logger.debug(`🔎 [FindAssignedGuides] Matched guide1 by name similarity to ${group.guideName}`);
+          }
+          else if (guide2Info && typeof guide2Info.name === 'string' && 
+                  group.guideName.toLowerCase().includes(guide2Info.name.toLowerCase())) {
+            assignedGuideIds.add("guide2");
+            logger.debug(`🔎 [FindAssignedGuides] Matched guide2 by name similarity to ${group.guideName}`);
+          }
+          else if (guide3Info && typeof guide3Info.name === 'string' && 
+                  group.guideName.toLowerCase().includes(guide3Info.name.toLowerCase())) {
+            assignedGuideIds.add("guide3");
+            logger.debug(`🔎 [FindAssignedGuides] Matched guide3 by name similarity to ${group.guideName}`);
+          }
+        }
       }
     }
   });

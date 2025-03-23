@@ -92,4 +92,3 @@ export const useTourGroupState = (tour: TourCardProps) => {
     recalculateGroupSizes
   };
 };
-

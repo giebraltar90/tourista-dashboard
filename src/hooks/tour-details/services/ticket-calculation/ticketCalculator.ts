@@ -34,6 +34,7 @@ export const calculateGuideTicketsNeeded = (
       id: g.id,
       name: g.name,
       guideId: g.guideId,
+      guideName: g.guideName
     }))
   });
   

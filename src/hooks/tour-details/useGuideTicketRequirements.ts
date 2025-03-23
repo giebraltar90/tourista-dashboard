@@ -66,6 +66,7 @@ export const useGuideTicketRequirements = (
         groupId: g.id,
         groupName: g.name,
         guideId: g.guideId,
+        guideName: g.guideName
       }))
     );
     
@@ -92,16 +93,17 @@ export const useGuideTicketRequirements = (
       tourGroups: tour.tourGroups?.map(g => ({
         id: g.id,
         name: g.name,
-        guideId: g.guideId
+        guideId: g.guideId,
+        guideName: g.guideName
       }))
     });
     
     // Explicitly find which guides are assigned to groups
     const assignedGuideIds = findAssignedGuides(
       tour.tourGroups || [],
-      guide1Info,
-      guide2Info,
-      guide3Info
+      guide1Info || null,
+      guide2Info || null,
+      guide3Info || null
     );
     
     logger.debug(`🔍 [useGuideTicketRequirements] Found assigned guide IDs:`, {
