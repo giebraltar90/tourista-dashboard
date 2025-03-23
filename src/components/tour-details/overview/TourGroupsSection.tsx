@@ -1,13 +1,13 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { VentrataTourGroup } from "@/types/ventrata";
 import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { Button } from "@/components/ui/button";
 import { AssignGuideDialog } from "../groups-management/dialogs/AssignGuideDialog";
 import { useGuideData } from "@/hooks/guides";
 import { TourCardProps } from "@/components/tours/tour-card/types";
+import { logger } from "@/utils/logger";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
@@ -34,6 +34,20 @@ export const TourGroupsSection = ({
   
   // Ensure we have tour groups
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
+  
+  // Log group data for debugging
+  useEffect(() => {
+    logger.debug("TourGroupsSection: Tour groups data", {
+      tourId: tour.id,
+      groupCount: tourGroups.length,
+      groups: tourGroups.map((g, i) => ({
+        index: i,
+        id: g.id,
+        name: g.name,
+        guideId: g.guideId || 'none'
+      }))
+    });
+  }, [tour.id, tourGroups]);
   
   const toggleGroupExpanded = (groupId: string) => {
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
@@ -106,6 +120,14 @@ export const TourGroupsSection = ({
               const displayName = guideName && guideName !== "Unassigned" 
                 ? `Group ${index + 1} (${guideName})`
                 : `Group ${index + 1}`;
+                
+              // Log each group's guide info for debugging
+              logger.debug(`Group ${index + 1} guide info:`, {
+                groupId: group.id,
+                groupName: group.name,
+                guideId: group.guideId,
+                calculatedGuideName: guideName
+              });
               
               return (
                 <div 

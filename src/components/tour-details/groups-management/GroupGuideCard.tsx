@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Users, UserPlus } from "lucide-react";
 import { VentrataTourGroup } from "@/types/ventrata";
+import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 interface GroupGuideCardProps {
   index: number;
@@ -23,6 +25,16 @@ export const GroupGuideCard = ({
   
   // Calculate the correct participant count
   const totalParticipants = group.size || 0;
+  
+  // Log the guide assignment for debugging
+  useEffect(() => {
+    logger.debug(`GroupGuideCard[${index}]: Guide assignment info:`, {
+      groupId: group.id,
+      guideId: group.guideId,
+      guideName: guideName,
+      guideType: guideInfo?.guideType || 'unknown'
+    });
+  }, [index, group.id, group.guideId, guideName, guideInfo]);
   
   return (
     <div key={index} className={`p-4 rounded-lg border ${isGuideAssigned ? 'border-green-200 bg-green-50' : 'border-gray-200'}`}>
