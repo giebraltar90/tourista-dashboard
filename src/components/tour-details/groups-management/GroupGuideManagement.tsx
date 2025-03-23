@@ -19,17 +19,18 @@ interface GroupGuideManagementProps {
 }
 
 export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
-  const guide1Info = tour.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Info = tour.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Info = tour.guide3 ? useGuideInfo(tour.guide3) : null;
-  const { guides = [] } = useGuideData() || { guides: [] };
+  const guide1Info = useGuideInfo(tour.guide1 || '');
+  const guide2Info = useGuideInfo(tour.guide2 || '');
+  const guide3Info = useGuideInfo(tour.guide3 || '');
+  const { guides = [] } = useGuideData();
   
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   
   const isHighSeason = !!tour.isHighSeason;
-  const totalParticipants = tour.tourGroups.reduce((sum, group) => sum + group.size, 0);
+  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
+  const totalParticipants = tourGroups.reduce((sum, group) => sum + (group.size || 0), 0);
   
   const requiredGroups = isHighSeason ? 
     DEFAULT_CAPACITY_SETTINGS.highSeasonGroups : 
@@ -50,7 +51,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
   });
   
   return (
-    <Card>
+    <Card className="mt-6">
       <CardHeader>
         <GroupCapacityInfo 
           tour={tour} 
@@ -63,17 +64,17 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
         <div className="space-y-6">
           {/* Add the GroupCapacityAlert component */}
           <GroupCapacityAlert 
-            tourGroups={tour.tourGroups} 
+            tourGroups={tourGroups} 
             isHighSeason={isHighSeason} 
           />
           
-          {tour.tourGroups.length < requiredGroups && (
+          {tourGroups.length < requiredGroups && (
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
                 {isHighSeason
-                  ? `High season requires ${requiredGroups} groups, but you only have ${tour.tourGroups.length}. Please add more groups.`
-                  : `Standard capacity requires ${requiredGroups} groups, but you only have ${tour.tourGroups.length}. Please add more groups.`
+                  ? `High season requires ${requiredGroups} groups, but you only have ${tourGroups.length}. Please add more groups.`
+                  : `Standard capacity requires ${requiredGroups} groups, but you only have ${tourGroups.length}. Please add more groups.`
                 }
               </AlertDescription>
             </Alert>
@@ -85,7 +86,7 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
           <div className="space-y-4 pt-2">
             <h3 className="text-sm font-medium">Current Guide Assignments</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {tour.tourGroups.map((group, index) => {
+              {tourGroups.map((group, index) => {
                 const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
                 
                 return (
@@ -110,14 +111,16 @@ export const GroupGuideManagement = ({ tour }: GroupGuideManagementProps) => {
         </div>
       </CardFooter>
 
-      <GuideAssignmentDialog
-        isOpen={isAssignGuideOpen}
-        onOpenChange={setIsAssignGuideOpen}
-        selectedGroupIndex={selectedGroupIndex}
-        tourId={tour.id}
-        tourGroups={tour.tourGroups}
-        validGuides={validGuides}
-      />
+      {isAssignGuideOpen && selectedGroupIndex !== null && (
+        <GuideAssignmentDialog
+          isOpen={isAssignGuideOpen}
+          onOpenChange={setIsAssignGuideOpen}
+          selectedGroupIndex={selectedGroupIndex}
+          tourId={tour.id}
+          tourGroups={tourGroups}
+          validGuides={validGuides}
+        />
+      )}
     </Card>
   );
 };

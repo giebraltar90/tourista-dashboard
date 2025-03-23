@@ -53,7 +53,7 @@ export const TourGroupsSection = ({
   }));
   
   // Add special guides if they exist in the tour
-  if (tour.guide1 && !validGuides.some(g => g.name === tour.guide1)) {
+  if (tour.guide1 && !validGuides.some(g => g.id === tour.guide1)) {
     validGuides.push({
       id: "guide1",
       name: tour.guide1,
@@ -64,7 +64,7 @@ export const TourGroupsSection = ({
     });
   }
   
-  if (tour.guide2 && !validGuides.some(g => g.name === tour.guide2)) {
+  if (tour.guide2 && !validGuides.some(g => g.id === tour.guide2)) {
     validGuides.push({
       id: "guide2",
       name: tour.guide2,
@@ -75,7 +75,7 @@ export const TourGroupsSection = ({
     });
   }
   
-  if (tour.guide3 && !validGuides.some(g => g.name === tour.guide3)) {
+  if (tour.guide3 && !validGuides.some(g => g.id === tour.guide3)) {
     validGuides.push({
       id: "guide3",
       name: tour.guide3,

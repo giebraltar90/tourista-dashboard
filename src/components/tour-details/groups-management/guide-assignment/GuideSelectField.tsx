@@ -14,11 +14,11 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { GuideInfo } from "@/types/ventrata";
 import { GuideOption } from "@/hooks/group-management/types";
+import { UseFormReturn } from "react-hook-form";
 
 interface GuideSelectFieldProps {
-  form: any;
+  form: UseFormReturn<any>;
   guides: GuideOption[];
   defaultValue: string;
 }

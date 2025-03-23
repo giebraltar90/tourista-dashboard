@@ -2,6 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { TourGroupsSection } from "./overview/TourGroupsSection";
 import { InformationCardsSection } from "./overview/InformationCardsSection";
+import { GroupsManagement } from "./groups-management";
 import { GuideInfo } from "@/types/ventrata";
 import { ParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
 
@@ -50,6 +51,15 @@ export const TourOverview = ({
       <TourGroupsSection 
         tour={tour}
         isHighSeason={isHighSeason}
+        guide1Info={guide1Info}
+        guide2Info={guide2Info}
+        guide3Info={guide3Info}
+      />
+      
+      {/* Add GroupsManagement directly in the overview */}
+      <GroupsManagement 
+        tour={tour}
+        tourId={tour.id}
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}

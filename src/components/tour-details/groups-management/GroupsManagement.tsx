@@ -11,7 +11,7 @@ import { GroupsHeader } from "./components/GroupsHeader";
 import { DatabaseErrorAlert } from "./components/DatabaseErrorAlert";
 import { GroupsFooter } from "./components/GroupsFooter";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
-import { GroupAssignment } from "./group-assignment/GroupAssignment";
+import { GroupGuideManagement } from "./GroupGuideManagement";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -128,8 +128,8 @@ export const GroupsManagement = ({
             </div>
           )}
           
-          {/* Group assignment section for guide assignment */}
-          <GroupAssignment tour={tour} />
+          {/* Group guide management component */}
+          <GroupGuideManagement tour={tour} />
         </div>
       </CardContent>
       
