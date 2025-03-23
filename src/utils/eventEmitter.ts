@@ -1,9 +1,9 @@
 
-
 type EventCallback = (...args: any[]) => void;
 
 class EventEmitterClass {
   private events: Record<string, EventCallback[]> = {};
+  private lastErrors: Record<string, Error | null> = {};
 
   on(event: string, callback: EventCallback) {
     if (!this.events[event]) {
@@ -21,7 +21,20 @@ class EventEmitterClass {
 
   emit(event: string, ...args: any[]) {
     if (!this.events[event]) return false;
-    this.events[event].forEach(callback => callback(...args));
+    
+    // Log event emission for debugging
+    console.log(`EventEmitter: Emitting "${event}" with ${this.events[event].length} listeners`);
+    
+    // Execute each callback in a try/catch to prevent one bad callback from blocking others
+    this.events[event].forEach(callback => {
+      try {
+        callback(...args);
+      } catch (error) {
+        console.error(`Error in "${event}" event listener:`, error);
+        this.lastErrors[event] = error instanceof Error ? error : new Error(String(error));
+      }
+    });
+    
     return true;
   }
 
@@ -31,6 +44,21 @@ class EventEmitterClass {
       callback(...args);
     };
     return this.on(event, onceCallback);
+  }
+
+  // Helper to clear all listeners for testing/cleanup
+  clear(event?: string) {
+    if (event) {
+      delete this.events[event];
+    } else {
+      this.events = {};
+    }
+    return this;
+  }
+
+  // Get number of listeners for a given event
+  listenerCount(event: string): number {
+    return this.events[event]?.length || 0;
   }
 }
 
