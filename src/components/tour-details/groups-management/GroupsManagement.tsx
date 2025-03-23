@@ -11,7 +11,6 @@ import { GroupsHeader } from "./components/GroupsHeader";
 import { DatabaseErrorAlert } from "./components/DatabaseErrorAlert";
 import { GroupsFooter } from "./components/GroupsFooter";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
-import { group } from "console";
 import { GroupAssignment } from "./group-assignment/GroupAssignment";
 
 interface GroupsManagementProps {

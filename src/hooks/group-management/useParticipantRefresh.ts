@@ -49,6 +49,12 @@ export const useParticipantRefresh = (
   const loadParticipants = useCallback((tourId: string, showToast = false) => {
     console.log(`PARTICIPANTS DEBUG: Loading participants for tour ${tourId}`);
     
+    // Prevent loading if already in progress
+    if (isLoadingParticipants) {
+      console.log("PARTICIPANTS DEBUG: Skipping loadParticipants, already in progress");
+      return;
+    }
+    
     // Prevent too frequent refreshes (minimum 5 seconds between refreshes)
     const now = Date.now();
     const timeSinceLastRefresh = now - lastRefreshTimeRef.current;
@@ -122,7 +128,7 @@ export const useParticipantRefresh = (
         refreshInProgressRef.current = false;
       }, 200);
     }, showToast); // Pass the showToast parameter
-  }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes]);
+  }, [loadParticipantsInner, setLocalTourGroups, recalculateGroupSizes, isLoadingParticipants]);
 
   // Add a refresh function with improved debounce to manually trigger participant loading
   const refreshParticipants = useCallback(() => {
