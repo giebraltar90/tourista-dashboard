@@ -11,8 +11,21 @@ export const supabase = createSupabaseClient(
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(10000), // 10-second timeout
+          signal: AbortSignal.timeout(15000), // Increase timeout to 15 seconds
         });
+      },
+    },
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+    },
+    db: {
+      schema: 'public',
+    },
+    // Add retry strategy
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
       },
     },
   }
