@@ -22,7 +22,7 @@ export const calculateBasicGuideTickets = (
   guides: Array<{ 
     guideName: string; 
     guideType: string; 
-    ticketType: string | null 
+    ticketType: "adult" | "child" | null 
   }> 
 } => {
   // Skip calculation if location doesn't require tickets

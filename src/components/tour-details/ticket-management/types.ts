@@ -26,7 +26,7 @@ export interface GuideTicketInfoProps {
   guideName: string;
   guideInfo: GuideInfo | null;
   needsTicket: boolean;
-  ticketType: string | null;
+  ticketType: "adult" | "child" | null;
 }
 
 export interface TicketStatusProps {
@@ -56,5 +56,5 @@ export interface GuideTicketRequirement {
   guideName: string;
   guideInfo: GuideInfo | null;
   needsTicket: boolean;
-  ticketType: string | null;
+  ticketType: "adult" | "child" | null;
 }

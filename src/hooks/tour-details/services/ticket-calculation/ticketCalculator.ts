@@ -14,7 +14,7 @@ export const calculateGuideTicketsNeeded = (
   guide3Info: GuideInfo | null,
   location: string = "",
   tourGroups: any[] = []
-): { adultTickets: number; childTickets: number; guides: Array<{ guideName: string; guideType: string; ticketType: string | null }> } => {
+): { adultTickets: number; childTickets: number; guides: Array<{ guideName: string; guideType: string; ticketType: "adult" | "child" | null }> } => {
   logger.debug(`🎟️ [CalculateTickets] Starting calculation for location "${location}"`);
   
   return calculateBasicGuideTickets(

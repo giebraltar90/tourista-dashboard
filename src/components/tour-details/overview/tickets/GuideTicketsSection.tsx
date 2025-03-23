@@ -5,7 +5,7 @@ import { logger } from "@/utils/logger";
 interface GuideWithTicket {
   guideName: string;
   guideType: string;
-  ticketType: 'adult' | 'child' | null;
+  ticketType: "adult" | "child" | null;
 }
 
 interface GuideTicketsSectionProps {

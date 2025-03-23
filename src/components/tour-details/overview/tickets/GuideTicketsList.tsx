@@ -3,7 +3,7 @@ interface GuideTicketsListProps {
   guides: Array<{
     guideName: string;
     guideType: string;
-    ticketType: string | null;
+    ticketType: "adult" | "child" | null;
   }>;
 }
 
