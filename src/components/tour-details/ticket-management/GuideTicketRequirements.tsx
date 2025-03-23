@@ -3,6 +3,7 @@ import { GuideTicketInfo } from "./GuideTicketInfo";
 import { Separator } from "@/components/ui/separator";
 import { TicketSufficiencyAlert } from "./TicketSufficiencyAlert";
 import { GuideInfo } from "@/types/ventrata";
+import { logger } from "@/utils/logger";
 
 interface GuideTicketRequirementsProps {
   tour: {
@@ -44,6 +45,23 @@ export const GuideTicketRequirements = ({
   requiredAdultTickets,
   requiredChildTickets
 }: GuideTicketRequirementsProps) => {
+  // Log the guides and their ticket info
+  logger.debug(`🎟️ [GuideTicketRequirements] Rendering with:`, {
+    location: tour.location,
+    guide1: tour.guide1,
+    guide2: tour.guide2,
+    guide3: tour.guide3,
+    guide1Type: guide1Info?.guideType,
+    guide2Type: guide2Info?.guideType,
+    guide3Type: guide3Info?.guideType,
+    guide1TicketType,
+    guide2TicketType,
+    guide3TicketType,
+    requiredAdultTickets,
+    requiredChildTickets,
+    totalRequiredTickets: requiredTickets
+  });
+
   return (
     <>
       <div className="space-y-4">

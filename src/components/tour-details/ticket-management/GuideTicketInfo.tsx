@@ -1,6 +1,14 @@
 
 import { IdCard, Ticket, Check } from "lucide-react";
-import { GuideTicketInfoProps } from "./types";
+import { GuideInfo } from "@/types/ventrata";
+import { logger } from "@/utils/logger";
+
+export interface GuideTicketInfoProps {
+  guideName: string;
+  guideInfo: GuideInfo | null;
+  needsTicket: boolean;
+  ticketType: "adult" | "child" | null;
+}
 
 export const GuideTicketInfo = ({ 
   guideName, 
@@ -8,6 +16,12 @@ export const GuideTicketInfo = ({
   needsTicket, 
   ticketType 
 }: GuideTicketInfoProps) => {
+  logger.debug(`🎟️ [GuideTicketInfo] Render for ${guideName}:`, {
+    guideType: guideInfo?.guideType,
+    needsTicket,
+    ticketType
+  });
+
   return (
     <div className={`p-4 rounded-md ${needsTicket ? 'bg-blue-50' : 'bg-green-50'}`}>
       <div className="flex items-center">

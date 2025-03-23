@@ -17,6 +17,12 @@ export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
     return false;
   }
   
+  // If guide type contains "skip" or "no ticket", they don't need a ticket
+  if (normalizedType.includes("skip") || normalizedType.includes("no ticket")) {
+    logger.debug(`🎟️ [guideTypeNeedsTicket] Type "${guideType}" contains skip/no ticket - no ticket needed`);
+    return false;
+  }
+  
   // If guide type contains "GA" (GA Free or GA Ticket), they need a ticket
   if (normalizedType.includes("ga")) {
     logger.debug(`🎟️ [guideTypeNeedsTicket] Type "${guideType}" contains GA - ticket needed`);
@@ -45,7 +51,7 @@ export const determineTicketTypeForGuide = (guideType: string = ""): "adult" | "
   }
   
   // Guide types that need child tickets - GA Free or contains 'free'
-  if (normalizedType.includes("free")) {
+  if (normalizedType.includes("free") || normalizedType.includes("child")) {
     logger.debug(`🎟️ [determineTicketTypeForGuide] Type "${guideType}" needs a child ticket`);
     return "child";
   }

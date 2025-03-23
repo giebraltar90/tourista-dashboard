@@ -25,6 +25,15 @@ export const calculateBasicGuideTickets = (
     ticketType: "adult" | "child" | null 
   }> 
 } => {
+  logger.debug(`🎟️ [BasicCalculator] Starting calculation for location "${location}" with guides:`, {
+    guide1: guide1Info?.name || 'none',
+    guide1Type: guide1Info?.guideType || 'none',
+    guide2: guide2Info?.name || 'none',
+    guide2Type: guide2Info?.guideType || 'none',
+    guide3: guide3Info?.name || 'none', 
+    guide3Type: guide3Info?.guideType || 'none',
+  });
+  
   // Skip calculation if location doesn't require tickets
   if (!locationRequiresGuideTickets(location)) {
     logger.debug(`🎟️ [BasicCalculator] Location "${location}" doesn't require guide tickets, returning zero`);

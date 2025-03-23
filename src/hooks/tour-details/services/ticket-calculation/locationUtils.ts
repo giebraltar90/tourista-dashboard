@@ -2,11 +2,33 @@
 import { logger } from "@/utils/logger";
 
 /**
- * Determines if a tour location requires guide tickets
- * Based on updated requirements: location no longer matters for guide tickets
+ * Determine if a location requires guide tickets
+ * 
+ * This function checks if the given location requires guides to have tickets
  */
 export const locationRequiresGuideTickets = (location: string = ""): boolean => {
-  // Always return true since location doesn't matter anymore, we only check the guide type
-  logger.debug(`🎟️ [locationUtils] Location no longer affects ticket requirements, always returning true`);
-  return true;
+  const normalizedLocation = location.trim().toLowerCase();
+  
+  // Specific locations that DO NOT require guide tickets
+  const excludedLocations = [
+    'louvre', 
+    'paris', 
+    'colosseum',
+    'rome',
+    'versailles',
+    'vatican',
+    'sistine chapel'
+  ];
+  
+  const requiresTickets = !excludedLocations.some(
+    excluded => normalizedLocation.includes(excluded)
+  );
+  
+  logger.debug(`🎟️ [LocationCheck] Location "${location}" requires guide tickets: ${requiresTickets}`, {
+    normalizedLocation,
+    excludedLocations,
+    requiresTickets
+  });
+  
+  return requiresTickets;
 };

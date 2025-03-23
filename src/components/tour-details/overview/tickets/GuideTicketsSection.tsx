@@ -1,6 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
+import { GuideTicketsList } from "./GuideTicketsList";
 
 interface GuideWithTicket {
   guideName: string;
@@ -63,6 +64,8 @@ export const GuideTicketsSection = ({
               <span className="font-medium">0</span>
             </div>
           )}
+          
+          <GuideTicketsList guides={guidesWithTickets} />
         </>
       ) : (
         <div className="flex justify-between text-sm">
