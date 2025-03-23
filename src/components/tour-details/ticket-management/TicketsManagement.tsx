@@ -25,6 +25,9 @@ export const TicketsManagement = ({
   
   const adultParticipants = totalParticipants - totalChildCount;
   
+  // Special monitoring for specific tour ID
+  const isSpecialMonitoringTour = tour.id === '324598820';
+  
   // Use the hook to determine guide requirements
   const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
     tour, guide1Info, guide2Info, guide3Info
@@ -44,27 +47,34 @@ export const TicketsManagement = ({
   
   // Log the total tickets needed for debugging
   useEffect(() => {
-    logger.debug(`🎟️ [TicketsManagement] Tour ${tour.id} ticket requirements:`, {
-      tourName: tour.tourName || 'Unknown Tour',
-      referenceCode: tour.referenceCode || 'Unknown Ref',
-      location: tour.location || 'Unknown Location',
-      hasAssignedGuides,
-      adultParticipants,
-      totalChildCount,
-      guideAdultTickets,
-      guideChildTickets,
-      totalTicketsNeeded,
-      guidesWithTicketsCount: guidesWithTickets.length,
-      guideDetails: guidesWithTickets.map(g => ({
-        name: g.guideName,
-        type: g.guideType,
-        ticketType: g.ticketType
-      }))
-    });
+    // Only log detailed information for special monitoring tours or when there are guide tickets
+    const shouldLogDetailed = isSpecialMonitoringTour || 
+                             guideAdultTickets > 0 || 
+                             guideChildTickets > 0;
+                             
+    if (shouldLogDetailed) {
+      logger.debug(`🎟️ [TicketsManagement] Tour ${tour.id} ticket requirements:`, {
+        tourName: tour.tourName || 'Unknown Tour',
+        referenceCode: tour.referenceCode || 'Unknown Ref',
+        location: tour.location || 'Unknown Location',
+        hasAssignedGuides,
+        adultParticipants,
+        totalChildCount,
+        guideAdultTickets,
+        guideChildTickets,
+        totalTicketsNeeded,
+        guidesWithTicketsCount: guidesWithTickets.length,
+        guideDetails: guidesWithTickets.map(g => ({
+          name: g.guideName,
+          type: g.guideType,
+          ticketType: g.ticketType
+        }))
+      });
+    }
   }, [
     tour.id, tour.tourName, tour.referenceCode, tour.location, hasAssignedGuides,
     adultParticipants, totalChildCount, guideAdultTickets, guideChildTickets,
-    totalTicketsNeeded, guidesWithTickets
+    totalTicketsNeeded, guidesWithTickets, isSpecialMonitoringTour
   ]);
   
   return (

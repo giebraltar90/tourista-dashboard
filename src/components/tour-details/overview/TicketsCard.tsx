@@ -39,6 +39,9 @@ export const TicketsCard = ({
   const validAdultTickets = Math.max(0, adultTickets || 0);
   const validChildTickets = Math.max(0, childTickets || 0);
   
+  // Special monitoring for specific tour ID
+  const isSpecialMonitoringTour = tourId === '324598820';
+  
   // Create a simplified mock tour for the guide requirements hook
   const mockTour = {
     id: tourId,
@@ -56,6 +59,24 @@ export const TicketsCard = ({
     isHighSeason: false
   };
   
+  // Special logging for monitored tour
+  if (isSpecialMonitoringTour) {
+    logger.debug(`🔍 [TOUR MONITORING] TicketsCard initializing for tour ${tourId}`, {
+      location,
+      guide1: guide1Info?.name,
+      guide1Type: guide1Info?.guideType,
+      guide2: guide2Info?.name,
+      guide2Type: guide2Info?.guideType,
+      guide3: guide3Info?.name,
+      guide3Type: guide3Info?.guideType,
+      participantTickets: {
+        adult: validAdultTickets,
+        child: validChildTickets,
+        total: validAdultTickets + validChildTickets
+      }
+    });
+  }
+  
   // Get guide ticket requirements
   const { locationNeedsGuideTickets, hasAssignedGuides, guideTickets } = useGuideTicketRequirements(
     mockTour, guide1Info, guide2Info, guide3Info
@@ -69,38 +90,45 @@ export const TicketsCard = ({
   
   // Log detailed debug information for guide tickets
   useEffect(() => {
-    logger.debug(`🎟️ [TicketsCard] Tour ${tourId} ticket data:`, {
-      location,
-      locationNeedsGuideTickets,
-      hasAssignedGuides,
-      guideDetails: {
-        guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
-        guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
-        guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
-      },
-      tickets: {
-        participantAdults: validAdultTickets,
-        participantChildren: validChildTickets,
-        guideAdultTickets,
-        guideChildTickets,
-        totalGuideTickets: guideAdultTickets + guideChildTickets,
-      },
-      guides: guidesWithTickets.map(g => ({
-        name: g.guideName,
-        type: g.guideType,
-        ticketType: g.ticketType
-      }))
-    });
+    // Only log for special monitoring tours or when there's a change in tickets
+    const shouldLogDetail = isSpecialMonitoringTour || 
+                           guideAdultTickets > 0 || 
+                           guideChildTickets > 0;
+    
+    if (shouldLogDetail) {
+      logger.debug(`🎟️ [TicketsCard] Tour ${tourId} ticket data:`, {
+        location,
+        locationNeedsGuideTickets,
+        hasAssignedGuides,
+        guideDetails: {
+          guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
+          guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
+          guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'none',
+        },
+        tickets: {
+          participantAdults: validAdultTickets,
+          participantChildren: validChildTickets,
+          guideAdultTickets,
+          guideChildTickets,
+          totalGuideTickets: guideAdultTickets + guideChildTickets,
+        },
+        guides: guidesWithTickets.map(g => ({
+          name: g.guideName,
+          type: g.guideType,
+          ticketType: g.ticketType
+        }))
+      });
+    }
   }, [
     tourId, location, locationNeedsGuideTickets, hasAssignedGuides, 
     validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets,
-    guide1Info, guide2Info, guide3Info, guidesWithTickets
+    guide1Info, guide2Info, guide3Info, guidesWithTickets, isSpecialMonitoringTour
   ]);
   
   // Enhanced logging for specific tours with issues
   useEffect(() => {
-    // Log extra details for problematic tours
-    if (['313911645', '313922567', '324598761'].includes(tourId)) {
+    // Log extra details for problematic tours (adding the requested tour ID)
+    if (['313911645', '313922567', '324598761', '324598820'].includes(tourId)) {
       logger.debug(`🚨 [TicketsCard] SPECIAL TOUR MONITORING: ${tourId}`, {
         location,
         needsGuideTickets: locationNeedsGuideTickets,
