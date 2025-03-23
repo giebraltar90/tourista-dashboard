@@ -5,6 +5,8 @@ import { GuideInfo } from '@/types/ventrata';
 import { useGuideInfo } from '@/hooks/guides';
 import { logger } from '@/utils/logger';
 import { processGuideInfo, mapTourGroupGuideIds } from './utils/guideInfoProcessor';
+import { fetchGuideById } from '@/services/api/guideApi';
+import { isValidUuid } from '@/services/api/utils/guidesUtils';
 
 interface UseTourGuideInfoResult {
   guide1Info: GuideInfo | null;
@@ -47,10 +49,61 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
     });
   }, [id, guide1, guide2, guide3, safeTour.referenceCode, location, tourGroups?.length]);
   
-  // Get guide info from database
+  // Get guide info from database - handle both name and UUID lookups
   const rawGuide1Info = useGuideInfo(guide1 || '');
   const rawGuide2Info = useGuideInfo(guide2 || '');
   const rawGuide3Info = useGuideInfo(guide3 || '');
+  
+  // For direct UUID fetching if needed
+  const [guide1DirectInfo, setGuide1DirectInfo] = useState<GuideInfo | null>(null);
+  const [guide2DirectInfo, setGuide2DirectInfo] = useState<GuideInfo | null>(null);
+  const [guide3DirectInfo, setGuide3DirectInfo] = useState<GuideInfo | null>(null);
+  
+  // Attempt direct UUID fetching for guides if they're UUIDs but weren't found
+  useEffect(() => {
+    const fetchMissingGuideInfo = async () => {
+      // Only try direct fetch if guide1 is a UUID and we don't have info yet
+      if (guide1 && isValidUuid(guide1) && !rawGuide1Info && !guide1DirectInfo) {
+        try {
+          const info = await fetchGuideById(guide1);
+          if (info) {
+            setGuide1DirectInfo(info);
+            logger.debug(`🔄 [useTourGuideInfo] Directly fetched guide1 info: ${info.name}`);
+          }
+        } catch (error) {
+          logger.debug(`🔄 [useTourGuideInfo] Error directly fetching guide1 info for ${guide1}`);
+        }
+      }
+      
+      // Repeat for guide2
+      if (guide2 && isValidUuid(guide2) && !rawGuide2Info && !guide2DirectInfo) {
+        try {
+          const info = await fetchGuideById(guide2);
+          if (info) {
+            setGuide2DirectInfo(info);
+            logger.debug(`🔄 [useTourGuideInfo] Directly fetched guide2 info: ${info.name}`);
+          }
+        } catch (error) {
+          logger.debug(`🔄 [useTourGuideInfo] Error directly fetching guide2 info for ${guide2}`);
+        }
+      }
+      
+      // Repeat for guide3
+      if (guide3 && isValidUuid(guide3) && !rawGuide3Info && !guide3DirectInfo) {
+        try {
+          const info = await fetchGuideById(guide3);
+          if (info) {
+            setGuide3DirectInfo(info);
+            logger.debug(`🔄 [useTourGuideInfo] Directly fetched guide3 info: ${info.name}`);
+          }
+        } catch (error) {
+          logger.debug(`🔄 [useTourGuideInfo] Error directly fetching guide3 info for ${guide3}`);
+        }
+      }
+    };
+    
+    fetchMissingGuideInfo();
+  }, [guide1, guide2, guide3, rawGuide1Info, rawGuide2Info, rawGuide3Info]);
   
   // State for processed guide info
   const [guide1Info, setGuide1Info] = useState<GuideInfo | null>(null);
@@ -60,16 +113,21 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
   
   // Process guide info
   useEffect(() => {
+    // Use either the hooks result or direct fetch result, preferring hooks result
+    const effectiveGuide1Info = rawGuide1Info || guide1DirectInfo;
+    const effectiveGuide2Info = rawGuide2Info || guide2DirectInfo;
+    const effectiveGuide3Info = rawGuide3Info || guide3DirectInfo;
+    
     // Process guide1 info
-    const processedGuide1 = processGuideInfo(rawGuide1Info, guide1, 'guide1');
+    const processedGuide1 = processGuideInfo(effectiveGuide1Info, guide1, 'guide1');
     setGuide1Info(processedGuide1);
     
     // Process guide2 info
-    const processedGuide2 = processGuideInfo(rawGuide2Info, guide2, 'guide2');
+    const processedGuide2 = processGuideInfo(effectiveGuide2Info, guide2, 'guide2');
     setGuide2Info(processedGuide2);
     
     // Process guide3 info
-    const processedGuide3 = processGuideInfo(rawGuide3Info, guide3, 'guide3');
+    const processedGuide3 = processGuideInfo(effectiveGuide3Info, guide3, 'guide3');
     setGuide3Info(processedGuide3);
     
     // Map guide IDs in tour groups
@@ -81,7 +139,8 @@ export const useTourGuideInfo = (tour: TourCardProps | null): UseTourGuideInfoRe
       tourGroups: mappedGroups
     });
     
-  }, [rawGuide1Info, rawGuide2Info, rawGuide3Info, guide1, guide2, guide3, safeTour, tourGroups]);
+  }, [rawGuide1Info, rawGuide2Info, rawGuide3Info, guide1DirectInfo, guide2DirectInfo, 
+      guide3DirectInfo, guide1, guide2, guide3, safeTour, tourGroups]);
   
   // Log final guide info for debugging
   useEffect(() => {

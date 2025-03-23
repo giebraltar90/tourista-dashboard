@@ -1,8 +1,10 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { isUuid } from "@/types/ventrata";
+import { isUuid } from "@/services/api/utils/guidesUtils";
 import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
 import { updateTourModification } from "./modificationApi";
 import { Json } from "@/integrations/supabase/types";
+import { handleApiError, headers } from "./apiConfig";
 
 /**
  * Fetch all guides from the database
@@ -28,6 +30,41 @@ export const fetchGuides = async (): Promise<GuideInfo[]> => {
   } catch (error) {
     console.error("Error in fetchGuides:", error);
     return [];
+  }
+};
+
+/**
+ * Fetch a specific guide by ID
+ */
+export const fetchGuideById = async (guideId: string): Promise<GuideInfo | null> => {
+  if (!guideId || !isUuid(guideId)) {
+    console.warn(`Invalid guide ID format: ${guideId}`);
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('guides')
+      .select('*')
+      .eq('id', guideId)
+      .single();
+      
+    if (error) {
+      console.error(`Error fetching guide with ID ${guideId}:`, error);
+      return null;
+    }
+    
+    if (!data) return null;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      birthday: data.birthday ? new Date(data.birthday) : new Date(),
+      guideType: data.guide_type
+    };
+  } catch (error) {
+    console.error(`Error fetching guide with ID ${guideId}:`, error);
+    return null;
   }
 };
 
@@ -109,3 +146,35 @@ export const assignGuideToGroup = async (
     throw error;
   }
 };
+
+/**
+ * Get guide names from their IDs - with improved error handling
+ */
+export const getGuideNames = async (guideIds: string[]) => {
+  if (!guideIds.length) return {};
+  
+  const validIds = guideIds.filter(id => id && isUuid(id));
+  
+  if (!validIds.length) return {};
+  
+  try {
+    const { data, error } = await supabase
+      .from('guides')
+      .select('id, name')
+      .in('id', validIds);
+      
+    if (error || !data) {
+      console.error("Error fetching guide names:", error);
+      return {};
+    }
+    
+    return data.reduce((map, guide) => {
+      map[guide.id] = guide.name;
+      return map;
+    }, {});
+  } catch (error) {
+    console.error("Error in getGuideNames:", error);
+    return {};
+  }
+};
+

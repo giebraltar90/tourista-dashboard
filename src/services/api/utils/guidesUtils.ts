@@ -65,6 +65,11 @@ export const mapSpecialGuideIdToUuid = (guideId: string | undefined, tour: any):
     }
   }
   
+  // Check if one of the main guide IDs is already a UUID and matches
+  if (isValidUuid(tour.guide1) && guideId === "guide1") return tour.guide1;
+  if (isValidUuid(tour.guide2) && guideId === "guide2") return tour.guide2;
+  if (isValidUuid(tour.guide3) && guideId === "guide3") return tour.guide3;
+  
   // If we still couldn't map the ID, return null
   console.error(`Could not map special guide ID "${guideId}" to UUID - no matching ID found in tour data`);
   return null;
@@ -81,7 +86,7 @@ export const getGuideDisplayName = (guideId: string | undefined, tour: any, guid
     guideId,
     isUuid: isValidUuid(guideId),
     tourHasGuides: tour?.guide1 || tour?.guide2 || tour?.guide3 ? "Yes" : "No",
-    availableGuides: guides.map(g => ({ id: g.id, name: g.name }))
+    availableGuides: guides.length
   });
   
   // Check UUID matches in guides array - this is the most reliable method
@@ -103,4 +108,15 @@ export const getGuideDisplayName = (guideId: string | undefined, tour: any, guid
   
   // Fallback for unknown IDs (should rarely happen)
   return guideId.startsWith("guide") ? `Guide ${guideId.slice(5)}` : `Guide (${guideId.substring(0, 6)}...)`;
+};
+
+/**
+ * Format a UUID as a readable ID for display
+ */
+export const formatGuideId = (id: string | undefined): string => {
+  if (!id) return "Unknown";
+  if (isValidUuid(id)) {
+    return `${id.substring(0, 8)}...`;
+  }
+  return id;
 };

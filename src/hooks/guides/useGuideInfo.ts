@@ -1,13 +1,23 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { GuideInfo } from "@/types/ventrata";
+import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { fetchGuideById } from "@/services/api/guideApi";
 
 export function useGuideInfo(guideName: string) {
-  const { data } = useQuery({
+  const { data, isError, error } = useQuery({
     queryKey: ['guide-info', guideName],
     queryFn: async (): Promise<GuideInfo | null> => {
       if (!guideName) return null;
+      
+      if (isValidUuid(guideName)) {
+        try {
+          return await fetchGuideById(guideName);
+        } catch (error) {
+          console.error(`Error fetching guide info for ID ${guideName}:`, error);
+          return null;
+        }
+      }
       
       try {
         const { data, error } = await supabase
@@ -17,7 +27,9 @@ export function useGuideInfo(guideName: string) {
           .single();
         
         if (error) {
-          console.error(`Error fetching guide info for ${guideName}:`, error);
+          if (error.code !== 'PGRST116') {
+            console.error(`Error fetching guide info for ${guideName}:`, error);
+          }
           return null;
         }
         
@@ -36,7 +48,12 @@ export function useGuideInfo(guideName: string) {
     },
     enabled: !!guideName,
     staleTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1, // Only retry once to prevent excessive requests
   });
+  
+  if (isError) {
+    console.error(`Error in useGuideInfo for ${guideName}:`, error);
+  }
   
   return data;
 }

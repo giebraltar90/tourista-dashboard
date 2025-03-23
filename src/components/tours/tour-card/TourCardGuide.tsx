@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { IdCard, CalendarIcon, Users } from "lucide-react";
 import { format } from "date-fns";
@@ -12,29 +12,52 @@ import {
 import { TourCardGuideProps } from "./types";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useGuideData } from "@/hooks/guides/useGuideData";
+import { fetchGuideById } from "@/services/api/guideApi";
 
 export const TourCardGuide: React.FC<TourCardGuideProps> = ({ 
   guideName, 
   guideInfo, 
   isSecondary = false 
 }) => {
+  const [displayName, setDisplayName] = useState<string>(guideName || "");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { guides = [] } = useGuideData() || { guides: [] };
+  
+  useEffect(() => {
+    // Handle case when guideName is a UUID instead of an actual name
+    if (guideName && isValidUuid(guideName) && !guideInfo) {
+      setIsLoading(true);
+      
+      // Try to find the actual guide name from our guides list
+      const matchingGuide = guides.find(g => g.id === guideName);
+      
+      if (matchingGuide) {
+        setDisplayName(matchingGuide.name);
+        setIsLoading(false);
+      } else {
+        // If not found in cached guides, try to fetch directly
+        fetchGuideById(guideName)
+          .then(guide => {
+            if (guide) {
+              setDisplayName(guide.name);
+            } else {
+              setDisplayName(`Guide ${guideName.substring(0, 4)}...`);
+            }
+          })
+          .catch(() => {
+            setDisplayName(`Guide ${guideName.substring(0, 4)}...`);
+          })
+          .finally(() => {
+            setIsLoading(false);
+          });
+      }
+    } else {
+      setDisplayName(guideName || "");
+    }
+  }, [guideName, guides, guideInfo]);
   
   if (!guideName) return null;
   
-  // Handle case when guideName is a UUID instead of an actual name
-  let displayName = guideName;
-  
-  if (isValidUuid(guideName)) {
-    // Try to find the actual guide name from our guides list
-    const matchingGuide = guides.find(g => g.id === guideName);
-    if (matchingGuide) {
-      displayName = matchingGuide.name;
-    } else {
-      displayName = `Guide ${guideName.substring(0, 4)}...`;
-    }
-  }
-
   return (
     <div className="flex items-center mt-1">
       {!isSecondary && (
@@ -44,7 +67,11 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
         <Users className="h-4 w-4 mr-2 text-muted-foreground opacity-0" />
       )}
       <div className="flex items-center">
-        <span className="text-sm">{displayName}</span>
+        {isLoading ? (
+          <span className="text-sm italic">Loading guide info...</span>
+        ) : (
+          <span className="text-sm">{displayName}</span>
+        )}
         {guideInfo && (
           <TooltipProvider>
             <Tooltip>
