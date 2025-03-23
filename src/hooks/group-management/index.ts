@@ -7,7 +7,8 @@ export * from './useParticipantMovement';
 export * from './useUpdateGroup';
 export * from './useAssignGuide';
 export * from './useGuideNameInfo';
-export * from './useGuideAssignmentForm';
+// Removed explicit re-export of useGuideAssignmentForm to avoid ambiguity
+export { useGuideAssignmentForm } from './useGuideAssignmentForm';
 export * from './types';
 
 // Newly refactored hooks

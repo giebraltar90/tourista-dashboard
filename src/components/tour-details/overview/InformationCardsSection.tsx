@@ -26,9 +26,7 @@ export const InformationCardsSection = ({
     totalChildCount,
     totalTickets,
     adultTickets,
-    childTickets,
-    guideAdultTickets,
-    guideChildTickets
+    childTickets
   } = participantCounts;
   
   const requiredTickets = tour.numTickets || 0;
@@ -52,8 +50,6 @@ export const InformationCardsSection = ({
         childTickets={childTickets}
         totalTickets={totalTickets}
         requiredTickets={requiredTickets > 0 ? requiredTickets : totalParticipants}
-        guideAdultTickets={guideAdultTickets}
-        guideChildTickets={guideChildTickets}
         location={tour.location}
       />
     </div>

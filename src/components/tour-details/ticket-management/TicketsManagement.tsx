@@ -9,85 +9,18 @@ import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 import { useEffect } from "react";
 import { useParticipantCounts } from "@/hooks/tour-details/useParticipantCounts";
-import { doesGuideNeedTicket } from "@/hooks/guides/useGuideTickets";
 
 export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: TicketsManagementProps) => {
-  // Validate guide information to only include valid guides
-  const guide1Name = tour.guide1 ? tour.guide1.trim() : '';
-  const guide2Name = tour.guide2 ? tour.guide2.trim() : '';
-  const guide3Name = tour.guide3 ? tour.guide3.trim() : '';
-  
-  // Super detailed logging for guide info - critical for debugging
-  console.log("GUIDE TICKET DEBUG: [TicketsManagement] COMPLETE GUIDE INFO:", {
-    tourId: tour.id,
-    tourLocation: tour.location,
-    guide1: { 
-      name: guide1Name, 
-      info: guide1Info, 
-      needsTicket: guide1Info ? doesGuideNeedTicket(guide1Info, tour.location || '') : false,
-      type: guide1Info?.guideType || 'unknown',
-      isSophieMiller: guide1Name?.toLowerCase().includes('sophie miller') || false
-    },
-    guide2: { 
-      name: guide2Name, 
-      info: guide2Info,
-      needsTicket: guide2Info ? doesGuideNeedTicket(guide2Info, tour.location || '') : false,
-      type: guide2Info?.guideType || 'unknown',
-      isSophieMiller: guide2Name?.toLowerCase().includes('sophie miller') || false
-    },
-    guide3: { 
-      name: guide3Name, 
-      info: guide3Info,
-      needsTicket: guide3Info ? doesGuideNeedTicket(guide3Info, tour.location || '') : false,
-      type: guide3Info?.guideType || 'unknown',
-      isSophieMiller: guide3Name?.toLowerCase().includes('sophie miller') || false
-    },
-    uniqueGuideCount: new Set([
-      guide1Name && guide1Name.trim(), 
-      guide2Name && guide2Name.trim(), 
-      guide3Name && guide3Name.trim()
-    ].filter(Boolean)).size
-  });
-  
-  // Force Sophie Miller to be GC type if she's one of the guides
-  if (guide1Info && guide1Name.toLowerCase().includes('sophie miller') && guide1Info.guideType !== 'GC') {
-    console.log('GUIDE TICKET DEBUG: [TicketsManagement] Forcing Sophie Miller (guide1) to be GC type');
-    guide1Info.guideType = 'GC';
-  }
-  
-  if (guide2Info && guide2Name.toLowerCase().includes('sophie miller') && guide2Info.guideType !== 'GC') {
-    console.log('GUIDE TICKET DEBUG: [TicketsManagement] Forcing Sophie Miller (guide2) to be GC type');
-    guide2Info.guideType = 'GC';
-  }
-  
-  if (guide3Info && guide3Name.toLowerCase().includes('sophie miller') && guide3Info.guideType !== 'GC') {
-    console.log('GUIDE TICKET DEBUG: [TicketsManagement] Forcing Sophie Miller (guide3) to be GC type');
-    guide3Info.guideType = 'GC';
-  }
-  
-  // Use the participant counts hook to get ticket requirements with validated guide names
+  // Use the participant counts hook to get ticket requirements
   const participantCounts = useParticipantCounts(
     tour.tourGroups || [],
-    guide1Info,
-    guide2Info, 
-    guide3Info,
-    guide1Name,
-    guide2Name, 
-    guide3Name,
-    tour.location || '',
-    []
+    tour.location || ''
   );
   
-  const { 
-    totalParticipants, 
-    totalChildCount,
-    guideAdultTickets,
-    guideChildTickets,
-    guideTicketsNeeded
-  } = participantCounts;
+  const { totalParticipants } = participantCounts;
   
-  // Total required tickets including guides
-  const requiredTickets = totalParticipants + guideTicketsNeeded;
+  // Total required tickets is just participants (removed guide tickets)
+  const requiredTickets = totalParticipants;
 
   // Fetch ticket buckets for this specific tour
   const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
@@ -124,43 +57,13 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
       tourLocation: tour.location,
       tourGroups: tour.tourGroups?.length || 0,
       totalParticipants,
-      totalChildCount,
-      // Guide tickets
-      guideAdultTickets,
-      guideChildTickets,
-      guideTicketsNeeded,
-      uniqueGuideNames: new Set([guide1Name, guide2Name, guide3Name].filter(Boolean)).size,
-      // Allocation details
-      ticketsAllocatedToThisTour,
       // Totals and allocation
       requiredTickets,
       bucketCount: ticketBuckets.length,
       bucketMaxTickets,
       allocatedToOtherTours,
       availableTickets,
-      hasEnoughTickets,
-      // Guide info
-      guide1Info: guide1Info ? {
-        name: guide1Info.name,
-        type: guide1Info.guideType,
-        needsTicket: guide1Info ? tour.location && guide1Info.guideType ? 
-          (tour.location.toLowerCase().includes('versailles') || tour.location.toLowerCase().includes('montmartre')) && 
-          (guide1Info.guideType === 'GA Ticket' || guide1Info.guideType === 'GA Free') : false : false
-      } : null,
-      guide2Info: guide2Info ? {
-        name: guide2Info.name,
-        type: guide2Info.guideType,
-        needsTicket: guide2Info ? tour.location && guide2Info.guideType ? 
-          (tour.location.toLowerCase().includes('versailles') || tour.location.toLowerCase().includes('montmartre')) && 
-          (guide2Info.guideType === 'GA Ticket' || guide2Info.guideType === 'GA Free') : false : false
-      } : null,
-      guide3Info: guide3Info ? {
-        name: guide3Info.name,
-        type: guide3Info.guideType,
-        needsTicket: guide3Info ? tour.location && guide3Info.guideType ? 
-          (tour.location.toLowerCase().includes('versailles') || tour.location.toLowerCase().includes('montmartre')) && 
-          (guide3Info.guideType === 'GA Ticket' || guide3Info.guideType === 'GA Free') : false : false
-      } : null
+      hasEnoughTickets
     });
   }, [
     tour.id,
@@ -168,21 +71,11 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
     tour.tourGroups,
     ticketBuckets, 
     totalParticipants, 
-    totalChildCount,
-    guideTicketsNeeded, 
     requiredTickets, 
-    guideAdultTickets,
-    guideChildTickets,
     availableTickets,
-    guide1Info,
-    guide2Info,
-    guide3Info,
     bucketMaxTickets,
     allocatedToOtherTours,
-    ticketsAllocatedToThisTour,
-    guide1Name,
-    guide2Name,
-    guide3Name
+    ticketsAllocatedToThisTour
   ]);
 
   return (
@@ -201,7 +94,6 @@ export const TicketsManagement = ({ tour, guide1Info, guide2Info, guide3Info }: 
             requiredTickets={requiredTickets}
             tourDate={tourDate}
             totalParticipants={totalParticipants}
-            guideTicketsNeeded={guideTicketsNeeded}
           />
           
           <Separator />

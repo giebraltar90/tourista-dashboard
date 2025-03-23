@@ -67,9 +67,6 @@ export const TicketBucketInfo = ({
       totalBucketTickets,
       requiredTickets,
       totalParticipants,
-      guideTicketsNeeded,
-      totalTicketsNeeded: totalParticipants + guideTicketsNeeded,
-      participantsOnly: totalParticipants,
       bucketCount: validBuckets.length,
       bucketAssignedToTour: bucketAssignedToTour ? {
         id: bucketAssignedToTour.id,
@@ -80,7 +77,7 @@ export const TicketBucketInfo = ({
         tourAllocations: bucketAssignedToTour.tour_allocations
       } : null
     });
-  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, guideTicketsNeeded, totalBucketTickets, bucketMaxTickets, allocatedToOtherTours, ticketsAllocatedToThisTour]);
+  }, [validBuckets, requiredTickets, totalParticipants, bucketAssignedToTour, tourId, totalBucketTickets, bucketMaxTickets, allocatedToOtherTours, ticketsAllocatedToThisTour]);
 
   // We have enough tickets if a bucket is assigned to this tour and has enough available tickets
   const hasEnoughBucketTickets = !!bucketAssignedToTour && totalBucketTickets >= requiredTickets;
@@ -88,7 +85,7 @@ export const TicketBucketInfo = ({
   // Add guide tickets information to buckets for consistent display
   const bucketsWithGuideInfo = validBuckets.map(bucket => ({
     ...bucket,
-    guide_tickets: bucket.assigned_tours?.includes(tourId) ? guideTicketsNeeded : 0
+    guide_tickets: 0 // Remove guide ticket calculation
   }));
 
   if (isLoading) {
@@ -132,7 +129,6 @@ export const TicketBucketInfo = ({
         totalBucketTickets={totalBucketTickets} 
         requiredTickets={requiredTickets} 
         hasEnoughBucketTickets={hasEnoughBucketTickets}
-        guideTicketsNeeded={guideTicketsNeeded}
       />
       
       {isAssignDialogOpen && (
