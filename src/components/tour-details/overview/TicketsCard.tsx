@@ -103,15 +103,6 @@ export const TicketsCard = ({
   // Determine if we have enough tickets
   const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
 
-  // Format the display strings
-  const adultTicketsDisplay = guideAdultTickets > 0 
-    ? `${validAdultTickets} + ${guideAdultTickets} guides` 
-    : `${validAdultTickets}`;
-    
-  const childTicketsDisplay = guideChildTickets > 0 
-    ? `${validChildTickets} + ${guideChildTickets} guides` 
-    : `${validChildTickets}`;
-    
   // Format the total tickets display
   const formattedTotalTickets = totalRequiredChildTickets > 0 && totalRequiredAdultTickets > 0
     ? `${totalRequiredAdultTickets} + ${totalRequiredChildTickets}`
@@ -126,13 +117,27 @@ export const TicketsCard = ({
         <div className="grid gap-2">
           <div className="flex justify-between">
             <span className="text-muted-foreground">Adult tickets:</span>
-            <span className="font-medium">{adultTicketsDisplay}</span>
+            <span className="font-medium">{validAdultTickets}</span>
           </div>
           
           <div className="flex justify-between">
             <span className="text-muted-foreground">Child tickets:</span>
-            <span className="font-medium">{childTicketsDisplay}</span>
+            <span className="font-medium">{validChildTickets}</span>
           </div>
+
+          {guideAdultTickets > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground pl-4">GA Ticket (adult tickets):</span>
+              <span className="font-medium">{guideAdultTickets}</span>
+            </div>
+          )}
+
+          {guideChildTickets > 0 && (
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground pl-4">GA Free (child tickets):</span>
+              <span className="font-medium">{guideChildTickets}</span>
+            </div>
+          )}
           
           <div className="flex justify-between pt-2 border-t">
             <span className="text-muted-foreground">Total tickets needed:</span>
@@ -145,39 +150,39 @@ export const TicketsCard = ({
           </div>
           
           {/* Guide ticket breakdown section - always show if there are guides, even if no tickets needed */}
-          {guide1Info || guide2Info || guide3Info ? (
+          {(guide1Info || guide2Info || guide3Info) && guidesWithTickets.length > 0 ? (
             <div className="mt-3 border-t pt-3">
               <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
               <div className="space-y-1 text-xs">
-                {guidesWithTickets.length > 0 ? (
-                  guidesWithTickets.map((guide, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-muted-foreground">{guide.guideName}:</span>
-                      <span>{guide.ticketType === 'adult' ? 'Adult ticket' : 'Child ticket'}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-muted-foreground italic">No guide tickets required</div>
-                )}
-                
-                {/* Show all guides for debugging */}
-                {(guide1Info || guide2Info || guide3Info) && guidesWithTickets.length === 0 && (
-                  <div className="mt-1 text-xs text-gray-400">
-                    <div>Guide types:</div>
-                    {guide1Info && (
-                      <div>{guide1Info.name}: {guide1Info.guideType}</div>
-                    )}
-                    {guide2Info && (
-                      <div>{guide2Info.name}: {guide2Info.guideType}</div>
-                    )}
-                    {guide3Info && (
-                      <div>{guide3Info.name}: {guide3Info.guideType}</div>
-                    )}
+                {guidesWithTickets.map((guide, index) => (
+                  <div key={index} className="flex justify-between">
+                    <span className="text-muted-foreground">{guide.guideName}:</span>
+                    <span>{guide.ticketType === 'adult' ? 'Adult ticket' : 'Child ticket'}</span>
                   </div>
-                )}
+                ))}
               </div>
             </div>
           ) : null}
+          
+          {/* Show all guides for debugging when no guides need tickets */}
+          {(guide1Info || guide2Info || guide3Info) && guidesWithTickets.length === 0 && (
+            <div className="mt-3 border-t pt-3">
+              <h4 className="text-xs font-medium mb-1">Guide ticket breakdown</h4>
+              <div className="text-muted-foreground italic text-xs">No guide tickets required</div>
+              
+              <div className="mt-1 text-xs text-gray-400">
+                {guide1Info && (
+                  <div>{guide1Info.name}: {guide1Info.guideType}</div>
+                )}
+                {guide2Info && (
+                  <div>{guide2Info.name}: {guide2Info.guideType}</div>
+                )}
+                {guide3Info && (
+                  <div>{guide3Info.name}: {guide3Info.guideType}</div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -27,7 +27,7 @@ export const TicketCountCard = ({
         
         {guideTickets && guideTickets.length > 0 && (
           <div className="mt-2">
-            <h3 className="text-sm font-medium mb-2">Guide Tickets</h3>
+            <h3 className="text-sm font-medium mb-2">Guide Ticket Details</h3>
             <div className="space-y-1">
               {guideTickets.map((guide, idx) => (
                 <div key={idx} className="flex justify-between text-xs">

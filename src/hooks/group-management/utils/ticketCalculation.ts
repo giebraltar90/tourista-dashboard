@@ -69,6 +69,14 @@ export const calculateGuideTicketsNeeded = (
     location,
     tourGroupsCount: tourGroups?.length || 0
   });
+
+  // Skip ticket calculation if location doesn't require tickets
+  if (!location || 
+      (!location.toLowerCase().includes('versailles') && 
+       !location.toLowerCase().includes('montmartre'))) {
+    logger.debug(`🎟️ [CalculateTickets] Location "${location}" doesn't require guide tickets`);
+    return { adultTickets: 0, childTickets: 0, guides: [] };
+  }
   
   // IMPORTANT: Track processed guides to avoid counting duplicates
   const processedGuideIds = new Set<string>();
@@ -148,6 +156,25 @@ export const calculateGuideTicketsNeeded = (
       guideType: guide3Info.guideType,
       adultTicketsRunning: adultTickets,
       childTicketsRunning: childTickets
+    });
+  }
+
+  // Check for guides assigned directly to groups that aren't in guide1/2/3
+  if (Array.isArray(tourGroups) && tourGroups.length > 0) {
+    logger.debug(`🎟️ [CalculateTickets] Checking ${tourGroups.length} tour groups for additional guides`);
+    
+    // Extract all guide IDs from the groups
+    tourGroups.forEach(group => {
+      if (!group.guideId || processedGuideIds.has(group.guideId)) {
+        return; // Skip if no guide or already processed
+      }
+      
+      // Log that we found a guide in the groups that wasn't in guide1/2/3
+      logger.debug(`🎟️ [CalculateTickets] Found additional guide ID ${group.guideId} in group ${group.name || 'unnamed'}`);
+      
+      // Skip this guide since we don't have their guide type info
+      // We can't calculate ticket requirements without knowing the guide type
+      processedGuideIds.add(group.guideId);
     });
   }
   
