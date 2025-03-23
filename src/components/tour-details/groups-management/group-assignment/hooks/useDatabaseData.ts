@@ -23,7 +23,12 @@ export const useDatabaseData = (tourId: string) => {
   const checkDatabase = async () => {
     try {
       const result = await checkParticipantsTable(tourId);
-      setDbCheckResult(result);
+      // Map the API response to our state format
+      setDbCheckResult({
+        hasTable: result.exists,
+        participantCount: result.records || 0,
+        error: result.error
+      });
     } catch (error) {
       console.error("Error checking database:", error);
       setDbCheckResult({

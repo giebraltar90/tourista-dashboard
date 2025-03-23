@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DatabaseStatus } from "./DatabaseStatus";
 import { RefreshControls } from "./RefreshControls";
 import { FormActions } from "./FormActions";
-import { AssignGuideForm } from "./AssignGuideForm";
+import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
 import { useDatabaseData } from "./hooks/useDatabaseData";
 import { useGuideData } from "@/hooks/guides";
 
@@ -30,7 +30,7 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
     
   // Format guides for the form
   const formattedGuides = guides.map(guide => ({
-    id: guide.id,
+    id: guide.id || '', // Ensure ID is never undefined
     name: guide.name,
     info: guide
   }));
@@ -45,6 +45,8 @@ export const GroupAssignment = ({ tour }: GroupAssignmentProps) => {
   const handleFormComplete = () => {
     handleRefresh();
   };
+
+  console.log("Rendering GroupAssignment component with tour groups:", tour.tourGroups?.length);
 
   return (
     <div className="space-y-4">

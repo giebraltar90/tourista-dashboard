@@ -82,8 +82,8 @@ export const GroupsManagement = ({
     dialogUtils.openAssignGuideDialog(groupIndex);
   };
 
-  // Fix: Wrap handleDragEnd to match the expected signature
-  const handleDragEndWrapper = (e?: React.DragEvent) => {
+  // Fix: Create a wrapper that properly handles the event parameter
+  const handleDragEndWrapper = (e: React.DragEvent<Element>) => {
     handleDragEnd();
   };
 

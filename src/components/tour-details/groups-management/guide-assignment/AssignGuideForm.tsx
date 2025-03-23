@@ -35,7 +35,7 @@ export const AssignGuideForm = ({
   useEffect(() => {
     // Map all guides to the GuideOption format
     const allProcessedGuides = allGuides.map(guide => ({
-      id: guide.id,
+      id: guide.id || '', // Ensure ID is never undefined
       name: guide.name,
       info: guide
     }));
