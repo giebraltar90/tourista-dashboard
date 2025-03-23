@@ -1,68 +1,47 @@
 
-import { cn } from "@/lib/utils";
-import { logger } from "@/utils/logger";
-import { GuideTicketsList } from "./GuideTicketsList";
-
-interface GuideWithTicket {
-  guideName: string;
-  guideType: string;
-  ticketType: "adult" | "child" | null;
-}
+import { Badge } from "@/components/ui/badge";
 
 interface GuideTicketsSectionProps {
-  guides: GuideWithTicket[];
+  guides: {
+    guideName: string;
+    guideType: string;
+    ticketType: "adult" | "child" | null;
+  }[];
   adultTickets: number;
   childTickets: number;
 }
 
-export const GuideTicketsSection = ({
-  guides,
-  adultTickets,
-  childTickets
-}: GuideTicketsSectionProps) => {
-  // Log the input props for debugging
-  logger.debug(`🎟️ [GuideTicketsSection] Rendering with:`, {
-    adultTickets,
-    childTickets,
-    guidesWithTicketsCount: guides.length,
-    guidesDetail: guides.map(g => ({
-      name: g.guideName,
-      type: g.guideType,
-      ticketType: g.ticketType
-    }))
-  });
+export const GuideTicketsSection = ({ guides, adultTickets, childTickets }: GuideTicketsSectionProps) => {
+  // Only show section if there are guide tickets
+  if (adultTickets === 0 && childTickets === 0) {
+    return null;
+  }
+
+  // Format the total guide tickets
+  const totalGuideTickets = adultTickets + childTickets;
+  const formattedGuideTickets = `${adultTickets}${childTickets > 0 ? ` + ${childTickets}` : ''}`;
   
-  // Always display the section, even if there are no guide tickets
   return (
-    <div>
-      <div className="text-xs text-muted-foreground mb-1">
-        Guide Tickets
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="font-medium">Guide Tickets</span>
+        <Badge variant="outline" className="font-medium">
+          {formattedGuideTickets}
+        </Badge>
       </div>
       
-      {/* Display guide adult tickets - always show this row */}
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Guide adult tickets:</span>
-        <span className="font-medium">{adultTickets}</span>
+      <div className="text-xs text-muted-foreground">
+        {guides.length > 0 && (
+          <ul className="space-y-1">
+            {guides.map((guide, index) => (
+              <li key={index} className="flex justify-between">
+                <span>{guide.guideName}</span>
+                <span>{guide.ticketType === "adult" ? "Adult" : guide.ticketType === "child" ? "Child" : "None"}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      
-      {/* Display guide child tickets - always show this row */}
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Guide child tickets:</span>
-        <span className="font-medium">{childTickets}</span>
-      </div>
-      
-      {/* Show total if there are any guide tickets */}
-      {(adultTickets > 0 || childTickets > 0) && (
-        <div className="flex justify-between text-sm mt-1 pt-1 border-t border-border">
-          <span className="text-muted-foreground">Total guide tickets:</span>
-          <span className="font-medium">{adultTickets + childTickets}</span>
-        </div>
-      )}
-      
-      {/* Show guide details if there are any */}
-      {guides.length > 0 && (
-        <GuideTicketsList guides={guides} />
-      )}
     </div>
   );
 };

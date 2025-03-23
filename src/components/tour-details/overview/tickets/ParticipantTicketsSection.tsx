@@ -1,4 +1,6 @@
 
+import { Badge } from "@/components/ui/badge";
+
 interface ParticipantTicketsSectionProps {
   validAdultTickets: number;
   validChildTickets: number;
@@ -8,24 +10,24 @@ export const ParticipantTicketsSection = ({
   validAdultTickets, 
   validChildTickets 
 }: ParticipantTicketsSectionProps) => {
-  // Ensure values are valid numbers
-  const displayAdultTickets = validAdultTickets >= 0 ? validAdultTickets : 0;
-  const displayChildTickets = validChildTickets >= 0 ? validChildTickets : 0;
-  
   return (
-    <div>
-      <div className="text-xs text-muted-foreground mb-1">
-        Participant Tickets
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="font-medium">Participant Tickets</span>
+        <Badge variant="outline" className="font-medium">
+          {validAdultTickets} + {validChildTickets}
+        </Badge>
       </div>
       
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Adult participants:</span>
-        <span className="font-medium">{displayAdultTickets}</span>
-      </div>
-
-      <div className="flex justify-between text-sm">
-        <span className="text-muted-foreground">Child participants:</span>
-        <span className="font-medium">{displayChildTickets}</span>
+      <div className="text-xs space-y-1">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Adults</span>
+          <span>{validAdultTickets}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Children</span>
+          <span>{validChildTickets}</span>
+        </div>
       </div>
     </div>
   );
