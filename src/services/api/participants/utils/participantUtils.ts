@@ -1,25 +1,32 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { generateRandomParticipant } from "./testDataUtils";
 
 /**
- * Fetch participants for tour groups
+ * Fetch participants for groups
  */
-export const fetchParticipantsForGroups = async (groupIds: string[]) => {
+export const fetchParticipantsForGroups = async (groupIds) => {
   try {
-    const { data: participantsData, error: participantsError } = await supabase
+    if (!groupIds || groupIds.length === 0) {
+      console.log("DATABASE DEBUG: No group IDs provided for participants");
+      return { success: true, participants: [] };
+    }
+    
+    console.log("DATABASE DEBUG: Fetching participants for groups:", groupIds);
+    
+    const { data: participants, error } = await supabase
       .from('participants')
       .select('*')
       .in('group_id', groupIds);
       
-    if (participantsError) {
-      console.error("DATABASE DEBUG: Error fetching participants:", participantsError);
-      console.log("DATABASE DEBUG: SQL error details:", participantsError.details, participantsError.message);
-      return { success: false, error: participantsError.message };
+    if (error) {
+      console.error("DATABASE DEBUG: Error fetching participants:", error);
+      return { success: false, error: error.message };
     }
-    
-    console.log(`DATABASE DEBUG: Found ${participantsData ? participantsData.length : 0} total participants`);
-    return { success: true, participants: participantsData || [] };
+
+    console.log(`DATABASE DEBUG: Found ${participants.length} participants`);
+    return { success: true, participants };
   } catch (error) {
     console.error("DATABASE DEBUG: Error in fetchParticipantsForGroups:", error);
     return { success: false, error: String(error) };
@@ -27,40 +34,49 @@ export const fetchParticipantsForGroups = async (groupIds: string[]) => {
 };
 
 /**
- * Create test participants for groups with no participants
+ * Create test participants for groups
  */
-export const createTestParticipants = async (groups: any[]) => {
+export const createTestParticipants = async (groups) => {
   try {
-    console.log("DATABASE DEBUG: Attempting to create test participants...");
+    if (!groups || groups.length === 0) {
+      console.log("DATABASE DEBUG: No groups provided for test participant creation");
+      return { success: false, error: "No groups provided" };
+    }
     
-    const createdParticipants = [];
+    console.log(`DATABASE DEBUG: Creating test participants for ${groups.length} groups`);
     
-    // Insert one test participant per group
+    // Create test participants for each group
+    const testParticipants = [];
+    
     for (const group of groups) {
-      const { data: insertResult, error: insertError } = await supabase
-        .from('participants')
-        .insert({
-          name: `Test Participant for ${group.name || 'Group'}`,
-          count: 2,
-          child_count: 1,
-          group_id: group.id,
-          booking_ref: 'TEST-123'
-        })
-        .select();
-        
-      if (insertError) {
-        console.error(`DATABASE DEBUG: Error inserting test participant for group ${group.id}:`, insertError);
-      } else {
-        console.log(`DATABASE DEBUG: Successfully created test participant for group ${group.id}:`, insertResult);
-        if (insertResult) {
-          createdParticipants.push(...insertResult);
-        }
+      // Create 2-3 test participants per group
+      const participantCount = 2 + Math.floor(Math.random() * 2);
+      
+      for (let i = 0; i < participantCount; i++) {
+        const participant = generateRandomParticipant(group.id);
+        testParticipants.push(participant);
       }
     }
     
-    return { success: createdParticipants.length > 0, participants: createdParticipants };
+    // Batch insert participants
+    if (testParticipants.length > 0) {
+      const { data, error } = await supabase
+        .from('participants')
+        .insert(testParticipants)
+        .select();
+        
+      if (error) {
+        console.error("DATABASE DEBUG: Error creating test participants:", error);
+        return { success: false, error: error.message };
+      }
+      
+      console.log(`DATABASE DEBUG: Created ${data.length} test participants`);
+      return { success: true, participants: data };
+    }
+    
+    return { success: true, participants: [] };
   } catch (error) {
-    console.error("DATABASE DEBUG: Exception when inserting test participants:", error);
+    console.error("DATABASE DEBUG: Error in createTestParticipants:", error);
     return { success: false, error: String(error) };
   }
 };

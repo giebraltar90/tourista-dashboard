@@ -1,67 +1,35 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { updateTourGuidesInDatabase } from "@/services/api/guideAssignmentService";
 import { logger } from "@/utils/logger";
 
 /**
- * Updates the guide assignment in the database
+ * Update the database with the guide assignment
  */
-export const updateGroupGuideAssignment = async (
-  tourId: string,
-  actualGroupId: string,
-  finalGuideId: string | null,
-  newGroupName: string
+export const updateDatabaseWithGuideAssignment = async (
+  groupId: string,
+  guideId: string | null,
+  updatedName: string
 ): Promise<boolean> => {
-  // Update the guide assignment in the database
-  const { error } = await supabase
-    .from("tour_groups")
-    .update({ 
-      guide_id: finalGuideId,
-      name: newGroupName
-    })
-    .eq("id", actualGroupId)
-    .eq("tour_id", tourId);
-    
-  if (error) {
-    logger.error("🔄 [AssignGuide] Error assigning guide:", error);
-    return false;
-  }
-  
-  return true;
-};
-
-/**
- * Updates the guide reference in the tours table if needed
- */
-export const updateTourGuideReference = async (
-  tourId: string,
-  guideId: string,
-  finalGuideId: string | null
-): Promise<boolean> => {
-  // Only update if this is a main guide
-  if (!guideId.startsWith("guide")) {
-    return true;
-  }
-  
   try {
-    // Determine which guide we're updating (guide1, guide2, guide3)
-    const guideNumber = guideId.replace("guide", "");
-    
-    // Only set the specific guide we're updating
-    let guide1Id = undefined;
-    let guide2Id = undefined;
-    let guide3Id = undefined;
-    
-    // Only set the specific guide we're updating
-    if (guideNumber === "1") guide1Id = finalGuideId;
-    if (guideNumber === "2") guide2Id = finalGuideId;
-    if (guideNumber === "3") guide3Id = finalGuideId;
-    
-    await updateTourGuidesInDatabase(tourId, guide1Id, guide2Id, guide3Id);
+    // Update the group with the new guide ID and name
+    const { error: updateError } = await supabase
+      .from('tour_groups')
+      .update({
+        guide_id: guideId,
+        name: updatedName,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', groupId);
+
+    if (updateError) {
+      logger.error("🔄 [AssignGuide] Error updating group:", updateError);
+      return false;
+    }
+
+    logger.log(`🔄 [AssignGuide] Successfully updated group ${groupId} with guide ${guideId || 'none'}`);
     return true;
-  } catch (updateError) {
-    logger.error("🔄 [AssignGuide] Error updating tour guides:", updateError);
-    // Don't fail the whole operation if this part fails
-    return true;
+  } catch (error) {
+    logger.error("🔄 [AssignGuide] Exception in updateDatabaseWithGuideAssignment:", error);
+    return false;
   }
 };

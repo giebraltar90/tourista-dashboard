@@ -1,53 +1,25 @@
 
-import { useEffect, useRef } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from 'react';
 
 /**
- * Hook for setting up participant refresh event listeners
+ * Hook to listen for participant refresh events from other components
  */
-export const useParticipantRefreshEvents = (
-  tourId: string,
-  handleRefetch: () => void
-) => {
-  const queryClient = useQueryClient();
-  const isRefreshingRef = useRef(false);
-  const lastRefreshTime = useRef(0);
-  const refreshEventCount = useRef(0);
-  
-  // Listen for refresh-participants event
+export const useParticipantRefreshEvents = (tourId: string, handleRefetch: () => void) => {
   useEffect(() => {
-    const handleRefreshParticipants = () => {
-      if (!tourId || isRefreshingRef.current) return;
-      
-      const now = Date.now();
-      // Prevent refreshes too close together (within 3 seconds)
-      if (now - lastRefreshTime.current < 3000) {
-        console.log("DATABASE DEBUG: Skipping refresh, too soon after last refresh");
-        return;
-      }
-      
-      refreshEventCount.current += 1;
-      console.log(`DATABASE DEBUG: Received refresh-participants event #${refreshEventCount.current}`);
-      
-      isRefreshingRef.current = true;
-      lastRefreshTime.current = now;
-      
-      // Only invalidate the cache, don't trigger additional refresh actions
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      
-      // Only call handleRefetch once
+    // This event can be dispatched from other components to trigger a refresh
+    const handleRefreshEvent = () => {
+      console.log("Received refresh-participants event, refreshing data");
       handleRefetch();
-      
-      // Reset the refreshing flag after a delay
-      setTimeout(() => {
-        isRefreshingRef.current = false;
-      }, 3000); // Increased to 3 seconds to further prevent rapid refreshes
     };
-    
-    window.addEventListener('refresh-participants', handleRefreshParticipants);
-    
+
+    // Listen for the custom event
+    window.addEventListener('refresh-participants', handleRefreshEvent);
+    window.addEventListener('participants-loaded', handleRefreshEvent);
+
+    // Clean up
     return () => {
-      window.removeEventListener('refresh-participants', handleRefreshParticipants);
+      window.removeEventListener('refresh-participants', handleRefreshEvent);
+      window.removeEventListener('participants-loaded', handleRefreshEvent);
     };
-  }, [tourId, queryClient, handleRefetch]);
+  }, [tourId, handleRefetch]);
 };

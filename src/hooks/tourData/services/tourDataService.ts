@@ -3,6 +3,7 @@ import { fetchTourFromSupabase } from '@/services/api/tour/fetchSupabaseTour';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { normalizeTourData } from '../helpers/normalizeTourData';
 import { mockTours } from '@/data/mockData';
+import { toast } from 'sonner';
 
 /**
  * Service function to fetch tour data with error handling
@@ -33,6 +34,9 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     return null;
   } catch (error) {
     console.error(`Error in fetchTourData for tour ${tourId}:`, error);
+    
+    // Show error toast
+    toast.error(`Failed to fetch tour data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     
     // Fallback to mock data when there's an error
     console.log(`Error fetching tour ${tourId}, using mock data`);
