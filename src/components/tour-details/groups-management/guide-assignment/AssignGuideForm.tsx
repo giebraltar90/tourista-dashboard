@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useGuideAssignmentForm } from "@/hooks/group-management/guide-assignment/useGuideAssignmentForm";
 import { GuideOption } from "@/hooks/group-management/types";
 import { AlertTriangle } from "lucide-react";
@@ -73,9 +74,17 @@ export const AssignGuideForm = ({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="_none">None (Unassign Guide)</SelectItem>
                   {guides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
-                      {guide.name}
+                      <div className="flex items-center gap-2">
+                        <span>{guide.name}</span>
+                        {guide.info?.guideType && (
+                          <Badge variant="outline" className="text-xs">
+                            {guide.info.guideType}
+                          </Badge>
+                        )}
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
