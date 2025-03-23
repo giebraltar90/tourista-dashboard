@@ -3,10 +3,25 @@ import { useDebugMode } from '@/contexts/DebugContext';
 
 export type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
+// Standard emoji prefixes for different log types 
+const LOG_PREFIXES = {
+  participant: "👤",
+  group: "👥",
+  guide: "🧭",
+  ticket: "🎟️",
+  db: "💾",
+  api: "🔌",
+  sync: "🔄",
+  move: "↔️",
+  error: "❌",
+  success: "✅",
+};
+
 class Logger {
   // Store original console methods
   private originalConsole: Record<LogLevel, (...args: any[]) => void>;
   private debugEnabled: boolean = false;
+  private forceDebug: boolean = true; // Force debug logs on for troubleshooting
 
   constructor() {
     // Save original console methods
@@ -20,7 +35,7 @@ class Logger {
   }
 
   setDebugMode(enabled: boolean) {
-    this.debugEnabled = enabled;
+    this.debugEnabled = enabled || this.forceDebug;
   }
 
   log(...args: any[]) {
@@ -46,9 +61,8 @@ class Logger {
   }
 
   debug(...args: any[]) {
-    if (this.debugEnabled) {
-      this.originalConsole.debug(...args);
-    }
+    // Force debug logs for troubleshooting
+    this.originalConsole.debug(...args);
   }
 }
 

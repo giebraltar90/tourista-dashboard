@@ -3,6 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { calculateGuideTicketsNeeded } from "@/hooks/group-management/utils";
 import { GuideInfo } from "@/types/ventrata";
+import { useEffect } from "react";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -44,6 +45,22 @@ export const TicketsCard = ({
     tourGroups
   );
   
+  // Log ticket calculation for debugging
+  useEffect(() => {
+    console.log("🎟️ [TicketsCard] Ticket calculation results:", {
+      validAdultTickets,
+      validChildTickets,
+      guideAdultTickets,
+      guideChildTickets,
+      guidesWithTickets,
+      location,
+      guide1Type: guide1Info?.guideType,
+      guide2Type: guide2Info?.guideType,
+      guide3Type: guide3Info?.guideType
+    });
+  }, [validAdultTickets, validChildTickets, guideAdultTickets, guideChildTickets, 
+      guide1Info, guide2Info, guide3Info, location, guidesWithTickets]);
+  
   // Total required tickets calculations
   const totalRequiredAdultTickets = validAdultTickets + guideAdultTickets;
   const totalRequiredChildTickets = validChildTickets + guideChildTickets;
@@ -52,7 +69,7 @@ export const TicketsCard = ({
   // Determine if we have enough tickets
   const hasEnoughTickets = !requiredTickets || totalRequiredTickets <= requiredTickets;
 
-  // Format the display strings for clarity
+  // Format the display strings
   const adultTicketsDisplay = guideAdultTickets > 0 
     ? `${validAdultTickets} + ${guideAdultTickets} guides` 
     : `${validAdultTickets}`;
@@ -87,7 +104,7 @@ export const TicketsCard = ({
             <span className="text-muted-foreground">Total tickets needed:</span>
             <Badge 
               variant="outline" 
-              className="font-medium bg-green-100 text-green-800 border-green-300"
+              className={`font-medium ${hasEnoughTickets ? "bg-green-100 text-green-800 border-green-300" : ""}`}
             >
               {formattedTotalTickets}
             </Badge>
