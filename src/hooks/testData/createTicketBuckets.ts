@@ -34,7 +34,7 @@ export const createTestTicketBuckets = async (tours) => {
       tickets_range: `1-${ticketCount}`,
       bucket_type: bucketType,
       max_tickets: ticketCount,
-      available_tickets: ticketCount,
+      // Remove available_tickets as it's a generated column
       allocated_tickets: ticketCount,
       assigned_tours: [tour.id],
       access_time: tour.start_time,

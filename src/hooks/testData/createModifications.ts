@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { ModificationStatus } from "./helpers";
 
 /**
  * Creates test modifications in the database

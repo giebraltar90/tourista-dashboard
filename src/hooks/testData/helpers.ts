@@ -1,4 +1,5 @@
 
+// Define types with exact string literals to match database enum values
 export type GuideType = 'GA Free' | 'GA Ticket' | 'GC';
 export type TourType = 'food' | 'private' | 'default';
 export type ModificationStatus = 'pending' | 'complete';
