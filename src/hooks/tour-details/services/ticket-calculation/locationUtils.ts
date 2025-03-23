@@ -36,28 +36,3 @@ export const locationRequiresGuideTickets = (location: string = ""): boolean => 
   
   return requiresTickets;
 };
-
-/**
- * Special override function to handle problematic tour IDs
- * This is used to fix specific tour tickets issues
- */
-export const shouldOverrideGuideTickets = (tourId: string): boolean => {
-  // List of tour IDs that should never have guide tickets regardless of location
-  const noTicketsTourIds = [
-    '313922567',  // Specified as not needing guide tickets
-    '324598761',   // Specified as not needing guide tickets
-    '324598820'    // Adding the requested tour ID for monitoring
-  ];
-  
-  // Special monitoring for specific tour ID
-  if (tourId === '324598820') {
-    logger.debug(`🚨 [SPECIAL MONITORING] Tour ${tourId} is being monitored for guide tickets calculation`);
-  }
-  
-  if (noTicketsTourIds.includes(tourId)) {
-    logger.debug(`🎟️ [TicketOverride] Tour ${tourId} has a manual override: NO GUIDE TICKETS`);
-    return true;
-  }
-  
-  return false;
-};

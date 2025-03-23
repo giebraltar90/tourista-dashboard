@@ -7,7 +7,7 @@ import {
   calculateGuideTicketsNeeded,
   calculateCompleteGuideTicketRequirements
 } from "./services/ticket-calculation";
-import { locationRequiresGuideTickets, shouldOverrideGuideTickets } from "./services/ticket-calculation/locationUtils";
+import { locationRequiresGuideTickets } from "./services/ticket-calculation/locationUtils";
 
 /**
  * Hook to determine guide ticket requirements for a tour
@@ -33,19 +33,11 @@ export const useGuideTicketRequirements = (
     });
   }
   
-  // Check if this is a special tour that should override ticket calculations
-  const isOverrideTour = useMemo(() => {
-    return shouldOverrideGuideTickets(tour.id);
-  }, [tour.id]);
-  
   // Check if location needs tickets
   const location = tour.location || '';
   const locationNeedsGuideTickets = useMemo(() => {
-    if (isOverrideTour) {
-      return false; // Force no guide tickets for override tours
-    }
     return locationRequiresGuideTickets(location);
-  }, [location, isOverrideTour]);
+  }, [location]);
   
   // Calculate guide tickets using the calculation service
   const { adultTickets, childTickets, guides } = useMemo(() => {
@@ -53,14 +45,8 @@ export const useGuideTicketRequirements = (
       guide1Type: guide1Info?.guideType || 'none',
       guide2Type: guide2Info?.guideType || 'none',
       guide3Type: guide3Info?.guideType || 'none',
-      locationNeedsTickets: locationNeedsGuideTickets,
-      isOverrideTour
+      locationNeedsTickets: locationNeedsGuideTickets
     });
-    
-    if (isOverrideTour) {
-      logger.debug(`🎟️ [useGuideTicketRequirements] Tour ${tour.id} has a manual override, returning zero tickets`);
-      return { adultTickets: 0, childTickets: 0, guides: [] };
-    }
     
     if (!locationNeedsGuideTickets) {
       logger.debug(`🎟️ [useGuideTicketRequirements] Location "${location}" doesn't need guide tickets, returning zero`);
@@ -89,7 +75,7 @@ export const useGuideTicketRequirements = (
     }
     
     return result;
-  }, [guide1Info, guide2Info, guide3Info, location, tour.tourGroups, tour.id, locationNeedsGuideTickets, isOverrideTour, isSpecialMonitoringTour]);
+  }, [guide1Info, guide2Info, guide3Info, location, tour.tourGroups, tour.id, locationNeedsGuideTickets, isSpecialMonitoringTour]);
   
   // Log detailed information about the guide tickets
   useEffect(() => {
@@ -99,7 +85,6 @@ export const useGuideTicketRequirements = (
     if (shouldLogDetailed) {
       logger.debug(`🎟️ [useGuideTicketRequirements] Final guide ticket requirements for tour ${tour.id}:`, {
         tourLocation: tour.location,
-        isOverrideTour,
         locationNeedsGuideTickets,
         guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'none',
         guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'none',
@@ -115,7 +100,7 @@ export const useGuideTicketRequirements = (
       });
     }
   }, [
-    tour.id, tour.location, locationNeedsGuideTickets, isOverrideTour,
+    tour.id, tour.location, locationNeedsGuideTickets,
     guide1Info, guide2Info, guide3Info,
     adultTickets, childTickets, guides, isSpecialMonitoringTour
   ]);
