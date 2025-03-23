@@ -25,11 +25,7 @@ export function useTourDetailsData(tourId: string) {
       queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
       refetch().catch(err => {
         console.error("Error refetching tour:", err);
-        toast({
-          title: "Refresh failed",
-          description: "Failed to refresh tour data. Please try again.",
-          variant: "destructive"
-        });
+        toast.error("Failed to refresh tour data. Please try again.");
       });
     }
   }, [tourId, queryClient, refetch]);
