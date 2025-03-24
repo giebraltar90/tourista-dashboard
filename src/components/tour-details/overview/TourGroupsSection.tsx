@@ -81,8 +81,10 @@ export const TourGroupsSection = ({
       guideType: guide.guide_type || "GA Ticket",
       info: {
         name: guide.name,
-        birthday: typeof guide.birthday === 'object' && guide.birthday !== null 
-          ? guide.birthday 
+        birthday: guide.birthday ? 
+          (typeof guide.birthday === 'object' && guide.birthday !== null 
+            ? guide.birthday 
+            : new Date(guide.birthday || '')) 
           : new Date(),
         guideType: (guide.guide_type || "GA Ticket") as GuideType
       }
