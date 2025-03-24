@@ -73,7 +73,7 @@ export const AssignGuideDialog = ({
         </DialogHeader>
         
         <Form {...form}>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="guideId"
@@ -105,7 +105,7 @@ export const AssignGuideDialog = ({
             />
             
             {guideHasInfo && selectedGuide.info.guideType && (
-              <Alert variant="info" className="bg-blue-50">
+              <Alert variant="default" className="bg-blue-50">
                 <Info className="h-4 w-4 text-blue-500" />
                 <AlertDescription>
                   <div className="font-medium mb-1">Guide Type: {selectedGuide.info.guideType}</div>

@@ -3,6 +3,7 @@ import { useState, useCallback, useRef } from "react";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { loadParticipantsData } from "@/services/api/participants/participantDbService";
 import { toast } from "sonner";
+import { supabaseWithRetry } from "@/integrations/supabase/client";
 
 /**
  * Hook for refreshing and loading participants for a tour
@@ -16,14 +17,21 @@ export const useParticipantRefresh = (
   const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
   const lastToastTime = useRef(Date.now());
   const initialLoadComplete = useRef(false);
+  const loadOperationInProgress = useRef(false);
   
   /**
-   * Load participants for a tour
+   * Load participants for a tour with improved error handling
    */
   const loadParticipants = useCallback(async (tourIdParam: string = tourId, showToast: boolean = false) => {
     const usedTourId = tourIdParam || tourId;
     if (!usedTourId) {
       console.error("DATABASE DEBUG: No tour ID provided for loading participants");
+      return;
+    }
+    
+    // Prevent concurrent refreshes
+    if (loadOperationInProgress.current) {
+      console.log("DATABASE DEBUG: Skipping participant load - operation already in progress");
       return;
     }
     
@@ -37,10 +45,13 @@ export const useParticipantRefresh = (
     
     console.log("DATABASE DEBUG: loadParticipants called for tourId:", usedTourId);
     setIsLoadingParticipants(true);
-    console.log("DATABASE DEBUG: Checking participants table existence");
+    loadOperationInProgress.current = true;
     
     try {
-      const result = await loadParticipantsData(usedTourId);
+      // Use retry mechanism for more reliable access
+      const result = await supabaseWithRetry(async () => {
+        return await loadParticipantsData(usedTourId);
+      });
       
       if (result.success) {
         console.log("DATABASE DEBUG: Loaded participants successfully");
@@ -96,11 +107,15 @@ export const useParticipantRefresh = (
       }
     } catch (error) {
       console.error("DATABASE DEBUG: Error loading participants:", error);
-      if (showToast) {
-        toast.error("Error loading participants");
+      if (showToast && !toast.isActive('participants-error')) {
+        toast.error("Error loading participants", {
+          id: 'participants-error',
+          duration: 3000
+        });
       }
     } finally {
       setIsLoadingParticipants(false);
+      loadOperationInProgress.current = false;
     }
   }, [tourId, setLocalTourGroups, recalculateGroupSizes]);
   

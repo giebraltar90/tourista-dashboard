@@ -7,11 +7,11 @@ export const supabase = createSupabaseClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
   {
     global: {
-      // Use AbortSignal.timeout as part of the global fetch options
+      // Use a longer timeout for fetch operations
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(15000), // Increase timeout to 15 seconds
+          signal: AbortSignal.timeout(30000), // Increase timeout to 30 seconds
         });
       },
     },
@@ -53,10 +53,15 @@ export const checkDatabaseConnection = async () => {
     
     // Use a more type-safe approach for checking table existence
     const checkTable = async (tableName: string) => {
-      const { error } = await supabase.rpc('check_table_exists', { 
-        table_name_param: tableName 
-      });
-      return !error;
+      try {
+        const { error } = await supabase.rpc('check_table_exists', { 
+          table_name_param: tableName 
+        });
+        return !error;
+      } catch (err) {
+        console.error(`Error checking table ${tableName}:`, err);
+        return false;
+      }
     };
     
     // Check if the bucket_tour_assignments table exists

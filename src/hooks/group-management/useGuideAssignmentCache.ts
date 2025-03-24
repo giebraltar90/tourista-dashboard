@@ -38,10 +38,15 @@ export const useGuideAssignmentCache = (tourId: string) => {
         return;
       }
       
+      if (!data) {
+        setAssignments([]);
+        return;
+      }
+      
       const processedAssignments = data.map((group, index) => ({
         groupId: group.id,
         guideId: group.guide_id,
-        guideName: group.guides?.name || null,
+        guideName: group.guides ? group.guides.name : null,
         groupIndex: index,
         groupName: group.name || `Group ${index + 1}`
       }));
