@@ -596,6 +596,12 @@ export type Database = {
         }
         Returns: string
       }
+      sync_all_tour_groups: {
+        Args: {
+          p_tour_id: string
+        }
+        Returns: undefined
+      }
       update_groups_after_move: {
         Args: {
           source_group_id: string
