@@ -8,9 +8,8 @@ import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourC
 import { useTourDatabaseCheck } from "./hooks/useTourDatabaseCheck";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents";
-import { useEffect, useCallback, memo, useState } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useSyncTourGroupGuides } from "@/hooks/group-management/useSyncTourGroupGuides";
-import { EventEmitter } from "@/utils/eventEmitter";
 import { logger } from "@/utils/logger";
 
 /**
@@ -129,5 +128,5 @@ const TourDetailsPage = () => {
   );
 };
 
-// Use memo to prevent unnecessary re-renders
-export default memo(TourDetailsPage);
+// Export as default without using memo to avoid potential issues
+export default TourDetailsPage;
