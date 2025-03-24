@@ -26,6 +26,13 @@ export const useParticipantRefresh = (
   // Track whether any toast is currently displayed to avoid toast spam
   const [isToastActive, setIsToastActive] = useState(false);
   
+  // Add a participants cache to prevent unnecessary reloads
+  const [participantsCache, setParticipantsCache] = useState<{
+    cacheTime: number;
+    participants: VentrataParticipant[];
+    groupIds: string[];
+  } | null>(null);
+  
   // Function to load participants with retries and better error handling
   const loadParticipants = useCallback(async (tourIdOrGroupIds: string | string[]) => {
     try {
@@ -62,6 +69,15 @@ export const useParticipantRefresh = (
         return [];
       }
       
+      // Check if we have a valid cache for these exact group IDs
+      if (participantsCache && 
+          participantsCache.cacheTime > Date.now() - 30000 && // Cache valid for 30 seconds
+          participantsCache.groupIds.length === groupIds.length &&
+          participantsCache.groupIds.every(id => groupIds.includes(id))) {
+        console.log("DATABASE DEBUG: Using cached participants data");
+        return participantsCache.participants;
+      }
+      
       // Use retry mechanism for better reliability
       const result = await supabaseWithRetry(async () => {
         const { data, error } = await supabase
@@ -70,6 +86,14 @@ export const useParticipantRefresh = (
           .in('group_id', groupIds);
           
         if (error) throw error;
+        
+        // Update cache
+        setParticipantsCache({
+          cacheTime: Date.now(),
+          participants: data || [],
+          groupIds: [...groupIds]
+        });
+        
         return data || [];
       });
       
@@ -80,7 +104,7 @@ export const useParticipantRefresh = (
     } finally {
       pendingOperations--;
     }
-  }, []);
+  }, [participantsCache]);
   
   // Primary refresh function with improved reliability
   const refreshParticipants = useCallback(async () => {
@@ -190,6 +214,9 @@ export const useParticipantRefresh = (
       // Notify other components
       EventEmitter.emit(`participant-change:${tourId}`);
       
+      // Invalidate the cache
+      setParticipantsCache(null);
+      
       toast.success("Participant moved successfully");
       return true;
     } catch (err) {
@@ -201,12 +228,12 @@ export const useParticipantRefresh = (
     }
   }, [tourId, isLoading]);
   
-  // Initial load on mount
+  // Initial load on mount - only once
   useEffect(() => {
-    if (tourId) {
+    if (tourId && !participantsCache) {
       refreshParticipants();
     }
-  }, [tourId, refreshParticipants]);
+  }, [tourId, refreshParticipants, participantsCache]);
   
   return {
     isLoading,

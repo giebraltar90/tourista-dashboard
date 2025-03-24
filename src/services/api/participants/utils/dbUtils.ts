@@ -1,3 +1,4 @@
+
 import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
@@ -55,8 +56,23 @@ export const debugCheckParticipantsTable = async (groupIds: string[]) => {
       };
     }
     
+    // Cache results for 30 seconds to prevent excessive checks
+    const cacheKey = `debug_participants_${groupIds.join('_')}`;
+    const cachedResult = sessionStorage.getItem(cacheKey);
+    
+    if (cachedResult) {
+      const parsedCache = JSON.parse(cachedResult);
+      const cacheTime = parsedCache.timestamp || 0;
+      
+      // Use cache if it's less than 30 seconds old
+      if (Date.now() - cacheTime < 30000) {
+        logger.debug("DATABASE DEBUG: Using cached participants table check");
+        return parsedCache.result;
+      }
+    }
+    
     // Use retry mechanism for more reliable database access
-    return await supabaseWithRetry(async () => {
+    const result = await supabaseWithRetry(async () => {
       try {
         const { data: directCheck, error: directError } = await supabase.rpc(
           'debug_check_participants',
@@ -79,6 +95,18 @@ export const debugCheckParticipantsTable = async (groupIds: string[]) => {
         };
       }
     }, 2); // Reduced retries for diagnostic functions
+    
+    // Cache the result
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify({
+        timestamp: Date.now(),
+        result
+      }));
+    } catch (cacheError) {
+      // Ignore cache errors
+    }
+    
+    return result;
   } catch (error) {
     logger.error("DATABASE DEBUG: Error in debugCheckParticipantsTable:", error);
     return { success: false, error: String(error) };
@@ -100,7 +128,7 @@ export const executeWithFallback = async <T>(
     try {
       // Add small delay before retries
       if (attempt > 0) {
-        await new Promise(resolve => setTimeout(resolve, 200 * attempt));
+        await new Promise(resolve => setTimeout(resolve, 300 * attempt));
       }
       
       return await operation();

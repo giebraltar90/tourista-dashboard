@@ -1,17 +1,21 @@
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
+// Increase timeout settings to prevent frequent timeouts
+const FETCH_TIMEOUT = 30000; // 30 seconds timeout
+const MAX_RETRIES = 3; // Maximum number of retries for operations
+
 // Supabase client initialization with improved retry and timeout settings
 export const supabase = createSupabaseClient(
   import.meta.env.VITE_SUPABASE_URL || 'https://hznwikjmwmskvoqgkvjk.supabase.co',
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
   {
     global: {
-      // Use a longer timeout for fetch operations
+      // Use a longer timeout for fetch operations with AbortSignal
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(15000), // Reduced timeout to 15 seconds for faster failure
+          signal: AbortSignal.timeout(FETCH_TIMEOUT),
         });
       },
     },
@@ -22,10 +26,10 @@ export const supabase = createSupabaseClient(
     db: {
       schema: 'public',
     },
-    // Add retry strategy
+    // Add retry strategy for more resilient connections
     realtime: {
       params: {
-        eventsPerSecond: 10,
+        eventsPerSecond: 5, // Reduce events per second to be gentler on the connection
       },
     },
   }
@@ -74,14 +78,14 @@ export const checkDatabaseConnection = async () => {
 };
 
 // Create a utility for Supabase retries with exponential backoff
-export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = 2) => {
+export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = MAX_RETRIES) => {
   let lastError;
   
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // Add delay before retries (except the first attempt)
       if (attempt > 0) {
-        const delay = Math.min(200 * Math.pow(1.5, attempt), 2000) + Math.random() * 200;
+        const delay = Math.min(1000 * Math.pow(1.5, attempt), 10000) + Math.random() * 500;
         console.log(`Retry attempt ${attempt+1}/${maxRetries} after ${delay.toFixed(0)}ms delay`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
@@ -103,8 +107,9 @@ export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetrie
       // For example, permission issues or syntax errors
       if (error && typeof error === 'object') {
         // Check if error is not a timeout or network error
-        if (error.code && !['23', '20'].includes(error.code)) {
-          console.log(`Error code ${error.code} indicates non-recoverable error, stopping retries`);
+        const errorCode = error.code?.toString() || '';
+        if (errorCode && !['23', '20', 'ECONNABORTED', 'ETIMEDOUT'].includes(errorCode)) {
+          console.log(`Error code ${errorCode} indicates non-recoverable error, stopping retries`);
           break;
         }
       }

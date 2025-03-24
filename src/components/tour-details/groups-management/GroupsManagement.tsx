@@ -30,6 +30,7 @@ export const GroupsManagement = ({
 }: GroupsManagementProps) => {
   console.log("GroupsManagement rendering with tourId:", tourId);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   // Get guide assignments from cache
   const { assignments, refreshAssignments } = useGuideAssignmentCache(tourId);
@@ -62,12 +63,12 @@ export const GroupsManagement = ({
     refreshAssignments();
   });
   
-  // Initial load of participants
+  // Initial load of participants - only once
   useEffect(() => {
-    if (tourId) {
+    if (tourId && !initialLoadDone) {
       console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
-      // Load participants with the tour ID
-      // We need to fetch the group IDs first since loadParticipants expects an array of groupIds or a tourId
+      
+      // Load participants with the tourId directly
       const fetchGroups = async () => {
         try {
           const { data: groups } = await supabase
@@ -78,19 +79,22 @@ export const GroupsManagement = ({
           if (groups && groups.length > 0) {
             const groupIds = groups.map(g => g.id);
             await loadParticipants(groupIds);
+            setInitialLoadDone(true);
           } else {
             console.log("No groups found for this tour");
+            setInitialLoadDone(true);
           }
         } catch (err) {
           console.error("Error fetching groups for loadParticipants:", err);
+          setInitialLoadDone(true);
         }
       };
       
       fetchGroups();
     }
-  }, [tourId, loadParticipants]);
+  }, [tourId, loadParticipants, initialLoadDone]);
 
-  // Sync localTourGroups with guide assignments
+  // Sync localTourGroups with guide assignments - only when assignments change
   useEffect(() => {
     if (localTourGroups && localTourGroups.length > 0 && assignments.length > 0) {
       // We don't modify localTourGroups directly, but this ensures the correct guide names are displayed
@@ -99,7 +103,7 @@ export const GroupsManagement = ({
         assignments: assignments.map(a => ({ id: a.groupId, guideName: a.guideName }))
       });
     }
-  }, [localTourGroups, assignments]);
+  }, [assignments]);
   
   // Get dialog management - pass the tour object
   const dialogUtils = GroupDialogsContainer({
