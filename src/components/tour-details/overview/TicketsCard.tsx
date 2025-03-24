@@ -81,8 +81,10 @@ export const TicketsCard = ({
   // Calculate total tickets needed (participants + guide tickets)
   const totalTicketsNeeded = adultTickets + childTickets + guideTickets.adultTickets + guideTickets.childTickets;
     
-  // Format the total tickets as "x + y" where x is adult and y is child
-  const formattedTotalTickets = `${adultTickets + guideTickets.adultTickets} + ${childTickets + guideTickets.childTickets}`;
+  // Format the total tickets in standard format: "adult + child"
+  const totalAdultTickets = adultTickets + guideTickets.adultTickets;
+  const totalChildTickets = childTickets + guideTickets.childTickets;
+  const formattedTotalTickets = `${totalAdultTickets} + ${totalChildTickets}`;
   
   return (
     <Card>
