@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
@@ -59,10 +58,7 @@ export const GroupsManagement = ({
   } = useGroupManagement(tour);
 
   // Database check hook
-  const { databaseError, isFixingDatabase, handleFixDatabase } = useDatabaseCheck(
-    tourId, 
-    refreshParticipants
-  );
+  const { databaseError, isFixingDatabase, handleFixDatabase } = useDatabaseCheck(tourId, refreshParticipants);
   
   // Manual refresh hook with reduced frequency
   const { isManualRefreshing, handleManualRefresh } = useManualRefresh(() => {

@@ -24,7 +24,7 @@ export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
     // Database triggers should handle this automatically now, but let's verify
     const { data: tourGroups, error: groupsError } = await supabase
       .from('tour_groups')
-      .select('id, name, participants(id, count, child_count)')
+      .select('id, name, size, child_count, participants(id, count, child_count)')
       .eq('tour_id', tourId);
       
     if (groupsError) {

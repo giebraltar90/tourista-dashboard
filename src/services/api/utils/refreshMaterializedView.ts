@@ -41,11 +41,15 @@ export const forceRefreshTourData = async (tourId: string): Promise<boolean> => 
     // Then refresh the materialized view
     const viewResult = await refreshTourStatisticsView();
     
-    // Invalidate query cache for this tour
+    // Invalidate query cache for this tour - fix the error by using .then() instead of .catch()
     supabase.rpc('invalidate_tour_cache', {
       p_tour_id: tourId
+    }).then(result => {
+      if (result.error) {
+        logger.warn("💾 [API] Error invalidating tour cache:", result.error);
+      }
     }).catch(err => {
-      logger.warn("💾 [API] Error invalidating tour cache:", err);
+      logger.warn("💾 [API] Exception invalidating tour cache:", err);
     });
     
     return !syncResult.error && viewResult;
