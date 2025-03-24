@@ -36,6 +36,7 @@ export const mapGuidesToResultFormat = (
     needsTicket: boolean;
     ticketType: "adult" | "child" | null;
     guideId?: string;
+    guideInfo?: GuideInfo | null;
   }>,
   guideInfos: Array<GuideInfo | null> = []
 ): Array<{
@@ -46,9 +47,9 @@ export const mapGuidesToResultFormat = (
 }> => {
   return guideResults.map((guide, index) => {
     // Find the corresponding guide info by matching guide ID or fallback to index
-    const guideInfo = guide.guideId 
+    const guideInfo = guide.guideInfo || (guide.guideId 
       ? guideInfos.find(g => g?.id === guide.guideId) || null
-      : guideInfos[index] || null;
+      : guideInfos[index] || null);
       
     return {
       guideName: guide.guideName,

@@ -17,6 +17,7 @@ export const processGuideTicketRequirement = (
   needsTicket: boolean;
   ticketType: "adult" | "child" | null;
   guideId: string;
+  guideInfo: GuideInfo | null;
 } => {
   // Default values if no guide info is provided
   const defaultValues = {
@@ -24,7 +25,8 @@ export const processGuideTicketRequirement = (
     guideType: "Unknown",
     needsTicket: false,
     ticketType: null as "adult" | "child" | null,
-    guideId
+    guideId,
+    guideInfo: null
   };
   
   // If guide info is null, they don't need a ticket
@@ -41,7 +43,8 @@ export const processGuideTicketRequirement = (
       guideType: guideInfo.guideType,
       needsTicket: false,
       ticketType: null,
-      guideId
+      guideId,
+      guideInfo
     };
   }
   
@@ -56,7 +59,8 @@ export const processGuideTicketRequirement = (
       guideType: guideInfo.guideType,
       needsTicket: false,
       ticketType: null,
-      guideId
+      guideId,
+      guideInfo
     };
   }
   
@@ -70,6 +74,7 @@ export const processGuideTicketRequirement = (
     guideType: guideInfo.guideType,
     needsTicket: true,
     ticketType,
-    guideId
+    guideId,
+    guideInfo
   };
 };

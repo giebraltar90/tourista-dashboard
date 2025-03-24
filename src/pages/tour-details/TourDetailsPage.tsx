@@ -11,6 +11,7 @@ import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents
 import { useEffect, useCallback, useState } from "react";
 import { useSyncTourGroupGuides } from "@/hooks/group-management/useSyncTourGroupGuides";
 import { logger } from "@/utils/logger";
+import { useGuideGroupConsistencyCheck } from "@/hooks/tour-details/useGuideGroupConsistencyCheck";
 
 /**
  * Main tour details page component - refactored for cleaner organization
@@ -28,6 +29,9 @@ const TourDetailsPage = () => {
   
   // Add the guide sync hook to ensure database consistency
   useSyncTourGroupGuides(tourId);
+  
+  // Add the guide-group consistency check
+  useGuideGroupConsistencyCheck(tourId);
   
   const {
     tour,

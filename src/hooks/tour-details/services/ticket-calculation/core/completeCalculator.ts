@@ -95,14 +95,10 @@ export const calculateCompleteTicketRequirements = (
   const guidesWithRequirements = [
     guide1Req, guide2Req, guide3Req
   ].filter(g => g.needsTicket).map(g => {
-    // Assign the guide info based on which guide position this is
-    const guideInfo = g.guideId === "guide1" ? guide1Info : 
-                      g.guideId === "guide2" ? guide2Info : 
-                      g.guideId === "guide3" ? guide3Info : null;
-    
+    // Return the guide with its info
     return {
       guideName: g.guideName,
-      guideInfo: guideInfo,
+      guideInfo: g.guideInfo,
       needsTicket: g.needsTicket,
       ticketType: g.ticketType
     };
