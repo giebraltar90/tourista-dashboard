@@ -29,6 +29,15 @@ export const TourOverview = ({
   // Use synced participant counts for consistent display
   const participantCounts = useParticipantCountsSync(tourGroups);
 
+  // Log tour data for debugging
+  console.log("TourOverview rendering with tour data:", {
+    tourId: tour?.id,
+    tourName: tour?.tourName,
+    location: tour?.location,
+    referenceCode: tour?.referenceCode,
+    tourGroups: tourGroups?.length
+  });
+
   // Guard against undefined tour
   if (!tour) {
     return (
@@ -48,6 +57,10 @@ export const TourOverview = ({
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Tour Name</h3>
+              <p className="font-medium">{tour.tourName || 'N/A'}</p>
+            </div>
+            <div>
               <h3 className="font-medium text-sm text-muted-foreground">Reference Code</h3>
               <p className="font-medium">{tour.referenceCode || 'N/A'}</p>
             </div>
@@ -66,6 +79,14 @@ export const TourOverview = ({
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">Season Status</h3>
               <p className="font-medium">{isHighSeason ? 'High Season' : 'Standard Season'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Date</h3>
+              <p className="font-medium">
+                {tour.date instanceof Date 
+                  ? tour.date.toLocaleDateString() 
+                  : (typeof tour.date === 'string' ? new Date(tour.date).toLocaleDateString() : 'N/A')}
+              </p>
             </div>
             <div>
               <h3 className="font-medium text-sm text-muted-foreground">Total Participants</h3>

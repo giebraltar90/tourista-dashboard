@@ -3,7 +3,7 @@ import { TourCardProps } from "./types";
 import { GuideInfo } from "@/types/ventrata";
 import { findGuideName } from "@/hooks/group-management/services/utils/guideNameUtils";
 import { useGuideData } from "@/hooks/guides/useGuideData";
-import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
+import { formatParticipantCount } from "@/hooks/group-management/utils/countingService";
 
 interface TourCardDetailsProps {
   guide1: string;

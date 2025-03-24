@@ -60,12 +60,18 @@ export const TourGroupsSection = ({
   };
   
   // Get valid guide options - making sure each guide has all required properties
+  // Updated to match the GuideOption interface with the info property
   const validGuides = guides.map(guide => ({
     id: guide.id,
     name: guide.name,
-    guide_type: guide.guide_type,
-    birthday: guide.birthday || "",  // Convert Date to string if needed
-    guideType: guide.guide_type  // Add for backward compatibility
+    guide_type: guide.guide_type || "GA Ticket",
+    birthday: typeof guide.birthday === 'string' ? guide.birthday : (guide.birthday ? guide.birthday.toString() : ""),
+    guideType: guide.guide_type || "GA Ticket",
+    info: {
+      name: guide.name,
+      birthday: typeof guide.birthday === 'object' ? guide.birthday : new Date(),
+      guideType: guide.guide_type || "GA Ticket"
+    }
   }));
   
   // Add special guides if they exist in the tour
@@ -75,7 +81,12 @@ export const TourGroupsSection = ({
       name: tour.guide1,
       guide_type: guide1Info?.guideType || "GA Ticket",
       birthday: guide1Info?.birthday ? guide1Info.birthday.toString() : "",
-      guideType: guide1Info?.guideType || "GA Ticket"
+      guideType: guide1Info?.guideType || "GA Ticket",
+      info: {
+        name: tour.guide1,
+        birthday: guide1Info?.birthday || new Date(),
+        guideType: guide1Info?.guideType || "GA Ticket"
+      }
     });
   }
   
@@ -85,7 +96,12 @@ export const TourGroupsSection = ({
       name: tour.guide2,
       guide_type: guide2Info?.guideType || "GA Ticket",
       birthday: guide2Info?.birthday ? guide2Info.birthday.toString() : "",
-      guideType: guide2Info?.guideType || "GA Ticket"
+      guideType: guide2Info?.guideType || "GA Ticket",
+      info: {
+        name: tour.guide2,
+        birthday: guide2Info?.birthday || new Date(),
+        guideType: guide2Info?.guideType || "GA Ticket"
+      }
     });
   }
   
@@ -95,7 +111,12 @@ export const TourGroupsSection = ({
       name: tour.guide3,
       guide_type: guide3Info?.guideType || "GA Ticket",
       birthday: guide3Info?.birthday ? guide3Info.birthday.toString() : "",
-      guideType: guide3Info?.guideType || "GA Ticket"
+      guideType: guide3Info?.guideType || "GA Ticket",
+      info: {
+        name: tour.guide3,
+        birthday: guide3Info?.birthday || new Date(),
+        guideType: guide3Info?.guideType || "GA Ticket"
+      }
     });
   }
 
