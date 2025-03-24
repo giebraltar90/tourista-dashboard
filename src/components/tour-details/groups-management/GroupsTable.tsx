@@ -44,9 +44,8 @@ export const GroupsTable = ({
           const totalParticipants = group.participants?.reduce((sum, p) => sum + (p.count || 1), 0) || group.size || 0;
           
           const childCount = group.childCount || 0;
-          const formattedParticipantCount = childCount > 0 
-            ? `${totalParticipants - childCount}+${childCount}` 
-            : totalParticipants;
+          const adultCount = totalParticipants - childCount;
+          const formattedParticipantCount = `${adultCount} + ${childCount}`;
           
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           

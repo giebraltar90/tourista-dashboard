@@ -65,8 +65,8 @@ export const ParticipantsCard = ({
     
     const finalAdultCount = finalTotalParticipants - finalChildCount;
     
-    // Format the display string
-    const formatted = formatParticipantCount(finalTotalParticipants, finalChildCount);
+    // Format the display string in our standard format: "adult + child"
+    const formatted = `${finalAdultCount} + ${finalChildCount}`;
     
     return {
       totalParticipants: finalTotalParticipants,
