@@ -8,14 +8,17 @@ import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourC
 import { useTourDatabaseCheck } from "./hooks/useTourDatabaseCheck";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents";
-import { useEffect, useCallback, memo } from "react";
+import { useEffect, useCallback, memo, useState } from "react";
 import { useSyncTourGroupGuides } from "@/hooks/group-management/useSyncTourGroupGuides";
+import { EventEmitter } from "@/utils/eventEmitter";
+import { logger } from "@/utils/logger";
 
 /**
  * Main tour details page component - refactored for cleaner organization
  */
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [lastGuideChangeTime, setLastGuideChangeTime] = useState(0);
   
   // Always ensure id has a value for the query
   const tourId = id || "";
@@ -39,7 +42,7 @@ const TourDetailsPage = () => {
   // Debug tour data - using useCallback to prevent recreation on each render
   const logTourData = useCallback(() => {
     if (tour) {
-      console.log("🚀 [TourDetailsPage] Tour data loaded:", {
+      logger.debug("🚀 [TourDetailsPage] Tour data loaded:", {
         id: tour.id,
         guide1: tour.guide1 || 'none',
         guide2: tour.guide2 || 'none',
@@ -48,11 +51,11 @@ const TourDetailsPage = () => {
         location: tour.location
       });
     } else if (error) {
-      console.error("🚀 [TourDetailsPage] Error loading tour:", error);
+      logger.error("🚀 [TourDetailsPage] Error loading tour:", error);
     } else if (isLoading) {
-      console.log("🚀 [TourDetailsPage] Loading tour data...");
+      logger.debug("🚀 [TourDetailsPage] Loading tour data...");
     } else {
-      console.log("🚀 [TourDetailsPage] No tour data available yet");
+      logger.debug("🚀 [TourDetailsPage] No tour data available yet");
     }
   }, [tour, error, isLoading]);
   
@@ -67,9 +70,37 @@ const TourDetailsPage = () => {
   // Listen for refresh-participants event
   useParticipantRefreshEvents(tourId, handleRefetch);
 
+  // Listen for guide change events to force a full refetch
+  useEffect(() => {
+    const handleGuideChange = () => {
+      logger.debug("🔄 [TourDetailsPage] Guide change event detected, scheduling refetch");
+      
+      // Set a timestamp to prevent duplicate events
+      const now = Date.now();
+      if (now - lastGuideChangeTime > 500) {
+        setLastGuideChangeTime(now);
+        
+        // Force a refetch after a slight delay to ensure DB changes are complete
+        setTimeout(() => {
+          logger.debug("🔄 [TourDetailsPage] Executing scheduled refetch after guide change");
+          handleRefetch();
+        }, 800);
+      }
+    };
+    
+    // Register for both guide change events
+    window.addEventListener(`guide-change:${tourId}`, handleGuideChange);
+    window.addEventListener(`guide-assignment-updated:${tourId}`, handleGuideChange);
+    
+    return () => {
+      window.removeEventListener(`guide-change:${tourId}`, handleGuideChange);
+      window.removeEventListener(`guide-assignment-updated:${tourId}`, handleGuideChange);
+    };
+  }, [tourId, handleRefetch, lastGuideChangeTime]);
+
   // Early return if we have an error that's not just "no tour data"
   if (error && !isLoading) {
-    console.error("🚀 [TourDetailsPage] Error rendering tour:", error);
+    logger.error("🚀 [TourDetailsPage] Error rendering tour:", error);
     return (
       <DashboardLayout>
         <ErrorState tourId={tourId} onRetry={handleRefetch} />

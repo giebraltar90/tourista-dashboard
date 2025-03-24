@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client"; 
 import { logger } from "@/utils/logger";
+import { EventEmitter } from "@/utils/eventEmitter";
 
 /**
  * Hook to synchronize tour guide data with group guide assignments
@@ -41,7 +42,7 @@ export const useSyncTourGroupGuides = (tourId: string) => {
           guide1_id: tourData.guide1_id || 'none',
           guide2_id: tourData.guide2_id || 'none',
           guide3_id: tourData.guide3_id || 'none',
-          groups: groups.map(g => ({ id: g.id, guide_id: g.guide_id || 'none' }))
+          groups: groups.map(g => ({ id: g.id, guide_id: g.guide_id || 'none', name: g.name }))
         });
         
         // Check if guide IDs in tour match the guide IDs in groups
@@ -98,6 +99,12 @@ export const useSyncTourGroupGuides = (tourId: string) => {
               logger.error("Error assigning guide to group:", updateError);
             } else {
               logger.debug(`Successfully assigned guide ${guideId} to group ${group.id}`);
+              // Emit an event to notify the UI of this change
+              EventEmitter.emit(`guide-assignment-updated:${tourId}`, { 
+                tourId, 
+                groupId: group.id, 
+                guideId 
+              });
             }
           }
         }
@@ -136,12 +143,81 @@ export const useSyncTourGroupGuides = (tourId: string) => {
             if (updateError) {
               logger.error("Error updating tour guides:", updateError);
             } else {
-              logger.debug("Successfully updated tour guides from groups");
+              logger.debug("Successfully updated tour guides from groups:");
+              // Emit an event to notify the UI of this change
+              EventEmitter.emit(`guide-change:${tourId}`);
+            }
+          }
+        }
+        
+        // Ensure group names are consistent with their guide assignments
+        await updateGroupNamesBasedOnGuides(tourId, groups);
+        
+      } catch (error) {
+        logger.error("Error in guide sync process:", error);
+      }
+    };
+    
+    // Helper function to update group names based on their guides
+    const updateGroupNamesBasedOnGuides = async (tourId: string, groups: any[]) => {
+      try {
+        // For each group with a guide, ensure the guide name is in the group name
+        for (const group of groups) {
+          if (group.guide_id) {
+            // Get the guide's name
+            const { data: guideData } = await supabase
+              .from('guides')
+              .select('name')
+              .eq('id', group.guide_id)
+              .maybeSingle();
+              
+            if (guideData?.name) {
+              const guideName = guideData.name;
+              const groupIndex = groups.findIndex(g => g.id === group.id) + 1;
+              const expectedName = `Group ${groupIndex} (${guideName})`;
+              
+              // If the name doesn't match what we expect, update it
+              if (group.name !== expectedName) {
+                const { error: updateError } = await supabase
+                  .from('tour_groups')
+                  .update({
+                    name: expectedName,
+                    updated_at: new Date().toISOString()
+                  })
+                  .eq('id', group.id);
+                  
+                if (updateError) {
+                  logger.error(`Error updating group name for guide consistency:`, updateError);
+                } else {
+                  logger.debug(`Updated group name for consistency: ${group.name} -> ${expectedName}`);
+                }
+              }
+            }
+          } else {
+            // For groups without a guide, ensure they have a simple name
+            const groupIndex = groups.findIndex(g => g.id === group.id) + 1;
+            const expectedName = `Group ${groupIndex}`;
+            
+            // If the name doesn't match what we expect, update it
+            if (group.name !== expectedName && group.name.includes('(')) {
+              const { error: updateError } = await supabase
+                .from('tour_groups')
+                .update({
+                  name: expectedName,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', group.id);
+                
+              if (updateError) {
+                logger.error(`Error updating group name for unassigned group:`, updateError);
+              } else {
+                logger.debug(`Updated unassigned group name: ${group.name} -> ${expectedName}`);
+              }
             }
           }
         }
       } catch (error) {
-        logger.error("Error in guide sync process:", error);
+        logger.error("Error updating group names:", error);
       }
     };
     
@@ -150,15 +226,18 @@ export const useSyncTourGroupGuides = (tourId: string) => {
     
     // Set up listener for guide-change events
     const handleGuideChange = () => {
+      logger.debug(`Guide change detected for tour ${tourId}, syncing guides`);
       syncGuides();
     };
     
     // Listen for guide change events
     window.addEventListener(`guide-change:${tourId}`, handleGuideChange);
+    window.addEventListener(`guide-assignment-updated:${tourId}`, handleGuideChange);
     
     // Clean up
     return () => {
       window.removeEventListener(`guide-change:${tourId}`, handleGuideChange);
+      window.removeEventListener(`guide-assignment-updated:${tourId}`, handleGuideChange);
     };
   }, [tourId]);
 };
