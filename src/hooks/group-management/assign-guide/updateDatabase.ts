@@ -1,5 +1,5 @@
 
-import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 
@@ -45,24 +45,48 @@ export const updateDatabase = async (
       // Continue to fallback methods if this fails
     }
     
-    // Strategy 2: Use retry-enhanced Supabase client
+    // Strategy 2: Use retry mechanism with direct Supabase calls
     try {
-      const { error, attempt } = await supabaseWithRetry
-        .from("tour_groups")
-        .updateWithRetry({ 
-          guide_id: guideId,
-          name: updatedName,
-          updated_at: new Date().toISOString()
-        }, { id: groupId });
+      // Manually implement retry logic
+      const maxRetries = 3;
+      let attempt = 0;
+      let success = false;
+      
+      while (attempt < maxRetries && !success) {
+        try {
+          const { error } = await supabase
+            .from("tour_groups")
+            .update({ 
+              guide_id: guideId,
+              name: updatedName,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", groupId);
+            
+          if (!error) {
+            logger.debug(`🔄 [AssignGuide] Successfully updated guide assignment with retry (attempt ${attempt + 1})`);
+            success = true;
+            break;
+          } else {
+            logger.error(`🔄 [AssignGuide] Error with retry update (attempt ${attempt + 1}/${maxRetries}):`, error);
+          }
+        } catch (err) {
+          logger.error(`🔄 [AssignGuide] Exception in retry attempt ${attempt + 1}/${maxRetries}:`, err);
+        }
         
-      if (!error) {
-        logger.debug(`🔄 [AssignGuide] Successfully updated guide assignment with retry-enhanced client (attempt ${attempt})`);
+        // Increment attempt and wait before retrying
+        attempt++;
+        if (attempt < maxRetries) {
+          const delay = Math.min(500 * Math.pow(2, attempt), 3000); // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      
+      if (success) {
         return true;
-      } else {
-        logger.error(`🔄 [AssignGuide] Error with retry-enhanced update after ${attempt} attempts:`, error);
       }
     } catch (error) {
-      logger.error("🔄 [AssignGuide] Error with retry-enhanced update:", error);
+      logger.error("🔄 [AssignGuide] Error with retry update:", error);
       // Continue to final fallback method
     }
     

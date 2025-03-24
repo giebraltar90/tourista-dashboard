@@ -86,6 +86,79 @@ export const supabase = createSupabaseClient(
   }
 );
 
+// Add a retry-enhanced Supabase client
+// This extends the standard Supabase client with retry functionality
+export const supabaseWithRetry = {
+  from: (table: string) => {
+    return {
+      select: (columns: string) => {
+        const query = supabase.from(table).select(columns);
+        return {
+          ...query,
+          // Add retry methods to the query
+          async executeWithRetry(maxRetries = 3) {
+            let attempt = 0;
+            let lastError = null;
+            
+            while (attempt < maxRetries) {
+              try {
+                const result = await query;
+                return { ...result, attempt: attempt + 1 };
+              } catch (error) {
+                lastError = error;
+                attempt++;
+                if (attempt < maxRetries) {
+                  // Exponential backoff
+                  const delay = Math.min(100 * Math.pow(2, attempt), 3000);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                }
+              }
+            }
+            
+            return { error: lastError, attempt: maxRetries };
+          }
+        };
+      },
+      update: (data: any) => {
+        const query = supabase.from(table).update(data);
+        return {
+          ...query,
+          // Add update with retry
+          async updateWithRetry(data: any, match: Record<string, any>) {
+            let attempt = 0;
+            const maxRetries = 3;
+            let lastError = null;
+            
+            while (attempt < maxRetries) {
+              try {
+                let updateQuery = supabase.from(table).update(data);
+                
+                // Add all match conditions
+                Object.entries(match).forEach(([key, value]) => {
+                  updateQuery = updateQuery.eq(key, value);
+                });
+                
+                const result = await updateQuery;
+                return { ...result, attempt: attempt + 1 };
+              } catch (error) {
+                lastError = error;
+                attempt++;
+                if (attempt < maxRetries) {
+                  // Exponential backoff
+                  const delay = Math.min(200 * Math.pow(2, attempt), 3000);
+                  await new Promise(resolve => setTimeout(resolve, delay));
+                }
+              }
+            }
+            
+            return { error: lastError, attempt: maxRetries };
+          }
+        };
+      }
+    };
+  }
+};
+
 // Add a helper for checking database connection with improved error reporting
 export const checkDatabaseConnection = async () => {
   try {

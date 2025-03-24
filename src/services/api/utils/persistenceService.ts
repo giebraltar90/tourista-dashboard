@@ -4,6 +4,7 @@ import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { updateTourGroups } from "@/services/api/tourGroupApi";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { logger } from "@/utils/logger";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Attempts to persist guide assignment changes through multiple strategies
@@ -83,32 +84,47 @@ export const persistGuideAssignmentChanges = async (
     logger.error("Error with direct Supabase update:", error);
   }
   
-  // Second attempt: try direct Supabase update without using a helper function
+  // Second attempt: try direct Supabase update with retry logic
   if (!updateSuccess) {
     try {
-      // Import and use supabase client directly for this attempt
-      const { supabase } = await import("@/integrations/supabase/client");
+      // Implement retry logic manually
+      const maxRetries = 3;
+      let attempt = 0;
       
-      logger.debug(`Trying direct database update for group ${groupId}`);
-      
-      const { error } = await supabase
-        .from('tour_groups')
-        .update({
-          guide_id: actualGuideId,
-          name: groupName
-        })
-        .eq('id', groupId)
-        .eq('tour_id', tourId);
+      while (attempt < maxRetries && !updateSuccess) {
+        try {
+          logger.debug(`Trying direct database update for group ${groupId} (attempt ${attempt + 1}/${maxRetries})`);
+          
+          const { error } = await supabase
+            .from('tour_groups')
+            .update({
+              guide_id: actualGuideId,
+              name: groupName,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', groupId)
+            .eq('tour_id', tourId);
+            
+          if (!error) {
+            logger.debug(`Successfully updated guide assignment with direct query (attempt ${attempt + 1})`);
+            updateSuccess = true;
+            return true;
+          } else {
+            logger.error(`Error updating via direct query (attempt ${attempt + 1}/${maxRetries}):`, error);
+          }
+        } catch (error) {
+          logger.error(`Error with direct database update (attempt ${attempt + 1}/${maxRetries}):`, error);
+        }
         
-      if (!error) {
-        logger.debug("Successfully updated guide assignment with direct query");
-        updateSuccess = true;
-        return true;
-      } else {
-        logger.error("Error updating via direct query:", error);
+        // Increment attempt and add delay if we're going to retry
+        attempt++;
+        if (attempt < maxRetries) {
+          const delay = Math.min(500 * Math.pow(2, attempt), 3000); // Exponential backoff
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
       }
     } catch (error) {
-      logger.error("Error with direct database update:", error);
+      logger.error("Unexpected error in direct database update:", error);
     }
   }
   

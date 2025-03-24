@@ -44,7 +44,8 @@ export const persistGuideAssignmentChanges = async (
         .from('tour_groups')
         .update({
           guide_id: guideId,
-          name: groupName
+          name: groupName,
+          updated_at: new Date().toISOString()
         })
         .eq('id', groupId)
         .eq('tour_id', tourId);

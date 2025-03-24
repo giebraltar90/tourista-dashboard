@@ -1,5 +1,5 @@
 
-import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid } from "./utils/guidesUtils";
 import { logger } from "@/utils/logger";
 import { EventEmitter } from "@/utils/eventEmitter";
@@ -49,25 +49,41 @@ export const updateGuideInSupabase = async (
     // Log the actual data being sent to the database
     logger.debug("Sending to database:", updateData);
 
-    // Try the more reliable update method with retry
-    const { error, attempt } = await supabaseWithRetry
-      .from('tour_groups')
-      .updateWithRetry(updateData, { id: groupId, tour_id: tourId });
-      
-    if (error) {
-      logger.error(`Error updating guide assignment after ${attempt} attempts:`, error);
-      
-      // Fall back to standard update if the retry method fails
-      const { error: fallbackError } = await supabase
-        .from('tour_groups')
-        .update(updateData)
-        .eq('id', groupId)
-        .eq('tour_id', tourId);
-        
-      if (fallbackError) {
-        logger.error("Fallback update also failed:", fallbackError);
-        return false;
+    // Try update with manual retry logic
+    let success = false;
+    let attempt = 0;
+    const maxRetries = 3;
+    
+    while (attempt < maxRetries && !success) {
+      try {
+        const { error } = await supabase
+          .from('tour_groups')
+          .update(updateData)
+          .eq('id', groupId)
+          .eq('tour_id', tourId);
+          
+        if (!error) {
+          logger.debug(`Successfully updated guide assignment on attempt ${attempt + 1}`);
+          success = true;
+          break;
+        } else {
+          logger.error(`Error updating guide assignment (attempt ${attempt + 1}/${maxRetries}):`, error);
+        }
+      } catch (error) {
+        logger.error(`Exception in update attempt ${attempt + 1}/${maxRetries}:`, error);
       }
+      
+      // Increment and add backoff delay
+      attempt++;
+      if (attempt < maxRetries) {
+        const delay = Math.min(200 * Math.pow(2, attempt), 3000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    if (!success) {
+      logger.error(`Failed to update guide assignment after ${maxRetries} attempts`);
+      return false;
     }
     
     // After successful update to the group, also update the guide_N_id in the tours table
