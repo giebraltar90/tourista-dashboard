@@ -1,5 +1,5 @@
 
-import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid } from "./utils/guidesUtils";
 import { logger } from "@/utils/logger";
 import { EventEmitter } from "@/utils/eventEmitter";
@@ -49,25 +49,60 @@ export const updateGuideInSupabase = async (
     // Log the actual data being sent to the database
     logger.debug("Sending to database:", updateData);
 
-    // Try the more reliable update method with retry
-    const { error, attempt } = await supabaseWithRetry
-      .from('tour_groups')
-      .updateWithRetry(updateData, { id: groupId, tour_id: tourId });
-      
-    if (error) {
-      logger.error(`Error updating guide assignment after ${attempt} attempts:`, error);
-      
-      // Fall back to standard update if the retry method fails
-      const { error: fallbackError } = await supabase
-        .from('tour_groups')
-        .update(updateData)
-        .eq('id', groupId)
-        .eq('tour_id', tourId);
-        
-      if (fallbackError) {
-        logger.error("Fallback update also failed:", fallbackError);
-        return false;
+    // Try update with manual retry logic
+    let success = false;
+    let attempt = 0;
+    const maxRetries = 3;
+    
+    while (attempt < maxRetries && !success) {
+      try {
+        const { error } = await supabase
+          .from('tour_groups')
+          .update(updateData)
+          .eq('id', groupId)
+          .eq('tour_id', tourId);
+          
+        if (!error) {
+          logger.debug(`Successfully updated guide assignment on attempt ${attempt + 1}`);
+          success = true;
+          break;
+        } else {
+          logger.error(`Error updating guide assignment (attempt ${attempt + 1}/${maxRetries}):`, error);
+          
+          // If that failed, try with just the guide_id as a more targeted update
+          if (attempt === 0) {
+            const reducedUpdate = {
+              guide_id: updateData.guide_id,
+              updated_at: updateData.updated_at
+            };
+            
+            const { error: reducedError } = await supabase
+              .from('tour_groups')
+              .update(reducedUpdate)
+              .eq('id', groupId);
+              
+            if (!reducedError) {
+              logger.debug("Successfully updated guide assignment with reduced fields");
+              success = true;
+              break;
+            }
+          }
+        }
+      } catch (error) {
+        logger.error(`Exception in update attempt ${attempt + 1}/${maxRetries}:`, error);
       }
+      
+      // Increment and add backoff delay
+      attempt++;
+      if (attempt < maxRetries) {
+        const delay = Math.min(200 * Math.pow(2, attempt), 3000);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    if (!success) {
+      logger.error(`Failed to update guide assignment after ${maxRetries} attempts`);
+      return false;
     }
     
     // After successful update to the group, also update the guide_N_id in the tours table
@@ -102,6 +137,59 @@ export const updateGuideInSupabase = async (
             logger.debug(`Successfully updated ${tourUpdateField} in tours table to ${groupData.guide_id}`);
           }
         }
+      }
+    } else if (guideId === null || guideId === "_none") {
+      // When removing a guide, we should check if this was assigned as a main guide in the tour
+      try {
+        // First get the current tour data to check guide assignments
+        const { data: tourData } = await supabase
+          .from('tours')
+          .select('guide1_id, guide2_id, guide3_id')
+          .eq('id', tourId)
+          .single();
+          
+        if (tourData) {
+          // Check if this group's guide was assigned as a main guide
+          const { data: groupBeforeUpdate } = await supabase
+            .from('tour_groups')
+            .select('guide_id')
+            .eq('id', groupId)
+            .single();
+            
+          const previousGuideId = groupBeforeUpdate?.guide_id;
+          
+          // If the previous guide was a main guide, remove it
+          if (previousGuideId) {
+            const updateData: Record<string, any> = {};
+            let needsUpdate = false;
+            
+            if (tourData.guide1_id === previousGuideId) {
+              updateData.guide1_id = null;
+              needsUpdate = true;
+            }
+            if (tourData.guide2_id === previousGuideId) {
+              updateData.guide2_id = null;
+              needsUpdate = true;
+            }
+            if (tourData.guide3_id === previousGuideId) {
+              updateData.guide3_id = null;
+              needsUpdate = true;
+            }
+            
+            if (needsUpdate) {
+              const { error: updateError } = await supabase
+                .from('tours')
+                .update(updateData)
+                .eq('id', tourId);
+                
+              if (updateError) {
+                logger.error("Error removing guide from tour:", updateError);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        logger.error("Error checking main guide assignments:", error);
       }
     }
     
@@ -166,7 +254,7 @@ export const updateTourGuidesInDatabase = async (
         logger.debug(`Successfully updated all guides for tour on attempt ${attempt}`);
         
         // Force update of any related groups to ensure consistency
-        await updateTourGroupsGuideConsistency(tourId);
+        await updateTourGroupsGuideConsistency(tourId, guide1Id, guide2Id, guide3Id);
         
         return true;
       }
@@ -189,7 +277,12 @@ export const updateTourGuidesInDatabase = async (
 /**
  * Ensures consistency between tours table guide assignments and tour_groups table
  */
-const updateTourGroupsGuideConsistency = async (tourId: string): Promise<void> => {
+const updateTourGroupsGuideConsistency = async (
+  tourId: string,
+  guide1Id: string | null = null,
+  guide2Id: string | null = null,
+  guide3Id: string | null = null
+): Promise<void> => {
   try {
     // First, get the current tour record to see guide assignments
     const { data: tourData, error: tourError } = await supabase
@@ -222,15 +315,16 @@ const updateTourGroupsGuideConsistency = async (tourId: string): Promise<void> =
       }
     });
     
-    // If tour has guides that aren't assigned to groups, assign them
+    // Use provided guide IDs or fallback to what's in the database
     const guidesToCheck = [
-      { fieldName: 'guide1_id', guideId: tourData.guide1_id },
-      { fieldName: 'guide2_id', guideId: tourData.guide2_id },
-      { fieldName: 'guide3_id', guideId: tourData.guide3_id }
+      { fieldName: 'guide1_id', guideId: guide1Id !== undefined ? guide1Id : tourData.guide1_id },
+      { fieldName: 'guide2_id', guideId: guide2Id !== undefined ? guide2Id : tourData.guide2_id },
+      { fieldName: 'guide3_id', guideId: guide3Id !== undefined ? guide3Id : tourData.guide3_id }
     ];
     
+    // Make sure tour's main guides are assigned to groups
     for (const { fieldName, guideId } of guidesToCheck) {
-      if (guideId && !guideGroupMap[guideId]) {
+      if (guideId && !guideGroupMap[guideId] && guideId !== "_none") {
         // This guide is in the tour but not assigned to any group
         // Find a group to assign it to
         const availableGroupIndex = tourGroups.findIndex(g => !g.guide_id);
@@ -255,6 +349,42 @@ const updateTourGroupsGuideConsistency = async (tourId: string): Promise<void> =
             // Update our local data structure
             tourGroups[availableGroupIndex].guide_id = guideId;
             guideGroupMap[guideId] = groupToUpdate.id;
+          }
+        }
+      }
+    }
+    
+    // Make sure groups match their guide assignments in the tour record
+    for (const group of tourGroups) {
+      if (group.guide_id) {
+        // Check if this guide is one of the main guides
+        const isTourMainGuide = 
+          group.guide_id === tourData.guide1_id || 
+          group.guide_id === tourData.guide2_id || 
+          group.guide_id === tourData.guide3_id;
+        
+        // If not a main guide, update the group name to reflect the guide
+        if (!isTourMainGuide) {
+          // Get guide name for the group name update
+          const { data: guideData } = await supabase
+            .from('guides')
+            .select('name')
+            .eq('id', group.guide_id)
+            .maybeSingle();
+            
+          const guideName = guideData?.name || 'Guide';
+          const groupIndex = tourGroups.findIndex(g => g.id === group.id);
+          const newGroupName = `Group ${groupIndex + 1} (${guideName})`;
+          
+          // Only update if the name needs to change
+          if (group.name !== newGroupName) {
+            await supabase
+              .from('tour_groups')
+              .update({ 
+                name: newGroupName,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', group.id);
           }
         }
       }
