@@ -1,6 +1,6 @@
 
 /**
- * Guide ticket requirement calculations return object
+ * Interface for guide ticket calculation results
  */
 export interface GuideTicketCounts {
   locationNeedsGuideTickets: boolean;
@@ -14,15 +14,4 @@ export interface GuideTicketCounts {
     }>;
   };
   hasAssignedGuides: boolean;
-}
-
-/**
- * Participant counts used throughout the application
- */
-export interface ParticipantCounts {
-  totalParticipants: number;
-  totalChildCount: number;
-  adultTickets: number;
-  childTickets: number;
-  totalTickets: number;
 }

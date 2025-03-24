@@ -6,7 +6,9 @@ import { logger } from "@/utils/logger";
  */
 export const countTicketsByType = (
   guidesWithRequirements: Array<{
-    needsTicket: boolean;
+    guideName?: string;
+    guideType?: string;
+    needsTicket?: boolean;
     ticketType: "adult" | "child" | null;
   }>
 ): { adultTickets: number; childTickets: number; totalTickets: number } => {
@@ -14,10 +16,9 @@ export const countTicketsByType = (
   let childTickets = 0;
   
   guidesWithRequirements.forEach(guide => {
-    if (guide.needsTicket) {
-      if (guide.ticketType === 'adult') adultTickets++;
-      else if (guide.ticketType === 'child') childTickets++;
-    }
+    // If guide has a ticket type, count it
+    if (guide.ticketType === 'adult') adultTickets++;
+    else if (guide.ticketType === 'child') childTickets++;
   });
   
   const total = adultTickets + childTickets;
