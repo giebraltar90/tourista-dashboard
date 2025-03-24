@@ -1,79 +1,90 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { toast } from "sonner";
 import { logger } from "@/utils/logger";
-import { EventEmitter } from "@/utils/eventEmitter";
+import { generateGroupName } from "@/hooks/group-management/utils/guideNameUtils";
 
 /**
- * Updates a guide assignment for a specific tour group
- * @param tourId - The ID of the tour
- * @param groupId - The ID of the group to update
- * @param guideId - The ID of the guide to assign, or undefined to remove assignment
- * @returns A boolean indicating success or failure
+ * Update the guide assignment for a specific tour group
  */
 export const updateGroupGuide = async (
   tourId: string,
   groupId: string,
-  guideId?: string
+  guideId: string | undefined | null
 ): Promise<boolean> => {
   try {
-    if (!tourId || !groupId) {
-      logger.error("Missing required parameters for updateGroupGuide:", { tourId, groupId });
-      return false;
-    }
-
-    logger.debug(`Updating guide for tour ${tourId}, group ${groupId}:`, {
-      guideId: guideId || 'none (removing guide)'
+    logger.debug(`🔧 [groupGuideService] Updating guide assignment for group ${groupId} in tour ${tourId}`, {
+      guideId: guideId || 'null'
     });
     
-    // Build update object to set or remove guide_id
-    const updateData: any = {
-      guide_id: guideId === "_none" ? null : guideId
-    };
-
-    // Update the group's guide in the database
+    // Generate new group name based on guide assignment
+    const updatedName = await generateGroupName(groupId, guideId || null);
+    
+    // Update the group with the new guide and name
     const { error } = await supabase
       .from('tour_groups')
-      .update(updateData)
-      .eq('id', groupId)
-      .eq('tour_id', tourId);
+      .update({ 
+        guide_id: guideId,
+        name: updatedName,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', groupId);
       
     if (error) {
-      logger.error("Error updating group guide assignment:", error);
+      logger.error(`🔧 [groupGuideService] Error updating guide for group ${groupId}:`, error);
       return false;
     }
     
-    // Emit event to trigger ticket recalculation
-    EventEmitter.emit(`guide-change:${tourId}`);
-    logger.debug("Successfully updated guide assignment");
-    
+    logger.debug(`🔧 [groupGuideService] Successfully updated guide for group ${groupId}`);
     return true;
   } catch (error) {
-    logger.error("Error updating group guide assignment:", error);
+    logger.error(`🔧 [groupGuideService] Unexpected error updating guide:`, error);
+    toast.error("An error occurred updating the guide");
     return false;
   }
 };
 
 /**
- * Retrieve all guide assignments for a specific tour
+ * Synchronize group names with assigned guides
  */
-export const getGroupGuideAssignments = async (tourId: string) => {
-  if (!tourId) return [];
-  
+export const syncGroupGuideNames = async (tourId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    // Get all groups for this tour
+    const { data: groups, error } = await supabase
       .from('tour_groups')
       .select('id, name, guide_id')
       .eq('tour_id', tourId);
       
     if (error) {
-      logger.error("Error fetching guide assignments:", error);
-      return [];
+      logger.error(`🔧 [groupGuideService] Error fetching groups for tour ${tourId}:`, error);
+      return false;
     }
     
-    return data || [];
+    // Update each group name based on its assigned guide
+    for (const group of groups) {
+      const updatedName = await generateGroupName(group.id, group.guide_id);
+      
+      // Only update if name is different
+      if (updatedName !== group.name) {
+        logger.debug(`🔧 [groupGuideService] Updating group ${group.id} name to "${updatedName}"`);
+        
+        const { error: updateError } = await supabase
+          .from('tour_groups')
+          .update({ 
+            name: updatedName,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', group.id);
+          
+        if (updateError) {
+          logger.error(`🔧 [groupGuideService] Error updating name for group ${group.id}:`, updateError);
+        }
+      }
+    }
+    
+    return true;
   } catch (error) {
-    logger.error("Error retrieving guide assignments:", error);
-    return [];
+    logger.error(`🔧 [groupGuideService] Unexpected error syncing group names:`, error);
+    return false;
   }
 };

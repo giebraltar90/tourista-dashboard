@@ -1,71 +1,79 @@
 
-import { useEffect, useCallback } from 'react';
-import { EventEmitter, EVENTS } from '@/utils/eventEmitter';
+import { useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
+import { EventEmitter, EVENTS } from '@/utils/eventEmitter';
 import { logger } from '@/utils/logger';
 
 /**
- * Hook that listens for events that should trigger ticket recalculation
+ * Custom hook to handle ticket recalculation events
  */
-export const useTicketRecalculation = (tourId: string, onRecalculate: () => void) => {
-  const handleRecalculation = useCallback((data: any = {}) => {
-    logger.debug(`[TicketRecalculation] Recalculating tickets for tour ${tourId}:`, { 
-      source: data.source || 'unknown',
-      details: data 
+export const useTicketRecalculation = (
+  tourId: string,
+  onRecalculate: () => void
+) => {
+  // Notify that guides have changed, triggering ticket recalculation
+  const notifyGuideChange = useCallback(() => {
+    if (!tourId) return;
+    
+    logger.debug(`🎟️ [useTicketRecalculation] Notifying guide change for tour ${tourId}`);
+    EventEmitter.emit(EVENTS.GUIDE_CHANGED(tourId), {
+      source: 'ticket_recalculation',
+      tourId
     });
     
-    try {
-      // Call the recalculation callback
-      onRecalculate();
-    } catch (error) {
-      logger.error('[TicketRecalculation] Error in recalculation:', error);
-      toast.error('Error recalculating tickets');
-    }
+    // Also call the onRecalculate callback
+    onRecalculate();
   }, [tourId, onRecalculate]);
-
+  
+  // Notify that participants have changed, triggering ticket recalculation
+  const notifyParticipantChange = useCallback(() => {
+    if (!tourId) return;
+    
+    logger.debug(`🎟️ [useTicketRecalculation] Notifying participant change for tour ${tourId}`);
+    EventEmitter.emit(EVENTS.PARTICIPANT_MOVED(tourId), {
+      source: 'ticket_recalculation',
+      tourId
+    });
+    
+    // Also call the onRecalculate callback
+    onRecalculate();
+  }, [tourId, onRecalculate]);
+  
+  // Directly request ticket recalculation
+  const requestRecalculation = useCallback(() => {
+    if (!tourId) return;
+    
+    logger.debug(`🎟️ [useTicketRecalculation] Requesting ticket recalculation for tour ${tourId}`);
+    EventEmitter.emit(EVENTS.RECALCULATE_TICKETS(tourId), {
+      source: 'manual_request',
+      tourId
+    });
+    
+    // Also call the onRecalculate callback
+    onRecalculate();
+  }, [tourId, onRecalculate]);
+  
+  // Listen for ticket update events
   useEffect(() => {
     if (!tourId) return;
     
-    // Listen for direct ticket recalculation events
-    EventEmitter.on(EVENTS.RECALCULATE_TICKETS(tourId), handleRecalculation);
-    
-    // Listen for guide changes that require ticket recalculation
-    EventEmitter.on(EVENTS.GUIDE_CHANGED(tourId), (data) => {
-      logger.debug(`[TicketRecalculation] Guide change detected for ${tourId}:`, data);
-      handleRecalculation({ source: 'guide_change', ...data });
-    });
-    
-    // Listen for guide assignment updates
-    EventEmitter.on(EVENTS.GUIDE_ASSIGNMENT_UPDATED(tourId), (data) => {
-      logger.debug(`[TicketRecalculation] Guide assignment updated for ${tourId}:`, data);
-      handleRecalculation({ source: 'guide_assignment_updated', ...data });
-    });
-    
-    // Listen for participant changes that require ticket recalculation
-    EventEmitter.on(EVENTS.PARTICIPANT_CHANGED(tourId), (data) => {
-      logger.debug(`[TicketRecalculation] Participant change detected for ${tourId}:`, data);
-      handleRecalculation({ source: 'participant_change', ...data });
-    });
-
-    return () => {
-      // Properly cleanup all event listeners
-      EventEmitter.off(EVENTS.RECALCULATE_TICKETS(tourId));
-      EventEmitter.off(EVENTS.GUIDE_CHANGED(tourId));
-      EventEmitter.off(EVENTS.GUIDE_ASSIGNMENT_UPDATED(tourId));
-      EventEmitter.off(EVENTS.PARTICIPANT_CHANGED(tourId));
+    const handleTicketsUpdated = (data: any) => {
+      logger.debug(`🎟️ [useTicketRecalculation] Tickets updated for tour ${tourId}`, data);
+      // We could show a toast here if needed
     };
-  }, [tourId, handleRecalculation]);
-
+    
+    // Set up event listeners
+    EventEmitter.on(EVENTS.TICKETS_UPDATED(tourId), handleTicketsUpdated);
+    
+    // Clean up event listeners
+    return () => {
+      EventEmitter.off(EVENTS.TICKETS_UPDATED(tourId), handleTicketsUpdated);
+    };
+  }, [tourId]);
+  
   return {
-    triggerRecalculation: (source: string = 'manual') => {
-      handleRecalculation({ source });
-    },
-    // Add these helper methods to match what TicketsCard.tsx is expecting
-    notifyParticipantChange: () => {
-      EventEmitter.emit(EVENTS.PARTICIPANT_CHANGED(tourId), { source: 'component' });
-    },
-    notifyGuideChange: () => {
-      EventEmitter.emit(EVENTS.GUIDE_CHANGED(tourId), { source: 'component' });
-    }
+    notifyGuideChange,
+    notifyParticipantChange,
+    requestRecalculation
   };
 };
