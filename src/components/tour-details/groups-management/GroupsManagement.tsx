@@ -127,9 +127,8 @@ export const GroupsManagement = ({
     dialogUtils.openAssignGuideDialog(groupIndex);
   };
 
-  // Fix: Create a compatible wrapper function without parameters for handleDragEnd
+  // Fix: Create a wrapper function without parameters for handleDragEnd
   const handleDragEndWrapper = () => {
-    // Call the original handler with no parameters
     handleDragEnd();
   };
   
