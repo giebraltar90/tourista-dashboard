@@ -9,6 +9,7 @@ import { useTourDatabaseCheck } from "./hooks/useTourDatabaseCheck";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents";
 import { useEffect, useCallback, memo } from "react";
+import { useSyncTourGroupGuides } from "@/hooks/group-management/useSyncTourGroupGuides";
 
 /**
  * Main tour details page component - refactored for cleaner organization
@@ -22,6 +23,9 @@ const TourDetailsPage = () => {
   
   // Extract hooks functionality for better organization
   useTourDatabaseCheck(tourId);
+  
+  // Add the guide sync hook to ensure database consistency
+  useSyncTourGroupGuides(tourId);
   
   const {
     tour,

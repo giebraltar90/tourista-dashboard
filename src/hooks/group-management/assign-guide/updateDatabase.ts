@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
+import { EventEmitter } from "@/utils/eventEmitter";
 
 /**
  * Update guide assignment in the database with multiple persistence strategies
@@ -37,6 +38,11 @@ export const updateDatabase = async (
         
         if (success) {
           logger.debug("🔄 [AssignGuide] Successfully updated guide assignment via updateGuideInSupabase");
+          
+          // Emit event for guide changes
+          EventEmitter.emit(`guide-change:${tourId}`);
+          logger.debug(`🔄 [AssignGuide] Emitted guide-change:${tourId} event`);
+          
           return true;
         }
       }
@@ -52,8 +58,23 @@ export const updateDatabase = async (
       let attempt = 0;
       let success = false;
       
+      // Get the tour_id for this group (if we don't already have it)
+      const { data: groupData } = await supabase
+        .from("tour_groups")
+        .select("tour_id")
+        .eq("id", groupId)
+        .maybeSingle();
+      
+      const tourId = groupData?.tour_id;
+      if (!tourId) {
+        logger.error("🔄 [AssignGuide] Could not find tour_id for group:", groupId);
+        return false;
+      }
+      
       while (attempt < maxRetries && !success) {
         try {
+          logger.debug(`🔄 [AssignGuide] Retry attempt ${attempt + 1}/${maxRetries}`);
+          
           const { error } = await supabase
             .from("tour_groups")
             .update({ 
@@ -66,6 +87,13 @@ export const updateDatabase = async (
           if (!error) {
             logger.debug(`🔄 [AssignGuide] Successfully updated guide assignment with retry (attempt ${attempt + 1})`);
             success = true;
+            
+            // Emit event for guide changes
+            if (tourId) {
+              EventEmitter.emit(`guide-change:${tourId}`);
+              logger.debug(`🔄 [AssignGuide] Emitted guide-change:${tourId} event`);
+            }
+            
             break;
           } else {
             logger.error(`🔄 [AssignGuide] Error with retry update (attempt ${attempt + 1}/${maxRetries}):`, error);
@@ -107,6 +135,19 @@ export const updateDatabase = async (
       }
       
       logger.debug("🔄 [AssignGuide] Successfully updated guide assignment with direct update");
+      
+      // Get the tour_id to emit event
+      const { data: groupData } = await supabase
+        .from("tour_groups")
+        .select("tour_id")
+        .eq("id", groupId)
+        .maybeSingle();
+      
+      if (groupData?.tour_id) {
+        EventEmitter.emit(`guide-change:${groupData.tour_id}`);
+        logger.debug(`🔄 [AssignGuide] Emitted guide-change:${groupData.tour_id} event`);
+      }
+      
       return true;
     } catch (error) {
       logger.error("🔄 [AssignGuide] Unexpected error in final fallback update:", error);
