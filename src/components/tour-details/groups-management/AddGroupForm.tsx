@@ -119,7 +119,7 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
                   <SelectItem value="">None (Unassigned)</SelectItem>
                   {validGuides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
-                      {guide.name} ({guide.guide_type})
+                      {guide.name} ({guide.guideType})
                     </SelectItem>
                   ))}
                 </SelectContent>
