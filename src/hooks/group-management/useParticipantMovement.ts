@@ -1,89 +1,111 @@
 
-import { useState, useCallback } from "react";
-import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
-import { moveParticipant } from "./services/participantService/movementService";
-import { toast } from "sonner";
-import { EventEmitter } from "@/utils/eventEmitter";
+import { useState, useCallback } from 'react';
+import { VentrataParticipant, VentrataTourGroup } from '@/types/ventrata';
+import { moveParticipant as moveParticipantService } from './services/participantService/movementService';
+import { syncParticipantCounts } from '@/services/api/participants/syncService';
+import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
+import { EventEmitter } from '@/utils/eventEmitter';
 
-export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourGroup[]) => {
-  const [selectedParticipant, setSelectedParticipant] = useState<{
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  } | null>(null);
+/**
+ * Hook to manage participant movement between groups
+ */
+export const useParticipantMovement = (tourId?: string, onSuccess?: () => void) => {
+  const [isProcessing, setIsProcessing] = useState(false);
   
-  const [isMovePending, setIsMovePending] = useState(false);
-  
-  const handleOpenMoveDialog = useCallback((data: {
-    participant: VentrataParticipant;
-    fromGroupIndex: number;
-  }) => {
-    setSelectedParticipant(data);
-  }, []);
-  
-  const handleCloseMoveDialog = useCallback(() => {
-    setSelectedParticipant(null);
-  }, []);
-  
-  const handleMoveParticipant = useCallback(async (toGroupIndex: number) => {
-    if (!selectedParticipant) return false;
-    
-    // Extract participant and source group index
-    const { participant, fromGroupIndex } = selectedParticipant;
-    
-    // Get source and target group IDs
-    const sourceGroup = tourGroups[fromGroupIndex];
-    const targetGroup = tourGroups[toGroupIndex];
-    
-    if (!sourceGroup || !targetGroup) {
-      toast.error("Group not found");
-      return false;
-    }
+  const moveParticipant = useCallback(async (
+    participant: VentrataParticipant,
+    fromGroupId: string,
+    toGroupId: string,
+    localTourGroups: VentrataTourGroup[],
+    setLocalTourGroups: (groups: VentrataTourGroup[] | ((prev: VentrataTourGroup[]) => VentrataTourGroup[])) => void,
+    fromGroupIndex: number,
+    toGroupIndex: number,
+  ) => {
+    if (isProcessing) return false;
     
     try {
-      setIsMovePending(true);
-      
-      console.log("PARTICIPANTS DEBUG: Moving participant:", {
+      setIsProcessing(true);
+      logger.debug("🔄 [PARTICIPANT_MOVEMENT] Moving participant", {
         participantId: participant.id,
-        fromGroup: sourceGroup.id,
-        toGroup: targetGroup.id,
-        fromIndex: fromGroupIndex,
-        toIndex: toGroupIndex
+        fromGroupId,
+        toGroupId
       });
       
-      // Move the participant using the service
-      const success = await moveParticipant(participant.id, sourceGroup.id, targetGroup.id);
+      // First update UI optimistically
+      setLocalTourGroups((prev: VentrataTourGroup[]) => {
+        const updatedGroups = [...prev];
+        
+        // Clone and remove participant from source group
+        if (updatedGroups[fromGroupIndex] && updatedGroups[fromGroupIndex].participants) {
+          const sourceParticipants = [...updatedGroups[fromGroupIndex].participants];
+          const participantIndex = sourceParticipants.findIndex(p => p.id === participant.id);
+          
+          if (participantIndex !== -1) {
+            sourceParticipants.splice(participantIndex, 1);
+            updatedGroups[fromGroupIndex] = {
+              ...updatedGroups[fromGroupIndex],
+              participants: sourceParticipants
+            };
+          }
+        }
+        
+        // Clone and add participant to target group
+        if (updatedGroups[toGroupIndex] && updatedGroups[toGroupIndex].participants) {
+          const targetParticipants = [...updatedGroups[toGroupIndex].participants];
+          const updatedParticipant = { ...participant, groupId: toGroupId, group_id: toGroupId };
+          targetParticipants.push(updatedParticipant);
+          
+          updatedGroups[toGroupIndex] = {
+            ...updatedGroups[toGroupIndex],
+            participants: targetParticipants
+          };
+        }
+        
+        return updatedGroups;
+      });
+      
+      // Use our simplified movement service - now handling all operations in a single database function
+      const success = await moveParticipantService(
+        participant.id,
+        fromGroupId,
+        toGroupId
+      );
       
       if (success) {
-        toast.success(`Moved participant to Group ${toGroupIndex + 1}`, {
-          description: "All changes have been saved"
-        });
+        logger.debug("🔄 [PARTICIPANT_MOVEMENT] Participant moved successfully");
         
-        // Clear the selected participant
-        setSelectedParticipant(null);
+        // Notify of participant change
+        if (tourId) {
+          EventEmitter.emit(`participant-change:${tourId}`);
+        }
         
-        // Notify of participant change to trigger ticket recalculation
-        EventEmitter.emit(`participant-change:${tourId}`);
+        // Call success callback if provided
+        if (onSuccess) onSuccess();
         
         return true;
       } else {
-        toast.error("Failed to move participant. Please try again.");
+        logger.error("🔄 [PARTICIPANT_MOVEMENT] Failed to update participant group");
+        toast.error("Failed to move participant. Database update failed.");
+        
+        // Revert optimistic update
+        setLocalTourGroups(localTourGroups);
         return false;
       }
     } catch (error) {
-      console.error("PARTICIPANTS DEBUG: Error moving participant:", error);
+      logger.error("🔄 [PARTICIPANT_MOVEMENT] Error while moving participant:", error);
       toast.error("An error occurred while moving the participant");
+      
+      // Revert optimistic update
+      setLocalTourGroups(localTourGroups);
       return false;
     } finally {
-      setIsMovePending(false);
+      setIsProcessing(false);
     }
-  }, [selectedParticipant, tourGroups, tourId]);
+  }, [isProcessing, onSuccess, tourId]);
   
   return {
-    selectedParticipant,
-    setSelectedParticipant: handleOpenMoveDialog,
-    handleOpenMoveDialog,
-    handleCloseMoveDialog,
-    handleMoveParticipant,
-    isMovePending
+    moveParticipant,
+    isProcessing
   };
 };

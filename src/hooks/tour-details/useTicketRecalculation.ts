@@ -1,50 +1,53 @@
 
 import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useTourStatistics, refreshTourStatistics } from './useTourStatistics';
 import { EventEmitter } from '@/utils/eventEmitter';
+import { logger } from '@/utils/logger';
 
 /**
- * Hook to trigger ticket recalculation when participants or guides change
+ * Hook to handle ticket recalculation when participants change
+ * Now using the materialized view for more efficient data access
  */
 export const useTicketRecalculation = (tourId: string) => {
-  const queryClient = useQueryClient();
+  // Use our improved tour statistics hook
+  const { data: statistics, refetch } = useTourStatistics(tourId);
   
   useEffect(() => {
-    // Set up listeners for participant and guide changes
-    const handleParticipantChange = () => {
-      console.log("🎟️ [useTicketRecalculation] Participant change detected, invalidating queries");
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['participantCounts', tourId] });
-    };
+    // Log the current statistics
+    if (statistics) {
+      logger.debug("🎟️ [TICKET_CALCULATION] Current tour statistics:", {
+        totalParticipants: statistics.total_participants,
+        adultCount: statistics.total_adult_count,
+        childCount: statistics.total_child_count,
+        groupCount: statistics.group_count
+      });
+    }
+  }, [statistics]);
+  
+  useEffect(() => {
+    if (!tourId) return;
     
-    const handleGuideChange = () => {
-      console.log("🎟️ [useTicketRecalculation] Guide change detected, invalidating queries");
-      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      queryClient.invalidateQueries({ queryKey: ['guideInfo', tourId] });
+    // Listen for participant movement events
+    const handleParticipantChange = async () => {
+      logger.debug("🎟️ [TICKET_CALCULATION] Participant change detected, refreshing statistics");
+      
+      // Refresh the materialized view
+      await refreshTourStatistics(tourId);
+      
+      // Refetch the statistics
+      refetch();
     };
     
     // Register event listeners
-    EventEmitter.on(`participant-change:${tourId}`, handleParticipantChange);
-    EventEmitter.on(`guide-change:${tourId}`, handleGuideChange);
+    const participantMovedListener = EventEmitter.on('participant-moved', handleParticipantChange);
+    const participantChangeListener = EventEmitter.on(`participant-change:${tourId}`, handleParticipantChange);
     
-    // Cleanup event listeners on unmount
     return () => {
-      EventEmitter.off(`participant-change:${tourId}`, handleParticipantChange);
-      EventEmitter.off(`guide-change:${tourId}`, handleGuideChange);
+      // Clean up event listeners
+      participantMovedListener.off();
+      participantChangeListener.off();
     };
-  }, [tourId, queryClient]);
+  }, [tourId, refetch]);
   
-  // Expose methods to manually trigger recalculations
-  const notifyParticipantChange = () => {
-    EventEmitter.emit(`participant-change:${tourId}`);
-  };
-  
-  const notifyGuideChange = () => {
-    EventEmitter.emit(`guide-change:${tourId}`);
-  };
-  
-  return {
-    notifyParticipantChange,
-    notifyGuideChange
-  };
+  return statistics;
 };

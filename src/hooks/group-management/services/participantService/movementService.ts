@@ -1,14 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
-import { VentrataParticipant } from "@/types/ventrata";
 import { EventEmitter } from "@/utils/eventEmitter";
 
 /**
  * Move a participant from one group to another
+ * Uses the database function for reliable atomic updates
  */
 export const moveParticipant = async (
-  participantId: string,  // Accept participant ID as string
+  participantId: string,
   fromGroupId: string,
   toGroupId: string
 ): Promise<boolean> => {
@@ -19,31 +19,15 @@ export const moveParticipant = async (
       toGroupId
     });
 
-    // Verify participant exists in the source group
-    const { data: participant, error: fetchError } = await supabase
-      .from('participants')
-      .select('*')
-      .eq('id', participantId)
-      .eq('group_id', fromGroupId)
-      .single();
+    // Use the database RPC function for atomic updates
+    const { data, error } = await supabase.rpc('move_participant', {
+      p_participant_id: participantId,
+      p_source_group_id: fromGroupId,
+      p_target_group_id: toGroupId
+    });
 
-    if (fetchError || !participant) {
-      logger.error("🔄 [MOVE_PARTICIPANT] Participant not found or not in source group", {
-        participantId,
-        fromGroupId,
-        error: fetchError
-      });
-      return false;
-    }
-
-    // Update the participant with the new group_id
-    const { error: updateError } = await supabase
-      .from('participants')
-      .update({ group_id: toGroupId })
-      .eq('id', participantId);
-
-    if (updateError) {
-      logger.error("🔄 [MOVE_PARTICIPANT] Failed to update participant group", updateError);
+    if (error) {
+      logger.error("🔄 [MOVE_PARTICIPANT] Database operation failed", error);
       return false;
     }
 
@@ -51,10 +35,11 @@ export const moveParticipant = async (
     logger.debug("🔄 [MOVE_PARTICIPANT] Successfully moved participant", {
       participantId,
       fromGroupId,
-      toGroupId
+      toGroupId,
+      result: data
     });
 
-    // Emit participant change event to trigger recalculations
+    // Emit participant change event to trigger UI updates
     EventEmitter.emit('participant-moved', {
       participantId,
       fromGroupId,
@@ -77,10 +62,14 @@ export const updateParticipantGroupInDatabase = async (
   newGroupId: string
 ): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('participants')
-      .update({ group_id: newGroupId })
-      .eq('id', participantId);
+    // Use our new move_participant function which handles all the updates
+    // We don't have the fromGroupId, so we pass null and let the function
+    // fetch it from the database
+    const { data, error } = await supabase.rpc('move_participant', {
+      p_participant_id: participantId,
+      p_source_group_id: null, // The DB function will find the current group
+      p_target_group_id: newGroupId
+    });
 
     if (error) {
       logger.error("🔄 [UPDATE_PARTICIPANT_GROUP] Error updating participant group:", error);

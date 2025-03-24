@@ -596,6 +596,14 @@ export type Database = {
         }
         Returns: string
       }
+      move_participant: {
+        Args: {
+          p_participant_id: string
+          p_source_group_id: string
+          p_target_group_id: string
+        }
+        Returns: boolean
+      }
       sync_all_tour_groups: {
         Args: {
           p_tour_id: string
@@ -612,6 +620,12 @@ export type Database = {
           target_child_count: number
         }
         Returns: undefined
+      }
+      update_participant_counts: {
+        Args: {
+          p_tour_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
