@@ -1,79 +1,75 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
-import { locationRequiresGuideTickets } from "./locationUtils";
 import { guideTypeNeedsTicket, determineTicketTypeForGuide } from "./guideTypeUtils";
 
 /**
- * Process whether a guide needs a ticket
+ * Process a guide to determine if they need a ticket
  */
 export const processGuideTicketRequirement = (
   guideInfo: GuideInfo | null,
-  location: string = "",
-  assignedGuideIds: Set<string>,
-  guideKey: string
+  location: string,
+  assignedGuides: Set<string>,
+  guideId: string = ""
 ): {
-  guideInfo: GuideInfo | null;
   guideName: string;
   guideType: string;
   needsTicket: boolean;
   ticketType: "adult" | "child" | null;
+  guideId: string;
 } => {
-  // If no guide info, no ticket needed
+  // Default values if no guide info is provided
+  const defaultValues = {
+    guideName: `Unknown ${guideId}`,
+    guideType: "Unknown",
+    needsTicket: false,
+    ticketType: null as "adult" | "child" | null,
+    guideId
+  };
+  
+  // If guide info is null, they don't need a ticket
   if (!guideInfo) {
-    logger.debug(`🎟️ [ProcessGuide] No guide info for ${guideKey}, no ticket needed`);
+    logger.debug(`🎟️ [processGuideTicket] No guide info for ${guideId}, returning defaults`);
+    return defaultValues;
+  }
+  
+  // If guide is not assigned, they don't need a ticket
+  if (!assignedGuides.has(guideId)) {
+    logger.debug(`🎟️ [processGuideTicket] Guide ${guideInfo.name} (${guideId}) is not assigned, no ticket needed`);
     return {
-      guideInfo: null,
-      guideName: `Unknown ${guideKey}`,
-      guideType: "unknown",
+      guideName: guideInfo.name,
+      guideType: guideInfo.guideType,
       needsTicket: false,
-      ticketType: null
+      ticketType: null,
+      guideId
     };
   }
-
-  // Extract guide name and type for logging
-  const guideName = guideInfo.name || guideKey;
-  const guideType = guideInfo.guideType || "unknown";
   
-  // Check if this guide is assigned to any groups
-  const isAssigned = assignedGuideIds.has(guideKey);
-  
-  // Log guide details
-  logger.debug(`🎟️ [ProcessGuide] Processing guide ${guideName} (${guideKey}):`, {
-    guideType: guideInfo.guideType,
-    isAssigned,
-    assignedGuideIds: Array.from(assignedGuideIds),
-    location
-  });
-  
-  // If guide is not assigned to any groups, no ticket needed
-  if (!isAssigned) {
-    logger.debug(`🎟️ [ProcessGuide] Guide ${guideName} (${guideKey}) is not assigned to any groups, no ticket needed`);
-    return {
-      guideInfo,
-      guideName,
-      guideType,
-      needsTicket: false,
-      ticketType: null
-    };
-  }
-
-  // Determine if guide needs a ticket based on type
+  // Check if guide type needs a ticket
   const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
-  let ticketType: "adult" | "child" | null = null;
   
-  if (needsTicket) {
-    ticketType = determineTicketTypeForGuide(guideInfo.guideType);
-    logger.debug(`🎟️ [ProcessGuide] ✅ Guide ${guideName} (${guideKey}) needs a ${ticketType} ticket`);
-  } else {
-    logger.debug(`🎟️ [ProcessGuide] ❌ Guide ${guideName} (${guideKey}) doesn't need a ticket due to guide type ${guideInfo.guideType}`);
+  // If guide doesn't need a ticket, return early
+  if (!needsTicket) {
+    logger.debug(`🎟️ [processGuideTicket] Guide ${guideInfo.name} (${guideId}) has type ${guideInfo.guideType} that doesn't need a ticket`);
+    return {
+      guideName: guideInfo.name,
+      guideType: guideInfo.guideType,
+      needsTicket: false,
+      ticketType: null,
+      guideId
+    };
   }
+  
+  // Determine ticket type for the guide
+  const ticketType = determineTicketTypeForGuide(guideInfo.guideType);
+  
+  logger.debug(`🎟️ [processGuideTicket] Guide ${guideInfo.name} (${guideId}) needs a ${ticketType} ticket`);
   
   return {
-    guideInfo,
-    guideName,
-    guideType,
-    needsTicket,
-    ticketType
+    guideName: guideInfo.name,
+    guideType: guideInfo.guideType,
+    needsTicket: true,
+    ticketType,
+    guideId
   };
 };

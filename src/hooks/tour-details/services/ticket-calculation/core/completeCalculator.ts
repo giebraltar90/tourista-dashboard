@@ -94,14 +94,19 @@ export const calculateCompleteTicketRequirements = (
   // Filter to only guides that need tickets
   const guidesWithRequirements = [
     guide1Req, guide2Req, guide3Req
-  ].filter(g => g.needsTicket).map(g => ({
-    guideName: g.guideName,
-    guideInfo: g.guideId === "guide1" ? guide1Info : 
-               g.guideId === "guide2" ? guide2Info : 
-               g.guideId === "guide3" ? guide3Info : null,
-    needsTicket: g.needsTicket,
-    ticketType: g.ticketType
-  }));
+  ].filter(g => g.needsTicket).map(g => {
+    // Assign the guide info based on which guide position this is
+    const guideInfo = g.guideId === "guide1" ? guide1Info : 
+                      g.guideId === "guide2" ? guide2Info : 
+                      g.guideId === "guide3" ? guide3Info : null;
+    
+    return {
+      guideName: g.guideName,
+      guideInfo: guideInfo,
+      needsTicket: g.needsTicket,
+      ticketType: g.ticketType
+    };
+  });
   
   // Count tickets by type
   const { adultTickets, childTickets } = countTicketsByType(guidesWithRequirements);
