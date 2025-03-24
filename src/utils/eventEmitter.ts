@@ -6,22 +6,71 @@ type EventCallback = (data: any) => void;
  */
 class EventEmitterClass {
   private events: Record<string, EventCallback[]> = {};
+  private debugEnabled: boolean = true;
+  private isInitialized: boolean = false;
+  private connectionErrors: boolean = false;
+
+  constructor() {
+    // Check if we're in development mode
+    this.debugEnabled = import.meta.env.DEV === true;
+    
+    if (this.debugEnabled) {
+      console.log('[EventEmitter] Initialized in debug mode');
+    }
+    
+    this.isInitialized = true;
+    
+    // Listen for auth events
+    window.addEventListener('supabase-auth-error', () => {
+      this.connectionErrors = true;
+      console.warn('[EventEmitter] Detected authentication issues, some events may not trigger backend operations');
+    });
+  }
+
+  // Enable or disable debug logging
+  setDebug(enabled: boolean): void {
+    this.debugEnabled = enabled;
+  }
+
+  // Log messages if debug is enabled
+  private log(message: string, ...args: any[]): void {
+    if (this.debugEnabled) {
+      console.log(`[EventEmitter] ${message}`, ...args);
+    }
+  }
+  
+  // Warn about connection issues
+  private warnIfConnectionIssues(): void {
+    if (this.connectionErrors) {
+      this.log('Warning: Connection issues detected, events may not trigger backend operations');
+    }
+  }
 
   // Register an event listener
   on(event: string, callback: EventCallback): void {
+    if (!event) {
+      console.warn('[EventEmitter] Attempted to register a listener with undefined event name');
+      return;
+    }
+    
     if (!this.events[event]) {
       this.events[event] = [];
     }
     this.events[event].push(callback);
     
-    console.log(`[EventEmitter] Registered event handler for: ${event}`);
+    this.log(`Registered event handler for: ${event}`);
   }
 
   // Remove an event listener
   off(event: string, callback?: EventCallback): void {
+    if (!event) {
+      this.log('Warning: Attempted to remove listener for undefined event');
+      return;
+    }
+    
     if (!callback) {
       delete this.events[event];
-      console.log(`[EventEmitter] Removed all handlers for: ${event}`);
+      this.log(`Removed all handlers for: ${event}`);
       return;
     }
     
@@ -29,7 +78,7 @@ class EventEmitterClass {
     if (!callbacks) return;
     
     this.events[event] = callbacks.filter(cb => cb !== callback);
-    console.log(`[EventEmitter] Removed specific handler for: ${event}`);
+    this.log(`Removed specific handler for: ${event}`);
     
     // Clean up empty arrays
     if (this.events[event].length === 0) {
@@ -39,41 +88,55 @@ class EventEmitterClass {
 
   // Emit an event with data
   emit(event: string, data?: any): void {
-    const callbacks = this.events[event];
-    
-    if (!callbacks || callbacks.length === 0) {
-      console.log(`[EventEmitter] Event emitted with no listeners: ${event}`);
-      
-      // Check for wildcard listeners (event patterns with *)
-      const wildcardEvents = Object.keys(this.events).filter(e => 
-        e.includes('*') && new RegExp('^' + e.replace('*', '.*') + '$').test(event)
-      );
-      
-      wildcardEvents.forEach(wildcardEvent => {
-        this.events[wildcardEvent].forEach(callback => {
-          try {
-            callback({
-              ...data,
-              originalEvent: event,
-              wildcardEvent
-            });
-          } catch (error) {
-            console.error(`[EventEmitter] Error in wildcard listener for ${event} (${wildcardEvent}):`, error);
-          }
-        });
-      });
-      
+    if (!this.isInitialized) {
+      console.warn('[EventEmitter] Event emitted before initialization:', event);
       return;
     }
-
-    console.log(`[EventEmitter] Emitting event: ${event} with ${callbacks.length} listeners`);
-    callbacks.forEach(callback => {
-      try {
-        callback(data);
-      } catch (error) {
-        console.error(`[EventEmitter] Error in listener for ${event}:`, error);
+    
+    this.warnIfConnectionIssues();
+    
+    try {
+      const callbacks = this.events[event];
+      
+      if (!callbacks || callbacks.length === 0) {
+        this.log(`Event emitted with no listeners: ${event}`);
+        
+        // Check for wildcard listeners (event patterns with *)
+        const wildcardEvents = Object.keys(this.events).filter(e => 
+          e.includes('*') && new RegExp('^' + e.replace('*', '.*') + '$').test(event)
+        );
+        
+        wildcardEvents.forEach(wildcardEvent => {
+          this.events[wildcardEvent].forEach(callback => {
+            try {
+              callback({
+                ...data,
+                originalEvent: event,
+                wildcardEvent
+              });
+            } catch (error) {
+              console.error(`[EventEmitter] Error in wildcard listener for ${event} (${wildcardEvent}):`, error);
+            }
+          });
+        });
+        
+        return;
       }
-    });
+
+      this.log(`Emitting event: ${event} with ${callbacks.length} listeners`, 
+        data ? { dataPreview: typeof data === 'object' ? Object.keys(data) : typeof data } : 'no data'
+      );
+      
+      callbacks.forEach(callback => {
+        try {
+          callback(data);
+        } catch (error) {
+          console.error(`[EventEmitter] Error in listener for ${event}:`, error);
+        }
+      });
+    } catch (error) {
+      console.error(`[EventEmitter] Error emitting event ${event}:`, error);
+    }
   }
   
   // Return all registered event types
@@ -84,6 +147,28 @@ class EventEmitterClass {
   // Check if an event has listeners
   hasListeners(event: string): boolean {
     return !!this.events[event] && this.events[event].length > 0;
+  }
+  
+  // Get the number of listeners for an event
+  getListenerCount(event: string): number {
+    return this.events[event]?.length || 0;
+  }
+  
+  // Clear all events
+  clearAll(): void {
+    this.events = {};
+    this.log('Cleared all event listeners');
+  }
+  
+  // Check authentication status
+  checkConnectionStatus(): { hasConnectionErrors: boolean } {
+    return { hasConnectionErrors: this.connectionErrors };
+  }
+  
+  // Reset connection error flag
+  resetConnectionErrors(): void {
+    this.connectionErrors = false;
+    this.log('Reset connection error flag');
   }
 }
 
@@ -98,4 +183,8 @@ export const EVENTS = {
   TOUR_DATA_LOADED: (tourId: string) => `tour-data-loaded:${tourId}`,
   REFRESH_PARTICIPANTS: 'refresh-participants',
   RECALCULATE_TICKETS: (tourId: string) => `recalculate-tickets:${tourId}`,
+  
+  // Add auth events
+  AUTH_ERROR: 'auth-error',
+  AUTH_RESTORED: 'auth-restored',
 };

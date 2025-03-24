@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { supabase } from "@/integrations/supabase/client";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { toast } from "sonner";
+import { EventEmitter, EVENTS } from "@/utils/eventEmitter";
 
 // Define the options type for the useTours hook
 interface UseToursOptions {
@@ -15,6 +17,12 @@ export const useTours = (options: UseToursOptions = {}) => {
     queryFn: async (): Promise<TourCardProps[]> => {
       try {
         console.log("Fetching tours from Supabase");
+        
+        // Log the Supabase URL and key (partially masked for security)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hznwikjmwmskvoqgkvjk.supabase.co';
+        const keyPrefix = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').substring(0, 10);
+        console.log(`Using Supabase URL: ${supabaseUrl}, Key prefix: ${keyPrefix}...`);
+        
         const { data: supabaseTours, error } = await supabase
           .from('tours')
           .select(`
@@ -29,6 +37,15 @@ export const useTours = (options: UseToursOptions = {}) => {
           
         if (error) {
           console.error("Error fetching tours:", error);
+          
+          // Check for authentication errors
+          if (error.code === '401' || error.message.includes('JWT')) {
+            EventEmitter.emit(EVENTS.AUTH_ERROR, { error });
+            window.dispatchEvent(new CustomEvent('supabase-auth-error', { detail: error }));
+            throw new Error("Authentication failed. Please check your API credentials or sign in again.");
+          }
+          
+          toast.error(`Error fetching tours: ${error.message}`);
           throw error;
         }
         
@@ -66,15 +83,16 @@ export const useTours = (options: UseToursOptions = {}) => {
             .select('id, name')
             .in('id', guideIdsArray);
             
-          if (!guidesError && guides) {
+          if (guidesError) {
+            console.error("Error fetching guides:", guidesError);
+          } else if (guides) {
             guideMap = guides.reduce((map, guide) => {
               map[guide.id] = guide.name;
               return map;
             }, {});
+            console.log("Guide map for resolving names:", guideMap);
           }
         }
-        
-        console.log("Guide map for resolving names:", guideMap);
         
         // Transform the Supabase data to match our TourCardProps structure
         return supabaseTours.map(tour => {
@@ -82,6 +100,9 @@ export const useTours = (options: UseToursOptions = {}) => {
           const guide1 = tour.guide1_id && guideMap[tour.guide1_id] ? guideMap[tour.guide1_id] : tour.guide1_id || "";
           const guide2 = tour.guide2_id && guideMap[tour.guide2_id] ? guideMap[tour.guide2_id] : tour.guide2_id || "";
           const guide3 = tour.guide3_id && guideMap[tour.guide3_id] ? guideMap[tour.guide3_id] : tour.guide3_id || "";
+          
+          // Ensure tourGroups is always an array
+          const tourGroups = Array.isArray(tour.tour_groups) ? tour.tour_groups : [];
           
           return {
             id: tour.id,
@@ -97,7 +118,7 @@ export const useTours = (options: UseToursOptions = {}) => {
             guide1Id: tour.guide1_id || "",
             guide2Id: tour.guide2_id || "",
             guide3Id: tour.guide3_id || "",
-            tourGroups: Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => ({
+            tourGroups: tourGroups.map(group => ({
               id: group.id,
               name: group.name,
               size: group.size,
@@ -112,16 +133,29 @@ export const useTours = (options: UseToursOptions = {}) => {
                 bookingRef: p.booking_ref,
                 childCount: p.child_count || 0
               })) : []
-            })) : [],
+            })),
             numTickets: tour.num_tickets || 0,
             isHighSeason: tour.is_high_season === true
           };
         });
       } catch (error) {
         console.error("Error fetching tours:", error);
-        return [];
+        
+        if (error instanceof Error && (
+          error.message.includes('Authentication') || 
+          error.message.includes('JWT') || 
+          error.message.includes('401')
+        )) {
+          toast.error("Authentication failed. Please check your API credentials.");
+        } else {
+          toast.error("Failed to load tours. Please try again.");
+        }
+        
+        throw error;
       }
     },
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     // Pass through any options provided
     ...options,
   });

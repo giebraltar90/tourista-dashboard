@@ -13,7 +13,17 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
   try {
     // Fetch base tour data
     const tour = await fetchBaseTourData(tourId);
-    if (!tour) return null;
+    
+    if (!tour) {
+      console.log(`DATABASE DEBUG: No tour found with ID: ${tourId}`);
+      return null;
+    }
+    
+    // Ensure tour.tour_groups exists
+    if (!tour.tour_groups) {
+      console.log(`DATABASE DEBUG: Tour ${tourId} exists but has no tour_groups, initializing empty array`);
+      tour.tour_groups = [];
+    }
     
     // Fetch modifications
     const modifications = await fetchModificationsForTour(tourId);
