@@ -2,7 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
-import { useGuideData } from "@/hooks/guides/useGuideData";
+import { useGuideData, Guide } from "@/hooks/guides/useGuideData";
 
 interface GuideNameAndInfo {
   name: string;
@@ -68,8 +68,8 @@ export const useGuideNameInfo = (
           name: matchingGuide.name,
           info: {
             name: matchingGuide.name,
-            birthday: matchingGuide.birthday || new Date(),
-            guideType: matchingGuide.guideType || "GA Ticket"
+            birthday: new Date(matchingGuide.birthday || new Date()),
+            guideType: matchingGuide.guide_type as any || "GA Ticket"
           }
         };
       }
@@ -134,4 +134,3 @@ export const useGuideNameInfo = (
   
   return { getGuideNameAndInfo };
 };
-

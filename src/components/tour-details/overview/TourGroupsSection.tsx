@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { Button } from "@/components/ui/button";
 import { AssignGuideDialog } from "../groups-management/dialogs/AssignGuideDialog";
-import { useGuideData } from "@/hooks/guides";
+import { useGuideData, Guide } from "@/hooks/guides/useGuideData";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { logger } from "@/utils/logger";
 
@@ -63,7 +62,10 @@ export const TourGroupsSection = ({
   const validGuides = guides.map(guide => ({
     id: guide.id,
     name: guide.name,
-    info: guide
+    info: {
+      ...guide,
+      guideType: guide.guide_type
+    }
   }));
   
   // Add special guides if they exist in the tour
@@ -73,7 +75,8 @@ export const TourGroupsSection = ({
       name: tour.guide1,
       info: guide1Info ? {
         ...guide1Info,
-        id: guide1Info.id || "guide1"
+        id: guide1Info.id || "guide1",
+        guide_type: guide1Info.guideType
       } : null
     });
   }
@@ -84,7 +87,8 @@ export const TourGroupsSection = ({
       name: tour.guide2,
       info: guide2Info ? {
         ...guide2Info,
-        id: guide2Info.id || "guide2"
+        id: guide2Info.id || "guide2",
+        guide_type: guide2Info.guideType
       } : null
     });
   }
@@ -95,7 +99,8 @@ export const TourGroupsSection = ({
       name: tour.guide3,
       info: guide3Info ? {
         ...guide3Info,
-        id: guide3Info.id || "guide3"
+        id: guide3Info.id || "guide3",
+        guide_type: guide3Info.guideType
       } : null
     });
   }

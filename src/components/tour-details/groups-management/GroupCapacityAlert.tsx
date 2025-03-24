@@ -1,9 +1,8 @@
-
 import { AlertTriangle, Info } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
-import { calculateTotalParticipants, formatParticipantCount } from "@/hooks/group-management/services/participantService";
+import { formatParticipantCount, calculateTotalParticipants } from "@/hooks/group-management/services/participantService";
 
 interface GroupCapacityAlertProps {
   tourGroups: VentrataTourGroup[];

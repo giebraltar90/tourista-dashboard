@@ -2,7 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Guide {
+export interface Guide {
   id: string;
   name: string;
   guide_type: string;

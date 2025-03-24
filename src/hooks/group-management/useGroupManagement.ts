@@ -1,16 +1,10 @@
 
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
 import { VentrataParticipant } from '@/types/ventrata';
 import { logger } from '@/utils/logger';
-import { useParticipantService } from './services/participantService';
-import { 
-  useLocalTourGroups,
-  useParticipantSelection,
-  useParticipantLoading,
-  useParticipantMovement,
-  useDragHandlers
-} from './hooks';
+import { useLocalTourGroups, useParticipantSelection, useDragHandlers } from './hooks';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Main hook for group management functionality
@@ -20,26 +14,29 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
   const { localTourGroups, setLocalTourGroups } = useLocalTourGroups(tour);
   const { selectedParticipant, setSelectedParticipant, isMovePending, setIsMovePending } = useParticipantSelection();
   
-  // Get participant service functions for additional operations & state
-  const { 
-    refreshParticipants: refreshParticipantsService,
-    isLoading,
-    error,
-    lastRefreshed
-  } = useParticipantService();
+  // Add state for loading and errors
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
   
   // Hook for refreshing participants
   const refreshParticipants = useCallback(async () => {
     try {
+      setIsLoading(true);
+      
       // Skip refreshing if we were just refreshed recently
       const lastRefreshTime = lastRefreshed.getTime();
       const now = Date.now();
       if (now - lastRefreshTime < 5000) {
         logger.debug("🔍 [GROUP_MANAGEMENT] Skipping refresh - last refresh was too recent");
+        setIsLoading(false);
         return;
       }
       
-      if (!tour) return;
+      if (!tour) {
+        setIsLoading(false);
+        return;
+      }
       
       // When a page loads, sometimes the groups are still loading
       if (!localTourGroups || localTourGroups.length === 0) {
@@ -48,6 +45,7 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
           setLocalTourGroups(tour.tourGroups);
         } else {
           logger.debug("🔍 [GROUP_MANAGEMENT] No tour groups available yet to refresh");
+          setIsLoading(false);
           return;
         }
       }
@@ -57,72 +55,174 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
       
       if (groupIds.length === 0) {
         logger.debug("🔍 [GROUP_MANAGEMENT] No group IDs to refresh");
+        setIsLoading(false);
         return;
       }
       
       logger.debug("🔍 [GROUP_MANAGEMENT] Refreshing participants for groups:", groupIds);
-      await refreshParticipantsService();
       await loadParticipantsHandler(groupIds);
+      setLastRefreshed(new Date());
       
     } catch (error) {
       logger.error("🔍 [GROUP_MANAGEMENT] Error refreshing participants:", error);
+      setError(error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [refreshParticipantsService, tour, localTourGroups, lastRefreshed, setLocalTourGroups]);
-  
-  // Set up the participant loading hook with the refresh function
-  const { loadParticipants } = useParticipantLoading(tour?.id);
+  }, [tour, localTourGroups, lastRefreshed, setLocalTourGroups]);
   
   // Handler function for loading participants that updates the local state
   const loadParticipantsHandler = useCallback(async (groupIds: string | string[]) => {
     try {
       setIsMovePending(true);
       
-      const result = await loadParticipants(groupIds);
+      // Convert to array if needed
+      const groupIdArray = typeof groupIds === 'string' ? [groupIds] : groupIds;
       
-      if (result.success && result.groups && result.participants) {
-        // Update local tour groups with the loaded data
-        setLocalTourGroups(prev => {
-          // Map participants to their respective groups
-          const updatedGroups = [...prev];
-          
-          for (const group of result.groups) {
-            const groupIndex = updatedGroups.findIndex(g => g.id === group.id);
-            
-            if (groupIndex !== -1) {
-              // Find participants for this group
-              const groupParticipants = result.participants
-                ?.filter(p => p.group_id === group.id)
-                .map(p => transformToVentrataParticipant(p));
-              
-              // Update the group with participants
-              updatedGroups[groupIndex] = {
-                ...updatedGroups[groupIndex],
-                participants: groupParticipants || [],
-                size: group.size,
-                childCount: group.child_count
-              };
-            }
-          }
-          
-          return updatedGroups;
-        });
-        
-        logger.debug("🔍 [GROUP_MANAGEMENT] Successfully loaded participants");
-      } else if (result.error) {
-        logger.error("🔍 [GROUP_MANAGEMENT] Error loading participants:", result.error);
+      // Fetch participants from the database
+      const { data: participants, error: participantsError } = await supabase
+        .from('participants')
+        .select('*')
+        .in('group_id', groupIdArray);
+      
+      if (participantsError) {
+        logger.error("🔍 [GROUP_MANAGEMENT] Error loading participants:", participantsError);
+        return { success: false, error: participantsError.message };
       }
       
-      return result;
+      // Fetch groups
+      const { data: groups, error: groupsError } = await supabase
+        .from('tour_groups')
+        .select('*')
+        .in('id', groupIdArray);
+      
+      if (groupsError) {
+        logger.error("🔍 [GROUP_MANAGEMENT] Error loading groups:", groupsError);
+        return { success: false, error: groupsError.message };
+      }
+      
+      // Update local tour groups with the loaded data
+      setLocalTourGroups(prev => {
+        // Map participants to their respective groups
+        const updatedGroups = [...prev];
+        
+        for (const group of groups) {
+          const groupIndex = updatedGroups.findIndex(g => g.id === group.id);
+          
+          if (groupIndex !== -1) {
+            // Find participants for this group
+            const groupParticipants = participants
+              ?.filter(p => p.group_id === group.id)
+              .map(p => transformToVentrataParticipant(p));
+            
+            // Update the group with participants
+            updatedGroups[groupIndex] = {
+              ...updatedGroups[groupIndex],
+              participants: groupParticipants || [],
+              size: group.size,
+              childCount: group.child_count
+            };
+          }
+        }
+        
+        return updatedGroups;
+      });
+      
+      logger.debug("🔍 [GROUP_MANAGEMENT] Successfully loaded participants");
+      return { success: true, error: null };
+      
     } catch (error) {
       logger.error("🔍 [GROUP_MANAGEMENT] Exception loading participants:", error);
+      setError(error);
       return { success: false, error: 'Exception loading participants' };
     } finally {
       setIsMovePending(false);
     }
-  }, [loadParticipants, setLocalTourGroups, setIsMovePending]);
+  }, [setLocalTourGroups, setIsMovePending]);
   
-  // Set up the participant movement hook
-  const { moveParticipant } = useParticipantMovement(tour?.id, refreshParticipants);
+  // Move participant function
+  const moveParticipant = useCallback(async (
+    participant: VentrataParticipant,
+    fromGroupId: string,
+    toGroupId: string,
+    localTourGroups: any[],
+    setLocalTourGroups: any,
+    fromGroupIndex: number,
+    toGroupIndex: number
+  ) => {
+    try {
+      logger.debug("🔄 [GROUP_MANAGEMENT] Moving participant:", {
+        participantId: participant.id,
+        fromGroupId,
+        toGroupId
+      });
+      
+      // Update the participant's group_id in the database
+      const { error } = await supabase
+        .from('participants')
+        .update({ group_id: toGroupId })
+        .eq('id', participant.id);
+      
+      if (error) {
+        logger.error("🔄 [GROUP_MANAGEMENT] Error moving participant:", error);
+        return false;
+      }
+      
+      // Update local state optimistically
+      setLocalTourGroups((prevGroups: any[]) => {
+        const newGroups = [...prevGroups];
+        
+        // Find the participant in the source group
+        const sourceGroup = { ...newGroups[fromGroupIndex] };
+        const sourceParticipants = Array.isArray(sourceGroup.participants) ? [...sourceGroup.participants] : [];
+        const participantIndex = sourceParticipants.findIndex(p => p.id === participant.id);
+        
+        if (participantIndex === -1) {
+          logger.error("🔄 [GROUP_MANAGEMENT] Participant not found in source group:", participant.id);
+          return prevGroups;
+        }
+        
+        // Remove participant from source group
+        const [movedParticipant] = sourceParticipants.splice(participantIndex, 1);
+        
+        // Add participant to target group
+        const targetGroup = { ...newGroups[toGroupIndex] };
+        const targetParticipants = Array.isArray(targetGroup.participants) ? [...targetGroup.participants] : [];
+        
+        // Update participant's group_id
+        const updatedParticipant = {
+          ...movedParticipant,
+          group_id: toGroupId,
+          groupId: toGroupId
+        };
+        
+        targetParticipants.push(updatedParticipant);
+        
+        // Update groups
+        newGroups[fromGroupIndex] = {
+          ...sourceGroup,
+          participants: sourceParticipants,
+          size: sourceGroup.size - (movedParticipant.count || 1),
+          childCount: (sourceGroup.childCount || 0) - (movedParticipant.childCount || 0)
+        };
+        
+        newGroups[toGroupIndex] = {
+          ...targetGroup,
+          participants: targetParticipants,
+          size: (targetGroup.size || 0) + (movedParticipant.count || 1),
+          childCount: (targetGroup.childCount || 0) + (movedParticipant.childCount || 0)
+        };
+        
+        return newGroups;
+      });
+      
+      logger.debug("🔄 [GROUP_MANAGEMENT] Participant moved successfully:", participant.id);
+      return true;
+    } catch (error) {
+      logger.error("🔄 [GROUP_MANAGEMENT] Exception moving participant:", error);
+      return false;
+    }
+  }, []);
   
   // Handler for moving a participant to a new group
   const handleMoveParticipant = useCallback(async (toGroupIndex: number) => {

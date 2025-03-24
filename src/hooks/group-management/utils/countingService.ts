@@ -1,5 +1,6 @@
 
-import { formatParticipantCount, calculateTotalParticipants } from "../services/participantService";
+import { formatParticipantCount } from "../services/participantService";
+import { calculateTotalParticipants } from "../services/participantService";
 
 // Re-export for backward compatibility
 export { formatParticipantCount, calculateTotalParticipants };
