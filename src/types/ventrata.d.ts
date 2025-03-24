@@ -45,7 +45,7 @@ export interface GuideInfo {
 export interface Guide {
   id: string;
   name: string;
-  guide_type?: string;
+  guide_type?: GuideType | string;
   birthday?: string | Date | null;
-  guideType?: string;
+  guideType?: GuideType | string;
 }
