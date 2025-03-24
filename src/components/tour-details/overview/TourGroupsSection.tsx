@@ -8,7 +8,6 @@ import { AssignGuideDialog } from "../groups-management/dialogs/AssignGuideDialo
 import { useGuideData } from "@/hooks/guides";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { logger } from "@/utils/logger";
-import { toast } from "sonner";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
@@ -32,35 +31,9 @@ export const TourGroupsSection = ({
   // State for guide assignment dialog
   const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(-1);
-  const [lastAssignmentTime, setLastAssignmentTime] = useState(0);
   
   // Ensure we have tour groups
   const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
-  
-  // Listen for guide change events to update UI
-  useEffect(() => {
-    const handleGuideChange = () => {
-      // Track the time of the last guide change
-      const now = Date.now();
-      // Only update if it's been at least 500ms since the last update
-      if (now - lastAssignmentTime > 500) {
-        setLastAssignmentTime(now);
-        
-        // No need to manually update anything here, as the parent will refetch tour data
-        logger.debug("TourGroupsSection: Guide change detected");
-      }
-    };
-    
-    if (tour.id) {
-      window.addEventListener(`guide-change:${tour.id}`, handleGuideChange);
-      window.addEventListener(`guide-assignment-updated:${tour.id}`, handleGuideChange);
-      
-      return () => {
-        window.removeEventListener(`guide-change:${tour.id}`, handleGuideChange);
-        window.removeEventListener(`guide-assignment-updated:${tour.id}`, handleGuideChange);
-      };
-    }
-  }, [tour.id, lastAssignmentTime]);
   
   // Log group data for debugging
   useEffect(() => {
@@ -86,13 +59,6 @@ export const TourGroupsSection = ({
     setIsAssignGuideOpen(true);
   };
   
-  // Handle successful guide assignment
-  const handleGuideAssigned = () => {
-    setIsAssignGuideOpen(false);
-    toast.success("Guide assigned successfully");
-    // No need to manually refetch as the main component listens for guide change events
-  };
-  
   // Get valid guide options - making sure each guide has all required properties
   const validGuides = guides.map(guide => ({
     id: guide.id,
@@ -101,7 +67,7 @@ export const TourGroupsSection = ({
   }));
   
   // Add special guides if they exist in the tour
-  if (tour.guide1 && !validGuides.some(g => g.id === "guide1")) {
+  if (tour.guide1 && !validGuides.some(g => g.id === tour.guide1)) {
     validGuides.push({
       id: "guide1",
       name: tour.guide1,
@@ -112,7 +78,7 @@ export const TourGroupsSection = ({
     });
   }
   
-  if (tour.guide2 && !validGuides.some(g => g.id === "guide2")) {
+  if (tour.guide2 && !validGuides.some(g => g.id === tour.guide2)) {
     validGuides.push({
       id: "guide2",
       name: tour.guide2,
@@ -123,7 +89,7 @@ export const TourGroupsSection = ({
     });
   }
   
-  if (tour.guide3 && !validGuides.some(g => g.id === "guide3")) {
+  if (tour.guide3 && !validGuides.some(g => g.id === tour.guide3)) {
     validGuides.push({
       id: "guide3",
       name: tour.guide3,
@@ -155,6 +121,14 @@ export const TourGroupsSection = ({
                 ? `Group ${index + 1} (${guideName}${guideInfo?.guideType ? ` - ${guideInfo.guideType}` : ''})`
                 : `Group ${index + 1}`;
                 
+              // Log each group's guide info for debugging
+              logger.debug(`Group ${index + 1} guide info:`, {
+                groupId: group.id,
+                groupName: group.name,
+                guideId: group.guideId,
+                calculatedGuideName: guideName
+              });
+              
               return (
                 <div 
                   key={group.id || index}

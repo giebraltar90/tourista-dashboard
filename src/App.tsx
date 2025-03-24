@@ -3,7 +3,7 @@ import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/Index";
 import AboutPage from "./pages/about";
 import ToursPage from "./pages/ToursPage";
-import TourDetailsPage from "./pages/tour-details/TourDetailsPage";
+import TourDetails from "./pages/tour-details/TourDetailsPage";
 import GuidesPage from "./pages/guides";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
@@ -31,7 +31,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/tours" element={<ToursPage />} />
-            <Route path="/tours/:id" element={<TourDetailsPage />} />
+            <Route path="/tours/:id" element={<TourDetails />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/tickets" element={<TicketsPage />} />

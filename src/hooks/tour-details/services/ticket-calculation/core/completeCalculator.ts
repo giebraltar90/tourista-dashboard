@@ -5,7 +5,7 @@ import { GuideTicketCounts } from "../../../utils/guideTicketTypes";
 import { processGuideTicketRequirement } from "../guideTicketProcessor";
 import { findAssignedGuides } from "../guideAssignmentUtils";
 import { locationRequiresGuideTickets } from "../locationUtils";
-import { countTicketsByType, mapGuidesToResultFormat } from "./ticketAggregation";
+import { countTicketsByType } from "./ticketAggregation";
 import { isDefaultGuide, processDefaultGuide } from "./assignmentDetection";
 
 /**
@@ -101,8 +101,7 @@ export const calculateCompleteTicketRequirements = (
   }));
   
   // Count tickets by type
-  const { adultTickets, childTickets } = countTicketsByType(guidesWithRequirements);
-  const totalTickets = adultTickets + childTickets;
+  const { adultTickets, childTickets, totalTickets } = countTicketsByType(guidesWithRequirements);
   
   logger.debug(`🎟️ [CompleteCalculator] Final ticket requirements:`, {
     adultTickets,
