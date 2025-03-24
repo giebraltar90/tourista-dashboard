@@ -51,14 +51,18 @@ export const checkDatabaseConnection = async () => {
       };
     }
     
-    // Now check if the newly recreated bucket_tour_assignments table exists
-    const { error: assignmentError } = await supabase
-      .from('bucket_tour_assignments')
-      .select('id')
-      .limit(1);
-      
-    if (assignmentError && !assignmentError.message.includes('relation "bucket_tour_assignments" does not exist')) {
-      console.warn("Bucket assignment table check failed:", assignmentError);
+    // Use a more type-safe approach for checking table existence
+    const checkTable = async (tableName: string) => {
+      const { error } = await supabase.rpc('check_table_exists', { 
+        table_name_param: tableName 
+      });
+      return !error;
+    };
+    
+    // Check if the bucket_tour_assignments table exists
+    const bucketTableExists = await checkTable('bucket_tour_assignments');
+    if (!bucketTableExists) {
+      console.warn("Bucket assignment table does not exist");
     }
     
     return { connected: true, error: null };
@@ -71,6 +75,23 @@ export const checkDatabaseConnection = async () => {
       hint: 'An unexpected error occurred while connecting to the database'
     };
   }
+};
+
+// Create a utility for Supabase retries
+export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = 3) => {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      console.error(`Supabase operation failed (attempt ${attempt + 1}/${maxRetries}):`, error);
+      lastError = error;
+      // Exponential backoff with jitter
+      const delay = Math.min(100 * 2 ** attempt, 2000) + Math.random() * 200;
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+  throw lastError;
 };
 
 // Re-export createClient with a better name to avoid circular dependencies

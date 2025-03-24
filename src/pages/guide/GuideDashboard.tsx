@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, Calendar } from "lucide-react";
 import { UpcomingTours } from "@/components/dashboard/UpcomingTours";
-import { useGuideTours } from "@/hooks/useGuideData";
+import { useGuideTours } from "@/hooks/guides/useGuideTours";
 
 const GuideDashboard = () => {
   const { role, guideView } = useRole();

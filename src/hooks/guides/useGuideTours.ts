@@ -72,5 +72,5 @@ export function useGuideTours() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  return { data: data || [], isLoading, error, guideName };
+  return { data: data || [], isLoading, error, guideName, refetch: () => {} };
 }

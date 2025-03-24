@@ -13,7 +13,7 @@ import {
 import { Search, Filter } from "lucide-react";
 import { useTours } from "@/hooks/useTourData";
 import { UpcomingToursProps } from "./UpcomingTours.d";
-import { useGuideTours } from "@/hooks/useGuideData";
+import { useGuideTours } from "@/hooks/guides/useGuideTours";
 import { useRole } from "@/contexts/RoleContext";
 import { Link } from "react-router-dom";
 

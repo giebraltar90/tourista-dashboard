@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { useGuideInfo, useGuideTours } from "@/hooks/useGuideData";
+import { useGuideInfo, useGuideTours } from "@/hooks/guides/useGuideTours";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon, IdCard } from "lucide-react";
@@ -16,9 +16,7 @@ import { Calendar as CalendarIcon, IdCard } from "lucide-react";
 const GuideProfile = () => {
   const { role, guideView } = useRole();
   const { guideName = "" } = useGuideTours();
-  const guideInfoQuery = useGuideInfo(guideName);
-  // Extract the data from the query result
-  const guideInfo = guideInfoQuery.data;
+  const { data: guideInfo } = useGuideInfo(guideName);
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
   if (role === "operator" && !guideView) {

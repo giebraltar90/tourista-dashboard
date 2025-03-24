@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MessageSquare, Send } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { useGuideTours } from "@/hooks/useGuideData";
+import { useGuideTours } from "@/hooks/guides/useGuideTours";
 
 const mockMessages = [
   {

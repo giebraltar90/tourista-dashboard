@@ -80,7 +80,7 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
   
   // Filter guides to only include those with valid IDs to prevent SelectItem errors
   const validGuides = Array.isArray(guides) 
-    ? guides.filter((guide: GuideInfo) => guide && guide.id && guide.id.trim() !== "") 
+    ? guides.filter((guide) => guide && guide.id && guide.id.trim() !== "") 
     : [];
   
   return (
@@ -117,9 +117,9 @@ export const AddGroupForm = ({ tourId, onSuccess }: AddGroupFormProps) => {
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="">None (Unassigned)</SelectItem>
-                  {validGuides.map((guide: GuideInfo) => (
+                  {validGuides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
-                      {guide.name} ({guide.guideType})
+                      {guide.name} ({guide.guide_type})
                     </SelectItem>
                   ))}
                 </SelectContent>
