@@ -10,6 +10,9 @@ export const transformTourData = (
   modifications: SupabaseModification[],
   participants: SupabaseParticipant[] = []
 ): TourCardProps => {
+  // Make sure we have tour_groups before trying to map them
+  const tourGroups = tour.tour_groups || [];
+  
   return {
     id: tour.id,
     date: new Date(tour.date),
@@ -21,7 +24,7 @@ export const transformTourData = (
     guide1: tour.guide1_id || "",
     guide2: tour.guide2_id || "",
     guide3: tour.guide3_id || "",
-    tourGroups: tour.tour_groups.map(group => {
+    tourGroups: tourGroups.map(group => {
       // Find participants for this group
       const groupParticipants = participants
         .filter(p => p.group_id === group.id)
@@ -79,6 +82,9 @@ export const transformTourDataWithoutParticipants = (
   tour: SupabaseTourData, 
   modifications: SupabaseModification[]
 ): TourCardProps => {
+  // Make sure we have tour_groups before trying to map them
+  const tourGroups = tour.tour_groups || [];
+  
   return {
     id: tour.id,
     date: new Date(tour.date),
@@ -90,7 +96,7 @@ export const transformTourDataWithoutParticipants = (
     guide1: tour.guide1_id || "",
     guide2: tour.guide2_id || "",
     guide3: tour.guide3_id || "",
-    tourGroups: tour.tour_groups ? tour.tour_groups.map(group => ({
+    tourGroups: tourGroups.map(group => ({
       id: group.id,
       name: group.name,
       size: group.size || 0,
@@ -98,7 +104,7 @@ export const transformTourDataWithoutParticipants = (
       childCount: group.child_count || 0,
       guideId: group.guide_id,
       participants: []
-    })) : [],
+    })),
     numTickets: tour.num_tickets || 0,
     isHighSeason: Boolean(tour.is_high_season),
     modifications: modifications ? modifications.map(mod => ({

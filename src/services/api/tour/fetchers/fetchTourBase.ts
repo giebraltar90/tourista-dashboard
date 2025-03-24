@@ -9,6 +9,11 @@ export const fetchBaseTourData = async (tourId: string): Promise<SupabaseTourDat
   try {
     console.log(`DATABASE DEBUG: Fetching tour data for ID: ${tourId}`);
     
+    if (!tourId) {
+      console.error("DATABASE DEBUG: Empty tourId provided to fetchBaseTourData");
+      return null;
+    }
+    
     const { data: tour, error } = await supabase
       .from('tours')
       .select(`
@@ -18,7 +23,7 @@ export const fetchBaseTourData = async (tourId: string): Promise<SupabaseTourDat
         tour_groups (id, name, size, entry_time, guide_id, child_count)
       `)
       .eq('id', tourId)
-      .single();
+      .maybeSingle(); // Use maybeSingle instead of single to avoid errors
       
     if (error) {
       console.error("DATABASE DEBUG: Error fetching tour:", error);
@@ -30,7 +35,19 @@ export const fetchBaseTourData = async (tourId: string): Promise<SupabaseTourDat
       return null;
     }
     
-    console.log("DATABASE DEBUG: Using Supabase tour data:", tour);
+    // Ensure we have a tour_groups array, even if it's empty
+    if (!tour.tour_groups) {
+      tour.tour_groups = [];
+    }
+    
+    console.log("DATABASE DEBUG: Using Supabase tour data:", {
+      id: tour.id,
+      name: tour.tour_name,
+      date: tour.date,
+      hasGroups: !!tour.tour_groups,
+      groupCount: tour.tour_groups ? tour.tour_groups.length : 0
+    });
+    
     return tour;
   } catch (error) {
     console.error("DATABASE DEBUG: Error in fetchBaseTourData:", error);

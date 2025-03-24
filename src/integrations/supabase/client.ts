@@ -12,6 +12,12 @@ export const supabase = createSupabaseClient(
         // Make sure API key is always included
         const apiKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY';
         
+        // Check if URL actually contains the project ID to avoid logging noise
+        const isSupabaseUrl = url.toString().includes('hznwikjmwmskvoqgkvjk');
+        if (isSupabaseUrl) {
+          console.log(`[Supabase] Fetching ${url}`);
+        }
+        
         // Build proper headers with correct authorization
         const headers = {
           ...options?.headers,
@@ -20,20 +26,46 @@ export const supabase = createSupabaseClient(
           'Authorization': `Bearer ${apiKey}`,
           'x-client-info': '@supabase/javascript-sdk/2.x.x'
         };
-
-        console.log(`[Supabase] Fetching ${url}`);
+        
+        // Use AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          controller.abort();
+          console.error(`[Supabase] Request timeout for ${url}`);
+        }, 30000); // 30 second timeout
         
         return fetch(url, {
           ...options,
           headers,
-          signal: AbortSignal.timeout(30000), // Increase timeout to 30 seconds
+          signal: controller.signal,
         }).then(response => {
+          clearTimeout(timeoutId);
+          
           if (response.status === 401) {
-            console.error("[Supabase] Authentication error (401). API key might be invalid or missing.");
+            console.error("[Supabase] Authentication error (401). API key might be invalid or missing:", {
+              url: url.toString().split('?')[0] // Log URL but strip query params for security
+            });
+            // Dispatch an event so we can show a UI notification
+            window.dispatchEvent(new CustomEvent('supabase-auth-error'));
           }
+          
+          if (!response.ok && isSupabaseUrl) {
+            console.error(`[Supabase] HTTP error ${response.status} for ${url.toString().split('?')[0]}`);
+          }
+          
           return response;
         }).catch(error => {
-          console.error(`[Supabase] Network error: ${error.message}`, error);
+          clearTimeout(timeoutId);
+          
+          if (error.name === 'AbortError') {
+            console.error(`[Supabase] Request aborted for ${url}`);
+            throw new Error('Request timeout or aborted');
+          }
+          
+          console.error(`[Supabase] Network error: ${error.message}`, {
+            url: url.toString().split('?')[0],
+            error
+          });
           throw error;
         });
       },
@@ -79,35 +111,6 @@ export const checkDatabaseConnection = async () => {
       };
     }
     
-    // Now check multiple tables to ensure full database integrity
-    const tables = ['tour_groups', 'participants', 'guides', 'bucket_tour_assignments'];
-    const tableChecks = await Promise.all(
-      tables.map(async (table) => {
-        const { error: tableError } = await supabase
-          .from(table)
-          .select('id')
-          .limit(1);
-          
-        return {
-          table,
-          exists: !tableError || !tableError.message.includes(`relation "${table}" does not exist`),
-          error: tableError?.message
-        };
-      })
-    );
-    
-    const missingTables = tableChecks.filter(check => !check.exists);
-    
-    if (missingTables.length > 0) {
-      console.warn("Some tables are missing:", missingTables);
-      return {
-        connected: true, 
-        error: `Missing tables: ${missingTables.map(t => t.table).join(', ')}`,
-        partialConnection: true,
-        hint: 'Some database tables may need to be created'
-      };
-    }
-    
     return { connected: true, error: null };
   } catch (err) {
     console.error("Database connection check failed (exception):", err);
@@ -116,53 +119,6 @@ export const checkDatabaseConnection = async () => {
       connected: false, 
       error: errorMessage,
       hint: 'An unexpected error occurred while connecting to the database'
-    };
-  }
-};
-
-// Improved Supabase client with retry mechanism for critical operations
-export const supabaseWithRetry = {
-  from: (table: string) => {
-    const MAX_RETRIES = 3;
-    
-    return {
-      ...supabase.from(table),
-      updateWithRetry: async (data: any, matchCriteria: Record<string, any>) => {
-        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-          try {
-            const query = supabase.from(table).update(data);
-            
-            // Apply all match criteria (e.g. .eq('id', id).eq('tour_id', tourId))
-            Object.entries(matchCriteria).forEach(([key, value]) => {
-              query.eq(key, value);
-            });
-            
-            const { data: result, error } = await query;
-            
-            if (!error) {
-              return { data: result, error: null, attempt };
-            }
-            
-            if (attempt < MAX_RETRIES) {
-              // Wait with exponential backoff before retrying
-              await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
-              console.log(`Retry ${attempt} for ${table} update...`);
-            } else {
-              return { data: null, error, attempt };
-            }
-          } catch (err) {
-            if (attempt === MAX_RETRIES) {
-              return { 
-                data: null, 
-                error: err instanceof Error ? err : new Error('Unknown error'),
-                attempt
-              };
-            }
-          }
-        }
-        
-        return { data: null, error: new Error('Max retries exceeded'), attempt: MAX_RETRIES };
-      }
     };
   }
 };
