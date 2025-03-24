@@ -9,13 +9,23 @@ import { toast } from "sonner";
  */
 export const ensureSyncFunction = async () => {
   try {
-    const { data, error } = await supabase.rpc('sync_all_tour_groups', {
+    // Just check if function exists - handle 401 gracefully
+    const { error } = await supabase.rpc('sync_all_tour_groups', {
       p_tour_id: '00000000-0000-0000-0000-000000000000' // Dummy ID to check if function exists
     });
     
-    if (error && error.message.includes('does not exist')) {
-      logger.error("Database function 'sync_all_tour_groups' not found. Please contact an administrator.");
-      toast.error("Database sync function not found. Some features may not work correctly.");
+    // For RPC functions, 401 Unauthorized is expected in some cases
+    // and shouldn't be treated as a critical error
+    if (error) {
+      if (error.code === "401" || error.message.includes("unauthorized")) {
+        logger.warn("RPC function 'sync_all_tour_groups' exists but requires authorization");
+        // No need to show a toast for auth issues
+      } else if (error.message.includes('does not exist')) {
+        logger.error("Database function 'sync_all_tour_groups' not found");
+        toast.error("Database sync function not found. Some features may not work correctly.");
+      } else {
+        logger.warn("Error checking sync function:", error);
+      }
     }
   } catch (err) {
     logger.error("Error checking for sync function:", err);
@@ -34,9 +44,28 @@ export const syncTourGroupSizes = async (tourId: string) => {
       p_tour_id: tourId
     });
     
+    // Handle 401 error gracefully
     if (error) {
-      logger.error("[syncTourGroupSizes] Error syncing tour groups:", error);
-      return false;
+      if (error.code === "401" || error.message.includes("unauthorized")) {
+        logger.warn("[syncTourGroupSizes] Authorization required for syncing tour groups");
+        // Fall back to manual calculation
+        logger.info("[syncTourGroupSizes] Falling back to manual group sync");
+        const { data: groups } = await supabase
+          .from('tour_groups')
+          .select('id')
+          .eq('tour_id', tourId);
+          
+        if (groups && groups.length > 0) {
+          // Process each group individually
+          for (const group of groups) {
+            await syncGroupWithParticipants({ id: group.id });
+          }
+        }
+        return true;
+      } else {
+        logger.error("[syncTourGroupSizes] Error syncing tour groups:", error);
+        return false;
+      }
     }
     
     logger.debug("[syncTourGroupSizes] Successfully synced tour groups");
@@ -75,6 +104,16 @@ export const calculateSizesFromParticipants = (group: any) => {
 export const syncGroupWithParticipants = async (group: any) => {
   try {
     if (!group || !group.id) return false;
+    
+    // First get participants for this group if they're not provided
+    if (!group.participants) {
+      const { data: participants } = await supabase
+        .from('participants')
+        .select('*')
+        .eq('group_id', group.id);
+        
+      group.participants = participants || [];
+    }
     
     const { size, childCount } = calculateSizesFromParticipants(group);
     
