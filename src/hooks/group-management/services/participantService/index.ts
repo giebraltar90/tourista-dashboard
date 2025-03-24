@@ -4,7 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { VentrataParticipant } from '@/types/ventrata';
 import { logger } from '@/utils/logger';
 import { syncTourGroupSizes } from './syncService';
-import { updateParticipantCountsRPC } from '@/services/api/participants/updateParticipantCountsRPC';
+import { updateParticipantCounts } from '@/services/api/participants/updateParticipantCountsRPC';
+import { formatParticipantCount, calculateTotalParticipants, calculateTotalChildCount } from './countingService';
+
+// Export functions directly to maintain backward compatibility
+export { formatParticipantCount, calculateTotalParticipants, calculateTotalChildCount };
 
 // Create a hook for participant service
 export const useParticipantService = () => {
@@ -106,7 +110,7 @@ export const useParticipantService = () => {
               .single();
               
             if (tourResult.data?.tour_id) {
-              await updateParticipantCountsRPC(tourResult.data.tour_id);
+              await updateParticipantCounts(tourResult.data.tour_id);
             }
           }
         } catch (err) {
