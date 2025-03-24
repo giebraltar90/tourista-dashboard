@@ -1,110 +1,34 @@
 
-import { useState, useCallback, useEffect } from 'react';
+import { useCallback } from 'react';
 import { TourCardProps } from '@/components/tours/tour-card/types';
-import { VentrataTourGroup, VentrataParticipant } from '@/types/ventrata';
-import { useParticipantService } from './services/participantService';
-import { transformToVentrataParticipant } from './services/participantService/transform';
+import { VentrataParticipant } from '@/types/ventrata';
 import { logger } from '@/utils/logger';
-import { queryCache } from '@/integrations/supabase/client';
+import { useParticipantService } from './services/participantService';
+import { 
+  useLocalTourGroups,
+  useParticipantSelection,
+  useParticipantLoading,
+  useParticipantMovement,
+  useDragHandlers
+} from './hooks';
 
 /**
  * Main hook for group management functionality
  */
 export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
-  const [localTourGroups, setLocalTourGroups] = useState<VentrataTourGroup[]>([]);
-  const [selectedParticipant, setSelectedParticipant] = useState<{ participant: VentrataParticipant; fromGroupIndex: number } | null>(null);
-  const [isMovePending, setIsMovePending] = useState(false);
+  // Use the refactored hooks
+  const { localTourGroups, setLocalTourGroups } = useLocalTourGroups(tour);
+  const { selectedParticipant, setSelectedParticipant, isMovePending, setIsMovePending } = useParticipantSelection();
   
-  // Get participant service functions
+  // Get participant service functions for additional operations & state
   const { 
-    loadParticipants: loadParticipantsService, 
-    moveParticipant: moveParticipantService,
     refreshParticipants: refreshParticipantsService,
     isLoading,
     error,
     lastRefreshed
   } = useParticipantService();
   
-  // Effect to initialize localTourGroups when tour changes
-  useEffect(() => {
-    if (tour?.tourGroups) {
-      const cacheKey = `localTourGroups_${tour.id}`;
-      const cachedGroups = queryCache.get(cacheKey);
-      
-      if (cachedGroups) {
-        logger.debug("🔍 [GROUP_MANAGEMENT] Using cached tour groups");
-        setLocalTourGroups(cachedGroups);
-      } else {
-        logger.debug("🔍 [GROUP_MANAGEMENT] Setting initial tour groups from tour prop");
-        setLocalTourGroups(tour.tourGroups);
-        
-        // Cache the groups
-        queryCache.set(cacheKey, tour.tourGroups);
-      }
-    }
-  }, [tour?.id, tour?.tourGroups]);
-  
-  // Handle loading participants 
-  const loadParticipants = useCallback(async (groupIds: string | string[]) => {
-    try {
-      setIsMovePending(true);
-      
-      // Convert single ID to array if needed
-      const groupIdArray = typeof groupIds === 'string' ? [groupIds] : groupIds;
-      
-      logger.debug("🔍 [GROUP_MANAGEMENT] Loading participants for groups:", groupIdArray);
-      
-      const result = await loadParticipantsService(groupIdArray);
-      
-      if (result.success && result.groups && result.participants) {
-        // Update local tour groups with the loaded data
-        setLocalTourGroups(prev => {
-          // Map participants to their respective groups
-          const updatedGroups = [...prev];
-          
-          for (const group of result.groups) {
-            const groupIndex = updatedGroups.findIndex(g => g.id === group.id);
-            
-            if (groupIndex !== -1) {
-              // Find participants for this group
-              const groupParticipants = result.participants
-                .filter(p => p.group_id === group.id)
-                .map(transformToVentrataParticipant);
-              
-              // Update the group with participants
-              updatedGroups[groupIndex] = {
-                ...updatedGroups[groupIndex],
-                participants: groupParticipants,
-                size: group.size,
-                childCount: group.child_count
-              };
-            }
-          }
-          
-          // Cache the updated groups
-          const cacheKey = tour?.id ? `localTourGroups_${tour.id}` : '';
-          if (cacheKey) {
-            queryCache.set(cacheKey, updatedGroups);
-          }
-          
-          return updatedGroups;
-        });
-        
-        logger.debug("🔍 [GROUP_MANAGEMENT] Successfully loaded participants");
-      } else if (result.error) {
-        logger.error("🔍 [GROUP_MANAGEMENT] Error loading participants:", result.error);
-      }
-      
-      return result;
-    } catch (error) {
-      logger.error("🔍 [GROUP_MANAGEMENT] Exception loading participants:", error);
-      return { success: false, error: 'Exception loading participants' };
-    } finally {
-      setIsMovePending(false);
-    }
-  }, [loadParticipantsService, tour?.id]);
-  
-  // Handle refreshing participants
+  // Hook for refreshing participants
   const refreshParticipants = useCallback(async () => {
     try {
       // Skip refreshing if we were just refreshed recently
@@ -136,22 +60,71 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
         return;
       }
       
-      // Invalidate cache for this tour
-      if (tour?.id) {
-        const cacheKey = `localTourGroups_${tour.id}`;
-        queryCache.invalidate(cacheKey);
-      }
-      
       logger.debug("🔍 [GROUP_MANAGEMENT] Refreshing participants for groups:", groupIds);
       await refreshParticipantsService();
-      await loadParticipants(groupIds);
+      await loadParticipantsHandler(groupIds);
       
     } catch (error) {
       logger.error("🔍 [GROUP_MANAGEMENT] Error refreshing participants:", error);
     }
-  }, [refreshParticipantsService, loadParticipants, tour, localTourGroups, lastRefreshed]);
+  }, [refreshParticipantsService, tour, localTourGroups, lastRefreshed, setLocalTourGroups]);
   
-  // Handle moving a participant to a new group
+  // Set up the participant loading hook with the refresh function
+  const { loadParticipants } = useParticipantLoading(tour?.id);
+  
+  // Handler function for loading participants that updates the local state
+  const loadParticipantsHandler = useCallback(async (groupIds: string | string[]) => {
+    try {
+      setIsMovePending(true);
+      
+      const result = await loadParticipants(groupIds);
+      
+      if (result.success && result.groups && result.participants) {
+        // Update local tour groups with the loaded data
+        setLocalTourGroups(prev => {
+          // Map participants to their respective groups
+          const updatedGroups = [...prev];
+          
+          for (const group of result.groups) {
+            const groupIndex = updatedGroups.findIndex(g => g.id === group.id);
+            
+            if (groupIndex !== -1) {
+              // Find participants for this group
+              const groupParticipants = result.participants
+                ?.filter(p => p.group_id === group.id)
+                .map(p => transformToVentrataParticipant(p));
+              
+              // Update the group with participants
+              updatedGroups[groupIndex] = {
+                ...updatedGroups[groupIndex],
+                participants: groupParticipants || [],
+                size: group.size,
+                childCount: group.child_count
+              };
+            }
+          }
+          
+          return updatedGroups;
+        });
+        
+        logger.debug("🔍 [GROUP_MANAGEMENT] Successfully loaded participants");
+      } else if (result.error) {
+        logger.error("🔍 [GROUP_MANAGEMENT] Error loading participants:", result.error);
+      }
+      
+      return result;
+    } catch (error) {
+      logger.error("🔍 [GROUP_MANAGEMENT] Exception loading participants:", error);
+      return { success: false, error: 'Exception loading participants' };
+    } finally {
+      setIsMovePending(false);
+    }
+  }, [loadParticipants, setLocalTourGroups, setIsMovePending]);
+  
+  // Set up the participant movement hook
+  const { moveParticipant } = useParticipantMovement(tour?.id, refreshParticipants);
+  
+  // Handler for moving a participant to a new group
   const handleMoveParticipant = useCallback(async (toGroupIndex: number) => {
     if (!selectedParticipant || isMovePending) return;
     
@@ -185,55 +158,15 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
         return;
       }
       
-      logger.debug("🔄 [GROUP_MANAGEMENT] Moving participant", {
-        participantId: participant.id,
-        fromGroupId,
-        toGroupId
-      });
-      
-      // Call the service to move the participant
-      const success = await moveParticipantService(participant, fromGroupId, toGroupId);
-      
-      if (success) {
-        logger.debug("🔄 [GROUP_MANAGEMENT] Participant moved successfully");
-        
-        // Optimistically update the UI, but also trigger a refresh to get accurate sizes
-        setLocalTourGroups(prev => {
-          const updatedGroups = [...prev];
-          
-          // Remove from source group
-          if (updatedGroups[fromGroupIndex] && updatedGroups[fromGroupIndex].participants) {
-            updatedGroups[fromGroupIndex] = {
-              ...updatedGroups[fromGroupIndex],
-              participants: updatedGroups[fromGroupIndex].participants!.filter(p => p.id !== participant.id)
-            };
-          }
-          
-          // Add to target group
-          if (updatedGroups[toGroupIndex] && updatedGroups[toGroupIndex].participants) {
-            updatedGroups[toGroupIndex] = {
-              ...updatedGroups[toGroupIndex],
-              participants: [...(updatedGroups[toGroupIndex].participants || []), { ...participant, group_id: toGroupId }]
-            };
-          }
-          
-          // Invalidate cache
-          if (tour?.id) {
-            const cacheKey = `localTourGroups_${tour.id}`;
-            queryCache.invalidate(cacheKey);
-          }
-          
-          return updatedGroups;
-        });
-        
-        // Get fresh data after a short delay
-        setTimeout(() => {
-          refreshParticipants();
-        }, 1000);
-        
-      } else {
-        logger.error("🔄 [GROUP_MANAGEMENT] Failed to move participant");
-      }
+      await moveParticipant(
+        participant, 
+        fromGroupId, 
+        toGroupId, 
+        localTourGroups, 
+        setLocalTourGroups,
+        fromGroupIndex,
+        toGroupIndex
+      );
       
     } catch (error) {
       logger.error("🔄 [GROUP_MANAGEMENT] Error moving participant:", error);
@@ -245,32 +178,16 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
     selectedParticipant, 
     isMovePending, 
     localTourGroups, 
-    moveParticipantService, 
-    refreshParticipants,
-    tour?.id
+    moveParticipant, 
+    setLocalTourGroups,
+    setIsMovePending,
+    setSelectedParticipant
   ]);
   
-  // Drag and drop handlers
-  const handleDragStart = useCallback((e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => {
-    if (isMovePending) return;
-    
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      participant,
-      fromGroupIndex
-    }));
-    
-    e.dataTransfer.effectAllowed = 'move';
-  }, [isMovePending]);
+  // Get drag and drop handlers
+  const dragHandlers = useDragHandlers(isMovePending);
   
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }, []);
-  
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-  }, []);
-  
+  // Custom drop handler that integrates with our state
   const handleDrop = useCallback((e: React.DragEvent, toGroupIndex: number) => {
     e.preventDefault();
     
@@ -283,11 +200,7 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
     } catch (error) {
       logger.error("🔄 [GROUP_MANAGEMENT] Error handling drop:", error);
     }
-  }, [handleMoveParticipant]);
-  
-  const handleDragEnd = useCallback(() => {
-    // Reset any drag state if needed
-  }, []);
+  }, [handleMoveParticipant, setSelectedParticipant]);
   
   return {
     localTourGroups,
@@ -295,15 +208,26 @@ export const useGroupManagement = (tour: TourCardProps | null | undefined) => {
     setSelectedParticipant,
     handleMoveParticipant,
     isMovePending,
-    handleDragStart,
-    handleDragOver,
-    handleDragLeave,
+    ...dragHandlers,
     handleDrop,
-    handleDragEnd,
-    loadParticipants,
+    loadParticipants: loadParticipantsHandler,
     refreshParticipants,
     isLoading,
     error,
     lastRefreshed
+  };
+};
+
+// Helper function to transform participant data
+const transformToVentrataParticipant = (participant: any): VentrataParticipant => {
+  return {
+    id: participant.id,
+    name: participant.name,
+    count: participant.count || 1,
+    bookingRef: participant.booking_ref,
+    childCount: participant.child_count || 0,
+    groupId: participant.group_id,
+    group_id: participant.group_id,
+    booking_ref: participant.booking_ref
   };
 };
