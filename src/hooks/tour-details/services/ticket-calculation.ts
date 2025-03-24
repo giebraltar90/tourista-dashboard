@@ -1,0 +1,139 @@
+
+import { GuideInfo } from "@/types/ventrata";
+import { logger } from "@/utils/logger";
+
+// Function to determine if a guide needs a ticket based on type and location
+export const doesGuideNeedTicket = (
+  guideType: string | undefined,
+  location: string
+): { needsTicket: boolean; ticketType: 'adult' | 'child' | 'none' } => {
+  if (!guideType) {
+    return { needsTicket: false, ticketType: 'none' };
+  }
+  
+  // Guide type determines ticket requirements
+  if (guideType.includes('GA Ticket')) {
+    return { needsTicket: true, ticketType: 'adult' };
+  }
+  
+  // Special locations where all guides need tickets
+  if (location === 'Versailles' || location === 'Louvre') {
+    return { needsTicket: true, ticketType: 'adult' };
+  }
+  
+  return { needsTicket: false, ticketType: 'none' };
+};
+
+// Function to check if a location requires guide tickets
+export const doesLocationRequireGuideTickets = (location: string): boolean => {
+  const locationsRequiringTickets = ['Versailles', 'Louvre', 'Disneyland', 'Eiffel Tower'];
+  return locationsRequiringTickets.includes(location);
+};
+
+// Comprehensive ticket calculation function
+export const calculateCompleteTicketRequirements = (
+  guide1Info: GuideInfo | null, 
+  guide2Info: GuideInfo | null,
+  guide3Info: GuideInfo | null,
+  location: string,
+  tourGroups: any[] = []
+) => {
+  // Check if any guides are assigned
+  const hasAssignedGuides = !!(guide1Info || guide2Info || guide3Info);
+  
+  // Check if location requires guide tickets
+  const locationNeedsGuideTickets = doesLocationRequireGuideTickets(location);
+  
+  // Initialize counts
+  let adultTickets = 0;
+  let childTickets = 0;
+  const guidesWithTickets: {
+    guideName: string;
+    guideType: string;
+    ticketType: 'adult' | 'child' | 'none';
+  }[] = [];
+  
+  // Process guide1
+  if (guide1Info) {
+    const { needsTicket, ticketType } = doesGuideNeedTicket(guide1Info.guide_type, location);
+    if (needsTicket) {
+      if (ticketType === 'adult') adultTickets++;
+      if (ticketType === 'child') childTickets++;
+      
+      guidesWithTickets.push({
+        guideName: guide1Info.name || 'Guide 1',
+        guideType: guide1Info.guide_type || 'Unknown',
+        ticketType
+      });
+    }
+  }
+  
+  // Process guide2
+  if (guide2Info) {
+    const { needsTicket, ticketType } = doesGuideNeedTicket(guide2Info.guide_type, location);
+    if (needsTicket) {
+      if (ticketType === 'adult') adultTickets++;
+      if (ticketType === 'child') childTickets++;
+      
+      guidesWithTickets.push({
+        guideName: guide2Info.name || 'Guide 2',
+        guideType: guide2Info.guide_type || 'Unknown',
+        ticketType
+      });
+    }
+  }
+  
+  // Process guide3
+  if (guide3Info) {
+    const { needsTicket, ticketType } = doesGuideNeedTicket(guide3Info.guide_type, location);
+    if (needsTicket) {
+      if (ticketType === 'adult') adultTickets++;
+      if (ticketType === 'child') childTickets++;
+      
+      guidesWithTickets.push({
+        guideName: guide3Info.name || 'Guide 3',
+        guideType: guide3Info.guide_type || 'Unknown',
+        ticketType
+      });
+    }
+  }
+  
+  // Also process guides assigned directly to groups
+  if (tourGroups && tourGroups.length > 0) {
+    tourGroups.forEach(group => {
+      if (group.guideInfo && !guidesWithTickets.some(g => g.guideName === group.guideInfo.name)) {
+        const { needsTicket, ticketType } = doesGuideNeedTicket(
+          group.guideInfo.guide_type, 
+          location
+        );
+        
+        if (needsTicket) {
+          if (ticketType === 'adult') adultTickets++;
+          if (ticketType === 'child') childTickets++;
+          
+          guidesWithTickets.push({
+            guideName: group.guideInfo.name || 'Group Guide',
+            guideType: group.guideInfo.guide_type || 'Unknown',
+            ticketType
+          });
+        }
+      }
+    });
+  }
+  
+  logger.debug(`🎟️ [calculateTickets] Calculated for ${location}:`, {
+    adultTickets,
+    childTickets,
+    guidesWithTickets
+  });
+  
+  return {
+    locationNeedsGuideTickets,
+    hasAssignedGuides,
+    guideTickets: {
+      adultTickets,
+      childTickets,
+      guides: guidesWithTickets
+    }
+  };
+};

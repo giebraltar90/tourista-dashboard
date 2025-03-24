@@ -1,13 +1,16 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { logger } from '@/utils/logger';
+import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
+/**
+ * Create a database function to sync tour groups
+ */
 export const createSyncTourGroupsFunction = async (): Promise<boolean> => {
   try {
-    logger.debug("Creating sync_all_tour_groups function in database");
+    logger.debug("Creating sync_all_tour_groups function");
     
-    // Create the function that will manually synchronize all tour groups
-    const createFunctionQuery = `
+    // SQL to create the function
+    const createFunctionSQL = `
       CREATE OR REPLACE FUNCTION sync_all_tour_groups(p_tour_id UUID)
       RETURNS void
       LANGUAGE plpgsql
@@ -35,8 +38,9 @@ export const createSyncTourGroupsFunction = async (): Promise<boolean> => {
       $$;
     `;
     
-    const { error } = await supabase.rpc('execute_sql', {
-      sql_query: createFunctionQuery
+    // Execute the SQL statement
+    const { error } = await supabase.rpc('execute_sql', { 
+      sql_query: createFunctionSQL 
     });
     
     if (error) {
@@ -44,7 +48,7 @@ export const createSyncTourGroupsFunction = async (): Promise<boolean> => {
       return false;
     }
     
-    logger.debug("Successfully created sync_all_tour_groups function");
+    logger.debug("sync_all_tour_groups function created successfully");
     return true;
   } catch (error) {
     logger.error("Exception creating sync_all_tour_groups function:", error);

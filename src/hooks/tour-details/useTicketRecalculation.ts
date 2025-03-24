@@ -32,8 +32,8 @@ export const useTicketRecalculation = (tourId: string) => {
       // Save calculated requirements to database
       await calculateAndSaveTicketRequirements(
         tourId,
-        statistics.total_adult_count,
-        statistics.total_child_count,
+        statistics.total_adult_count || 0,
+        statistics.total_child_count || 0,
         guideTickets.adultTickets,
         guideTickets.childTickets
       );
@@ -52,7 +52,7 @@ export const useTicketRecalculation = (tourId: string) => {
         groupCount: statistics.group_count,
         guideAdultTickets: guideTickets.adultTickets,
         guideChildTickets: guideTickets.childTickets,
-        totalTicketsNeeded: statistics.total_participants + guideTickets.adultTickets + guideTickets.childTickets
+        totalTicketsNeeded: (statistics.total_participants || 0) + guideTickets.adultTickets + guideTickets.childTickets
       });
     }
   }, [statistics, guideTickets]);

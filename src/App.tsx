@@ -1,47 +1,40 @@
 
-import { Routes, Route } from "react-router-dom";
-import HomePage from "./pages/Index";
-import AboutPage from "./pages/about";
-import ToursPage from "./pages/ToursPage";
-import TourDetails from "./pages/tour-details/TourDetailsPage";
-import GuidesPage from "./pages/guides";
-import SettingsPage from "./pages/SettingsPage";
-import NotFound from "./pages/NotFound";
-import TicketsPage from "./pages/TicketsPage";
-import { Toaster } from "@/components/ui/sonner";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ensureDbFunctionsExist } from "@/services/api/initializeDbFunctions";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RoleProvider } from "@/contexts/RoleContext";
-
-// Create a query client instance
-const queryClient = new QueryClient();
-
-// Execute DB functions initialization outside of component
-console.log("Ensuring database functions exist");
-ensureDbFunctionsExist().catch(error => {
-  console.error("Failed to initialize DB functions:", error);
-});
+import { useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Toaster } from "sonner";
+import Dashboard from "./pages/Dashboard";
+import NewTourPage from "./pages/NewTourPage";
+import TourDetails from "./pages/TourDetails";
+import EditTourPage from "./pages/EditTourPage";
+import TicketBucketsPage from "./pages/TicketBucketsPage";
+import { initializeDatabaseFunctions } from "./services/api/db/initialize";
+import { logger } from "./utils/logger";
 
 function App() {
+  // Initialize database functions on app start
+  useEffect(() => {
+    const initDb = async () => {
+      try {
+        await initializeDatabaseFunctions();
+      } catch (error) {
+        logger.error("Failed to initialize database functions:", error);
+      }
+    };
+    
+    initDb();
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <RoleProvider>
-        <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/tours" element={<ToursPage />} />
-            <Route path="/tours/:id" element={<TourDetails />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/guides" element={<GuidesPage />} />
-            <Route path="/tickets" element={<TicketsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <Toaster position="top-right" />
-        </ThemeProvider>
-      </RoleProvider>
-    </QueryClientProvider>
+    <Router>
+      <Toaster position="top-right" richColors />
+      <Routes>
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/tours/new" element={<NewTourPage />} />
+        <Route path="/tours/:id" element={<TourDetails />} />
+        <Route path="/tours/:id/edit" element={<EditTourPage />} />
+        <Route path="/ticket-buckets" element={<TicketBucketsPage />} />
+      </Routes>
+    </Router>
   );
 }
 
