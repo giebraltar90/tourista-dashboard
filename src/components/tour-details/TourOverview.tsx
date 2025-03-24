@@ -35,6 +35,10 @@ export const TourOverview = ({
     adultTickets,
     childTickets,
     totalTickets,
+    // Add the missing properties to fix TypeScript errors
+    adultCount: adultTickets,
+    childCount: totalChildCount,
+    totalTicketsNeeded: totalParticipants
   };
 
   return (

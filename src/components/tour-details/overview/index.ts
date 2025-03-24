@@ -12,3 +12,5 @@ export * from './AssignGuideButton';
 export * from './assign-guide/AssignGuideProvider';
 export * from './InformationCardsSection';
 export * from './TourDetailsCard';
+export * from './tickets';
+

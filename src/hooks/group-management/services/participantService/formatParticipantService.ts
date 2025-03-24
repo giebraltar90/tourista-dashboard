@@ -1,18 +1,27 @@
 
 /**
- * Format participant count to show adults+children
+ * Format participant count into a readable string
  */
 export const formatParticipantCount = (
   totalParticipants: number, 
   childCount: number
 ): string => {
-  if (totalParticipants === 0) return "0";
-  
-  const adultCount = totalParticipants - childCount;
-  
-  if (childCount === 0) {
-    return `${totalParticipants}`;
-  }
-  
-  return `${adultCount} + ${childCount}`;
+  const adultCount = Math.max(0, totalParticipants - childCount);
+  return `${adultCount} adults + ${childCount} children`;
 };
+
+/**
+ * Format participant count into a short string
+ */
+export const formatParticipantCountShort = (
+  totalParticipants: number, 
+  childCount: number
+): string => {
+  const adultCount = Math.max(0, totalParticipants - childCount);
+  return `${adultCount}A + ${childCount}C`;
+};
+
+/**
+ * Export formatting functions for backward compatibility
+ */
+export const formatParticipantCounts = formatParticipantCount;

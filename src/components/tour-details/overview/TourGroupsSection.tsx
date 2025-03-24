@@ -5,9 +5,10 @@ import { GuideInfo } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { Button } from "@/components/ui/button";
 import { AssignGuideDialog } from "../groups-management/dialogs/AssignGuideDialog";
-import { useGuideData, Guide } from "@/hooks/guides/useGuideData";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { logger } from "@/utils/logger";
+import { GuideType } from "@/types/ventrata";
 
 interface TourGroupsSectionProps {
   tour: TourCardProps;
@@ -65,8 +66,8 @@ export const TourGroupsSection = ({
     // Handle different types of birthday fields safely
     let birthdayStr = "";
     if (guide.birthday) {
-      if (typeof guide.birthday === 'object' && guide.birthday instanceof Date) {
-        birthdayStr = guide.birthday.toISOString();
+      if (typeof guide.birthday === 'object' && guide.birthday.toString) {
+        birthdayStr = guide.birthday.toString();
       } else if (typeof guide.birthday === 'string') {
         birthdayStr = guide.birthday;
       }
@@ -97,7 +98,7 @@ export const TourGroupsSection = ({
       info: {
         name: tour.guide1,
         birthday: guide1Info?.birthday || new Date(),
-        guideType: guide1Info?.guideType || "GA Ticket" as GuideType
+        guideType: (guide1Info?.guideType || "GA Ticket") as GuideType
       }
     });
   }
@@ -112,7 +113,7 @@ export const TourGroupsSection = ({
       info: {
         name: tour.guide2,
         birthday: guide2Info?.birthday || new Date(),
-        guideType: guide2Info?.guideType || "GA Ticket" as GuideType
+        guideType: (guide2Info?.guideType || "GA Ticket") as GuideType
       }
     });
   }
@@ -127,7 +128,7 @@ export const TourGroupsSection = ({
       info: {
         name: tour.guide3,
         birthday: guide3Info?.birthday || new Date(),
-        guideType: guide3Info?.guideType || "GA Ticket" as GuideType
+        guideType: (guide3Info?.guideType || "GA Ticket") as GuideType
       }
     });
   }
