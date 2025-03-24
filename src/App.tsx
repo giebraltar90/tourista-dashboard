@@ -28,7 +28,6 @@ function App() {
   return (
     <RoleProvider>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        {/* Removed the nested Router here */}
         <Routes>
           <Route path="/tours" element={<ToursPage />} />
           <Route path="/tours/:id" element={<TourDetailsPage />} />
