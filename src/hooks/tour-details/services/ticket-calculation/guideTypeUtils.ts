@@ -1,4 +1,5 @@
 
+import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
 
 /**
@@ -36,8 +37,12 @@ export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
 
 /**
  * Determine what type of ticket a guide needs (adult or child)
+ * Accepts either a guide info object or just the guide type string
  */
-export const determineTicketTypeForGuide = (guideType: string = ""): "adult" | "child" | null => {
+export const determineTicketTypeForGuide = (guide: GuideInfo | string | null | undefined): "adult" | "child" | null => {
+  // Extract the guide type string from either the guide object or use directly if it's a string
+  const guideType = typeof guide === 'string' ? guide : guide?.guideType || '';
+  
   // Normalize the guide type
   const normalizedType = guideType?.toLowerCase().trim() || "";
   

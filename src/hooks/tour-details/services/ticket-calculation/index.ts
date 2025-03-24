@@ -6,4 +6,4 @@ export { processGuideTicketRequirement } from './guideTicketProcessor';
 export { calculateCompleteTicketRequirements, calculateCompleteGuideTicketRequirements } from './core/completeCalculator';
 
 // Export the guide ticket processor utilities individually
-export { findAssignedGuides } from './guideAssignmentUtils';
+export { findAssignedGuides, getGuideTicketRequirement } from './guideAssignmentUtils';

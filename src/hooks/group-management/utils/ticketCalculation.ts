@@ -37,7 +37,7 @@ export const calculateGuideTicketsNeeded = (
     location
   );
   
-  // The returned object has adultTickets and childTickets properties
+  // The returned object has guideAdultTickets and guideChildTickets properties
   return {
     adultTickets: result.guideAdultTickets || 0,
     childTickets: result.guideChildTickets || 0

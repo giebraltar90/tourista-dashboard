@@ -57,7 +57,7 @@ export const getGuideTicketRequirement = (
     return { ticketType: null, guideInfo: null };
   }
   
-  // Determine ticket type based on guide type
+  // Determine ticket type based on guide info
   const ticketType = determineTicketTypeForGuide(guideInfo);
   
   logger.debug(`🎟️ [getGuideTicketRequirement] Guide ${guideInfo.name} (${guidePosition}) needs ${ticketType ? `a ${ticketType} ticket` : 'no ticket'}`);
