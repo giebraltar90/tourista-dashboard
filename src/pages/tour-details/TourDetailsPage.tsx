@@ -1,12 +1,14 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { Loading } from "@/components/ui/loading";
 import { useRole } from "@/contexts/RoleContext";
 import { useTourById } from "@/hooks/useTourData";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { logger } from "@/utils/logger";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -18,6 +20,7 @@ const TourDetailsContent = ({ tourId }: { tourId: string }) => {
   const { data: tour, isLoading, error } = useTourById(tourId);
   const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
   const [activeTab, setActiveTab] = useState("overview");
+  const navigate = useNavigate();
   
   // Log errors for debugging
   useEffect(() => {
@@ -60,15 +63,30 @@ const TourDetailsContent = ({ tourId }: { tourId: string }) => {
   }
   
   return (
-    <NormalizedTourContent
-      tour={tour}
-      tourId={tourId}
-      guide1Info={guide1Info}
-      guide2Info={guide2Info}
-      guide3Info={guide3Info}
-      activeTab={activeTab}
-      onTabChange={setActiveTab}
-    />
+    <div className="container mx-auto py-6 space-y-8">
+      {/* Back button */}
+      <div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => navigate("/tours")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Tour Overview
+        </Button>
+      </div>
+      
+      <NormalizedTourContent
+        tour={tour}
+        tourId={tourId}
+        guide1Info={guide1Info}
+        guide2Info={guide2Info}
+        guide3Info={guide3Info}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+      />
+    </div>
   );
 };
 
