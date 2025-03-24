@@ -10,28 +10,31 @@ import { toast } from "sonner";
  */
 export const useGuideTours = () => {
   const { user, profile } = useAuth();
+  const guideName = profile?.firstName || "Guide";
   
-  return useQuery({
-    queryKey: ["guideTours", user?.id],
-    queryFn: async (): Promise<TourCardProps[]> => {
-      if (!user || !user.id) {
-        return [];
+  return {
+    ...useQuery({
+      queryKey: ["guideTours", user?.id],
+      queryFn: async (): Promise<TourCardProps[]> => {
+        if (!user || !user.id) {
+          return [];
+        }
+        
+        try {
+          const tours = await fetchToursByGuideId(user.id);
+          return tours;
+        } catch (error) {
+          toast.error("Failed to load guide tours");
+          throw error;
+        }
+      },
+      enabled: !!user?.id,
+      refetchOnWindowFocus: false,
+      staleTime: 60000,
+      meta: {
+        guideName: guideName
       }
-      
-      try {
-        const tours = await fetchToursByGuideId(user.id);
-        return tours;
-      } catch (error) {
-        toast.error("Failed to load guide tours");
-        throw error;
-      }
-    },
-    enabled: !!user?.id,
-    refetchOnWindowFocus: false,
-    staleTime: 60000,
-    // Add refetch method
-    meta: {
-      guideName: profile?.firstName || "Guide" 
-    }
-  });
+    }),
+    guideName
+  };
 };

@@ -39,7 +39,7 @@ export const useAuth = () => {
           firstName: data.first_name,
           lastName: data.last_name,
           email: data.email,
-          role: data.role,
+          role: data.role || 'user' // Default to 'user' if role is not defined
         };
       }
 

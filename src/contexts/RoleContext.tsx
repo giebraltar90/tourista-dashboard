@@ -1,21 +1,35 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
+// Define the guide view type
+export interface GuideView {
+  type: string;
+  guideName: string;
+}
+
 interface RoleContextType {
-  guideView: boolean;
+  guideView: GuideView | null;
   adminView: boolean;
+  role: string;
   toggleGuideView: () => void;
   toggleAdminView: () => void;
+  setRole: (role: string) => void;
+  setGuideView: (view: GuideView | null) => void;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
-  const [guideView, setGuideView] = useState(false);
+  const [guideView, setGuideView] = useState<GuideView | null>(null);
   const [adminView, setAdminView] = useState(false);
+  const [role, setRole] = useState<string>("operator"); // Default role is operator
 
   const toggleGuideView = () => {
-    setGuideView(prev => !prev);
+    if (guideView) {
+      setGuideView(null);
+    } else {
+      setGuideView({ type: "guide", guideName: "Preview Guide" });
+    }
   };
 
   const toggleAdminView = () => {
@@ -26,8 +40,11 @@ export const RoleProvider = ({ children }: { children: ReactNode }) => {
     <RoleContext.Provider value={{ 
       guideView, 
       adminView, 
+      role,
       toggleGuideView, 
-      toggleAdminView 
+      toggleAdminView,
+      setRole,
+      setGuideView
     }}>
       {children}
     </RoleContext.Provider>
