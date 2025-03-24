@@ -66,7 +66,7 @@ export const TourGroupsSection = ({
     // Handle different types of birthday fields safely
     let birthdayStr = "";
     if (guide.birthday) {
-      if (typeof guide.birthday === 'object' && guide.birthday.toString) {
+      if (typeof guide.birthday === 'object' && guide.birthday !== null) {
         birthdayStr = guide.birthday.toString();
       } else if (typeof guide.birthday === 'string') {
         birthdayStr = guide.birthday;
@@ -81,7 +81,9 @@ export const TourGroupsSection = ({
       guideType: guide.guide_type || "GA Ticket",
       info: {
         name: guide.name,
-        birthday: typeof guide.birthday === 'object' ? guide.birthday : new Date(),
+        birthday: typeof guide.birthday === 'object' && guide.birthday !== null 
+          ? guide.birthday 
+          : new Date(),
         guideType: (guide.guide_type || "GA Ticket") as GuideType
       }
     };

@@ -22,6 +22,6 @@ export const formatParticipantCountShort = (
 };
 
 /**
- * Export formatting functions for backward compatibility
+ * Export for backward compatibility - renamed to avoid duplicate export
  */
 export const formatParticipantCounts = formatParticipantCount;

@@ -4,6 +4,8 @@ export * from './formatParticipantService';
 export * from './syncService';
 export * from './countingService';
 
+// Note: We don't re-export formatParticipantCounts since it's already exported from formatParticipantService
+
 // Define a useParticipantService hook for backward compatibility
 export const useParticipantService = () => {
   // This is a simplified version for compatibility
