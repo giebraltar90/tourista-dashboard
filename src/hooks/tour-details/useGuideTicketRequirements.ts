@@ -1,6 +1,6 @@
 
 import { useMemo } from "react";
-import { calculateCompleteTicketRequirements } from "./services/ticket-calculation";
+import { calculateCompleteTicketRequirements } from "./services/ticket-calculation/core/completeCalculator";
 import { logger } from "@/utils/logger";
 
 /**

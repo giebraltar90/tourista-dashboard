@@ -20,6 +20,35 @@ export {
   calculateCompleteGuideTicketRequirements
 };
 
+// Add these two functions that are expected by importers
+export const calculateGuideTicketsNeeded = (
+  guide1Info: GuideInfo | null,
+  guide2Info: GuideInfo | null,
+  guide3Info: GuideInfo | null,
+  location: string = "",
+  tourGroups: any[] = []
+) => {
+  return calculateCompleteGuideTicketRequirements(
+    guide1Info,
+    guide2Info,
+    guide3Info,
+    location,
+    tourGroups
+  ).guideTickets;
+};
+
+export const getGuideTicketRequirement = (
+  guideInfo: GuideInfo | null | undefined,
+  location: string = ""
+): { needsTicket: boolean; ticketType: "adult" | "child" | null } => {
+  if (!guideInfo) return { needsTicket: false, ticketType: null };
+  
+  const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
+  const ticketType = determineTicketTypeForGuide(guideInfo);
+  
+  return { needsTicket, ticketType };
+};
+
 // Add any additional ticket calculation utilities specific to group management here
 export function calculateTicketsForGroup(
   groupData: any,
@@ -45,10 +74,11 @@ export function calculateTicketsForGroup(
     }
   }
   
-  return calculateCompleteGuideTicketRequirements(
+  return {
     participantAdultCount,
     participantChildCount,
     guideAdultTickets,
-    guideChildTickets
-  );
+    guideChildTickets,
+    totalTicketsRequired: participantAdultCount + participantChildCount + guideAdultTickets + guideChildTickets
+  };
 }
