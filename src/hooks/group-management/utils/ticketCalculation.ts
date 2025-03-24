@@ -6,7 +6,7 @@ import {
   determineTicketTypeForGuide,
   findAssignedGuides,
   processGuideTicketRequirement,
-  calculateCompleteGuideTicketRequirements
+  calculateCompleteTicketRequirements as coreCalculateCompleteTicketRequirements
 } from "@/hooks/tour-details/services/ticket-calculation";
 import { TicketRequirements } from "@/hooks/tour-details/types";
 
@@ -16,9 +16,11 @@ export {
   guideTypeNeedsTicket,
   determineTicketTypeForGuide,
   findAssignedGuides,
-  processGuideTicketRequirement,
-  calculateCompleteGuideTicketRequirements
+  processGuideTicketRequirement
 };
+
+// Export our renamed function with the correct signature
+export const calculateCompleteGuideTicketRequirements = coreCalculateCompleteTicketRequirements;
 
 // Add these two functions that are expected by importers
 export const calculateGuideTicketsNeeded = (
@@ -28,13 +30,16 @@ export const calculateGuideTicketsNeeded = (
   location: string = "",
   tourGroups: any[] = []
 ) => {
-  return calculateCompleteGuideTicketRequirements(
+  // Import the actual function from the core implementation
+  const result = coreCalculateCompleteTicketRequirements(
     guide1Info,
     guide2Info,
     guide3Info,
     location,
     tourGroups
-  ).guideTickets;
+  );
+  
+  return result.guideTickets;
 };
 
 export const getGuideTicketRequirement = (
