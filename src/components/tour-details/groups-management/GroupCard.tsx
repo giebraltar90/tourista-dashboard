@@ -89,7 +89,8 @@ export const GroupCard = ({
     groupId: group.id,
     groupName: group.displayName || group.name || `Group ${groupIndex + 1}`,
     guideName,
-    participantsLength: Array.isArray(group.participants) ? group.participants.length : 0
+    participantsLength: Array.isArray(group.participants) ? group.participants.length : 0,
+    displayParticipants
   });
 
   // Render the container component with all props

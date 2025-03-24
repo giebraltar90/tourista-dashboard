@@ -136,5 +136,5 @@ export const formatParticipantCount = (
   }
   
   const adultCount = totalCount - childCount;
-  return `${adultCount} + ${childCount}`;
+  return `${adultCount}+${childCount}`;
 };

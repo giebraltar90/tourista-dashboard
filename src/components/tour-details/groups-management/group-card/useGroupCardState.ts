@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { VentrataParticipant } from "@/types/ventrata";
 import { EventEmitter } from "@/utils/eventEmitter";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService/formatParticipantService";
 
 export const useGroupCardState = (
   initialParticipants: VentrataParticipant[] | undefined,
@@ -62,10 +63,12 @@ export const useGroupCardState = (
   
   const adultCount = totalParticipants - childCount;
   
-  // For display: prefer calculated values over initial values
-  const displayParticipants = totalParticipants > 0 
-    ? totalParticipants 
-    : (initialSize || 0);
+  // For display: prefer calculated values over initial values and format using our standard function
+  const calculatedTotal = totalParticipants > 0 ? totalParticipants : (initialSize || 0);
+  const calculatedChildCount = childCount > 0 ? childCount : (initialChildCount || 0);
+  
+  // Format the display string in our standard format: "adult + child"
+  const displayParticipants: string = formatParticipantCount(calculatedTotal, calculatedChildCount);
   
   return {
     isExpanded,
