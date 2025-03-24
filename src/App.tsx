@@ -1,5 +1,5 @@
 
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import ToursPage from "@/pages/ToursPage";
 import TourDetailsPage from "@/pages/tour-details/TourDetailsPage";
@@ -28,15 +28,14 @@ function App() {
   return (
     <RoleProvider>
       <ErrorBoundary FallbackComponent={ErrorFallback}>
-        <Router>
-          <Routes>
-            <Route path="/tours" element={<ToursPage />} />
-            <Route path="/tours/:id" element={<TourDetailsPage />} />
-            <Route path="/" element={<Navigate to="/tours" replace />} />
-          </Routes>
-          <Toaster />
-          {process.env.NODE_ENV !== 'production' && <DebugDisplay />}
-        </Router>
+        {/* Removed the nested Router here */}
+        <Routes>
+          <Route path="/tours" element={<ToursPage />} />
+          <Route path="/tours/:id" element={<TourDetailsPage />} />
+          <Route path="/" element={<Navigate to="/tours" replace />} />
+        </Routes>
+        <Toaster />
+        {process.env.NODE_ENV !== 'production' && <DebugDisplay />}
       </ErrorBoundary>
     </RoleProvider>
   );
