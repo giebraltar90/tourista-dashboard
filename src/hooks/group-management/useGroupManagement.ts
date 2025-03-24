@@ -34,13 +34,8 @@ export const useGroupManagement = (tour: TourCardProps) => {
   const {
     loadParticipants,
     refreshParticipants,
-    isLoadingParticipants
-  } = useParticipantRefresh(
-    tour.id, 
-    localTourGroups, 
-    setLocalTourGroups, 
-    recalculateGroupSizes
-  );
+    isLoading: isLoadingParticipants
+  } = useParticipantRefresh(tour.id);
   
   // Get participant operations capabilities
   const {

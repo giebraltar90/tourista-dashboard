@@ -13,7 +13,12 @@ let pendingOperations = 0;
 /**
  * Hook for refreshing participant data with improved error handling
  */
-export const useParticipantRefresh = (tourId: string) => {
+export const useParticipantRefresh = (
+  tourId: string,
+  localTourGroups?: VentrataTourGroup[],
+  setLocalTourGroups?: (groups: VentrataTourGroup[]) => void,
+  recalculateGroupSizes?: () => void
+) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
@@ -22,7 +27,7 @@ export const useParticipantRefresh = (tourId: string) => {
   const [isToastActive, setIsToastActive] = useState(false);
   
   // Function to load participants with retries and better error handling
-  const loadParticipants = useCallback(async (groupIds: string[]) => {
+  const loadParticipants = useCallback(async (tourIdOrGroupIds: string | string[]) => {
     try {
       if (pendingOperations >= MAX_CONCURRENT_OPERATIONS) {
         console.warn("Too many concurrent operations, delaying participant load");
@@ -30,6 +35,32 @@ export const useParticipantRefresh = (tourId: string) => {
       }
       
       pendingOperations++;
+      
+      // Handle both string tourId and string[] groupIds
+      let groupIds: string[] = [];
+      
+      if (typeof tourIdOrGroupIds === 'string') {
+        // It's a tourId, fetch the groups first
+        const { data: groups, error: groupsError } = await supabase
+          .from('tour_groups')
+          .select('id')
+          .eq('tour_id', tourIdOrGroupIds);
+          
+        if (groupsError) {
+          console.error("DATABASE DEBUG: Failed to fetch groups for tour:", groupsError);
+          throw groupsError;
+        }
+        
+        groupIds = groups?.map(g => g.id) || [];
+      } else {
+        // It's already an array of groupIds
+        groupIds = tourIdOrGroupIds;
+      }
+      
+      if (groupIds.length === 0) {
+        console.log("DATABASE DEBUG: No groups to fetch participants for");
+        return [];
+      }
       
       // Use retry mechanism for better reliability
       const result = await supabaseWithRetry(async () => {

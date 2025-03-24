@@ -67,7 +67,26 @@ export const GroupsManagement = ({
     if (tourId) {
       console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
       // Load participants with the tour ID
-      loadParticipants(tourId); 
+      // We need to fetch the group IDs first since loadParticipants expects an array of groupIds or a tourId
+      const fetchGroups = async () => {
+        try {
+          const { data: groups } = await supabase
+            .from('tour_groups')
+            .select('id')
+            .eq('tour_id', tourId);
+            
+          if (groups && groups.length > 0) {
+            const groupIds = groups.map(g => g.id);
+            await loadParticipants(groupIds);
+          } else {
+            console.log("No groups found for this tour");
+          }
+        } catch (err) {
+          console.error("Error fetching groups for loadParticipants:", err);
+        }
+      };
+      
+      fetchGroups();
     }
   }, [tourId, loadParticipants]);
 
@@ -157,3 +176,6 @@ export const GroupsManagement = ({
     </Card>
   );
 };
+
+// Add missing import
+import { supabase } from "@/integrations/supabase/client";

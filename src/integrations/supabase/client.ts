@@ -11,7 +11,7 @@ export const supabase = createSupabaseClient(
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(60000), // Increase timeout to 60 seconds for better reliability
+          signal: AbortSignal.timeout(15000), // Reduced timeout to 15 seconds for faster failure
         });
       },
     },
@@ -74,21 +74,40 @@ export const checkDatabaseConnection = async () => {
 };
 
 // Create a utility for Supabase retries with exponential backoff
-export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = 5) => {
+export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = 2) => {
   let lastError;
+  
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       // Add delay before retries (except the first attempt)
       if (attempt > 0) {
-        const delay = Math.min(500 * Math.pow(2, attempt), 8000) + Math.random() * 500;
+        const delay = Math.min(200 * Math.pow(1.5, attempt), 2000) + Math.random() * 200;
         console.log(`Retry attempt ${attempt+1}/${maxRetries} after ${delay.toFixed(0)}ms delay`);
         await new Promise(resolve => setTimeout(resolve, delay));
       }
       
-      return await operation();
+      const result = await operation();
+      
+      // If operation result indicates we shouldn't retry (e.g., a check returned {recoverable: false})
+      if (result && typeof result === 'object' && result.recoverable === false) {
+        console.log("Operation returned non-recoverable result, no more retries");
+        return result;
+      }
+      
+      return result;
     } catch (error) {
       console.error(`Supabase operation failed (attempt ${attempt + 1}/${maxRetries}):`, error);
       lastError = error;
+      
+      // Break early for some types of errors that won't be fixed by retrying
+      // For example, permission issues or syntax errors
+      if (error && typeof error === 'object') {
+        // Check if error is not a timeout or network error
+        if (error.code && !['23', '20'].includes(error.code)) {
+          console.log(`Error code ${error.code} indicates non-recoverable error, stopping retries`);
+          break;
+        }
+      }
     }
   }
   
