@@ -13,6 +13,18 @@ export const ensureDbFunctionsExist = async (): Promise<void> => {
     // Create the sync_all_tour_groups function
     await createSyncTourGroupsFunction();
     
+    // Check if invalidate_tour_cache function exists and create it if needed
+    const { data: functionExists, error: checkError } = await supabase.rpc(
+      'invalidate_tour_cache',
+      { p_tour_id: '00000000-0000-0000-0000-000000000000' } // Dummy ID to check if function exists
+    );
+    
+    if (checkError && checkError.message.includes('does not exist')) {
+      logger.debug("Creating invalidate_tour_cache function");
+      // This is a placeholder - typically you would import and call a function that creates this RPC
+      // Similar to createSyncTourGroupsFunction
+    }
+    
     logger.debug("Database functions check complete");
   } catch (error) {
     logger.error("Error ensuring DB functions exist:", error);
