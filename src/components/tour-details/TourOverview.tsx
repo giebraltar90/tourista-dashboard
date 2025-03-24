@@ -59,7 +59,8 @@ export const TourOverview = ({
 
       {/* Tour groups section */}
       <TourGroupsSection 
-        tour={tour}
+        tourGroups={tourGroups}
+        tourId={tour.id}
         isHighSeason={isHighSeason}
         guide1Info={guide1Info}
         guide2Info={guide2Info}

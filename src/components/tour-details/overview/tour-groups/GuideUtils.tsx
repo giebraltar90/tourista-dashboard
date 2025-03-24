@@ -19,7 +19,7 @@ export const getGuideNameAndInfo = (guides: Guide[], guideId?: string): { name: 
       info: {
         guideType: guide.guide_type,
         // Safely handle potentially null birthday
-        birthday: guide.birthday ? new Date(guide.birthday) : new Date()
+        birthday: guide.birthday ? new Date(guide.birthday) : null
       }
     };
   }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuideInfo } from "@/types/ventrata";
@@ -11,7 +10,8 @@ import { logger } from "@/utils/logger";
 import { GuideType } from "@/types/ventrata";
 
 interface TourGroupsSectionProps {
-  tour: TourCardProps;
+  tourGroups: any[];
+  tourId: string;
   isHighSeason: boolean;
   guide1Info?: GuideInfo | null;
   guide2Info?: GuideInfo | null;
@@ -19,7 +19,8 @@ interface TourGroupsSectionProps {
 }
 
 export const TourGroupsSection = ({ 
-  tour, 
+  tourGroups, 
+  tourId,
   isHighSeason,
   guide1Info = null, 
   guide2Info = null, 
@@ -34,12 +35,12 @@ export const TourGroupsSection = ({
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(-1);
   
   // Ensure we have tour groups
-  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
+  const tourGroups = Array.isArray(tourGroups) ? tourGroups : [];
   
   // Log group data for debugging
   useEffect(() => {
     logger.debug("TourGroupsSection: Tour groups data", {
-      tourId: tour.id,
+      tourId: tourId,
       groupCount: tourGroups.length,
       groups: tourGroups.map((g, i) => ({
         index: i,
@@ -48,7 +49,7 @@ export const TourGroupsSection = ({
         guideId: g.guideId || 'none'
       }))
     });
-  }, [tour.id, tourGroups]);
+  }, [tourId, tourGroups]);
   
   const toggleGroupExpanded = (groupId: string) => {
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
@@ -91,52 +92,6 @@ export const TourGroupsSection = ({
     };
   });
   
-  // Add special guides if they exist in the tour
-  if (tour.guide1 && !validGuides.some(g => g.id === tour.guide1)) {
-    validGuides.push({
-      id: "guide1",
-      name: tour.guide1,
-      guide_type: guide1Info?.guideType || "GA Ticket",
-      birthday: guide1Info?.birthday ? guide1Info.birthday.toISOString() : "",
-      guideType: guide1Info?.guideType || "GA Ticket",
-      info: {
-        name: tour.guide1,
-        birthday: guide1Info?.birthday || new Date(),
-        guideType: (guide1Info?.guideType || "GA Ticket") as GuideType
-      }
-    });
-  }
-  
-  if (tour.guide2 && !validGuides.some(g => g.id === tour.guide2)) {
-    validGuides.push({
-      id: "guide2",
-      name: tour.guide2,
-      guide_type: guide2Info?.guideType || "GA Ticket",
-      birthday: guide2Info?.birthday ? guide2Info.birthday.toISOString() : "",
-      guideType: guide2Info?.guideType || "GA Ticket",
-      info: {
-        name: tour.guide2,
-        birthday: guide2Info?.birthday || new Date(),
-        guideType: (guide2Info?.guideType || "GA Ticket") as GuideType
-      }
-    });
-  }
-  
-  if (tour.guide3 && !validGuides.some(g => g.id === tour.guide3)) {
-    validGuides.push({
-      id: "guide3",
-      name: tour.guide3,
-      guide_type: guide3Info?.guideType || "GA Ticket",
-      birthday: guide3Info?.birthday ? guide3Info.birthday.toISOString() : "",
-      guideType: guide3Info?.guideType || "GA Ticket",
-      info: {
-        name: tour.guide3,
-        birthday: guide3Info?.birthday || new Date(),
-        guideType: (guide3Info?.guideType || "GA Ticket") as GuideType
-      }
-    });
-  }
-
   return (
     <Card>
       <CardHeader>
@@ -196,7 +151,7 @@ export const TourGroupsSection = ({
           <AssignGuideDialog
             isOpen={isAssignGuideOpen}
             onOpenChange={setIsAssignGuideOpen}
-            tourId={tour.id}
+            tourId={tourId}
             groupIndex={selectedGroupIndex}
             guides={validGuides}
             currentGuideId={tourGroups[selectedGroupIndex].guideId}

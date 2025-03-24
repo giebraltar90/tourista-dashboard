@@ -72,15 +72,12 @@ export const GroupDialogsContainer = ({
           isOpen={isDialogOpen}
           onOpenChange={(open) => {
             if (!open) closeDialog();
+            // Don't call onSuccess here as it doesn't exist on the component
           }}
           tourId={tour.id}
           groupIndex={selectedGroupIndex}
           guides={guides}
           currentGuideId={currentGuideId}
-          onSuccess={() => {
-            closeDialog();
-            if (onGuideAssigned) onGuideAssigned();
-          }}
         />
       );
     } else if (dialogType === 'editGroup' && currentGroup) {

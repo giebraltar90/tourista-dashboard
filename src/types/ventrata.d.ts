@@ -40,3 +40,11 @@ export interface GuideInfo {
   guideType: GuideType;
 }
 
+// Add Guide interface that was missing
+export interface Guide {
+  id: string;
+  name: string;
+  guide_type?: string;
+  birthday?: string | Date | null;
+  guideType?: string;
+}
