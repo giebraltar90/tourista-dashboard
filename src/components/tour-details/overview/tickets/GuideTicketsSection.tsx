@@ -20,12 +20,15 @@ export const GuideTicketsSection = ({
   adultTickets,
   childTickets
 }: GuideTicketsSectionProps) => {
-  // Log the input props for debugging
+  // Always ensure we have a valid guides array
+  const validGuides = Array.isArray(guides) ? guides : [];
+  
+  // Log guide tickets for debugging
   logger.debug(`🎟️ [GuideTicketsSection] Rendering with:`, {
     adultTickets,
     childTickets,
-    guidesWithTicketsCount: guides.length,
-    guidesDetail: guides.map(g => ({
+    guidesWithTicketsCount: validGuides.length,
+    guidesDetail: validGuides.map(g => ({
       name: g.guideName,
       type: g.guideType,
       ticketType: g.ticketType
@@ -59,10 +62,8 @@ export const GuideTicketsSection = ({
         </div>
       )}
       
-      {/* Show guide details if there are any */}
-      {guides.length > 0 && (
-        <GuideTicketsList guides={guides} />
-      )}
+      {/* Always show GuideTicketsList, which handles empty case internally */}
+      <GuideTicketsList guides={validGuides} />
     </div>
   );
 };

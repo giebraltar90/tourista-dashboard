@@ -1,6 +1,4 @@
 
-import { logger } from "@/utils/logger";
-
 /**
  * Count tickets by type from guide requirements
  */
@@ -9,38 +7,28 @@ export const countTicketsByType = (
     needsTicket: boolean;
     ticketType: "adult" | "child" | null;
   }>
-): { adultTickets: number; childTickets: number; totalTickets: number } => {
+): { adultTickets: number; childTickets: number } => {
+  // Initialize counters
   let adultTickets = 0;
   let childTickets = 0;
   
+  // Count tickets by type
   guidesWithRequirements.forEach(guide => {
-    if (guide.needsTicket) {
-      if (guide.ticketType === 'adult') adultTickets++;
-      else if (guide.ticketType === 'child') childTickets++;
+    if (guide.needsTicket && guide.ticketType === "adult") {
+      adultTickets++;
+    } else if (guide.needsTicket && guide.ticketType === "child") {
+      childTickets++;
     }
   });
   
-  const total = adultTickets + childTickets;
-  
-  logger.debug(`🎟️ [TicketAggregation] Counted tickets:`, {
-    adultTickets,
-    childTickets,
-    totalTickets: total
-  });
-  
-  return {
-    adultTickets,
-    childTickets,
-    totalTickets: total
-  };
+  return { adultTickets, childTickets };
 };
 
 /**
- * Map guide requirement objects to the guides array format
- * used in the ticket calculation result
+ * Map guides to result format
  */
 export const mapGuidesToResultFormat = (
-  guideRequirements: Array<{
+  guideResults: Array<{
     guideName: string;
     guideType: string;
     needsTicket: boolean;
@@ -51,9 +39,10 @@ export const mapGuidesToResultFormat = (
   guideType: string;
   ticketType: "adult" | "child" | null;
 }> => {
-  return guideRequirements.map(guide => ({
+  return guideResults.map(guide => ({
     guideName: guide.guideName,
-    guideType: guide.guideType || "Unknown",
-    ticketType: guide.ticketType
+    guideType: guide.guideType,
+    // Only set ticketType if guide needs a ticket
+    ticketType: guide.needsTicket ? guide.ticketType : null
   }));
 };
