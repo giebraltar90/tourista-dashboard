@@ -68,7 +68,9 @@ export const useGuideNameInfo = (
           name: matchingGuide.name,
           info: {
             name: matchingGuide.name,
-            birthday: new Date(matchingGuide.birthday || new Date()),
+            birthday: typeof matchingGuide.birthday === 'string' 
+              ? new Date(matchingGuide.birthday) 
+              : (matchingGuide.birthday || new Date()),
             guideType: matchingGuide.guide_type as any || "GA Ticket"
           }
         };

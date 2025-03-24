@@ -5,6 +5,7 @@ import { InformationCardsSection } from "./overview/InformationCardsSection";
 import { GroupsManagement } from "./groups-management";
 import { GuideInfo } from "@/types/ventrata";
 import { useParticipantCountsSync } from "@/hooks/tour-details/useParticipantCountsSync";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TourOverviewProps {
   tour: TourCardProps;
@@ -39,6 +40,43 @@ export const TourOverview = ({
 
   return (
     <div className="space-y-8">
+      {/* Tour Details Overview Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tour Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Reference Code</h3>
+              <p className="font-medium">{tour.referenceCode || 'N/A'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Tour Type</h3>
+              <p className="font-medium capitalize">{tour.tourType || 'Standard'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Location</h3>
+              <p className="font-medium">{tour.location || 'N/A'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Start Time</h3>
+              <p className="font-medium">{tour.startTime || 'N/A'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Season Status</h3>
+              <p className="font-medium">{isHighSeason ? 'High Season' : 'Standard Season'}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Total Participants</h3>
+              <p className="font-medium">{participantCounts.totalParticipants || 0} 
+                ({participantCounts.totalChildCount || 0} children)
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
       <InformationCardsSection 
         tour={tour} 
         tourGroups={tourGroups}

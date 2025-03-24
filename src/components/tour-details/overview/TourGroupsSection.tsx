@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuideInfo } from "@/types/ventrata";
@@ -62,10 +63,9 @@ export const TourGroupsSection = ({
   const validGuides = guides.map(guide => ({
     id: guide.id,
     name: guide.name,
-    info: {
-      ...guide,
-      guideType: guide.guide_type
-    }
+    guide_type: guide.guide_type,
+    birthday: guide.birthday || "",  // Convert Date to string if needed
+    guideType: guide.guide_type  // Add for backward compatibility
   }));
   
   // Add special guides if they exist in the tour
@@ -73,11 +73,9 @@ export const TourGroupsSection = ({
     validGuides.push({
       id: "guide1",
       name: tour.guide1,
-      info: guide1Info ? {
-        ...guide1Info,
-        id: guide1Info.id || "guide1",
-        guide_type: guide1Info.guideType
-      } : null
+      guide_type: guide1Info?.guideType || "GA Ticket",
+      birthday: guide1Info?.birthday ? guide1Info.birthday.toString() : "",
+      guideType: guide1Info?.guideType || "GA Ticket"
     });
   }
   
@@ -85,11 +83,9 @@ export const TourGroupsSection = ({
     validGuides.push({
       id: "guide2",
       name: tour.guide2,
-      info: guide2Info ? {
-        ...guide2Info,
-        id: guide2Info.id || "guide2",
-        guide_type: guide2Info.guideType
-      } : null
+      guide_type: guide2Info?.guideType || "GA Ticket",
+      birthday: guide2Info?.birthday ? guide2Info.birthday.toString() : "",
+      guideType: guide2Info?.guideType || "GA Ticket"
     });
   }
   
@@ -97,11 +93,9 @@ export const TourGroupsSection = ({
     validGuides.push({
       id: "guide3",
       name: tour.guide3,
-      info: guide3Info ? {
-        ...guide3Info,
-        id: guide3Info.id || "guide3",
-        guide_type: guide3Info.guideType
-      } : null
+      guide_type: guide3Info?.guideType || "GA Ticket",
+      birthday: guide3Info?.birthday ? guide3Info.birthday.toString() : "",
+      guideType: guide3Info?.guideType || "GA Ticket"
     });
   }
 
