@@ -1,4 +1,3 @@
-
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
 
@@ -25,19 +24,35 @@ export const doesGuideNeedTicket = (
 };
 
 // Function to check if a location requires guide tickets
-export const doesLocationRequireGuideTickets = (location: string): boolean => {
+export function doesLocationRequireGuideTickets(location: string): boolean {
   const locationsRequiringTickets = ['Versailles', 'Louvre', 'Disneyland', 'Eiffel Tower'];
   return locationsRequiringTickets.includes(location);
-};
+}
+
+// Function to determine if a guide needs a ticket based on type
+export function needsTicketForGuideType(guideType: string): boolean {
+  return guideType === 'staff' || guideType === 'contractor';
+}
+
+// Function to determine the ticket type for a guide
+export function determineTicketType(guide: GuideInfo | null | undefined): "adult" | "child" | null {
+  if (!guide) return null;
+  
+  if (needsTicketForGuideType(guide.guideType)) {
+    return "adult"; // Default to adult tickets for guides
+  }
+  
+  return null;
+}
 
 // Comprehensive ticket calculation function
-export const calculateCompleteTicketRequirements = (
+export function calculateCompleteTicketRequirements(
   guide1Info: GuideInfo | null, 
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null,
   location: string,
   tourGroups: any[] = []
-) => {
+): TicketRequirements {
   // Check if any guides are assigned
   const hasAssignedGuides = !!(guide1Info || guide2Info || guide3Info);
   
@@ -136,4 +151,4 @@ export const calculateCompleteTicketRequirements = (
       guides: guidesWithTickets
     }
   };
-};
+}

@@ -3,47 +3,38 @@ import { Navigate } from "react-router-dom";
 import { useRole } from "@/contexts/RoleContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { User, Mail, Phone, Calendar, MapPin, Clock } from "lucide-react";
 import { useGuideTours } from "@/hooks/guides/useGuideTours";
-import { useGuideInfo } from "@/hooks/guides/useGuideInfo";
-import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, IdCard } from "lucide-react";
 
 const GuideProfile = () => {
   const { role, guideView } = useRole();
   const { guideName = "" } = useGuideTours();
-  const { data: guideInfo } = useGuideInfo(guideName);
   
   // If accessed directly as an operator without guide view, redirect to main dashboard
   if (role === "operator" && !guideView) {
     return <Navigate to="/" replace />;
   }
   
-  const initials = guideName
-    .split(' ')
-    .map(name => name[0])
-    .join('')
-    .toUpperCase();
+  // For demo purposes, we'll create some mock data
+  const guideInfo = {
+    name: guideName,
+    email: `${guideName.toLowerCase().replace(/\s+/g, '.')}@example.com`,
+    phone: "+33 6 12 34 56 78",
+    location: "Paris, France",
+    joinDate: "January 2022",
+    guideType: "Staff Guide",
+    languages: ["English", "French", "Spanish"],
+    specialties: ["City Tours", "Museum Tours", "Food Tours"]
+  };
   
-  // Function to determine guide type badge color
-  const getGuideTypeBadgeColor = () => {
-    if (!guideInfo) return "bg-gray-100 text-gray-800";
-    
-    switch (guideInfo.guideType) {
-      case "GA Ticket":
-        return "bg-blue-100 text-blue-800 border-blue-300";
-      case "GA Free":
-        return "bg-green-100 text-green-800 border-green-300";
-      case "GC":
-        return "bg-purple-100 text-purple-800 border-purple-300";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(name => name[0])
+      .join('')
+      .toUpperCase();
   };
   
   return (
@@ -52,115 +43,100 @@ const GuideProfile = () => {
         <div className="flex flex-col gap-2">
           <h1 className="text-2xl font-bold">Guide Profile</h1>
           <p className="text-muted-foreground">
-            View and manage your guide profile
+            Your profile and account information
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-1">
+        <div className="grid gap-6 md:grid-cols-2">
+          <Card>
             <CardHeader>
-              <CardTitle>Profile Info</CardTitle>
+              <CardTitle>Personal Information</CardTitle>
             </CardHeader>
-            <CardContent className="flex flex-col items-center">
-              <Avatar className="h-24 w-24 mb-4">
-                <AvatarFallback className="text-xl">{initials}</AvatarFallback>
-              </Avatar>
+            <CardContent className="space-y-6">
+              <div className="flex items-center space-x-4">
+                <Avatar className="h-20 w-20">
+                  <AvatarFallback className="text-xl bg-primary text-primary-foreground">
+                    {getInitials(guideInfo.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-medium">{guideInfo.name}</h3>
+                  <p className="text-primary">{guideInfo.guideType}</p>
+                </div>
+              </div>
               
-              <h2 className="text-xl font-semibold">{guideName}</h2>
-              <p className="text-muted-foreground mb-2">Tour Guide</p>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 text-sm">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <span>{guideInfo.email}</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <Phone className="h-4 w-4 text-muted-foreground" />
+                  <span>{guideInfo.phone}</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <MapPin className="h-4 w-4 text-muted-foreground" />
+                  <span>{guideInfo.location}</span>
+                </div>
+                <div className="flex items-center space-x-3 text-sm">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span>Joined {guideInfo.joinDate}</span>
+                </div>
+              </div>
               
-              {guideInfo && (
-                <Badge variant="outline" className={`${getGuideTypeBadgeColor()} mt-1 mb-3`}>
-                  <IdCard className="h-3.5 w-3.5 mr-1.5" />
-                  {guideInfo.guideType}
-                </Badge>
-              )}
-              
-              <Button variant="outline" size="sm" className="mt-2">
-                Update Profile Picture
+              <Button variant="outline" className="w-full">
+                <User className="h-4 w-4 mr-2" />
+                Edit Profile
               </Button>
             </CardContent>
           </Card>
           
-          <Card className="md:col-span-2">
+          <Card>
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
+              <CardTitle>Skills & Expertise</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input id="name" value={guideName} readOnly />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input id="email" value={`${guideName.toLowerCase().replace(' ', '.')}@boutiquetours.com`} readOnly />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <Input id="phone" value="+1 (555) 123-4567" readOnly />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="birthday">Birthday</Label>
-                  <div className="flex items-center">
-                    <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="birthday" 
-                      value={guideInfo?.birthday ? format(guideInfo.birthday, 'MMMM d, yyyy') : 'N/A'} 
-                      readOnly 
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="language">Primary Language</Label>
-                  <Input id="language" value="English" readOnly />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="guideType">Guide Type</Label>
-                  <div className="flex items-center">
-                    <IdCard className="mr-2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="guideType" 
-                      value={guideInfo?.guideType || 'N/A'} 
-                      readOnly 
-                    />
-                  </div>
+            <CardContent className="space-y-6">
+              <div>
+                <h3 className="text-sm font-medium mb-2">Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {guideInfo.languages.map(language => (
+                    <span 
+                      key={language} 
+                      className="px-2.5 py-0.5 rounded-full text-xs bg-primary/10 text-primary"
+                    >
+                      {language}
+                    </span>
+                  ))}
                 </div>
               </div>
               
-              <Separator />
-              
-              <div className="space-y-2">
-                <Label htmlFor="specializations">Specializations</Label>
-                <Input id="specializations" value="City Tours, Historical Sites, Cultural Experiences" readOnly />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="certifications">Certifications</Label>
-                <Input id="certifications" value="Licensed City Guide, First Aid Certified" readOnly />
-              </div>
-              
-              {guideInfo && (
-                <div className="mt-4">
-                  <h3 className="text-sm font-medium mb-2">Guide Type Information</h3>
-                  <div className="bg-secondary/20 p-3 rounded-md text-sm">
-                    {guideInfo.guideType === "GA Ticket" && (
-                      <p>Over 26 years old, requires an adult ticket for Versailles tours, cannot guide inside.</p>
-                    )}
-                    {guideInfo.guideType === "GA Free" && (
-                      <p>Under 26 years old, requires a child's ticket for Versailles tours, cannot guide inside.</p>
-                    )}
-                    {guideInfo.guideType === "GC" && (
-                      <p>Can guide inside Versailles, no ticket needed.</p>
-                    )}
-                  </div>
+              <div>
+                <h3 className="text-sm font-medium mb-2">Specialties</h3>
+                <div className="flex flex-wrap gap-2">
+                  {guideInfo.specialties.map(specialty => (
+                    <span 
+                      key={specialty} 
+                      className="px-2.5 py-0.5 rounded-full text-xs bg-muted text-muted-foreground"
+                    >
+                      {specialty}
+                    </span>
+                  ))}
                 </div>
-              )}
+              </div>
+              
+              <div>
+                <h3 className="text-sm font-medium mb-2">Availability</h3>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm">
+                    Managing your tour schedule
+                  </span>
+                </div>
+                <Button variant="outline" className="w-full mt-4">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Update Availability
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

@@ -1,21 +1,31 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
+export type GuideViewType = {
+  type: string;
+  guideName: string;
+} | null;
+
 interface RoleContextType {
-  guideView: boolean;
-  setGuideView: (value: boolean) => void;
+  guideView: GuideViewType;
+  setGuideView: (value: GuideViewType) => void;
+  role?: string;
+  setRole?: (value: string) => void;
 }
 
 const RoleContext = createContext<RoleContextType>({
-  guideView: false,
-  setGuideView: () => {}
+  guideView: null,
+  setGuideView: () => {},
+  role: "operator",
+  setRole: () => {}
 });
 
 export const RoleProvider = ({ children }: { children: ReactNode }) => {
-  const [guideView, setGuideView] = useState(false);
+  const [guideView, setGuideView] = useState<GuideViewType>(null);
+  const [role, setRole] = useState<string>("operator");
   
   return (
-    <RoleContext.Provider value={{ guideView, setGuideView }}>
+    <RoleContext.Provider value={{ guideView, setGuideView, role, setRole }}>
       {children}
     </RoleContext.Provider>
   );
