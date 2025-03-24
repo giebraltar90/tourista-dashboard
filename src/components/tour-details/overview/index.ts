@@ -3,7 +3,6 @@ export * from './TourInformationCard';
 export * from './ParticipantsCard';
 export * from './TicketsCard';
 export * from './TourGroupGuide';
-export * from './TourGroupsSection';
 export * from './GuideAssignmentDisplay';
 export * from './GuideBadge';
 export * from './GuideSelectionPopover';
@@ -13,4 +12,5 @@ export * from './assign-guide/AssignGuideProvider';
 export * from './InformationCardsSection';
 export * from './TourDetailsCard';
 export * from './tickets';
+export * from './tour-groups';
 

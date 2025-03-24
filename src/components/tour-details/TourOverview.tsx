@@ -1,9 +1,9 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { TourGroupsSection } from "./overview/TourGroupsSection";
 import { GuideInfo } from "@/types/ventrata";
 import { TourDetailsCard } from "./overview/TourDetailsCard";
 import { InformationCardsSection } from "./overview/InformationCardsSection";
+import { TourGroupsSection } from "./overview/tour-groups/TourGroupsSection";
 import { GroupsManagement } from "./groups-management/GroupsManagement";
 
 interface TourOverviewProps {
