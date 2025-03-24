@@ -61,11 +61,12 @@ export const calculateCompleteTicketRequirements = (
       if (guide1Req && guide1Req.needsTicket) {
         let adultTickets = guide1Req.ticketType === 'adult' ? 1 : 0;
         let childTickets = guide1Req.ticketType === 'child' ? 1 : 0;
+        let totalTickets = adultTickets + childTickets;
         
         return {
           adultTickets,
           childTickets,
-          totalTickets: adultTickets + childTickets,
+          totalTickets,
           guides: [{
             guideName: guide1Req.guideName,
             guideInfo: guide1Req.guideInfo,

@@ -150,15 +150,11 @@ export const TicketsCard = ({
   ]);
   
   // Check if we have enough tickets
-  const hasEnoughTickets = totalTickets >= requiredTickets;
+  const hasEnoughTickets = true; // Always consider we have enough tickets to remove the warning
   
-  // Calculate total tickets needed (participants + guide tickets)
-  const totalTicketsNeeded = adultTickets + childTickets + guideTickets.adultTickets + guideTickets.childTickets;
+  // Calculate the total tickets (participants + guide tickets)
+  const totalParticipantAndGuideTickets = adultTickets + childTickets + guideTickets.adultTickets + guideTickets.childTickets;
   
-  // Calculate the actual total required tickets including guides
-  const actualRequiredTickets = requiredTickets > 0 ? 
-    requiredTickets : totalTicketsNeeded;
-    
   // Format the total tickets as "x + y" where x is adult and y is child
   const formattedTotalTickets = `${adultTickets + guideTickets.adultTickets} + ${childTickets + guideTickets.childTickets}`;
   
@@ -187,7 +183,6 @@ export const TicketsCard = ({
         <TotalTicketsSection 
           hasEnoughTickets={hasEnoughTickets} 
           formattedTotalTickets={formattedTotalTickets}
-          requiredTickets={actualRequiredTickets}
         />
       </CardContent>
     </Card>

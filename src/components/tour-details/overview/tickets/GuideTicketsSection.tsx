@@ -5,6 +5,7 @@ import { GuideTicketsList } from "./GuideTicketsList";
 
 interface GuideWithTicket {
   guideName: string;
+  guideInfo: any; // Add this to match GuideTicketsList interface
   guideType: string;
   ticketType: "adult" | "child" | null;
 }
