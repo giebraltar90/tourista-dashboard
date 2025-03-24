@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
 import { createSyncTourGroupsFunction } from './db/functions/createSyncTourGroupsFunction';
+import { createInvalidateCacheFunction } from './db/functions/createInvalidateCacheFunction';
 
 /**
  * Ensures all required database functions exist
@@ -21,12 +22,11 @@ export const ensureDbFunctionsExist = async (): Promise<void> => {
     
     if (checkError && checkError.message.includes('does not exist')) {
       logger.debug("Creating invalidate_tour_cache function");
-      // This is a placeholder - typically you would import and call a function that creates this RPC
-      // Similar to createSyncTourGroupsFunction
+      await createInvalidateCacheFunction();
     }
     
     logger.debug("Database functions check complete");
   } catch (error) {
     logger.error("Error ensuring DB functions exist:", error);
   }
-}
+};
