@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuideInfo } from "@/types/ventrata";
@@ -27,7 +28,7 @@ export const TourGroupsSection = ({
   guide3Info = null 
 }: TourGroupsSectionProps) => {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
-  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+  const { getGuideNameAndInfo } = useGuideNameInfo(tourId, guide1Info, guide2Info, guide3Info);
   const { guides = [] } = useGuideData();
   
   // State for guide assignment dialog
@@ -35,21 +36,21 @@ export const TourGroupsSection = ({
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(-1);
   
   // Ensure we have tour groups
-  const tourGroups = Array.isArray(tourGroups) ? tourGroups : [];
+  const validTourGroups = Array.isArray(tourGroups) ? tourGroups : [];
   
   // Log group data for debugging
   useEffect(() => {
     logger.debug("TourGroupsSection: Tour groups data", {
       tourId: tourId,
-      groupCount: tourGroups.length,
-      groups: tourGroups.map((g, i) => ({
+      groupCount: validTourGroups.length,
+      groups: validTourGroups.map((g, i) => ({
         index: i,
         id: g.id,
         name: g.name,
         guideId: g.guideId || 'none'
       }))
     });
-  }, [tourId, tourGroups]);
+  }, [tourId, validTourGroups]);
   
   const toggleGroupExpanded = (groupId: string) => {
     setExpandedGroup(expandedGroup === groupId ? null : groupId);
@@ -98,13 +99,13 @@ export const TourGroupsSection = ({
         <CardTitle>Tour Groups & Guides</CardTitle>
       </CardHeader>
       <CardContent>
-        {tourGroups.length === 0 ? (
+        {validTourGroups.length === 0 ? (
           <div className="text-center p-4 text-muted-foreground">
             No tour groups available
           </div>
         ) : (
           <div className="space-y-4">
-            {tourGroups.map((group, index) => {
+            {validTourGroups.map((group, index) => {
               const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
               const isExpanded = expandedGroup === group.id;
               
@@ -147,14 +148,14 @@ export const TourGroupsSection = ({
         )}
         
         {/* Guide Assignment Dialog */}
-        {isAssignGuideOpen && selectedGroupIndex >= 0 && tourGroups[selectedGroupIndex] && (
+        {isAssignGuideOpen && selectedGroupIndex >= 0 && validTourGroups[selectedGroupIndex] && (
           <AssignGuideDialog
             isOpen={isAssignGuideOpen}
             onOpenChange={setIsAssignGuideOpen}
             tourId={tourId}
             groupIndex={selectedGroupIndex}
             guides={validGuides}
-            currentGuideId={tourGroups[selectedGroupIndex].guideId}
+            currentGuideId={validTourGroups[selectedGroupIndex].guideId}
           />
         )}
       </CardContent>
