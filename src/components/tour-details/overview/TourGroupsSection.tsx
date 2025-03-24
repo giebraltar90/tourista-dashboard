@@ -1,19 +1,17 @@
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GuideInfo } from "@/types/ventrata";
+import { GuideInfo, VentrataTourGroup } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
 import { Button } from "@/components/ui/button";
 import { AssignGuideDialog } from "../groups-management/dialogs/AssignGuideDialog";
 import { useGuideData } from "@/hooks/guides/useGuideData";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { logger } from "@/utils/logger";
-import { GuideType } from "@/types/ventrata";
 
 interface TourGroupsSectionProps {
-  tourGroups: any[];
+  tourGroups: VentrataTourGroup[];
   tourId: string;
-  isHighSeason: boolean;
   guide1Info?: GuideInfo | null;
   guide2Info?: GuideInfo | null;
   guide3Info?: GuideInfo | null;
@@ -22,13 +20,14 @@ interface TourGroupsSectionProps {
 export const TourGroupsSection = ({ 
   tourGroups, 
   tourId,
-  isHighSeason,
   guide1Info = null, 
   guide2Info = null, 
   guide3Info = null 
 }: TourGroupsSectionProps) => {
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
-  const { getGuideNameAndInfo } = useGuideNameInfo(tourId, guide1Info, guide2Info, guide3Info);
+  // Create a minimal tour object with just the properties needed by useGuideNameInfo
+  const minimalTour: TourCardProps = { id: tourId, guide1: '', guide2: '', guide3: '' };
+  const { getGuideNameAndInfo } = useGuideNameInfo(minimalTour, guide1Info, guide2Info, guide3Info);
   const { guides = [] } = useGuideData();
   
   // State for guide assignment dialog

@@ -2,7 +2,7 @@
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo, GuideType } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
-import { useGuideData, Guide } from "@/hooks/guides/useGuideData";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 
 interface GuideNameAndInfo {
   name: string;

@@ -38,6 +38,7 @@ export interface GuideInfo {
   name: string;
   birthday: Date;
   guideType: GuideType;
+  id?: string; // Added id for reference
 }
 
 // Add Guide interface that was missing

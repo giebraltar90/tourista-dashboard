@@ -1,5 +1,5 @@
 
-import { Guide } from "@/types/ventrata";
+import { Guide, GuideInfo } from "@/types/ventrata";
 
 /**
  * Utility function to find and get guide name and info

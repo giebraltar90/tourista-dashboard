@@ -61,7 +61,6 @@ export const TourOverview = ({
       <TourGroupsSection 
         tourGroups={tourGroups}
         tourId={tour.id}
-        isHighSeason={isHighSeason}
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}
