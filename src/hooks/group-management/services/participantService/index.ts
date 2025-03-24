@@ -1,10 +1,13 @@
 
 // Export all utility functions from the participant service
-export * from './formatParticipantService';
 export * from './syncService';
 export * from './countingService';
 
-// Note: We don't re-export formatParticipantCounts since it's already exported from formatParticipantService
+// Selectively export from formatParticipantService to avoid duplicate export
+export { 
+  formatParticipantCount, 
+  formatParticipantCountShort 
+} from './formatParticipantService';
 
 // Define a useParticipantService hook for backward compatibility
 export const useParticipantService = () => {
