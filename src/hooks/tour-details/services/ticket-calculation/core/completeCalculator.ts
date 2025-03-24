@@ -104,6 +104,7 @@ export const calculateCompleteTicketRequirements = (
   ].filter(g => g.needsTicket).map(g => ({
     guideName: g.guideName,
     guideType: g.guideInfo?.guideType || '',
+    needsTicket: g.needsTicket,
     ticketType: g.ticketType
   }));
   
@@ -125,7 +126,11 @@ export const calculateCompleteTicketRequirements = (
     guideTickets: {
       adultTickets,
       childTickets,
-      guides: guidesWithRequirements
+      guides: guidesWithRequirements.map(g => ({
+        guideName: g.guideName,
+        guideType: g.guideType,
+        ticketType: g.ticketType
+      }))
     },
     hasAssignedGuides: assignedGuideIds.size > 0
   };

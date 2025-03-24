@@ -16,9 +16,11 @@ export const countTicketsByType = (
   let childTickets = 0;
   
   guidesWithRequirements.forEach(guide => {
-    // If guide has a ticket type, count it
-    if (guide.ticketType === 'adult') adultTickets++;
-    else if (guide.ticketType === 'child') childTickets++;
+    // Only count tickets for guides that need tickets
+    if (guide.needsTicket) {
+      if (guide.ticketType === 'adult') adultTickets++;
+      else if (guide.ticketType === 'child') childTickets++;
+    }
   });
   
   const total = adultTickets + childTickets;
