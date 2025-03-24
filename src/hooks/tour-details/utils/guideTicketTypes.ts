@@ -1,16 +1,28 @@
 
-import { GuideInfo } from "@/types/ventrata";
-
-export interface GuideTicketRequirement {
-  guideName: string;
-  guideInfo: GuideInfo | null;
-  needsTicket: boolean;
-  ticketType: "adult" | "child" | null;
+/**
+ * Guide ticket requirement calculations return object
+ */
+export interface GuideTicketCounts {
+  locationNeedsGuideTickets: boolean;
+  guideTickets: {
+    adultTickets: number;
+    childTickets: number;
+    guides: Array<{
+      guideName: string;
+      guideType: string;
+      ticketType: "adult" | "child" | null;
+    }>;
+  };
+  hasAssignedGuides: boolean;
 }
 
-export interface GuideTicketCounts {
+/**
+ * Participant counts used throughout the application
+ */
+export interface ParticipantCounts {
+  totalParticipants: number;
+  totalChildCount: number;
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
-  guides: GuideTicketRequirement[];
 }

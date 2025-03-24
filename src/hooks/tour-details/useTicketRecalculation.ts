@@ -78,10 +78,10 @@ export const useTicketRecalculation = (tourId: string) => {
     const guideChangeListener = EventEmitter.on(`guide-change:${tourId}`, handleDataChange);
     
     return () => {
-      // Properly clean up event listeners
-      EventEmitter.off('participant-moved', handleDataChange);
-      EventEmitter.off(`participant-change:${tourId}`, handleDataChange);
-      EventEmitter.off(`guide-change:${tourId}`, handleDataChange);
+      // Properly clean up event listeners using the objects returned by EventEmitter.on
+      participantMovedListener.off();
+      participantChangeListener.off();
+      guideChangeListener.off();
     };
   }, [tourId, refetch]);
   

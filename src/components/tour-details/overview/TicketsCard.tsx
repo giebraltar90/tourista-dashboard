@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ParticipantTicketsSection, GuideTicketsSection, TotalTicketsSection } from "./tickets";
 import { useEffect, useState } from "react";
 import { logger } from "@/utils/logger";
-import { useTicketRecalculation } from "@/hooks/tour-details/useTicketRecalculation";
+import { useTicketRequirements } from "@/hooks/tour-details/useTicketRequirements";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -34,9 +34,9 @@ export const TicketsCard = ({
   tourGroups = [],
   tourId = ""
 }: TicketsCardProps) => {
-  // Use ticket recalculation hook
+  // Use ticket requirements hook
   const tourIdString = String(tourId || '');
-  useTicketRecalculation(tourIdString);
+  const { requirements, derivedRequirements } = useTicketRequirements(tourIdString);
   
   // Calculate guide ticket requirements
   const { locationNeedsGuideTickets, guideTickets } = useGuideTicketRequirements(
@@ -61,64 +61,19 @@ export const TicketsCard = ({
     guide3Info
   );
   
-  // Track the last calculated data to detect changes
-  const [lastCalculation, setLastCalculation] = useState({
-    adultTickets,
-    childTickets,
-    guideAdultTickets: guideTickets.adultTickets,
-    guideChildTickets: guideTickets.childTickets,
-    guides: guideTickets.guides.map(g => g.guideName).join(',')
-  });
-  
   // Log changes to participant counts or guides to help with debugging
   useEffect(() => {
-    const currentData = {
+    logger.debug("🎟️ [TicketsCard] Ticket requirements:", {
+      tourId,
       adultTickets,
       childTickets,
       guideAdultTickets: guideTickets.adultTickets,
       guideChildTickets: guideTickets.childTickets,
-      guides: guideTickets.guides.map(g => g.guideName).join(',')
-    };
-    
-    // Check if anything has changed
-    const hasChanged = JSON.stringify(currentData) !== JSON.stringify(lastCalculation);
-    
-    if (hasChanged) {
-      logger.debug("🎟️ [TicketsCard] Recalculating tickets:", {
-        tourId,
-        adultTickets,
-        childTickets,
-        totalTickets,
-        locationNeedsGuideTickets,
-        guideTickets: {
-          adults: guideTickets.adultTickets,
-          children: guideTickets.childTickets,
-          guides: guideTickets.guides.map(g => g.guideName)
-        },
-        participantsCount: tourGroups?.reduce((total, group) => total + group.size, 0) || 0,
-        guidesAssigned: [
-          guide1Info?.name, 
-          guide2Info?.name, 
-          guide3Info?.name
-        ].filter(Boolean).join(', ') || 'None'
-      });
-      
-      // Update the last calculation
-      setLastCalculation(currentData);
-    }
-  }, [
-    tourId,
-    adultTickets, 
-    childTickets, 
-    totalTickets,
-    guideTickets,
-    tourGroups,
-    guide1Info, 
-    guide2Info, 
-    guide3Info,
-    locationNeedsGuideTickets,
-    lastCalculation
-  ]);
+      totalTickets,
+      derivedRequirements,
+      storedRequirements: requirements
+    });
+  }, [tourId, adultTickets, childTickets, totalTickets, guideTickets, requirements, derivedRequirements]);
   
   // Check if we have enough tickets
   const hasEnoughTickets = totalTickets >= requiredTickets;
@@ -131,7 +86,7 @@ export const TicketsCard = ({
     requiredTickets : totalTicketsNeeded;
     
   // Format the total tickets as "x + y" where x is adult and y is child
-  const formattedTotalTickets = `${adultTickets} + ${childTickets}`;
+  const formattedTotalTickets = `${adultTickets + guideTickets.adultTickets} + ${childTickets + guideTickets.childTickets}`;
   
   return (
     <Card>
