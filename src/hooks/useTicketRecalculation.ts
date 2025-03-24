@@ -42,7 +42,8 @@ export const useTicketRecalculation = (tourId: string, onRecalculate: () => void
     });
     
     // Listen for participant changes that require ticket recalculation
-    EventEmitter.on(EVENTS.PARTICIPANT_CHANGED(tourId), (data) => {
+    // Fix: Use PARTICIPANT_MOVED instead of PARTICIPANT_CHANGED
+    EventEmitter.on(EVENTS.PARTICIPANT_MOVED(tourId), (data) => {
       logger.debug(`[TicketRecalculation] Participant change detected for ${tourId}:`, data);
       handleRecalculation({ source: 'participant_change', ...data });
     });
@@ -52,7 +53,8 @@ export const useTicketRecalculation = (tourId: string, onRecalculate: () => void
       EventEmitter.off(EVENTS.RECALCULATE_TICKETS(tourId));
       EventEmitter.off(EVENTS.GUIDE_CHANGED(tourId));
       EventEmitter.off(EVENTS.GUIDE_ASSIGNMENT_UPDATED(tourId));
-      EventEmitter.off(EVENTS.PARTICIPANT_CHANGED(tourId));
+      // Fix: Use PARTICIPANT_MOVED instead of PARTICIPANT_CHANGED
+      EventEmitter.off(EVENTS.PARTICIPANT_MOVED(tourId));
     };
   }, [tourId, handleRecalculation]);
 

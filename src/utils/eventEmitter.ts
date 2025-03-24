@@ -19,13 +19,16 @@ export const EVENTS = {
   PARTICIPANT_REMOVED: (tourId: string) => `participant-removed:${tourId}`,
   PARTICIPANTS_LOADED: (tourId: string) => `participants-loaded:${tourId}`,
   PARTICIPANTS_REFRESHED: (tourId: string) => `participants-refreshed:${tourId}`,
+  PARTICIPANT_CHANGED: (tourId: string) => `participant-changed:${tourId}`,
   
   // Ticket events
   RECALCULATE_TICKETS: (tourId: string) => `recalculate-tickets:${tourId}`,
   TICKETS_UPDATED: (tourId: string) => `tickets-updated:${tourId}`,
   
   // Other events
-  REFETCH_REQUIRED: 'refetch-required'
+  REFETCH_REQUIRED: 'refetch-required',
+  REFRESH_PARTICIPANTS: 'refresh-participants',
+  AUTH_ERROR: 'auth-error'
 };
 
 // Attach a listener for a tour event

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { logger } from '@/utils/logger';
@@ -8,7 +7,6 @@ import { GuideInfo } from '@/types/ventrata';
 import { EventEmitter, EVENTS } from '@/utils/eventEmitter';
 import { calculateCompleteGuideTicketRequirements } from './services/ticket-calculation';
 
-// Interface for ticket requirements data
 interface TicketRequirements {
   id?: string;
   tourId: string;
@@ -20,9 +18,6 @@ interface TicketRequirements {
   timestamp?: Date;
 }
 
-/**
- * Custom hook to manage ticket requirements for a tour
- */
 export const useTicketRequirements = (
   tourId: string,
   tour?: TourCardProps | null,
@@ -33,7 +28,6 @@ export const useTicketRequirements = (
   const [isLoading, setIsLoading] = useState(false);
   const [ticketRequirements, setTicketRequirements] = useState<TicketRequirements | null>(null);
   
-  // Function to load ticket requirements from the database
   const loadTicketRequirements = useCallback(async () => {
     if (!tourId) return null;
     
@@ -76,14 +70,12 @@ export const useTicketRequirements = (
     }
   }, [tourId]);
   
-  // Function to calculate and save ticket requirements
   const calculateAndSaveTicketRequirements = useCallback(async () => {
     if (!tour || !tourId) return null;
     
     try {
       setIsLoading(true);
       
-      // Calculate participant tickets
       const totalParticipants = tour.tourGroups.reduce(
         (sum, group) => sum + group.size, 
         0
@@ -97,18 +89,15 @@ export const useTicketRequirements = (
       const participantAdultTickets = totalParticipants - totalChildCount;
       const participantChildTickets = totalChildCount;
       
-      // Calculate guide tickets
       const { adultTickets: guideAdultTickets, childTickets: guideChildTickets } = 
-        calculateCompleteGuideTicketRequirements(tour, guide1Info, guide2Info, guide3Info);
+        calculateCompleteGuideTicketRequirements(tour, guide1Info, guide2Info, guide3Info, tour.location);
       
-      // Calculate total tickets
       const totalTicketsRequired = 
         participantAdultTickets + 
         participantChildTickets + 
         guideAdultTickets + 
         guideChildTickets;
       
-      // Prepare data for saving
       const requirements: TicketRequirements = {
         tourId,
         participantAdultTickets,
@@ -118,7 +107,6 @@ export const useTicketRequirements = (
         totalTicketsRequired
       };
       
-      // Save to database (upsert)
       const { error } = await supabase
         .from('ticket_requirements')
         .upsert({
@@ -137,10 +125,8 @@ export const useTicketRequirements = (
         return null;
       }
       
-      // Update local state
       setTicketRequirements(requirements);
       
-      // Notify that tickets have been updated
       EventEmitter.emit(EVENTS.TICKETS_UPDATED(tourId), requirements);
       
       return requirements;
@@ -152,41 +138,34 @@ export const useTicketRequirements = (
     }
   }, [tourId, tour, guide1Info, guide2Info, guide3Info]);
   
-  // Load ticket requirements on initial mount
   useEffect(() => {
     loadTicketRequirements();
   }, [loadTicketRequirements]);
   
-  // Listen for events that should trigger recalculation
   useEffect(() => {
     if (!tourId) return;
     
-    // Handle guide changes
     const handleGuideChange = () => {
       logger.debug(`Guide changed for tour ${tourId}, recalculating tickets`);
       calculateAndSaveTicketRequirements();
     };
     
-    // Handle participant changes
     const handleParticipantChange = () => {
       logger.debug(`Participants changed for tour ${tourId}, recalculating tickets`);
       calculateAndSaveTicketRequirements();
     };
     
-    // Handle explicit recalculation request
     const handleRecalculateRequest = () => {
       logger.debug(`Recalculation requested for tour ${tourId}`);
       calculateAndSaveTicketRequirements();
     };
     
-    // Set up event listeners
     EventEmitter.on(EVENTS.GUIDE_CHANGED(tourId), handleGuideChange);
     EventEmitter.on(EVENTS.PARTICIPANT_MOVED(tourId), handleParticipantChange);
     EventEmitter.on(EVENTS.PARTICIPANT_ADDED(tourId), handleParticipantChange);
     EventEmitter.on(EVENTS.PARTICIPANT_REMOVED(tourId), handleParticipantChange);
     EventEmitter.on(EVENTS.RECALCULATE_TICKETS(tourId), handleRecalculateRequest);
     
-    // Clean up event listeners
     return () => {
       EventEmitter.off(EVENTS.GUIDE_CHANGED(tourId), handleGuideChange);
       EventEmitter.off(EVENTS.PARTICIPANT_MOVED(tourId), handleParticipantChange);

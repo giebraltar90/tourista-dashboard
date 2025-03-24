@@ -40,7 +40,8 @@ export const useTours = (options: UseToursOptions = {}) => {
           
           // Check for authentication errors
           if (error.code === '401' || error.message.includes('JWT')) {
-            EventEmitter.emit(EVENTS.AUTH_ERROR, { error });
+            // Fix: Use a custom event instead of the non-existent AUTH_ERROR
+            EventEmitter.emit('auth-error', { error });
             window.dispatchEvent(new CustomEvent('supabase-auth-error', { detail: error }));
             throw new Error("Authentication failed. Please check your API credentials or sign in again.");
           }

@@ -1,33 +1,43 @@
 
-import { createContext, useContext, useState, ReactNode } from "react";
-
-type Role = "operator" | "guide";
-type GuideView = { type: "guide"; guideName: string } | null;
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 interface RoleContextType {
-  role: Role;
-  setRole: (role: Role) => void;
-  guideView: GuideView;
-  setGuideView: (view: GuideView) => void;
+  guideView: boolean;
+  adminView: boolean;
+  toggleGuideView: () => void;
+  toggleAdminView: () => void;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<Role>("operator");
-  const [guideView, setGuideView] = useState<GuideView>(null);
+export const RoleProvider = ({ children }: { children: ReactNode }) => {
+  const [guideView, setGuideView] = useState(false);
+  const [adminView, setAdminView] = useState(false);
+
+  const toggleGuideView = () => {
+    setGuideView(prev => !prev);
+  };
+
+  const toggleAdminView = () => {
+    setAdminView(prev => !prev);
+  };
 
   return (
-    <RoleContext.Provider value={{ role, setRole, guideView, setGuideView }}>
+    <RoleContext.Provider value={{ 
+      guideView, 
+      adminView, 
+      toggleGuideView, 
+      toggleAdminView 
+    }}>
       {children}
     </RoleContext.Provider>
   );
-}
+};
 
-export function useRole() {
+export const useRole = (): RoleContextType => {
   const context = useContext(RoleContext);
   if (context === undefined) {
-    throw new Error("useRole must be used within a RoleProvider");
+    throw new Error('useRole must be used within a RoleProvider');
   }
   return context;
-}
+};

@@ -30,7 +30,8 @@ const ToursPage = () => {
     data: guideTours, 
     isLoading: guideToursLoading, 
     error: guideToursError,
-    refetch: refetchGuideTours
+    // Fix: Add refetch for guideTours
+    refetch: refetchGuideTours = () => Promise.resolve()
   } = useGuideTours();
   
   const { 
@@ -44,6 +45,7 @@ const ToursPage = () => {
   const tours = guideView ? guideTours : allTours;
   const isLoading = guideView ? guideToursLoading : allToursLoading;
   const error = guideView ? guideToursError : allToursError;
+  // Fix: Ensure refetchTours is always a function
   const refetchTours = guideView ? refetchGuideTours : refetchAllTours;
   
   // Notify if no tours are found when data is loaded

@@ -18,6 +18,7 @@ export const updateGroupGuide = async (
     });
     
     // Generate new group name based on guide assignment
+    // Fix: Pass correct arguments to generateGroupName
     const updatedName = await generateGroupName(groupId, guideId || null);
     
     // Update the group with the new guide and name

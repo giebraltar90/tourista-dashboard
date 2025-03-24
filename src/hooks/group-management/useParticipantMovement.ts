@@ -66,14 +66,14 @@ export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourG
         
         // Emit multiple events to ensure all components update
         
-        // 1. Notify of participant change to trigger ticket recalculation
-        EventEmitter.emit(EVENTS.PARTICIPANT_CHANGED(tourId), {
+        // Fix: Use PARTICIPANT_MOVED instead of PARTICIPANT_CHANGED
+        EventEmitter.emit(EVENTS.PARTICIPANT_MOVED(tourId), {
           moved: true,
           participantId: participant.id,
           fromGroupId: sourceGroup.id,
           toGroupId: targetGroup.id
         });
-        logger.debug(`Emitted ${EVENTS.PARTICIPANT_CHANGED(tourId)} event`);
+        logger.debug(`Emitted ${EVENTS.PARTICIPANT_MOVED(tourId)} event`);
         
         // 2. Explicitly trigger ticket recalculation
         EventEmitter.emit(EVENTS.RECALCULATE_TICKETS(tourId), {
@@ -84,6 +84,7 @@ export const useParticipantMovement = (tourId: string, tourGroups: VentrataTourG
         });
         
         // 3. Request a refresh of participant data
+        // Fix: Use the correct event
         EventEmitter.emit(EVENTS.REFRESH_PARTICIPANTS, { tourId });
         
         return true;

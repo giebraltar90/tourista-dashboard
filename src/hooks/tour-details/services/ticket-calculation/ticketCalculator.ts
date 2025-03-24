@@ -31,13 +31,16 @@ export const calculateGuideTicketsNeeded = (
  * This is now a thin wrapper around the core calculator functions
  */
 export const calculateCompleteGuideTicketRequirements = (
+  tour: any,
   guide1Info: GuideInfo | null,
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null,
-  location: string,
-  tourGroups: any[]
+  location: string
 ): GuideTicketCounts => {
   logger.debug(`🎟️ [GuideRequirements] Starting complete calculation for location "${location}"`);
+  
+  // Extract tour information if tour object is provided
+  const tourGroups = tour?.tourGroups || [];
   
   return calculateCompleteTicketRequirements(
     guide1Info,
