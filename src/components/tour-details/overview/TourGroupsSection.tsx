@@ -36,7 +36,10 @@ export const TourGroupsSection = ({
     tourName: '',
     tourType: 'default',
     startTime: '',
-    referenceCode: ''
+    referenceCode: '',
+    tourGroups: [],
+    numTickets: 0,
+    isHighSeason: false
   };
   const { getGuideNameAndInfo } = useGuideNameInfo(minimalTour, guide1Info, guide2Info, guide3Info);
   const { guides = [] } = useGuideData();
