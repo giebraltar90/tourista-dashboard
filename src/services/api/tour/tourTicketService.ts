@@ -1,12 +1,11 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { logger } from "@/utils/logger";
 import { EventEmitter } from "@/utils/eventEmitter";
 
-/**
- * Interface for ticket requirements
- */
 export interface TourTicketRequirements {
+  id?: string;
   tourId: string;
   participantAdultTickets: number;
   participantChildTickets: number;
@@ -17,7 +16,7 @@ export interface TourTicketRequirements {
 }
 
 /**
- * Store ticket requirements in the database
+ * Store ticket requirements for a tour in the database
  */
 export const storeTicketRequirements = async (
   tourId: string,
@@ -27,33 +26,14 @@ export const storeTicketRequirements = async (
   guideChildTickets: number
 ): Promise<boolean> => {
   try {
-    if (!tourId) {
-      logger.error("Cannot store ticket requirements without a tour ID");
-      return false;
-    }
-    
-    // Calculate total tickets
+    const timestamp = new Date().toISOString();
     const totalTicketsRequired = 
       participantAdultTickets + 
       participantChildTickets + 
       guideAdultTickets + 
       guideChildTickets;
     
-    // Update the tour with the calculated ticket requirements
-    const { error } = await supabase
-      .from('tours')
-      .update({
-        num_tickets: totalTicketsRequired,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', tourId);
-    
-    if (error) {
-      logger.error(`Error storing ticket requirements for tour ${tourId}:`, error);
-      return false;
-    }
-    
-    logger.debug(`Successfully stored ticket requirements for tour ${tourId}:`, {
+    logger.debug(`Storing ticket requirements for tour ${tourId}:`, {
       participantAdultTickets,
       participantChildTickets,
       guideAdultTickets,
@@ -61,111 +41,129 @@ export const storeTicketRequirements = async (
       totalTicketsRequired
     });
     
-    // Trigger event to notify other components of the update
-    EventEmitter.emit(`ticket-requirements-updated:${tourId}`, {
+    // First, check if requirements already exist for this tour
+    const { data: existingRequirements, error: checkError } = await supabase
+      .from('ticket_requirements')
+      .select('id')
+      .eq('tour_id', tourId)
+      .maybeSingle();
+    
+    if (checkError) {
+      logger.error(`Error checking existing ticket requirements for tour ${tourId}:`, checkError);
+      return false;
+    }
+    
+    // Prepare data to store
+    const requirementsData: Omit<TourTicketRequirements, 'id'> = {
       tourId,
       participantAdultTickets,
       participantChildTickets,
       guideAdultTickets,
       guideChildTickets,
-      totalTicketsRequired
-    });
+      totalTicketsRequired,
+      timestamp
+    };
+    
+    let result;
+    
+    // Update or insert depending on whether requirements already exist
+    if (existingRequirements?.id) {
+      // Update existing requirements
+      const { error: updateError } = await supabase
+        .from('ticket_requirements')
+        .update(requirementsData)
+        .eq('id', existingRequirements.id);
+      
+      if (updateError) {
+        logger.error(`Error updating ticket requirements for tour ${tourId}:`, updateError);
+        return false;
+      }
+      
+      result = { ...requirementsData, id: existingRequirements.id };
+    } else {
+      // Insert new requirements
+      const { data: insertedData, error: insertError } = await supabase
+        .from('ticket_requirements')
+        .insert(requirementsData)
+        .select('id')
+        .single();
+      
+      if (insertError) {
+        logger.error(`Error inserting ticket requirements for tour ${tourId}:`, insertError);
+        return false;
+      }
+      
+      result = { ...requirementsData, id: insertedData?.id };
+    }
+    
+    // Emit an event to notify that ticket requirements have been updated
+    if (result) {
+      EventEmitter.emit(`ticket-requirements-updated:${tourId}`, result);
+    }
     
     return true;
   } catch (error) {
-    logger.error(`Error in storeTicketRequirements for tour ${tourId}:`, error);
+    logger.error(`Error storing ticket requirements for tour ${tourId}:`, error);
     return false;
   }
 };
 
 /**
- * Get ticket requirements from the database
+ * Get stored ticket requirements for a tour
  */
-export const getTicketRequirements = async (
-  tourId: string
-): Promise<TourTicketRequirements | null> => {
+export const getTicketRequirements = async (tourId: string): Promise<TourTicketRequirements | null> => {
   try {
-    if (!tourId) {
-      logger.error("Cannot get ticket requirements without a tour ID");
-      return null;
-    }
-    
-    // Get tour data with ticket requirements
     const { data, error } = await supabase
-      .from('tours')
-      .select('id, num_tickets, updated_at')
-      .eq('id', tourId)
-      .single();
+      .from('ticket_requirements')
+      .select('*')
+      .eq('tour_id', tourId)
+      .maybeSingle();
     
-    if (error || !data) {
+    if (error) {
       logger.error(`Error getting ticket requirements for tour ${tourId}:`, error);
       return null;
     }
     
-    // We only store total tickets in the database currently,
-    // so we can't break it down into detailed categories
+    if (!data) {
+      logger.debug(`No ticket requirements found for tour ${tourId}`);
+      return null;
+    }
+    
+    // Transform to camelCase properties
     return {
-      tourId: data.id,
-      participantAdultTickets: 0, // We don't have this breakdown stored yet
-      participantChildTickets: 0, // We don't have this breakdown stored yet
-      guideAdultTickets: 0, // We don't have this breakdown stored yet
-      guideChildTickets: 0, // We don't have this breakdown stored yet
-      totalTicketsRequired: data.num_tickets || 0,
-      timestamp: data.updated_at
+      id: data.id,
+      tourId: data.tour_id,
+      participantAdultTickets: data.participant_adult_tickets,
+      participantChildTickets: data.participant_child_tickets,
+      guideAdultTickets: data.guide_adult_tickets,
+      guideChildTickets: data.guide_child_tickets,
+      totalTicketsRequired: data.total_tickets_required,
+      timestamp: data.timestamp
     };
   } catch (error) {
-    logger.error(`Error in getTicketRequirements for tour ${tourId}:`, error);
+    logger.error(`Error getting ticket requirements for tour ${tourId}:`, error);
     return null;
   }
 };
 
 /**
- * Update ticket count when participant counts change
+ * Delete ticket requirements for a tour
  */
-export const updateTicketCountsFromParticipants = async (
-  tourId: string,
-  adultCount: number,
-  childCount: number
-): Promise<boolean> => {
+export const deleteTicketRequirements = async (tourId: string): Promise<boolean> => {
   try {
-    // Get current guide ticket requirements first
-    const { data: tourData, error: tourError } = await supabase
-      .from('tours')
-      .select('id, num_tickets')
-      .eq('id', tourId)
-      .single();
-      
-    if (tourError) {
-      logger.error(`Error fetching tour data for ticket update:`, tourError);
-      return false;
-    }
-    
-    // Calculate the total tickets needed
-    const totalTickets = adultCount + childCount + (tourData?.num_tickets || 0);
-    
-    // Update the tour with the new total
     const { error } = await supabase
-      .from('tours')
-      .update({
-        num_tickets: totalTickets,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', tourId);
-      
+      .from('ticket_requirements')
+      .delete()
+      .eq('tour_id', tourId);
+    
     if (error) {
-      logger.error(`Error updating ticket count:`, error);
+      logger.error(`Error deleting ticket requirements for tour ${tourId}:`, error);
       return false;
     }
-    
-    // Trigger event to notify other components
-    EventEmitter.emit(`ticket-requirements-updated:${tourId}`, {
-      tourId,
-      totalTicketsRequired: totalTickets
-    });
     
     return true;
   } catch (error) {
-    logger.error(`Error in updateTicketCountsFromParticipants:`, error);
+    logger.error(`Error deleting ticket requirements for tour ${tourId}:`, error);
     return false;
   }
 };

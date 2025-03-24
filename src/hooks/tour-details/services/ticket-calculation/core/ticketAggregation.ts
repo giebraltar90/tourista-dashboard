@@ -44,6 +44,7 @@ export const mapGuidesToResultFormat = (
   guideType: string;
   ticketType: "adult" | "child" | null;
   guideInfo: GuideInfo | null;
+  needsTicket?: boolean;
 }> => {
   return guideResults.map((guide, index) => {
     // Find the corresponding guide info by matching guide ID or fallback to index
@@ -56,7 +57,8 @@ export const mapGuidesToResultFormat = (
       guideType: guide.guideType,
       // Only set ticketType if guide needs a ticket
       ticketType: guide.needsTicket ? guide.ticketType : null,
-      guideInfo: guideInfo
+      guideInfo: guideInfo,
+      needsTicket: guide.needsTicket
     };
   });
 };

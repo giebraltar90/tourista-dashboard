@@ -1,13 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { logger } from "@/utils/logger";
-
-interface GuideWithTicket {
-  guideName: string;
-  guideInfo: any; // Added to match incoming data structure
-  guideType: string;
-  ticketType: "adult" | "child" | null;
-}
+import { GuideWithTicket } from "./GuideTicketsSection";
 
 interface GuideTicketsListProps {
   guides: GuideWithTicket[];

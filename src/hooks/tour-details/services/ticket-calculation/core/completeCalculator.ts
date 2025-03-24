@@ -1,127 +1,90 @@
 
 import { GuideInfo } from "@/types/ventrata";
-import { logger } from "@/utils/logger";
-import { GuideTicketCounts } from "../../../utils/guideTicketTypes";
-import { processGuideTicketRequirement } from "../guideTicketProcessor";
-import { findAssignedGuides } from "../guideAssignmentUtils";
-import { locationRequiresGuideTickets } from "../locationUtils";
+import { VentrataTourGroup } from "@/types/ventrata";
 import { countTicketsByType, mapGuidesToResultFormat } from "./ticketAggregation";
-import { isDefaultGuide, processDefaultGuide } from "./assignmentDetection";
+import { determineGuideTicketNeeds } from "./guideTicketType";
 
 /**
- * Calculate complete ticket requirements including details for guides
+ * Calculate guide tickets needed with more complex scenarios
+ * 
+ * @param guide1Info First guide info
+ * @param guide2Info Second guide info 
+ * @param guide3Info Third guide info
+ * @param location Tour location to determine ticket requirements
+ * @param tourGroups Tour groups data for allocation
+ * @returns Object with ticket counts and guide details
  */
-export const calculateCompleteTicketRequirements = (
+export const calculateCompleteGuideTicketRequirements = (
   guide1Info: GuideInfo | null,
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null,
   location: string,
-  tourGroups: any[]
-): GuideTicketCounts => {
-  logger.debug(`🎟️ [CompleteCalculator] Starting complete calculation for location "${location}"`);
+  tourGroups: VentrataTourGroup[] = []
+): {
+  adultTickets: number;
+  childTickets: number;
+  guides: Array<{
+    guideName: string;
+    guideType: string;
+    ticketType: "adult" | "child" | null;
+    guideInfo: GuideInfo | null;
+    needsTicket?: boolean;
+  }>;
+} => {
+  // Get non-null guides
+  const guides = [
+    { info: guide1Info, position: 1 },
+    { info: guide2Info, position: 2 },
+    { info: guide3Info, position: 3 },
+  ].filter(g => g.info !== null);
   
-  // First determine if tickets are needed at all
-  const needsGuideTickets = locationRequiresGuideTickets(location);
-  
-  if (!needsGuideTickets) {
-    logger.debug(`🎟️ [CompleteCalculator] Location "${location}" doesn't require guide tickets, returning zero`);
+  // If no guides, return empty result
+  if (guides.length === 0) {
     return {
       adultTickets: 0,
       childTickets: 0,
-      totalTickets: 0,
       guides: []
     };
   }
   
-  // Ensure tour groups is an array
-  const validTourGroups = Array.isArray(tourGroups) ? tourGroups : [];
-  
-  // Find which guides are assigned
-  const assignedGuideIds = findAssignedGuides(validTourGroups, guide1Info, guide2Info, guide3Info);
-  
-  logger.debug(`🎟️ [CompleteCalculator] Found ${assignedGuideIds.size} assigned guides: ${Array.from(assignedGuideIds).join(', ')}`);
-  
-  if (assignedGuideIds.size === 0) {
-    // Check if we have guide1 (default guide) that needs to be included
-    if (isDefaultGuide(guide1Info, needsGuideTickets)) {
-      logger.debug(`🎟️ [CompleteCalculator] No assigned guides, but default guide1 exists:`, {
-        guide1Name: guide1Info?.name,
-        guide1Type: guide1Info?.guideType
-      });
-      
-      // Process the default guide
-      const guide1Req = processDefaultGuide(
-        guide1Info,
-        needsGuideTickets,
-        "guide1",
-        processGuideTicketRequirement
-      );
-      
-      // If the guide needs a ticket, return that information
-      if (guide1Req && guide1Req.needsTicket) {
-        let adultTickets = guide1Req.ticketType === 'adult' ? 1 : 0;
-        let childTickets = guide1Req.ticketType === 'child' ? 1 : 0;
-        let totalTickets = adultTickets + childTickets;
-        
-        return {
-          adultTickets,
-          childTickets,
-          totalTickets,
-          guides: [{
-            guideName: guide1Req.guideName,
-            guideInfo: guide1Info,
-            needsTicket: true,
-            ticketType: guide1Req.ticketType
-          }]
-        };
-      }
+  // Check ticket needs for each guide based on location and guide type
+  const guidesWithRequirements = guides.map(({ info, position }) => {
+    // This shouldn't happen due to the filter above, but TypeScript needs reassurance
+    if (!info) {
+      return {
+        guideName: `Unknown guide${position}`,
+        guideType: "Unknown",
+        needsTicket: false,
+        ticketType: null as "adult" | "child" | null,
+        guideInfo: null
+      };
     }
     
-    logger.debug(`🎟️ [CompleteCalculator] No assigned guides found, returning zero tickets`);
+    // Determine if the guide needs a ticket and what type
+    const { needsTicket, ticketType } = determineGuideTicketNeeds(
+      info, 
+      location, 
+      tourGroups
+    );
+    
     return {
-      adultTickets: 0,
-      childTickets: 0,
-      totalTickets: 0,
-      guides: []
-    };
-  }
-  
-  // Calculate requirements for each guide
-  const guide1Req = processGuideTicketRequirement(guide1Info, location, assignedGuideIds, "guide1");
-  const guide2Req = processGuideTicketRequirement(guide2Info, location, assignedGuideIds, "guide2");
-  const guide3Req = processGuideTicketRequirement(guide3Info, location, assignedGuideIds, "guide3");
-  
-  // Filter to only guides that need tickets
-  const guidesWithRequirements = [
-    guide1Req, guide2Req, guide3Req
-  ].filter(g => g.needsTicket).map(g => {
-    // Return the guide with its info
-    return {
-      guideName: g.guideName,
-      guideInfo: g.guideInfo,
-      needsTicket: g.needsTicket,
-      ticketType: g.ticketType
+      guideName: info.name,
+      guideType: info.guideType,
+      needsTicket,
+      ticketType,
+      guideInfo: info
     };
   });
   
   // Count tickets by type
   const { adultTickets, childTickets } = countTicketsByType(guidesWithRequirements);
-  const totalTickets = adultTickets + childTickets;
   
-  logger.debug(`🎟️ [CompleteCalculator] Final ticket requirements:`, {
-    adultTickets,
-    childTickets,
-    totalTickets,
-    guides: guidesWithRequirements.map(g => ({
-      name: g.guideName,
-      ticketType: g.ticketType
-    }))
-  });
+  // Map guide data to result format
+  const mappedGuides = mapGuidesToResultFormat(guidesWithRequirements);
   
   return {
     adultTickets,
     childTickets,
-    totalTickets,
-    guides: guidesWithRequirements
+    guides: mappedGuides
   };
 };
