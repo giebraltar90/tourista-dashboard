@@ -129,7 +129,7 @@ export const GroupsManagement = ({
 
   // Fix: Create a compatible wrapper function without parameters for handleDragEnd
   const handleDragEndWrapper = () => {
-    // Call the original handler with a dummy event or no parameters
+    // Call the original handler with no parameters
     handleDragEnd();
   };
   
