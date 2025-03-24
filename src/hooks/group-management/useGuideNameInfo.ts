@@ -1,6 +1,6 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { GuideInfo } from "@/types/ventrata";
+import { GuideInfo, GuideType } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useGuideData, Guide } from "@/hooks/guides/useGuideData";
 
@@ -69,12 +69,15 @@ export const useGuideNameInfo = (
           ? new Date(matchingGuide.birthday) 
           : (matchingGuide.birthday || new Date());
           
+        // Fix: Make sure we're using the correct GuideType
+        const guideType: GuideType = (matchingGuide.guide_type || "GA Ticket") as GuideType;
+          
         return {
           name: matchingGuide.name,
           info: {
             name: matchingGuide.name,
             birthday: birthday,
-            guideType: matchingGuide.guide_type || "GA Ticket"
+            guideType: guideType
           }
         };
       }

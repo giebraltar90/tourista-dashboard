@@ -61,18 +61,30 @@ export const TourGroupsSection = ({
   
   // Get valid guide options - making sure each guide has all required properties
   // Updated to match the GuideOption interface with the info property
-  const validGuides = guides.map(guide => ({
-    id: guide.id,
-    name: guide.name,
-    guide_type: guide.guide_type || "GA Ticket",
-    birthday: typeof guide.birthday === 'string' ? guide.birthday : (guide.birthday ? guide.birthday.toString() : ""),
-    guideType: guide.guide_type || "GA Ticket",
-    info: {
-      name: guide.name,
-      birthday: typeof guide.birthday === 'object' ? guide.birthday : new Date(),
-      guideType: guide.guide_type || "GA Ticket"
+  const validGuides = guides.map(guide => {
+    // Handle different types of birthday fields safely
+    let birthdayStr = "";
+    if (guide.birthday) {
+      if (typeof guide.birthday === 'object' && guide.birthday instanceof Date) {
+        birthdayStr = guide.birthday.toISOString();
+      } else if (typeof guide.birthday === 'string') {
+        birthdayStr = guide.birthday;
+      }
     }
-  }));
+    
+    return {
+      id: guide.id,
+      name: guide.name,
+      guide_type: guide.guide_type || "GA Ticket",
+      birthday: birthdayStr,
+      guideType: guide.guide_type || "GA Ticket",
+      info: {
+        name: guide.name,
+        birthday: typeof guide.birthday === 'object' ? guide.birthday : new Date(),
+        guideType: (guide.guide_type || "GA Ticket") as GuideType
+      }
+    };
+  });
   
   // Add special guides if they exist in the tour
   if (tour.guide1 && !validGuides.some(g => g.id === tour.guide1)) {
@@ -80,12 +92,12 @@ export const TourGroupsSection = ({
       id: "guide1",
       name: tour.guide1,
       guide_type: guide1Info?.guideType || "GA Ticket",
-      birthday: guide1Info?.birthday ? guide1Info.birthday.toString() : "",
+      birthday: guide1Info?.birthday ? guide1Info.birthday.toISOString() : "",
       guideType: guide1Info?.guideType || "GA Ticket",
       info: {
         name: tour.guide1,
         birthday: guide1Info?.birthday || new Date(),
-        guideType: guide1Info?.guideType || "GA Ticket"
+        guideType: guide1Info?.guideType || "GA Ticket" as GuideType
       }
     });
   }
@@ -95,12 +107,12 @@ export const TourGroupsSection = ({
       id: "guide2",
       name: tour.guide2,
       guide_type: guide2Info?.guideType || "GA Ticket",
-      birthday: guide2Info?.birthday ? guide2Info.birthday.toString() : "",
+      birthday: guide2Info?.birthday ? guide2Info.birthday.toISOString() : "",
       guideType: guide2Info?.guideType || "GA Ticket",
       info: {
         name: tour.guide2,
         birthday: guide2Info?.birthday || new Date(),
-        guideType: guide2Info?.guideType || "GA Ticket"
+        guideType: guide2Info?.guideType || "GA Ticket" as GuideType
       }
     });
   }
@@ -110,12 +122,12 @@ export const TourGroupsSection = ({
       id: "guide3",
       name: tour.guide3,
       guide_type: guide3Info?.guideType || "GA Ticket",
-      birthday: guide3Info?.birthday ? guide3Info.birthday.toString() : "",
+      birthday: guide3Info?.birthday ? guide3Info.birthday.toISOString() : "",
       guideType: guide3Info?.guideType || "GA Ticket",
       info: {
         name: tour.guide3,
         birthday: guide3Info?.birthday || new Date(),
-        guideType: guide3Info?.guideType || "GA Ticket"
+        guideType: guide3Info?.guideType || "GA Ticket" as GuideType
       }
     });
   }

@@ -1,105 +1,49 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { TourGroupsSection } from "./overview/TourGroupsSection";
-import { InformationCardsSection } from "./overview/InformationCardsSection";
-import { GroupsManagement } from "./groups-management";
 import { GuideInfo } from "@/types/ventrata";
-import { useParticipantCountsSync } from "@/hooks/tour-details/useParticipantCountsSync";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TourDetailsCard } from "./overview/TourDetailsCard";
+import { InformationCardsSection } from "./overview/InformationCardsSection";
 
 interface TourOverviewProps {
   tour: TourCardProps;
-  guide1Info?: GuideInfo | null;
-  guide2Info?: GuideInfo | null;
-  guide3Info?: GuideInfo | null;
+  guide1Info: GuideInfo | null;
+  guide2Info: GuideInfo | null;
+  guide3Info: GuideInfo | null;
 }
 
-export const TourOverview = ({ 
+export const TourOverview = ({
   tour,
   guide1Info,
   guide2Info,
-  guide3Info
+  guide3Info,
 }: TourOverviewProps) => {
-  // Check if this is high season (example logic)
-  const isHighSeason = tour?.isHighSeason || false;
-  
-  // Safely access tourGroups with a fallback
-  const tourGroups = tour?.tourGroups || [];
+  // Calculate if it's high season
+  const isHighSeason = tour.isHighSeason || false;
+  const tourGroups = Array.isArray(tour.tourGroups) ? tour.tourGroups : [];
 
-  // Use synced participant counts for consistent display
-  const participantCounts = useParticipantCountsSync(tourGroups);
+  // Get participant counts
+  const totalParticipants = tourGroups.reduce((sum, group) => sum + (group.size || 0), 0);
+  const totalChildCount = tourGroups.reduce((sum, group) => sum + (group.childCount || 0), 0);
+  const adultTickets = totalParticipants - totalChildCount;
+  const childTickets = totalChildCount;
+  const totalTickets = totalParticipants;
 
-  // Log tour data for debugging
-  console.log("TourOverview rendering with tour data:", {
-    tourId: tour?.id,
-    tourName: tour?.tourName,
-    location: tour?.location,
-    referenceCode: tour?.referenceCode,
-    tourGroups: tourGroups?.length
-  });
-
-  // Guard against undefined tour
-  if (!tour) {
-    return (
-      <div className="text-center p-8 bg-muted rounded-lg">
-        <p className="text-muted-foreground">Cannot display tour overview. Tour data is missing.</p>
-      </div>
-    );
-  }
+  const participantCounts = {
+    totalParticipants,
+    totalChildCount,
+    adultTickets,
+    childTickets,
+    totalTickets,
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Tour Details Overview Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Tour Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Tour Name</h3>
-              <p className="font-medium">{tour.tourName || 'N/A'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Reference Code</h3>
-              <p className="font-medium">{tour.referenceCode || 'N/A'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Tour Type</h3>
-              <p className="font-medium capitalize">{tour.tourType || 'Standard'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Location</h3>
-              <p className="font-medium">{tour.location || 'N/A'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Start Time</h3>
-              <p className="font-medium">{tour.startTime || 'N/A'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Season Status</h3>
-              <p className="font-medium">{isHighSeason ? 'High Season' : 'Standard Season'}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Date</h3>
-              <p className="font-medium">
-                {tour.date instanceof Date 
-                  ? tour.date.toLocaleDateString() 
-                  : (typeof tour.date === 'string' ? new Date(tour.date).toLocaleDateString() : 'N/A')}
-              </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Total Participants</h3>
-              <p className="font-medium">{participantCounts.totalParticipants || 0} 
-                ({participantCounts.totalChildCount || 0} children)
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      {/* Add the new TourDetailsCard at the top */}
+      <TourDetailsCard tour={tour} />
       
       <InformationCardsSection 
-        tour={tour} 
+        tour={tour}
         tourGroups={tourGroups}
         participantCounts={participantCounts}
         isHighSeason={isHighSeason}
@@ -107,19 +51,10 @@ export const TourOverview = ({
         guide2Info={guide2Info}
         guide3Info={guide3Info}
       />
-      
+
       <TourGroupsSection 
         tour={tour}
         isHighSeason={isHighSeason}
-        guide1Info={guide1Info}
-        guide2Info={guide2Info}
-        guide3Info={guide3Info}
-      />
-      
-      {/* Add GroupsManagement directly in the overview */}
-      <GroupsManagement 
-        tour={tour}
-        tourId={tour.id}
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}
