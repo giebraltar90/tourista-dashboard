@@ -3,11 +3,13 @@ import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { GuideTicketsList } from "./GuideTicketsList";
 
+// Updated to match the format from useGuideTicketRequirements
 interface GuideWithTicket {
   guideName: string;
-  guideInfo: any; // Add this to match GuideTicketsList interface
+  guideInfo: any; // This can be GuideInfo | null
   guideType: string;
   ticketType: "adult" | "child" | null;
+  needsTicket?: boolean; // Add this optional field to match the complete interface
 }
 
 interface GuideTicketsSectionProps {
