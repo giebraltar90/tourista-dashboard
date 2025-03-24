@@ -6,6 +6,7 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { useGuideNameInfo } from "@/hooks/group-management";
 import { useGuideData } from "@/hooks/guides";
 import { findGuideNameByTour } from "@/hooks/group-management/utils";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService/formatParticipantService";
 
 interface GroupsTableProps {
   tourGroups: VentrataTourGroup[];
@@ -45,7 +46,9 @@ export const GroupsTable = ({
           
           const childCount = group.childCount || 0;
           const adultCount = totalParticipants - childCount;
-          const formattedParticipantCount = `${adultCount} + ${childCount}`;
+          
+          // Format participants in the standard format
+          const formattedParticipantCount = formatParticipantCount(totalParticipants, childCount);
           
           const isGuideAssigned = !!group.guideId && guideName !== "Unassigned";
           

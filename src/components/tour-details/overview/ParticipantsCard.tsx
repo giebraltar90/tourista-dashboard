@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { DEFAULT_CAPACITY_SETTINGS } from "@/types/ventrata";
 import { Badge } from "@/components/ui/badge";
-import { formatParticipantCount } from "@/hooks/group-management/services/participantService";
+import { formatParticipantCount } from "@/hooks/group-management/services/participantService/formatParticipantService";
 import { useMemo } from "react";
 import { AlertTriangle } from "lucide-react";
 
@@ -66,7 +66,7 @@ export const ParticipantsCard = ({
     const finalAdultCount = finalTotalParticipants - finalChildCount;
     
     // Format the display string in our standard format: "adult + child"
-    const formatted = `${finalAdultCount} + ${finalChildCount}`;
+    const formatted = formatParticipantCount(finalTotalParticipants, finalChildCount);
     
     return {
       totalParticipants: finalTotalParticipants,
