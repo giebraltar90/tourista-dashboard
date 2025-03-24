@@ -7,19 +7,33 @@ import { useRole } from "@/contexts/RoleContext";
 import { useTourById } from "@/hooks/useTourData";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { logger } from "@/utils/logger";
+import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
+
+// Create a query client for this component
+const queryClient = new QueryClient();
 
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: tour, isLoading, error } = useTourById(id || "");
+  
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TourDetailsContent tourId={id || ""} />
+    </QueryClientProvider>
+  );
+};
+
+// Separate component for the tour details content
+const TourDetailsContent = ({ tourId }: { tourId: string }) => {
+  const { data: tour, isLoading, error } = useTourById(tourId);
   const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
   const [activeTab, setActiveTab] = useState("overview");
   
   // Log errors for debugging
   useEffect(() => {
     if (error) {
-      logger.error(`Failed to load tour with ID ${id}:`, error);
+      logger.error(`Failed to load tour with ID ${tourId}:`, error);
     }
-  }, [error, id]);
+  }, [error, tourId]);
   
   // When a tour is loaded, log its basic details
   useEffect(() => {
@@ -57,7 +71,7 @@ const TourDetailsPage = () => {
   return (
     <NormalizedTourContent
       tour={tour}
-      tourId={id || ""}
+      tourId={tourId}
       guide1Info={guide1Info}
       guide2Info={guide2Info}
       guide3Info={guide3Info}

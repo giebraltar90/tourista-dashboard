@@ -19,24 +19,22 @@ export {
   processGuideTicketRequirement
 };
 
-// Export our renamed function with the correct signature
+// Export the renamed function with correct signature
 export const calculateCompleteTicketRequirements = calculateCompleteGuideTicketRequirements;
 
-// Add these two functions that are expected by importers
+// Add these two functions that are expected by importers with correct signatures
 export const calculateGuideTicketsNeeded = (
   guide1Info: GuideInfo | null,
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null,
-  location: string = "",
-  tourGroups: any[] = []
+  location: string = ""
 ) => {
   // Import the actual function from the core implementation
   const result = calculateCompleteGuideTicketRequirements(
     guide1Info,
     guide2Info,
     guide3Info,
-    location,
-    tourGroups
+    location
   );
   
   return result.guideTickets;

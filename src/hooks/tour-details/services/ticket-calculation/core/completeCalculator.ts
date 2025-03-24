@@ -35,8 +35,7 @@ export const calculateCompleteTicketRequirements = (
     guide1Info, 
     guide2Info,
     guide3Info,
-    location,
-    tourGroups
+    location
   );
   
   // Return full result
@@ -46,3 +45,6 @@ export const calculateCompleteTicketRequirements = (
     guideTickets
   };
 };
+
+// Explicitly export as calculateCompleteGuideTicketRequirements for backward compatibility
+export const calculateCompleteGuideTicketRequirements = calculateCompleteTicketRequirements;

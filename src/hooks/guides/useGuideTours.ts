@@ -11,18 +11,23 @@ export const useGuideTours = () => {
     queryFn: async () => {
       if (!guideName) return [];
       
-      // Fetch tours assigned to this guide
-      const tours = await fetchToursFromSupabase();
-      
-      return tours.filter(tour => {
-        // Check if the guide is assigned to this tour in any position
-        return (
-          tour.guide1 === guideName ||
-          tour.guide2 === guideName ||
-          tour.guide3 === guideName ||
-          tour.tourGroups?.some(group => group.guideName === guideName)
-        );
-      });
+      try {
+        // Fetch tours assigned to this guide
+        const tours = await fetchToursFromSupabase();
+        
+        return tours.filter(tour => {
+          // Check if the guide is assigned to this tour in any position
+          return (
+            tour.guide1 === guideName ||
+            tour.guide2 === guideName ||
+            tour.guide3 === guideName ||
+            tour.tourGroups?.some(group => group.guideName === guideName)
+          );
+        });
+      } catch (error) {
+        console.error("Error fetching guide tours:", error);
+        return [];
+      }
     },
     enabled: !!guideName,
   });
