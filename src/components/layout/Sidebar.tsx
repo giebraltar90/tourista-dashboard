@@ -1,126 +1,108 @@
 
-import { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  TicketIcon,
+  Calendar,
+  Users,
+  Settings,
+  Mail,
+  User,
+  LogOut,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { useRole } from "@/contexts/RoleContext"; 
-import { 
-  Calendar, 
-  Bike, 
-  Users, 
-  Ticket, 
-  Map, 
-  Settings, 
-  MessageSquare,
-  ChevronRight,
-  User
-} from "lucide-react";
+import { useRole } from "@/contexts/RoleContext";
 
 interface SidebarProps {
-  collapsed: boolean;
+  className?: string;
 }
 
-export function Sidebar({ collapsed }: SidebarProps) {
-  const location = useLocation();
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const { role, guideView } = useRole();
-  
-  // Define navigation items based on role
-  const getNavigationItems = () => {
-    if (role === "guide" || guideView) {
-      return [
-        { name: "My Tours", href: guideView ? "/tours" : "/guide", icon: Bike },
-        { name: "Messages", href: guideView ? "/messages" : "/guide/messages", icon: MessageSquare },
-        { name: "Profile", href: guideView ? "/settings" : "/guide/profile", icon: User },
-      ];
-    }
-    
-    return [
-      { name: "Dashboard", href: "/", icon: Calendar },
-      { name: "Tours", href: "/tours", icon: Bike },
-      { name: "Guides", href: "/guides", icon: Users },
-      { name: "Tickets", href: "/tickets", icon: Ticket },
-      { name: "Locations", href: "/locations", icon: Map },
-      { name: "Messages", href: "/messages", icon: MessageSquare },
-      { name: "Settings", href: "/settings", icon: Settings },
-    ];
-  };
+// Define navigation items
+const getNavItems = (role: string, guideName: string | null) => {
+  // Common items for all roles
+  const commonItems = [
+    {
+      name: "Tours",
+      href: "/tours",
+      icon: <Calendar className="h-5 w-5" />,
+    },
+  ];
 
-  const navigationItems = getNavigationItems();
+  // Guide-specific items
+  const guideItems = [
+    {
+      name: "Messages",
+      href: "/guide/messages",
+      icon: <Mail className="h-5 w-5" />,
+    },
+    {
+      name: "Profile",
+      href: "/guide/profile",
+      icon: <User className="h-5 w-5" />,
+    },
+  ];
+
+  // Admin-specific items
+  const adminItems = [
+    {
+      name: "Guides",
+      href: "/admin/guides",
+      icon: <Users className="h-5 w-5" />,
+    },
+    {
+      name: "Settings",
+      href: "/admin/settings",
+      icon: <Settings className="h-5 w-5" />,
+    },
+  ];
+
+  // Return navigation items based on role
+  if (role === "guide") {
+    return [...commonItems, ...guideItems];
+  } else if (role === "admin") {
+    return [...commonItems, ...adminItems];
+  }
+
+  // Default for user role
+  return commonItems;
+};
+
+export function Sidebar({ className }: SidebarProps) {
+  const { role, guideName } = useRole();
+  const location = useLocation();
+  const navItems = getNavItems(role, guideName);
 
   return (
-    <aside
-      className={cn(
-        "fixed left-0 top-[64px] bottom-0 transition-all duration-300 ease-in-out z-30",
-        "bg-white shadow-sm border-r border-border flex flex-col",
-        collapsed ? "w-[80px]" : "w-[280px]"
-      )}
-    >
-      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-        {navigationItems.map((item, index) => {
-          const isActive = location.pathname === item.href || 
-                          (item.href === "/guide" && location.pathname.startsWith("/tours"));
-          const isHovered = hoveredItem === item.name;
-          
-          return (
-            <Link 
-              key={item.name}
-              to={item.href}
-              className="sidebar-item block"
-              onMouseEnter={() => setHoveredItem(item.name)}
-              onMouseLeave={() => setHoveredItem(null)}
-            >
-              <Button
-                variant={isActive ? "default" : "ghost"}
-                size="lg"
-                className={cn(
-                  "w-full justify-start mb-1 group relative overflow-hidden transition-all duration-300",
-                  isActive ? 
-                    "bg-primary text-primary-foreground" : 
-                    "text-muted-foreground hover:text-foreground",
-                  collapsed ? "px-0 justify-center" : ""
-                )}
-              >
-                <div className={cn(
-                  "absolute inset-0 bg-primary opacity-0 transition-opacity duration-300",
-                  (isHovered && !isActive) && "opacity-5"
-                )} />
-                
-                <item.icon className={cn(
-                  "h-5 w-5 shrink-0 transition-all duration-300",
-                  isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
-                  collapsed ? "mr-0" : "mr-3"
-                )} />
-                
-                {!collapsed && (
-                  <span className="text-base font-medium">
-                    {item.name}
-                  </span>
-                )}
-                
-                {!collapsed && isActive && (
-                  <ChevronRight className="ml-auto h-5 w-5 text-primary-foreground" />
-                )}
-              </Button>
-            </Link>
-          );
-        })}
-      </nav>
-      
-      <div className={cn(
-        "p-4 border-t border-border transition-opacity duration-300",
-        collapsed ? "opacity-0 pointer-events-none" : "opacity-100"
-      )}>
-        <div className="text-xs text-muted-foreground">
-          {guideView && (
-            <p className="font-semibold text-orange-500 mb-1">
-              Viewing as guide: {guideView.guideName}
-            </p>
-          )}
-          <p>Tourista Operations Dashboard</p>
-          <p className="mt-1">Version 1.0.0</p>
+    <div className={cn("pb-12 h-full", className)}>
+      <div className="space-y-4 py-4">
+        <div className="px-4 py-2">
+          <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">
+            {role === "guide" && guideName
+              ? `Guide: ${guideName}`
+              : role === "admin"
+              ? "Admin Panel"
+              : "Tour Management"}
+          </h2>
+          <div className="space-y-1">
+            {navItems.map((item) => (
+              <Link key={item.href} to={item.href}>
+                <Button
+                  variant={
+                    location.pathname === item.href ? "secondary" : "ghost"
+                  }
+                  size="sm"
+                  className="w-full justify-start"
+                >
+                  {item.icon}
+                  <span className="ml-2">{item.name}</span>
+                </Button>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
-    </aside>
+    </div>
   );
 }

@@ -11,6 +11,13 @@ class LoggerService {
   setLogLevel(level: LogLevel): void {
     this.logLevel = level;
   }
+  
+  /**
+   * Sets debug mode on/off (shortcut for setting log level)
+   */
+  setDebugMode(enabled: boolean): void {
+    this.logLevel = enabled ? 'debug' : 'info';
+  }
 
   /**
    * Debug level logging - only shown in development by default

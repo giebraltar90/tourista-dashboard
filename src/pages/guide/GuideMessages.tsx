@@ -1,105 +1,70 @@
 
-import { Navigate } from "react-router-dom";
-import { useRole } from "@/contexts/RoleContext";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MessageSquare, Send } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { useGuideTours } from "@/hooks/guides/useGuideTours";
+import React, { useState } from 'react';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useRole } from '@/contexts/RoleContext';
 
+// Mock messages for demo purposes
 const mockMessages = [
-  {
-    id: 1,
-    sender: "Operations Team",
-    message: "Can you arrive 15 minutes early for tomorrow's tour? We have some VIP guests.",
-    timestamp: "10:30 AM",
-    isFromGuide: false
-  },
-  {
-    id: 2,
-    sender: "John Smith",
-    message: "No problem, I'll be there early.",
-    timestamp: "10:45 AM",
-    isFromGuide: true
-  },
-  {
-    id: 3,
-    sender: "Operations Team",
-    message: "Great, thanks! Let me know if you need anything.",
-    timestamp: "11:00 AM",
-    isFromGuide: false
-  }
+  { id: 1, sender: 'System', content: 'Welcome to the tour management system!', timestamp: '2023-05-01T10:00:00Z' },
+  { id: 2, sender: 'Admin', content: 'Please review your assigned tours for next week.', timestamp: '2023-05-02T09:30:00Z' },
+  { id: 3, sender: 'Manager', content: 'New tour assignment pending your confirmation.', timestamp: '2023-05-03T14:15:00Z' },
 ];
 
 const GuideMessages = () => {
-  const { role, guideView } = useRole();
-  const { guideName = "" } = useGuideTours();
+  const { role, guideName } = useRole();
+  const [messages, setMessages] = useState(mockMessages);
+  const [newMessage, setNewMessage] = useState('');
   
-  // If accessed directly as an operator without guide view, redirect to main dashboard
-  if (role === "operator" && !guideView) {
-    return <Navigate to="/" replace />;
-  }
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+    
+    const message = {
+      id: messages.length + 1,
+      sender: guideName || 'You',
+      content: newMessage,
+      timestamp: new Date().toISOString(),
+    };
+    
+    setMessages([...messages, message]);
+    setNewMessage('');
+  };
   
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold">Messages</h1>
-          <p className="text-muted-foreground">
-            Communications with the operations team
-          </p>
-        </div>
-        
-        <Card className="overflow-hidden">
-          <CardHeader className="bg-muted/50">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              <CardTitle>Operations Messages</CardTitle>
-            </div>
+    <DashboardLayout title="Messages">
+      <div className="space-y-6 py-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Your Messages</CardTitle>
           </CardHeader>
-          
-          <CardContent className="p-0">
-            <div className="h-[400px] flex flex-col">
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {mockMessages.map((msg) => (
-                  <div 
-                    key={msg.id}
-                    className={`flex ${msg.isFromGuide ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div 
-                      className={`max-w-[80%] rounded-lg p-3 ${
-                        msg.isFromGuide 
-                          ? 'bg-primary text-primary-foreground ml-auto' 
-                          : 'bg-muted'
-                      }`}
-                    >
-                      {!msg.isFromGuide && (
-                        <p className="text-xs font-semibold mb-1">{msg.sender}</p>
-                      )}
-                      <p>{msg.message}</p>
-                      <p className={`text-xs ${msg.isFromGuide ? 'text-primary-foreground/80' : 'text-muted-foreground'} text-right mt-1`}>
-                        {msg.timestamp}
-                      </p>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="border rounded-md h-80 overflow-y-auto p-4">
+                {messages.map((message) => (
+                  <div key={message.id} className="mb-4">
+                    <div className="flex justify-between text-sm mb-1">
+                      <span className="font-medium">{message.sender}</span>
+                      <span className="text-muted-foreground">
+                        {new Date(message.timestamp).toLocaleString()}
+                      </span>
                     </div>
+                    <p className="text-sm">{message.content}</p>
                   </div>
                 ))}
               </div>
               
-              <div className="p-4 border-t">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Type your message..." 
-                    className="flex-1"
-                  />
-                  <Button>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send
-                  </Button>
-                </div>
-              </div>
+              <form onSubmit={handleSendMessage} className="flex gap-2">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Type your message..."
+                  className="flex-1"
+                />
+                <Button type="submit">Send</Button>
+              </form>
             </div>
           </CardContent>
         </Card>

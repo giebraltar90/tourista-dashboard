@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,79 +10,64 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRole } from "@/contexts/RoleContext";
-import { User, ChevronDown, LogOut } from "lucide-react";
-import { useTours } from "@/hooks/useTourData";
-import { toast } from "sonner";
+import { User, Users } from "lucide-react";
 
-export function RoleSwitcher() {
-  const { role, setRole, guideView, setGuideView } = useRole();
-  const [open, setOpen] = useState(false);
-  const { data: tours } = useTours();
-  
-  // Extract unique guide names from tours
-  const uniqueGuides = tours
-    ? Array.from(
-        new Set(
-          tours.flatMap(tour => 
-            [tour.guide1, tour.guide2].filter(Boolean) as string[]
-          )
-        )
-      )
-    : [];
+export const RoleSwitcher = () => {
+  const { role, setRole, guideName } = useRole();
+  const [guideNameInput, setGuideNameInput] = useState("");
 
-  const handleGuideView = (guideName: string) => {
-    toast.success(`Now viewing as guide: ${guideName}`);
-    setGuideView({ type: "guide", guideName });
-    setOpen(false);
+  const handleRoleChange = (newRole: string, details?: any) => {
+    setRole(newRole, details);
   };
 
-  const exitGuideView = () => {
-    setGuideView(null);
-    toast.info("Exited guide view");
-    setOpen(false);
+  const handleGuideSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (guideNameInput.trim()) {
+      handleRoleChange("guide", { 
+        guideName: guideNameInput.trim() 
+      });
+    }
   };
 
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2 min-w-40">
+        <Button variant="outline" size="sm" className="h-8 gap-1">
           <User className="h-4 w-4" />
-          {guideView ? (
-            <span className="text-orange-500 font-medium">
-              Viewing as: {guideView.guideName}
-            </span>
-          ) : (
-            <span>Tour Operator</span>
-          )}
-          <ChevronDown className="h-4 w-4 ml-auto" />
+          <span>{role === "guide" && guideName ? guideName : role}</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Switch View</DropdownMenuLabel>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Switch Role</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        
-        {guideView ? (
-          <DropdownMenuItem onClick={exitGuideView}>
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Exit Guide View</span>
-          </DropdownMenuItem>
-        ) : (
-          <>
-            <DropdownMenuLabel className="font-normal text-xs text-muted-foreground">
-              Guide Views
-            </DropdownMenuLabel>
-            {uniqueGuides.map((guide) => (
-              <DropdownMenuItem 
-                key={guide} 
-                onClick={() => handleGuideView(guide)}
-              >
-                <User className="mr-2 h-4 w-4" />
-                <span>{guide}</span>
-              </DropdownMenuItem>
-            ))}
-          </>
-        )}
+        <DropdownMenuItem
+          onClick={() => handleRoleChange("user")}
+          className={role === "user" ? "bg-accent" : ""}
+        >
+          <User className="mr-2 h-4 w-4" /> User
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handleRoleChange("admin")}
+          className={role === "admin" ? "bg-accent" : ""}
+        >
+          <Users className="mr-2 h-4 w-4" /> Admin
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <div className="p-2">
+          <form onSubmit={handleGuideSubmit} className="flex flex-col space-y-2">
+            <input
+              type="text"
+              placeholder="Guide Name"
+              value={guideNameInput}
+              onChange={(e) => setGuideNameInput(e.target.value)}
+              className="px-2 py-1 text-sm border rounded"
+            />
+            <Button type="submit" size="sm" className="w-full">
+              Switch to Guide
+            </Button>
+          </form>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+};
