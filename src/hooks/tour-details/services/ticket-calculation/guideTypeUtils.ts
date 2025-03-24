@@ -11,8 +11,8 @@ export const guideTypeNeedsTicket = (guideType?: string): boolean => {
     return true;
   }
   
-  // 'GA Ticket' and guide types with 'Ticket' in the name need tickets
-  const needsTicket = guideType === 'GA Ticket' || guideType.includes('Ticket');
+  // FIXED: Only 'GA Ticket' needs a ticket, not guide types just containing 'Ticket'
+  const needsTicket = guideType === 'GA Ticket';
   logger.debug(`🎟️ [guideTypeNeedsTicket] Guide type "${guideType}" ${needsTicket ? 'needs' : 'does not need'} a ticket`);
   
   return needsTicket;

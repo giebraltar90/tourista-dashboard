@@ -5,7 +5,7 @@ import { determineTicketTypeForGuide } from "./guideTypeUtils";
 
 /**
  * Find which guides are assigned to groups for this tour
- * We now assume all guides need tickets if they're present
+ * We now check both tour groups and primary guides
  */
 export const findAssignedGuides = (
   tourGroups: any[] = [],
@@ -15,10 +15,23 @@ export const findAssignedGuides = (
 ): Set<string> => {
   const assignedGuideIds = new Set<string>();
   
-  // Add all available guides by default
-  if (guide1Info) assignedGuideIds.add("guide1");
-  if (guide2Info) assignedGuideIds.add("guide2");
-  if (guide3Info) assignedGuideIds.add("guide3");
+  // Check if groups have assigned guides
+  if (Array.isArray(tourGroups) && tourGroups.length > 0) {
+    tourGroups.forEach(group => {
+      if (group.guideId === "guide1") assignedGuideIds.add("guide1");
+      if (group.guideId === "guide2") assignedGuideIds.add("guide2");
+      if (group.guideId === "guide3") assignedGuideIds.add("guide3");
+    });
+  }
+  
+  // If no guides are assigned to groups, but we have primary guides available,
+  // consider the first available guide as assigned (this matches original behavior)
+  if (assignedGuideIds.size === 0) {
+    // Only add primary guides that exist
+    if (guide1Info && guide1Info.name) assignedGuideIds.add("guide1");
+    else if (guide2Info && guide2Info.name) assignedGuideIds.add("guide2");
+    else if (guide3Info && guide3Info.name) assignedGuideIds.add("guide3");
+  }
   
   // Log the results
   logger.debug(`🎟️ [findAssignedGuides] Found ${assignedGuideIds.size} assigned guides:`, {
