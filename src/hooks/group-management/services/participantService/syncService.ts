@@ -5,117 +5,129 @@ import { logger } from "@/utils/logger";
 
 /**
  * Updates the calculated sizes on tour groups based on their participants
+ * This will be handled by database triggers now, but we keep this function 
+ * as a manual fallback
  */
 export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
   try {
     logger.debug(`🔁 [GROUP_SYNC] Syncing tour group sizes for tour ${tourId}`);
     
-    // First get all groups for this tour
+    // Try to refresh materialized view explicitly
+    try {
+      await supabase.rpc('refresh_tour_statistics');
+      logger.debug("🔁 [GROUP_SYNC] Refreshed tour statistics materialized view");
+    } catch (err) {
+      logger.warn("🔁 [GROUP_SYNC] Error refreshing materialized view:", err);
+      // Continue with fallback
+    }
+    
+    // Database triggers should handle this automatically now, but let's verify
     const { data: tourGroups, error: groupsError } = await supabase
       .from('tour_groups')
       .select('id, name, participants(id, count, child_count)')
       .eq('tour_id', tourId);
       
     if (groupsError) {
-      logger.error("🔁 [GROUP_SYNC] Error fetching tour groups for size sync:", groupsError);
+      logger.error("🔁 [GROUP_SYNC] Error fetching tour groups for size verification:", groupsError);
       return false;
     }
     
-    logger.debug(`🔁 [GROUP_SYNC] Fetched ${tourGroups.length} groups for size sync`);
+    logger.debug(`🔁 [GROUP_SYNC] Fetched ${tourGroups.length} groups for sync verification`);
     
-    // Update each group's size and child_count based on participants
+    let syncNeeded = false;
+    
+    // Verify that group sizes match participants (as a safety check)
     for (const group of tourGroups) {
       if (!Array.isArray(group.participants)) {
-        logger.debug(`🔁 [GROUP_SYNC] Group ${group.id} (${group.name || 'Unnamed'}) has no participants array, skipping`);
+        logger.debug(`🔁 [GROUP_SYNC] Group ${group.id} (${group.name || 'Unnamed'}) has no participants array, skipping verification`);
         continue;
       }
       
-      let totalSize = 0;
-      let totalChildCount = 0;
+      let calculatedSize = 0;
+      let calculatedChildCount = 0;
       
       // Calculate from participants
       for (const participant of group.participants) {
-        totalSize += participant.count || 1;
-        totalChildCount += participant.child_count || 0;
-        
-        logger.debug(`🔁 [GROUP_SYNC] Adding participant ${participant.id} with count ${participant.count || 1} and childCount ${participant.child_count || 0}`);
+        calculatedSize += participant.count || 1;
+        calculatedChildCount += participant.child_count || 0;
       }
       
-      logger.debug(`🔁 [GROUP_SYNC] Updating group ${group.id} (${group.name || 'Unnamed'}) with size ${totalSize} and childCount ${totalChildCount} from ${group.participants.length} participants`);
-      
-      // Update the group with calculated values
-      const { error: updateError } = await supabase
-        .from('tour_groups')
-        .update({
-          size: totalSize,
-          child_count: totalChildCount
-        })
-        .eq('id', group.id);
-        
-      if (updateError) {
-        logger.error(`🔁 [GROUP_SYNC] Error updating size for group ${group.id}:`, updateError);
+      // Only update if there's a discrepancy (which should be rare due to triggers)
+      if (calculatedSize !== group.size || calculatedChildCount !== group.child_count) {
+        syncNeeded = true;
+        logger.warn(`🔁 [GROUP_SYNC] Discrepancy detected for group ${group.id} (${group.name || 'Unnamed'})`, {
+          dbSize: group.size,
+          calculatedSize,
+          dbChildCount: group.child_count,
+          calculatedChildCount,
+          participantCount: group.participants.length
+        });
       }
-      
-      // Add a small delay between operations to prevent race conditions
-      await new Promise(resolve => setTimeout(resolve, 300));
     }
     
-    // Add a longer delay to ensure database consistency
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Verify the updates
-    const { data: verifyGroups, error: verifyError } = await supabase
-      .from('tour_groups')
-      .select('id, name, size, child_count, participants(id, count, child_count)')
-      .eq('tour_id', tourId);
+    // If any discrepancies were found, force a manual refresh
+    if (syncNeeded) {
+      logger.warn("🔁 [GROUP_SYNC] Discrepancies detected, forcing manual sync");
       
-    if (!verifyError && Array.isArray(verifyGroups)) {
-      for (const group of verifyGroups) {
-        let calculatedSize = 0;
-        let calculatedChildCount = 0;
+      // Directly call database function to recalculate
+      try {
+        await supabase.rpc('sync_all_tour_groups', {
+          p_tour_id: tourId
+        });
+        logger.debug("🔁 [GROUP_SYNC] Manual sync completed");
+      } catch (err) {
+        // If RPC fails, fall back to older method
+        logger.error("🔁 [GROUP_SYNC] RPC sync failed, falling back to manual updates:", err);
         
-        if (Array.isArray(group.participants)) {
-          for (const p of group.participants) {
-            calculatedSize += p.count || 1;
-            calculatedChildCount += p.child_count || 0;
+        for (const group of tourGroups) {
+          if (!Array.isArray(group.participants)) continue;
+          
+          let totalSize = 0;
+          let totalChildCount = 0;
+          
+          for (const participant of group.participants) {
+            totalSize += participant.count || 1;
+            totalChildCount += participant.child_count || 0;
           }
           
-          if (calculatedSize !== group.size || calculatedChildCount !== group.child_count) {
-            logger.warn(`🔁 [GROUP_SYNC] Verification failed for group ${group.id} (${group.name || 'Unnamed'})`, {
-              dbSize: group.size,
-              calculatedSize,
-              dbChildCount: group.child_count,
-              calculatedChildCount,
-              participantCount: group.participants.length
-            });
-            
-            // Auto-correct the values if they don't match
-            const { error: fixError } = await supabase
-              .from('tour_groups')
-              .update({
-                size: calculatedSize,
-                child_count: calculatedChildCount
-              })
-              .eq('id', group.id);
-              
-            if (fixError) {
-              logger.error(`🔁 [GROUP_SYNC] Error fixing group ${group.id}:`, fixError);
-            } else {
-              logger.debug(`🔁 [GROUP_SYNC] Auto-fixed group ${group.id} with correct size ${calculatedSize} and childCount ${calculatedChildCount}`);
-            }
-            
-            // Add a small delay after the fix
-            await new Promise(resolve => setTimeout(resolve, 200));
-          } else {
-            logger.debug(`🔁 [GROUP_SYNC] Verification passed for group ${group.id} (${group.name || 'Unnamed'})`);
-          }
+          await supabase
+            .from('tour_groups')
+            .update({
+              size: totalSize,
+              child_count: totalChildCount
+            })
+            .eq('id', group.id);
         }
       }
+    } else {
+      logger.debug("🔁 [GROUP_SYNC] All groups are correctly synchronized, no manual update needed");
     }
     
     return true;
   } catch (error) {
     logger.error("🔁 [GROUP_SYNC] Error synchronizing tour group sizes:", error);
+    return false;
+  }
+};
+
+// Export a function to create the database function if it doesn't exist
+export const ensureSyncFunction = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.rpc('sync_all_tour_groups', {
+      p_tour_id: '00000000-0000-0000-0000-000000000000' // Dummy ID to test if function exists
+    });
+    
+    // If function doesn't exist, we'll get a specific error
+    if (error && error.message.includes('function sync_all_tour_groups() does not exist')) {
+      logger.debug("🔁 [GROUP_SYNC] sync_all_tour_groups function doesn't exist, creating it");
+      
+      // We should create it, but this will be handled by migrations
+      return false;
+    }
+    
+    return true;
+  } catch (err) {
+    logger.error("🔁 [GROUP_SYNC] Error checking sync function:", err);
     return false;
   }
 };

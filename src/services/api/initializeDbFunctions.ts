@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { createGroupsUpdateFunction } from "./db/functions/createGroupsUpdateFunction";
+import { createSyncTourGroupsFunction } from "./db/functions/createSyncTourGroupsFunction";
 
 /**
  * Initialize all required database functions on application startup
@@ -11,15 +12,24 @@ export const initializeDbFunctions = async () => {
     logger.debug("Creating/updating database functions...");
     
     // Create the update_groups_after_move function for atomic group updates
-    const success = await createGroupsUpdateFunction();
+    const updateSuccess = await createGroupsUpdateFunction();
     
-    if (!success) {
+    if (!updateSuccess) {
       logger.error("Failed to create update_groups_after_move function");
     } else {
       logger.debug("Successfully created/updated update_groups_after_move function");
     }
     
-    return true;
+    // Create the sync_all_tour_groups function
+    const syncSuccess = await createSyncTourGroupsFunction();
+    
+    if (!syncSuccess) {
+      logger.error("Failed to create sync_all_tour_groups function");
+    } else {
+      logger.debug("Successfully created/updated sync_all_tour_groups function");
+    }
+    
+    return updateSuccess && syncSuccess;
   } catch (error) {
     logger.error("Error initializing database functions:", error);
     return false;

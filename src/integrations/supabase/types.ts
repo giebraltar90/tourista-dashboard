@@ -144,6 +144,13 @@ export type Database = {
             foreignKeyName: "modifications_tour_id_fkey"
             columns: ["tour_id"]
             isOneToOne: false
+            referencedRelation: "tour_statistics"
+            referencedColumns: ["tour_id"]
+          },
+          {
+            foreignKeyName: "modifications_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
             referencedRelation: "tours"
             referencedColumns: ["id"]
           },
@@ -247,6 +254,13 @@ export type Database = {
             foreignKeyName: "ticket_buckets_tour_id_fkey"
             columns: ["tour_id"]
             isOneToOne: false
+            referencedRelation: "tour_statistics"
+            referencedColumns: ["tour_id"]
+          },
+          {
+            foreignKeyName: "ticket_buckets_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
             referencedRelation: "tours"
             referencedColumns: ["id"]
           },
@@ -294,6 +308,13 @@ export type Database = {
             foreignKeyName: "ticket_requirements_tour_id_fkey"
             columns: ["tour_id"]
             isOneToOne: true
+            referencedRelation: "tour_statistics"
+            referencedColumns: ["tour_id"]
+          },
+          {
+            foreignKeyName: "ticket_requirements_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: true
             referencedRelation: "tours"
             referencedColumns: ["id"]
           },
@@ -331,6 +352,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tickets_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tour_statistics"
+            referencedColumns: ["tour_id"]
+          },
           {
             foreignKeyName: "tickets_tour_id_fkey"
             columns: ["tour_id"]
@@ -381,6 +409,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "guides"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tour_groups_tour_id_fkey"
+            columns: ["tour_id"]
+            isOneToOne: false
+            referencedRelation: "tour_statistics"
+            referencedColumns: ["tour_id"]
           },
           {
             foreignKeyName: "tour_groups_tour_id_fkey"
@@ -496,7 +531,45 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tour_statistics: {
+        Row: {
+          date: string | null
+          group_count: number | null
+          guide1_id: string | null
+          guide2_id: string | null
+          guide3_id: string | null
+          location: string | null
+          reference_code: string | null
+          total_child_count: number | null
+          total_participants: number | null
+          tour_id: string | null
+          tour_name: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tours_guide1_id_fkey"
+            columns: ["guide1_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tours_guide2_id_fkey"
+            columns: ["guide2_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tours_guide3_id_fkey"
+            columns: ["guide3_id"]
+            isOneToOne: false
+            referencedRelation: "guides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       check_table_exists: {

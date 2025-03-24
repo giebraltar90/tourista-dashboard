@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GroupsGrid } from "./GroupsGrid";
@@ -12,6 +12,10 @@ import { DatabaseErrorAlert } from "./components/DatabaseErrorAlert";
 import { GroupsFooter } from "./components/GroupsFooter";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
 import { useGuideAssignmentCache } from "@/hooks/group-management/useGuideAssignmentCache";
+import { logger } from "@/utils/logger";
+import { supabase } from "@/integrations/supabase/client";
+import { RequestError } from "@/components/ui/request-error";
+import { ensureSyncFunction } from "@/hooks/group-management/services/participantService/syncService";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -28,10 +32,11 @@ export const GroupsManagement = ({
   guide2Info = null,
   guide3Info = null
 }: GroupsManagementProps) => {
-  console.log("GroupsManagement rendering with tourId:", tourId);
+  logger.debug("👥 [GroupsManagement] Rendering with tourId:", tourId);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
-
+  const initialLoadAttempted = useRef(false);
+  
   // Get guide assignments from cache
   const { assignments, refreshAssignments } = useGuideAssignmentCache(tourId);
 
@@ -48,7 +53,9 @@ export const GroupsManagement = ({
     setSelectedParticipant,
     isMovePending,
     loadParticipants,
-    refreshParticipants
+    refreshParticipants,
+    isLoading,
+    error
   } = useGroupManagement(tour);
 
   // Database check hook
@@ -57,55 +64,55 @@ export const GroupsManagement = ({
     refreshParticipants
   );
   
-  // Manual refresh hook
+  // Manual refresh hook with reduced frequency
   const { isManualRefreshing, handleManualRefresh } = useManualRefresh(() => {
     refreshParticipants();
     refreshAssignments();
-  });
+  }, 10000); // 10 second minimum between manual refreshes
   
-  // Initial load of participants - only once
+  // Ensure sync function exists on component mount
   useEffect(() => {
-    if (tourId && !initialLoadDone) {
-      console.log("GroupsManagement: Initial loading of participants for tour:", tourId);
-      
-      // Load participants with the tourId directly
-      const fetchGroups = async () => {
-        try {
-          const { data: groups } = await supabase
-            .from('tour_groups')
-            .select('id')
-            .eq('tour_id', tourId);
-            
-          if (groups && groups.length > 0) {
-            const groupIds = groups.map(g => g.id);
-            await loadParticipants(groupIds);
-            setInitialLoadDone(true);
-          } else {
-            console.log("No groups found for this tour");
-            setInitialLoadDone(true);
-          }
-        } catch (err) {
-          console.error("Error fetching groups for loadParticipants:", err);
+    ensureSyncFunction();
+  }, []);
+  
+  // Load tour groups first, then participants
+  useEffect(() => {
+    const loadInitialGroups = async () => {
+      try {
+        if (!tourId || initialLoadDone || initialLoadAttempted.current) return;
+        
+        initialLoadAttempted.current = true;
+        logger.debug("👥 [GroupsManagement] Initial loading of groups for tour:", tourId);
+        
+        const { data: groups, error: groupsError } = await supabase
+          .from('tour_groups')
+          .select('id')
+          .eq('tour_id', tourId);
+          
+        if (groupsError) {
+          logger.error("👥 [GroupsManagement] Error fetching groups:", groupsError);
+          return;
+        }
+        
+        if (groups && groups.length > 0) {
+          const groupIds = groups.map(g => g.id);
+          logger.debug("👥 [GroupsManagement] Found groups for tour, loading participants:", groupIds);
+          await loadParticipants(groupIds);
+          setInitialLoadDone(true);
+        } else {
+          logger.debug("👥 [GroupsManagement] No groups found for this tour");
           setInitialLoadDone(true);
         }
-      };
-      
-      fetchGroups();
-    }
+      } catch (err) {
+        logger.error("👥 [GroupsManagement] Error in loadInitialGroups:", err);
+        setInitialLoadDone(true);
+      }
+    };
+    
+    loadInitialGroups();
   }, [tourId, loadParticipants, initialLoadDone]);
-
-  // Sync localTourGroups with guide assignments - only when assignments change
-  useEffect(() => {
-    if (localTourGroups && localTourGroups.length > 0 && assignments.length > 0) {
-      // We don't modify localTourGroups directly, but this ensures the correct guide names are displayed
-      console.log("Syncing localTourGroups with assignments:", {
-        localTourGroups: localTourGroups.map(g => ({ id: g.id, name: g.name })),
-        assignments: assignments.map(a => ({ id: a.groupId, guideName: a.guideName }))
-      });
-    }
-  }, [assignments]);
   
-  // Get dialog management - pass the tour object
+  // Get dialog management
   const dialogUtils = GroupDialogsContainer({
     tour,
     guide1Info,
@@ -128,6 +135,22 @@ export const GroupsManagement = ({
     // Call the original handler with a dummy event or no parameters
     handleDragEnd();
   };
+  
+  // Show error if there's a persistent issue
+  if (error && !isLoading && !isFixingDatabase) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <h2 className="text-2xl font-semibold mb-6">Group & Participant Management</h2>
+          <RequestError 
+            title="Error loading participants" 
+            message={typeof error === 'string' ? error : 'Failed to load participant data'}
+            retryAction={refreshParticipants}
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -167,7 +190,7 @@ export const GroupsManagement = ({
             />
           ) : (
             <div className="text-center p-6 text-muted-foreground">
-              No tour groups available. Try using the "Add Test Participants" button above.
+              {isLoading ? "Loading tour groups..." : "No tour groups available. Try using the \"Add Test Participants\" button above."}
             </div>
           )}
         </div>
@@ -180,6 +203,3 @@ export const GroupsManagement = ({
     </Card>
   );
 };
-
-// Add missing import
-import { supabase } from "@/integrations/supabase/client";

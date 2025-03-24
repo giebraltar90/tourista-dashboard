@@ -20,8 +20,8 @@ const LOG_PREFIXES = {
 class Logger {
   // Store original console methods
   private originalConsole: Record<LogLevel, (...args: any[]) => void>;
-  private debugEnabled: boolean = false;
-  private forceDebug: boolean = false; // Changed to false to disable excessive logging
+  private debugEnabled: boolean = true; // Changed to true to ensure logs are visible
+  private forceDebug: boolean = true; // Changed to true to enable all logs
 
   constructor() {
     // Save original console methods
@@ -51,7 +51,14 @@ class Logger {
           firstArg.startsWith('🔍') || 
           firstArg.startsWith('✅') || 
           firstArg.startsWith('❌') ||
-          firstArg.startsWith('❓')) {
+          firstArg.startsWith('❓') ||
+          firstArg.startsWith('👤') ||
+          firstArg.startsWith('👥') ||
+          firstArg.startsWith('🧭') ||
+          firstArg.startsWith('💾') ||
+          firstArg.startsWith('🔌') ||
+          firstArg.startsWith('🔄') ||
+          firstArg.startsWith('↔️')) {
         return [firstArg, ...restArgs];
       }
       
@@ -79,17 +86,13 @@ class Logger {
   }
 
   log(...args: any[]) {
-    // Only show important logs
-    if (this.debugEnabled) {
-      this.originalConsole.log(...this.formatArgs(args));
-    }
+    // Show all logs
+    this.originalConsole.log(...this.formatArgs(args));
   }
 
   info(...args: any[]) {
-    // Only show important info messages
-    if (this.debugEnabled) {
-      this.originalConsole.info(...this.formatArgs(args));
-    }
+    // Show all info messages
+    this.originalConsole.info(...this.formatArgs(args));
   }
 
   warn(...args: any[]) {
@@ -104,10 +107,8 @@ class Logger {
   }
 
   debug(...args: any[]) {
-    // Only show debug logs when explicitly enabled
-    if (this.debugEnabled) {
-      this.originalConsole.debug(...this.formatArgs(args));
-    }
+    // Show all debug logs
+    this.originalConsole.debug(...this.formatArgs(args));
   }
 }
 
@@ -116,6 +117,6 @@ export const logger = new Logger();
 // Hook to use in React components
 export const useLogger = () => {
   const debugMode = useDebugMode();
-  logger.setDebugMode(debugMode);
+  logger.setDebugMode(debugMode || true); // Force debug mode on
   return logger;
 };

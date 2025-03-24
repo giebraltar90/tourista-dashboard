@@ -4,6 +4,47 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 // Increase timeout settings to prevent frequent timeouts
 const FETCH_TIMEOUT = 30000; // 30 seconds timeout
 const MAX_RETRIES = 3; // Maximum number of retries for operations
+const CACHE_TTL = 30000; // 30 seconds cache timeout
+
+// Simple cache implementation
+class SimpleCache {
+  private cache: Map<string, {data: any, timestamp: number}> = new Map();
+  
+  get(key: string): any | null {
+    const entry = this.cache.get(key);
+    if (!entry) return null;
+    
+    // Check if entry is expired
+    if (Date.now() - entry.timestamp > CACHE_TTL) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return entry.data;
+  }
+  
+  set(key: string, data: any): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+  }
+  
+  invalidate(keyPattern: string): void {
+    for (const key of this.cache.keys()) {
+      if (key.includes(keyPattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+  
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+// Create a global cache instance
+export const queryCache = new SimpleCache();
 
 // Supabase client initialization with improved retry and timeout settings
 export const supabase = createSupabaseClient(
@@ -122,3 +163,40 @@ export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetrie
 
 // Re-export createClient with a better name to avoid circular dependencies
 export const createClient = createSupabaseClient;
+
+// Function to query the materialized view for tour statistics
+export const getTourStatistics = async (tourId: string) => {
+  // Check cache first
+  const cacheKey = `tour_statistics_${tourId}`;
+  const cachedData = queryCache.get(cacheKey);
+  if (cachedData) {
+    return cachedData;
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('tour_statistics')
+      .select('*')
+      .eq('tour_id', tourId)
+      .single();
+      
+    if (error) {
+      console.error("Error fetching tour statistics:", error);
+      // Fall back to direct queries if the materialized view fails
+      return null;
+    }
+    
+    // Cache the result
+    queryCache.set(cacheKey, data);
+    return data;
+  } catch (err) {
+    console.error("Exception fetching tour statistics:", err);
+    return null;
+  }
+};
+
+// Function to invalidate cache for a specific tour
+export const invalidateTourCache = (tourId: string) => {
+  queryCache.invalidate(`tour_${tourId}`);
+  queryCache.invalidate(`tour_statistics_${tourId}`);
+};
