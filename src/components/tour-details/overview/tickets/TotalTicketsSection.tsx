@@ -4,11 +4,13 @@ import { cn } from "@/lib/utils";
 interface TotalTicketsSectionProps {
   hasEnoughTickets: boolean;
   formattedTotalTickets: string;
+  requiredTickets: number;
 }
 
 export const TotalTicketsSection = ({
   hasEnoughTickets,
-  formattedTotalTickets
+  formattedTotalTickets,
+  requiredTickets
 }: TotalTicketsSectionProps) => {
   return (
     <div className="pt-1">
@@ -19,7 +21,7 @@ export const TotalTicketsSection = ({
             hasEnoughTickets ? "text-green-600" : "text-red-600",
           )}
         >
-          {formattedTotalTickets}
+          {formattedTotalTickets} / {requiredTickets}
         </span>
       </div>
     </div>

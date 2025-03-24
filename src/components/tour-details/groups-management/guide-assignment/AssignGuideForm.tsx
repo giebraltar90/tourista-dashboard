@@ -20,7 +20,6 @@ import { Badge } from "@/components/ui/badge";
 import { useGuideAssignmentForm } from "@/hooks/group-management/guide-assignment/useGuideAssignmentForm";
 import { GuideOption } from "@/hooks/group-management/types";
 import { AlertTriangle } from "lucide-react";
-import { logger } from "@/utils/logger";
 
 interface AssignGuideFormProps {
   tourId: string;
@@ -39,44 +38,6 @@ export const AssignGuideForm = ({
   onSuccess,
   tour
 }: AssignGuideFormProps) => {
-  // Ensure we have valid guide options by deduplicating and cleaning up
-  const normalizedGuides = React.useMemo(() => {
-    // Create a map to deduplicate guides
-    const guidesMap = new Map();
-    
-    guides.forEach(guide => {
-      // Skip invalid guide objects
-      if (!guide || !guide.id) return;
-      
-      // Use the ID as key to avoid duplicates
-      if (!guidesMap.has(guide.id)) {
-        guidesMap.set(guide.id, {
-          ...guide,
-          // Ensure guide has a valid name
-          name: guide.name || `Guide (${guide.id.substring(0, 6)}...)`
-        });
-      }
-    });
-    
-    // Convert map back to array
-    return Array.from(guidesMap.values());
-  }, [guides]);
-  
-  // Log available guides for debugging
-  React.useEffect(() => {
-    logger.debug("🔍 [AssignGuideForm] Available guides:", {
-      tourId,
-      groupIndex,
-      currentGuideId,
-      guidesCount: normalizedGuides.length,
-      guides: normalizedGuides.map(g => ({ 
-        id: g.id, 
-        name: g.name, 
-        type: g.info?.guideType 
-      }))
-    });
-  }, [tourId, groupIndex, currentGuideId, normalizedGuides]);
-  
   const { 
     form, 
     isSubmitting, 
@@ -87,7 +48,7 @@ export const AssignGuideForm = ({
   } = useGuideAssignmentForm({
     tourId,
     groupIndex,
-    guides: normalizedGuides,
+    guides,
     currentGuideId,
     onSuccess,
     tour
@@ -114,7 +75,7 @@ export const AssignGuideForm = ({
                 </FormControl>
                 <SelectContent>
                   <SelectItem value="_none">None (Unassign Guide)</SelectItem>
-                  {normalizedGuides.map((guide) => (
+                  {guides.map((guide) => (
                     <SelectItem key={guide.id} value={guide.id}>
                       <div className="flex items-center gap-2">
                         <span>{guide.name}</span>
@@ -156,7 +117,7 @@ export const AssignGuideForm = ({
           </div>
         </div>
         
-        {normalizedGuides.length === 0 && (
+        {guides.length === 0 && (
           <div className="flex items-center gap-2 text-amber-600 text-sm mt-2">
             <AlertTriangle className="w-4 h-4" />
             <span>No available guides. Please create guides first.</span>

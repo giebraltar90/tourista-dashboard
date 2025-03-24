@@ -8,7 +8,6 @@ import { ParticipantTicketsSection, GuideTicketsSection, TotalTicketsSection } f
 import { useEffect, useState, useCallback } from "react";
 import { logger } from "@/utils/logger";
 import { useTicketRecalculation } from "@/hooks/tour-details/useTicketRecalculation";
-import { useSyncedTicketRequirements } from "@/hooks/tour-details/useSyncedTicketRequirements";
 
 interface TicketsCardProps {
   adultTickets: number;
@@ -69,15 +68,6 @@ export const TicketsCard = ({
     guide1Info,
     guide2Info,
     guide3Info
-  );
-  
-  // Use our new hook to sync ticket requirements with the database
-  const { storedRequirements, needsSync } = useSyncedTicketRequirements(
-    tourIdString,
-    adultTickets,
-    childTickets,
-    guideTickets.adultTickets,
-    guideTickets.childTickets
   );
   
   // Function to handle guide changes
@@ -158,20 +148,17 @@ export const TicketsCard = ({
     locationNeedsGuideTickets,
     lastCalculation
   ]);
-
-  // Log if we need to sync requirements with database
-  useEffect(() => {
-    if (needsSync) {
-      logger.debug(`🎟️ [TicketsCard] Ticket requirements need to be synced for tour ${tourId}`);
-    }
-  }, [needsSync, tourId]);
   
   // Check if we have enough tickets
-  const hasEnoughTickets = true; // Always consider we have enough tickets to remove the warning
+  const hasEnoughTickets = totalTickets >= requiredTickets;
   
-  // Calculate the total tickets (participants + guide tickets)
-  const totalParticipantAndGuideTickets = adultTickets + childTickets + guideTickets.adultTickets + guideTickets.childTickets;
+  // Calculate total tickets needed (participants + guide tickets)
+  const totalTicketsNeeded = adultTickets + childTickets + guideTickets.adultTickets + guideTickets.childTickets;
   
+  // Calculate the actual total required tickets including guides
+  const actualRequiredTickets = requiredTickets > 0 ? 
+    requiredTickets : totalTicketsNeeded;
+    
   // Format the total tickets as "x + y" where x is adult and y is child
   const formattedTotalTickets = `${adultTickets + guideTickets.adultTickets} + ${childTickets + guideTickets.childTickets}`;
   
@@ -200,6 +187,7 @@ export const TicketsCard = ({
         <TotalTicketsSection 
           hasEnoughTickets={hasEnoughTickets} 
           formattedTotalTickets={formattedTotalTickets}
+          requiredTickets={actualRequiredTickets}
         />
       </CardContent>
     </Card>

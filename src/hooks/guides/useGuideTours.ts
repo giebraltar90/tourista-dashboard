@@ -8,7 +8,7 @@ export function useGuideTours() {
   const { guideView } = useRole();
   const guideName = guideView?.guideName || "";
   
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['guide-tours', guideName],
     queryFn: async () => {
       if (!guideName) return [];
@@ -72,5 +72,5 @@ export function useGuideTours() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  return { data: data || [], isLoading, error, refetch, guideName };
+  return { data: data || [], isLoading, error, guideName };
 }

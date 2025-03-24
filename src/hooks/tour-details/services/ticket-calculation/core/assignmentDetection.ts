@@ -1,62 +1,56 @@
 
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
-import { guideTypeNeedsTicket } from "../guideTypeUtils";
 
 /**
- * Determine if a guide is the default guide for a tour
+ * Helper function to detect if a guide is the default guide for a tour
+ * when no guides are explicitly assigned
  */
 export const isDefaultGuide = (
   guideInfo: GuideInfo | null,
   locationRequiresTickets: boolean
 ): boolean => {
-  // No guide info means it's not a default guide
-  if (!guideInfo) {
-    return false;
-  }
+  if (!guideInfo) return false;
   
-  // If location doesn't require tickets, we don't need a default guide
-  if (!locationRequiresTickets) {
-    return false;
-  }
-  
-  // Check if the guide type needs a ticket
-  const needsTicket = guideTypeNeedsTicket(guideInfo.guideType);
-  
-  // For a guide to be considered the default, they must have a name and need a ticket
-  const result = needsTicket && !!guideInfo.name;
-  
-  logger.debug(`🎟️ [isDefaultGuide] Guide ${guideInfo.name || 'unknown'} is ${result ? '' : 'not '}a default guide:`, {
-    guideType: guideInfo.guideType,
-    needsTicket,
-    hasName: !!guideInfo.name
-  });
-  
-  return result;
+  // If location requires tickets and we have guide info, consider as default
+  return locationRequiresTickets && !!guideInfo;
 };
 
 /**
- * Process the default guide for the tour
+ * Process a single guide when no guides are assigned
+ * Used when there are no explicit guide assignments but we still need tickets
  */
 export const processDefaultGuide = (
-  guideInfo: GuideInfo | null,
+  guideInfo: GuideInfo | null, 
   locationRequiresTickets: boolean,
-  guideKey: string,
-  processorFn: any
-): any => {
-  // If location doesn't require tickets, no tickets needed
-  if (!locationRequiresTickets) {
+  guidePosition: string,
+  processGuideFn: (
+    guideInfo: GuideInfo | null,
+    location: string,
+    assignedGuideIds: Set<string>,
+    guideKey: string
+  ) => any
+): any | null => {
+  
+  if (!guideInfo || !locationRequiresTickets) {
+    logger.debug(`🎟️ [DefaultGuide] No guide info or location doesn't require tickets`);
     return null;
   }
   
-  // No guide info, no ticket
-  if (!guideInfo) {
-    return null;
-  }
+  logger.debug(`🎟️ [DefaultGuide] Processing default guide:`, {
+    guideName: guideInfo.name,
+    guideType: guideInfo.guideType,
+    position: guidePosition
+  });
   
-  // Create a default set with just this guide
-  const defaultSet = new Set<string>([guideKey]);
+  // Create a mock assignment set with just this guide
+  const mockAssignments = new Set([guidePosition]);
   
-  // Process the guide using the provided processor function
-  return processorFn(guideInfo, "", defaultSet, guideKey);
+  // Use the standard processing function with the mock assignments
+  return processGuideFn(
+    guideInfo, 
+    "default", // Use a default location value 
+    mockAssignments, 
+    guidePosition
+  );
 };

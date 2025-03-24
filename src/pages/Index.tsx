@@ -1,101 +1,72 @@
 
-import React from 'react';
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { TodaysSummary } from '@/components/dashboard/TodaysSummary';
-import { StatsCard } from '@/components/dashboard/StatsCard';
-import { UpcomingTours } from '@/components/dashboard/UpcomingTours';
-import { Clock, Users, Calendar, Ticket } from 'lucide-react';
-import { addDays } from 'date-fns';
+import { StatsCard } from "@/components/dashboard/StatsCard";
+import { TodaysSummary } from "@/components/dashboard/TodaysSummary";
+import { UpcomingTours } from "@/components/dashboard/UpcomingTours";
+import { QuickActions } from "@/components/tours/QuickActions";
+import { mockTours, mockActivities, mockMessages } from "@/data/mockData";
+import { Bike, Ticket, Users, TrendingUp } from "lucide-react";
 
-const HomePage = () => {
-  // Today's date for TodaysSummary
-  const today = new Date();
-  
-  // Sample activities for TodaysSummary
-  const activities = [
-    {
-      id: '1',
-      time: '09:00 AM',
-      title: 'Mountain Bike Tour',
-      description: 'Prepare equipment for the mountain tour',
-      type: 'tour' as const,
-      status: 'active' as const
-    },
-    {
-      id: '2',
-      time: '11:30 AM',
-      title: 'Guide Meeting',
-      description: 'Brief guides on upcoming tours',
-      type: 'guide' as const,
-      status: 'pending' as const
-    }
-  ];
-  
-  // Sample messages for TodaysSummary
-  const messages = [
-    {
-      id: '101',
-      sender: 'Sarah Miller',
-      message: 'Can you confirm the equipment list for tomorrow?',
-      time: '08:45 AM',
-      read: false
-    },
-    {
-      id: '102',
-      sender: 'John Davis',
-      message: 'Tour group size increased by 2 participants',
-      time: '10:15 AM',
-      read: true
-    }
-  ];
-
+const Index = () => {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Operations Dashboard</h1>
+          <p className="text-muted-foreground mt-1">
+            Overview of today's tours, activities and operational metrics
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatsCard 
-            title="Total Tours" 
-            value="24" 
-            description="This month" 
-            icon={Calendar}
+            title="Total Tours Today"
+            value="3"
+            description="May 7, 2023"
+            icon={Bike}
+            trend={{ value: 20, isPositive: true }}
+          />
+          <StatsCard 
+            title="Participants"
+            value="23"
+            description="Across all tours"
+            icon={Users}
+            trend={{ value: 5, isPositive: true }}
+          />
+          <StatsCard 
+            title="Tickets Issued"
+            value="23"
+            description="For attractions & museums"
+            icon={Ticket}
+          />
+          <StatsCard 
+            title="Weekly Revenue"
+            value="€9,580"
+            description="15 tours completed"
+            icon={TrendingUp}
             trend={{ value: 12, isPositive: true }}
           />
-          <StatsCard 
-            title="Participants" 
-            value="548" 
-            description="This week" 
-            icon={Users}
-            trend={{ value: 8, isPositive: true }}
-          />
-          <StatsCard 
-            title="Upcoming Tours" 
-            value="18" 
-            description="Next 7 days" 
-            icon={Clock}
-          />
-          <StatsCard 
-            title="Available Tickets" 
-            value="236" 
-            description="Across all tours" 
-            icon={Ticket}
-            trend={{ value: 5, isPositive: false }}
-          />
         </div>
-        <div className="grid gap-8 lg:grid-cols-3">
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <TodaysSummary 
-              date={today}
-              activities={activities}
-              messages={messages}
+              date={new Date("2023-05-07")}
+              activities={mockActivities}
+              messages={mockMessages}
             />
           </div>
           <div>
-            <UpcomingTours />
+            <QuickActions />
           </div>
+        </div>
+        
+        <div>
+          <UpcomingTours tours={mockTours} />
         </div>
       </div>
     </DashboardLayout>
   );
 };
 
-export default HomePage;
+export default Index;

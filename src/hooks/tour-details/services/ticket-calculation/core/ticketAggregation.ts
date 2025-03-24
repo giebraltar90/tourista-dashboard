@@ -1,5 +1,5 @@
 
-import { GuideInfo } from "@/types/ventrata";
+import { logger } from "@/utils/logger";
 
 /**
  * Count tickets by type from guide requirements
@@ -9,56 +9,51 @@ export const countTicketsByType = (
     needsTicket: boolean;
     ticketType: "adult" | "child" | null;
   }>
-): { adultTickets: number; childTickets: number } => {
-  // Initialize counters
+): { adultTickets: number; childTickets: number; totalTickets: number } => {
   let adultTickets = 0;
   let childTickets = 0;
   
-  // Count tickets by type
   guidesWithRequirements.forEach(guide => {
-    if (guide.needsTicket && guide.ticketType === "adult") {
-      adultTickets++;
-    } else if (guide.needsTicket && guide.ticketType === "child") {
-      childTickets++;
+    if (guide.needsTicket) {
+      if (guide.ticketType === 'adult') adultTickets++;
+      else if (guide.ticketType === 'child') childTickets++;
     }
   });
   
-  return { adultTickets, childTickets };
+  const total = adultTickets + childTickets;
+  
+  logger.debug(`🎟️ [TicketAggregation] Counted tickets:`, {
+    adultTickets,
+    childTickets,
+    totalTickets: total
+  });
+  
+  return {
+    adultTickets,
+    childTickets,
+    totalTickets: total
+  };
 };
 
 /**
- * Map guides to result format
+ * Map guide requirement objects to the guides array format
+ * used in the ticket calculation result
  */
 export const mapGuidesToResultFormat = (
-  guideResults: Array<{
+  guideRequirements: Array<{
     guideName: string;
     guideType: string;
     needsTicket: boolean;
     ticketType: "adult" | "child" | null;
-    guideId?: string;
-    guideInfo?: GuideInfo | null;
-  }>,
-  guideInfos: Array<GuideInfo | null> = []
+  }>
 ): Array<{
   guideName: string;
   guideType: string;
   ticketType: "adult" | "child" | null;
-  guideInfo: GuideInfo | null;
-  needsTicket?: boolean;
 }> => {
-  return guideResults.map((guide, index) => {
-    // Find the corresponding guide info by matching guide ID or fallback to index
-    const guideInfo = guide.guideInfo || (guide.guideId 
-      ? guideInfos.find(g => g?.id === guide.guideId) || null
-      : guideInfos[index] || null);
-      
-    return {
-      guideName: guide.guideName,
-      guideType: guide.guideType,
-      // Only set ticketType if guide needs a ticket
-      ticketType: guide.needsTicket ? guide.ticketType : null,
-      guideInfo: guideInfo,
-      needsTicket: guide.needsTicket
-    };
-  });
+  return guideRequirements.map(guide => ({
+    guideName: guide.guideName,
+    guideType: guide.guideType || "Unknown",
+    ticketType: guide.ticketType
+  }));
 };
