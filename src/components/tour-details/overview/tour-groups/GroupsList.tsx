@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { GroupCard } from "./GroupCard";
 
 interface GroupsListProps {

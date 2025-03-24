@@ -1,9 +1,13 @@
 
-import { useState } from "react";
-import { GroupDialogs } from "../GroupDialogs";
+import { Fragment, ReactNode } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo } from "@/types/ventrata";
-import { useDeleteGroup } from "@/hooks/group-management";
+import { AddGroupDialog } from "../dialogs/AddGroupDialog";
+import { EditGroupDialog } from "../dialogs/EditGroupDialog";
+import { AssignGuideDialog } from "../dialogs/AssignGuideDialog";
+import { DeleteGroupDialog } from "../DeleteGroupDialog";
+import { useDialogUtils } from "../hooks/useDialogUtils";
+import { useGuides } from "@/hooks/useGuides";
 
 interface GroupDialogsContainerProps {
   tour: TourCardProps;
@@ -24,97 +28,105 @@ export const GroupDialogsContainer = ({
   setSelectedGroupIndex,
   onGuideAssigned
 }: GroupDialogsContainerProps) => {
-  // Dialog states
-  const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
-  const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
-  const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const { data: guidesData = [] } = useGuides();
   
-  // Hooks for group operations
-  const { deleteGroup, isDeleting } = useDeleteGroup(tour.id);
+  // Transform the guides data for compatibility
+  const guides = guidesData.map(guide => ({
+    id: guide.id,
+    name: guide.name,
+    info: {
+      name: guide.name,
+      birthday: guide.birthday ? new Date(guide.birthday) : new Date(),
+      guideType: guide.guide_type
+    } as GuideInfo
+  }));
   
-  // Handlers for opening dialogs
-  const openAddGroupDialog = () => {
-    setIsAddGroupOpen(true);
-  };
-  
-  const openEditGroupDialog = (groupIndex: number) => {
-    setSelectedGroupIndex(groupIndex);
-    setIsEditGroupOpen(true);
-  };
-  
-  const openAssignGuideDialog = (groupIndex: number) => {
-    setSelectedGroupIndex(groupIndex);
-    setIsAssignGuideOpen(true);
-  };
-  
-  const openDeleteDialog = () => {
-    if (selectedGroupIndex !== null) {
-      setIsDeleteDialogOpen(true);
-    }
-  };
-  
-  // Handle group deletion
-  const handleDeleteGroup = async () => {
-    if (selectedGroupIndex !== null) {
-      await deleteGroup(selectedGroupIndex);
-      setIsDeleteDialogOpen(false);
-      setSelectedGroupIndex(null);
-    }
-  };
-  
-  // Handle dialog close with guide assignment
-  const handleAssignGuideDialogClose = (open: boolean) => {
-    setIsAssignGuideOpen(open);
-    if (!open && onGuideAssigned) {
-      onGuideAssigned();
-    }
-  };
-
-  // Return an object with all the dialog states, handlers, and the rendered component
-  return {
-    // Dialog open states
-    isAddGroupOpen,
-    isEditGroupOpen,
-    isAssignGuideOpen,
-    isDeleteDialogOpen,
-    
-    // Dialog open handlers
+  // Use the dialog utilities
+  const {
+    isDialogOpen,
+    dialogType,
+    openAssignGuideDialog,
     openAddGroupDialog,
     openEditGroupDialog,
-    openAssignGuideDialog,
-    openDeleteDialog,
+    openDeleteGroupDialog,
+    closeDialog
+  } = useDialogUtils(
+    tour,
+    guide1Info,
+    guide2Info,
+    guide3Info,
+    selectedGroupIndex,
+    setSelectedGroupIndex
+  );
+  
+  // Render all dialogs based on dialogType
+  let dialogComponent: ReactNode = null;
+  
+  if (isDialogOpen && selectedGroupIndex !== null) {
+    const currentGroup = tour.tourGroups?.[selectedGroupIndex];
+    const currentGuideId = currentGroup?.guideId;
     
-    // Dialog control
-    setIsAddGroupOpen,
-    setIsEditGroupOpen,
-    setIsAssignGuideOpen,
-    setIsDeleteDialogOpen,
-    
-    // Delete handler
-    handleDeleteGroup,
-    isDeleting,
-    
-    // Render all dialogs
-    dialogsComponent: (
-      <GroupDialogs
+    if (dialogType === 'assignGuide' && currentGroup) {
+      dialogComponent = (
+        <AssignGuideDialog
+          isOpen={isDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) closeDialog();
+          }}
+          tourId={tour.id}
+          groupIndex={selectedGroupIndex}
+          guides={guides}
+          currentGuideId={currentGuideId}
+          onSuccess={() => {
+            closeDialog();
+            if (onGuideAssigned) onGuideAssigned();
+          }}
+        />
+      );
+    } else if (dialogType === 'editGroup' && currentGroup) {
+      dialogComponent = (
+        <EditGroupDialog
+          isOpen={isDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) closeDialog();
+          }}
+          tourId={tour.id}
+          group={currentGroup}
+          groupIndex={selectedGroupIndex}
+        />
+      );
+    } else if (dialogType === 'deleteGroup') {
+      dialogComponent = (
+        <DeleteGroupDialog
+          isOpen={isDialogOpen}
+          setIsOpen={(open) => {
+            if (!open) closeDialog();
+          }}
+          isDeleting={false}
+          onConfirmDelete={async () => {
+            closeDialog();
+          }}
+        />
+      );
+    }
+  } else if (isDialogOpen && dialogType === 'addGroup') {
+    dialogComponent = (
+      <AddGroupDialog
+        isOpen={isDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) closeDialog();
+        }}
         tourId={tour.id}
-        tour={tour}
-        selectedGroupIndex={selectedGroupIndex}
-        isAddGroupOpen={isAddGroupOpen}
-        setIsAddGroupOpen={setIsAddGroupOpen}
-        isEditGroupOpen={isEditGroupOpen}
-        setIsEditGroupOpen={setIsEditGroupOpen}
-        isAssignGuideOpen={isAssignGuideOpen}
-        setIsAssignGuideOpen={handleAssignGuideDialogClose}
-        isDeleteDialogOpen={isDeleteDialogOpen}
-        setIsDeleteDialogOpen={setIsDeleteDialogOpen}
-        guide1Info={guide1Info}
-        guide2Info={guide2Info}
-        guide3Info={guide3Info}
-        handleDeleteGroup={handleDeleteGroup}
-        isDeleting={isDeleting}
       />
-    )
+    );
+  }
+  
+  return {
+    openAssignGuideDialog,
+    openAddGroupDialog,
+    openEditGroupDialog,
+    openDeleteGroupDialog,
+    closeDialog,
+    dialogsComponent: dialogComponent ? <Fragment>{dialogComponent}</Fragment> : null
   };
 };

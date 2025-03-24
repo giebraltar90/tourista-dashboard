@@ -1,43 +1,39 @@
 
 import { Button } from "@/components/ui/button";
-import { RefreshCw, PlusCircle } from "lucide-react";
+import { RefreshCw, FilePlus2 } from "lucide-react";
 
 interface GroupsHeaderProps {
   isManualRefreshing: boolean;
   isFixingDatabase: boolean;
   onManualRefresh: () => void;
-  onAddParticipants?: () => void;
 }
 
 export const GroupsHeader = ({ 
   isManualRefreshing, 
   isFixingDatabase, 
-  onManualRefresh,
-  onAddParticipants
+  onManualRefresh 
 }: GroupsHeaderProps) => {
   return (
     <div className="flex justify-between items-center">
-      <Button 
-        variant="outline" 
-        size="sm" 
-        onClick={onManualRefresh}
-        disabled={isManualRefreshing || isFixingDatabase}
-      >
-        {isManualRefreshing && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-        {isManualRefreshing ? "Refreshing..." : "Refresh Participants"}
-      </Button>
-      
-      {onAddParticipants && (
-        <Button 
-          variant="outline" 
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
           size="sm"
-          onClick={onAddParticipants}
-          disabled={isFixingDatabase}
+          onClick={onManualRefresh}
+          disabled={isManualRefreshing || isFixingDatabase}
         >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Test Participants
+          <RefreshCw className={`h-4 w-4 mr-1 ${isManualRefreshing ? 'animate-spin' : ''}`} />
+          {isManualRefreshing ? "Refreshing..." : "Refresh"}
         </Button>
-      )}
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+        >
+          <FilePlus2 className="h-4 w-4 mr-1" /> Add Test Participants
+        </Button>
+      </div>
     </div>
   );
 };

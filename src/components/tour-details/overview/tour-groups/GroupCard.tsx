@@ -1,7 +1,5 @@
 
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { AssignGuideDialog } from "../../groups-management/dialogs/AssignGuideDialog";
 
 interface GroupCardProps {
   index: number;
@@ -27,7 +25,6 @@ export const GroupCard = ({
 
   return (
     <div 
-      key={group.id || index}
       className="border rounded-lg overflow-hidden"
     >
       <div className="bg-muted/30 p-3 flex items-center justify-between">
