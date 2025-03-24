@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import TodaysSummary from '@/components/dashboard/TodaysSummary';
-import StatsCard from '@/components/dashboard/StatsCard';
-import UpcomingTours from '@/components/dashboard/UpcomingTours';
+import { TodaysSummary } from '@/components/dashboard/TodaysSummary';
+import { StatsCard } from '@/components/dashboard/StatsCard';
+import { UpcomingTours } from '@/components/dashboard/UpcomingTours';
 
 const HomePage = () => {
   return (
