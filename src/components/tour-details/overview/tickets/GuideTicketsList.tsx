@@ -40,4 +40,4 @@ export const GuideTicketsList = ({ guides }: GuideTicketsListProps) => {
       })}
     </div>
   );
-});
+};
