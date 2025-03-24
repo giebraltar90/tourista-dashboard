@@ -34,11 +34,9 @@ export const TicketsCard = ({
   tourGroups = [],
   tourId = ""
 }: TicketsCardProps) => {
-  // Use ticket recalculation hook with an empty callback for now
+  // Use ticket recalculation hook
   const tourIdString = String(tourId || '');
-  const { notifyParticipantChange, notifyGuideChange } = useTicketRecalculation(tourIdString, () => {
-    logger.debug("🎟️ [TicketsCard] Recalculating tickets for tour", tourIdString);
-  });
+  const { notifyParticipantChange, notifyGuideChange } = useTicketRecalculation(tourIdString);
   
   // State to track the last calculation
   const [lastCalculation, setLastCalculation] = useState({
