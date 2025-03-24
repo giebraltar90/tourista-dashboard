@@ -8,7 +8,6 @@ import {
   calculateCompleteGuideTicketRequirements
 } from "./services/ticket-calculation";
 import { locationRequiresGuideTickets } from "./services/ticket-calculation/locationUtils";
-import { EventEmitter } from "@/utils/eventEmitter";
 
 /**
  * Hook to determine guide ticket requirements for a tour
@@ -21,24 +20,21 @@ export const useGuideTicketRequirements = (
 ) => {
   // Special monitoring for specific tour ID
   const isSpecialMonitoringTour = tour.id === '324598820';
-  const currentTourId = tour.id;
   
   // ENHANCED LOGGING: Log initial tour data for special monitoring tour
-  useEffect(() => {
-    if (isSpecialMonitoringTour) {
-      logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] Tour data received:`, {
-        tourId: tour.id,
-        tourLocation: tour.location,
-        tourName: tour.tourName || 'Unknown Tour',
-        tourDate: tour.date,
-        referenceCode: tour.referenceCode,
-        guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'None',
-        guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'None', 
-        guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'None',
-        tourGroups: tour.tourGroups ? JSON.stringify(tour.tourGroups) : 'No groups'
-      });
-    }
-  }, [isSpecialMonitoringTour, tour, guide1Info, guide2Info, guide3Info]);
+  if (isSpecialMonitoringTour) {
+    logger.debug(`🔍 [TOUR #324598820 INTENSIVE MONITORING] Tour data received:`, {
+      tourId: tour.id,
+      tourLocation: tour.location,
+      tourName: tour.tourName || 'Unknown Tour',
+      tourDate: tour.date,
+      referenceCode: tour.referenceCode,
+      guide1: guide1Info ? `${guide1Info.name} (${guide1Info.guideType})` : 'None',
+      guide2: guide2Info ? `${guide2Info.name} (${guide2Info.guideType})` : 'None', 
+      guide3: guide3Info ? `${guide3Info.name} (${guide3Info.guideType})` : 'None',
+      tourGroups: tour.tourGroups ? JSON.stringify(tour.tourGroups) : 'No groups'
+    });
+  }
   
   // Check if location needs tickets (now always true)
   const location = tour.location || '';
@@ -160,16 +156,6 @@ export const useGuideTicketRequirements = (
     guide1Info, guide2Info, guide3Info,
     adultTickets, childTickets, guides, isSpecialMonitoringTour
   ]);
-  
-  // Emit a guide-tickets-calculated event when the tickets change
-  useEffect(() => {
-    // This will notify other components that the guide tickets have been calculated
-    EventEmitter.emit(`guide-tickets-calculated:${tour.id}`, {
-      adultTickets,
-      childTickets,
-      guides
-    });
-  }, [tour.id, adultTickets, childTickets, guides]);
   
   return {
     locationNeedsGuideTickets,

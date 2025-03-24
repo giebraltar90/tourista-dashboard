@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { TicketBucketInfo } from "./TicketBucketInfo";
 import { useGuideTicketRequirements } from "@/hooks/tour-details/useGuideTicketRequirements";
 import { logger } from "@/utils/logger";
-import { useTicketBuckets } from "@/hooks/useTicketBuckets";
 
 export const TicketsManagement = ({ 
   tour, 
@@ -40,9 +39,6 @@ export const TicketsManagement = ({
     childTickets: guideChildTickets,
     guides: guidesWithTickets
   } = guideTickets;
-  
-  // Fetch ticket buckets for this tour
-  const { data: ticketBuckets = [], isLoading: isLoadingBuckets } = useTicketBuckets(tour.id);
   
   // Total tickets needed including guides
   const totalAdultTicketsNeeded = adultParticipants + guideAdultTickets;
@@ -81,21 +77,6 @@ export const TicketsManagement = ({
     totalTicketsNeeded, guidesWithTickets, isSpecialMonitoringTour
   ]);
   
-  // Log ticket bucket information
-  useEffect(() => {
-    if (ticketBuckets.length > 0) {
-      logger.debug(`🎟️ [TicketsManagement] Ticket buckets for tour ${tour.id}:`, {
-        bucketCount: ticketBuckets.length,
-        buckets: ticketBuckets.map(b => ({
-          id: b.id,
-          reference: b.reference_number,
-          maxTickets: b.max_tickets,
-          allocatedTickets: b.allocated_tickets || 0
-        }))
-      });
-    }
-  }, [tour.id, ticketBuckets]);
-  
   return (
     <Card className="col-span-3">
       <CardHeader>
@@ -103,13 +84,12 @@ export const TicketsManagement = ({
       </CardHeader>
       <CardContent>
         <TicketBucketInfo
-          buckets={ticketBuckets}
-          isLoading={isLoadingBuckets}
+          buckets={[]}
+          isLoading={false}
           tourId={tour.id}
           requiredTickets={totalTicketsNeeded}
           tourDate={tour.date}
           totalParticipants={totalParticipants}
-          guideTicketsNeeded={guideAdultTickets + guideChildTickets}
         />
       </CardContent>
     </Card>

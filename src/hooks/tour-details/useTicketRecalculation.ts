@@ -1,79 +1,50 @@
 
-import { useCallback, useEffect } from 'react';
-import { toast } from 'sonner';
-import { EventEmitter, EVENTS } from '@/utils/eventEmitter';
-import { logger } from '@/utils/logger';
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { EventEmitter } from '@/utils/eventEmitter';
 
 /**
- * Custom hook to handle ticket recalculation events
+ * Hook to trigger ticket recalculation when participants or guides change
  */
-export const useTicketRecalculation = (
-  tourId: string,
-  onRecalculate: () => void
-) => {
-  // Notify that guides have changed, triggering ticket recalculation
-  const notifyGuideChange = useCallback(() => {
-    if (!tourId) return;
-    
-    logger.debug(`🎟️ [useTicketRecalculation] Notifying guide change for tour ${tourId}`);
-    EventEmitter.emit(EVENTS.GUIDE_CHANGED(tourId), {
-      source: 'ticket_recalculation',
-      tourId
-    });
-    
-    // Also call the onRecalculate callback
-    onRecalculate();
-  }, [tourId, onRecalculate]);
+export const useTicketRecalculation = (tourId: string) => {
+  const queryClient = useQueryClient();
   
-  // Notify that participants have changed, triggering ticket recalculation
-  const notifyParticipantChange = useCallback(() => {
-    if (!tourId) return;
-    
-    logger.debug(`🎟️ [useTicketRecalculation] Notifying participant change for tour ${tourId}`);
-    EventEmitter.emit(EVENTS.PARTICIPANT_MOVED(tourId), {
-      source: 'ticket_recalculation',
-      tourId
-    });
-    
-    // Also call the onRecalculate callback
-    onRecalculate();
-  }, [tourId, onRecalculate]);
-  
-  // Directly request ticket recalculation
-  const requestRecalculation = useCallback(() => {
-    if (!tourId) return;
-    
-    logger.debug(`🎟️ [useTicketRecalculation] Requesting ticket recalculation for tour ${tourId}`);
-    EventEmitter.emit(EVENTS.RECALCULATE_TICKETS(tourId), {
-      source: 'manual_request',
-      tourId
-    });
-    
-    // Also call the onRecalculate callback
-    onRecalculate();
-  }, [tourId, onRecalculate]);
-  
-  // Listen for ticket update events
   useEffect(() => {
-    if (!tourId) return;
-    
-    const handleTicketsUpdated = (data: any) => {
-      logger.debug(`🎟️ [useTicketRecalculation] Tickets updated for tour ${tourId}`, data);
-      // We could show a toast here if needed
+    // Set up listeners for participant and guide changes
+    const handleParticipantChange = () => {
+      console.log("🎟️ [useTicketRecalculation] Participant change detected, invalidating queries");
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['participantCounts', tourId] });
     };
     
-    // Set up event listeners
-    EventEmitter.on(EVENTS.TICKETS_UPDATED(tourId), handleTicketsUpdated);
+    const handleGuideChange = () => {
+      console.log("🎟️ [useTicketRecalculation] Guide change detected, invalidating queries");
+      queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+      queryClient.invalidateQueries({ queryKey: ['guideInfo', tourId] });
+    };
     
-    // Clean up event listeners
+    // Register event listeners
+    EventEmitter.on(`participant-change:${tourId}`, handleParticipantChange);
+    EventEmitter.on(`guide-change:${tourId}`, handleGuideChange);
+    
+    // Cleanup event listeners on unmount
     return () => {
-      EventEmitter.off(EVENTS.TICKETS_UPDATED(tourId), handleTicketsUpdated);
+      EventEmitter.off(`participant-change:${tourId}`, handleParticipantChange);
+      EventEmitter.off(`guide-change:${tourId}`, handleGuideChange);
     };
-  }, [tourId]);
+  }, [tourId, queryClient]);
+  
+  // Expose methods to manually trigger recalculations
+  const notifyParticipantChange = () => {
+    EventEmitter.emit(`participant-change:${tourId}`);
+  };
+  
+  const notifyGuideChange = () => {
+    EventEmitter.emit(`guide-change:${tourId}`);
+  };
   
   return {
-    notifyGuideChange,
     notifyParticipantChange,
-    requestRecalculation
+    notifyGuideChange
   };
 };

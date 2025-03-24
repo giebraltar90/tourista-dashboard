@@ -9,9 +9,6 @@ import { useTourDatabaseCheck } from "./hooks/useTourDatabaseCheck";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents";
 import { useEffect, useCallback, memo } from "react";
-import { useGuideAssignmentConsistency } from "@/hooks/tour-details/useGuideAssignmentConsistency";
-import { useTicketRequirements } from "@/hooks/tour-details/useTicketRequirements";
-import { logger } from "@/utils/logger";
 
 /**
  * Main tour details page component - refactored for cleaner organization
@@ -63,26 +60,6 @@ const TourDetailsPage = () => {
   // Custom hook for guide information - safely pass tour
   const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
   
-  // Use the guide assignment consistency hook to ensure UI and DB are in sync
-  const { checkAndFixGuideAssignments } = useGuideAssignmentConsistency(tourId, tour);
-  
-  // Use the ticket requirements hook to calculate and store ticket requirements
-  const { ticketRequirements, calculateAndSaveTicketRequirements } = useTicketRequirements(
-    tourId, 
-    tour, 
-    guide1Info, 
-    guide2Info, 
-    guide3Info
-  );
-  
-  // Whenever tour data or guides change, recalculate ticket requirements
-  useEffect(() => {
-    if (tour && guide1Info !== undefined && guide2Info !== undefined && guide3Info !== undefined) {
-      logger.debug(`[TourDetailsPage] Guides loaded, calculating ticket requirements`);
-      calculateAndSaveTicketRequirements();
-    }
-  }, [tour, guide1Info, guide2Info, guide3Info, calculateAndSaveTicketRequirements]);
-  
   // Listen for refresh-participants event
   useParticipantRefreshEvents(tourId, handleRefetch);
 
@@ -111,7 +88,6 @@ const TourDetailsPage = () => {
           guide3Info={guide3Info}
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          ticketRequirements={ticketRequirements}
         />
       )}
     </DashboardLayout>

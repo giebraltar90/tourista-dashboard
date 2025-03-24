@@ -16,7 +16,6 @@ export interface NormalizedTourContentProps {
   guide3Info?: GuideInfo | null;
   activeTab?: string;
   onTabChange?: (value: string) => void;
-  ticketRequirements?: any; // Add the ticketRequirements prop
 }
 
 export const NormalizedTourContent = memo(({
@@ -27,7 +26,6 @@ export const NormalizedTourContent = memo(({
   guide3Info,
   activeTab = "overview",
   onTabChange,
-  ticketRequirements,
 }: NormalizedTourContentProps) => {
   // Guard against undefined tour data
   if (!tour || !tour.date) {

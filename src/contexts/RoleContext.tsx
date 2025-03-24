@@ -1,60 +1,33 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, ReactNode } from "react";
 
-// Define the guide view type
-export interface GuideView {
-  type: string;
-  guideName: string;
-}
+type Role = "operator" | "guide";
+type GuideView = { type: "guide"; guideName: string } | null;
 
 interface RoleContextType {
-  guideView: GuideView | null;
-  adminView: boolean;
-  role: string;
-  toggleGuideView: () => void;
-  toggleAdminView: () => void;
-  setRole: (role: string) => void;
-  setGuideView: (view: GuideView | null) => void;
+  role: Role;
+  setRole: (role: Role) => void;
+  guideView: GuideView;
+  setGuideView: (view: GuideView) => void;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
-export const RoleProvider = ({ children }: { children: ReactNode }) => {
-  const [guideView, setGuideView] = useState<GuideView | null>(null);
-  const [adminView, setAdminView] = useState(false);
-  const [role, setRole] = useState<string>("operator"); // Default role is operator
-
-  const toggleGuideView = () => {
-    if (guideView) {
-      setGuideView(null);
-    } else {
-      setGuideView({ type: "guide", guideName: "Preview Guide" });
-    }
-  };
-
-  const toggleAdminView = () => {
-    setAdminView(prev => !prev);
-  };
+export function RoleProvider({ children }: { children: ReactNode }) {
+  const [role, setRole] = useState<Role>("operator");
+  const [guideView, setGuideView] = useState<GuideView>(null);
 
   return (
-    <RoleContext.Provider value={{ 
-      guideView, 
-      adminView, 
-      role,
-      toggleGuideView, 
-      toggleAdminView,
-      setRole,
-      setGuideView
-    }}>
+    <RoleContext.Provider value={{ role, setRole, guideView, setGuideView }}>
       {children}
     </RoleContext.Provider>
   );
-};
+}
 
-export const useRole = (): RoleContextType => {
+export function useRole() {
   const context = useContext(RoleContext);
   if (context === undefined) {
-    throw new Error('useRole must be used within a RoleProvider');
+    throw new Error("useRole must be used within a RoleProvider");
   }
   return context;
-};
+}

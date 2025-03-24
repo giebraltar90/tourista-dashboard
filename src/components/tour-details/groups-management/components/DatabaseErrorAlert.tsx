@@ -21,9 +21,7 @@ export const DatabaseErrorAlert = ({
     ? 'Database error: No tour data found'
     : error.includes('NetworkError') 
       ? 'Network error: Unable to connect to database'
-      : error.includes('timeout') 
-        ? 'Database timeout: Connection timed out. Please try again.' 
-        : `Database error: ${error}`;
+      : `Database error: ${error}`;
   
   return (
     <Alert variant="destructive">

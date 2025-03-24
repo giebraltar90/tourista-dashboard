@@ -1,50 +1,34 @@
 
 /**
- * Check if a string is a valid UUID
+ * Validates if a string is a valid UUID
  */
-export const isValidUuid = (str: string): boolean => {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(str);
+export const isValidUuid = (id: string): boolean => {
+  if (!id) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
 };
 
 /**
- * Check if a guide ID is a special format (like guide1, guide2, etc.)
+ * Checks if a guide ID is a special ID like 'guide1', 'guide2', etc.
  */
 export const isSpecialGuideId = (guideId: string | null | undefined): boolean => {
   if (!guideId) return false;
-  return guideId.startsWith('guide') || guideId === '_none';
+  return /^guide[1-3]$/i.test(guideId);
 };
 
 /**
- * Maps special guide IDs to their UUID equivalents
+ * Maps a special guide ID like 'guide1' to the actual UUID from the tour object
  */
 export const mapSpecialGuideIdToUuid = (
-  guideId: string | null | undefined,
-  tourData: any
-): string | null => {
+  guideId: string | null | undefined, 
+  tourGuide1Id: string | null | undefined,
+  tourGuide2Id: string | null | undefined,
+  tourGuide3Id: string | null | undefined
+): string | null | undefined => {
   if (!guideId) return null;
   
-  // Handle unassign case
-  if (guideId === '_none') return null;
+  if (guideId.toLowerCase() === 'guide1') return tourGuide1Id;
+  if (guideId.toLowerCase() === 'guide2') return tourGuide2Id;
+  if (guideId.toLowerCase() === 'guide3') return tourGuide3Id;
   
-  // Map special IDs to tour guide fields
-  if (guideId === 'guide1' && tourData?.guide1Id) {
-    return tourData.guide1Id;
-  }
-  
-  if (guideId === 'guide2' && tourData?.guide2Id) {
-    return tourData.guide2Id;
-  }
-  
-  if (guideId === 'guide3' && tourData?.guide3Id) {
-    return tourData.guide3Id;
-  }
-  
-  // If it's already a UUID, return it directly
-  if (isValidUuid(guideId)) {
-    return guideId;
-  }
-  
-  // If we can't map it, return null
-  return null;
+  return guideId;
 };

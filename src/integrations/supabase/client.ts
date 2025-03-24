@@ -1,71 +1,77 @@
 
-import { createClient } from '@supabase/supabase-js';
-import { Database } from './types';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
-
-// Add Supabase client with retry functionality
-export const supabaseWithRetry = {
-  from: (table: string) => {
-    const maxRetries = 3;
-    
-    return {
-      updateWithRetry: async (data: any, match: any) => {
-        let attempt = 1;
-        let error = null;
-        
-        // Try to update with exponential backoff
-        while (attempt <= maxRetries) {
-          try {
-            const queryBuilder = supabase.from(table).update(data);
-            
-            // Add all match conditions
-            for (const [key, value] of Object.entries(match)) {
-              queryBuilder.eq(key, value);
-            }
-            
-            const result = await queryBuilder;
-            error = result.error;
-            
-            if (!error) {
-              return { error: null, attempt };
-            }
-            
-            // Wait before retrying with exponential backoff
-            await new Promise(r => setTimeout(r, 300 * Math.pow(2, attempt)));
-            attempt++;
-          } catch (err) {
-            error = err;
-            attempt++;
-          }
-        }
-        
-        return { error, attempt: maxRetries };
-      }
-    };
+// Supabase client initialization with custom fetch options
+export const supabase = createSupabaseClient(
+  import.meta.env.VITE_SUPABASE_URL || 'https://hznwikjmwmskvoqgkvjk.supabase.co',
+  import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
+  {
+    global: {
+      // Use AbortSignal.timeout as part of the global fetch options
+      fetch: (url, options) => {
+        return fetch(url, {
+          ...options,
+          signal: AbortSignal.timeout(15000), // Increase timeout to 15 seconds
+        });
+      },
+    },
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+    },
+    db: {
+      schema: 'public',
+    },
+    // Add retry strategy
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
   }
-};
+);
 
-// Add function to check database connection
-export const checkDatabaseConnection = async (): Promise<{connected: boolean; error?: string}> => {
+// Add a helper for checking database connection
+export const checkDatabaseConnection = async () => {
   try {
-    // Simple query to check if database is responsive
-    const { error } = await supabase.from('tours').select('id', { count: 'exact', head: true });
+    // Try accessing a table that we know should exist
+    const { data, error } = await supabase
+      .from('tours')
+      .select('id')
+      .limit(1)
+      .maybeSingle();
     
     if (error) {
-      console.error('Database connection check failed:', error);
-      return { connected: false, error: error.message };
+      console.error("Database connection check failed (query error):", error);
+      return { 
+        connected: false, 
+        error: error.message,
+        errorCode: error.code,
+        hint: 'Check your network connection and Supabase configuration'
+      };
     }
     
-    return { connected: true };
-  } catch (error) {
-    console.error('Database connection error:', error);
+    // Now check if the newly recreated bucket_tour_assignments table exists
+    const { error: assignmentError } = await supabase
+      .from('bucket_tour_assignments')
+      .select('id')
+      .limit(1);
+      
+    if (assignmentError && !assignmentError.message.includes('relation "bucket_tour_assignments" does not exist')) {
+      console.warn("Bucket assignment table check failed:", assignmentError);
+    }
+    
+    return { connected: true, error: null };
+  } catch (err) {
+    console.error("Database connection check failed (exception):", err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown connection error';
     return { 
       connected: false, 
-      error: error instanceof Error ? error.message : 'Unknown connection error'
+      error: errorMessage,
+      hint: 'An unexpected error occurred while connecting to the database'
     };
   }
 };
+
+// Re-export createClient with a better name to avoid circular dependencies
+export const createClient = createSupabaseClient;

@@ -5,7 +5,7 @@ import { GuideInfo } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { Separator } from "@/components/ui/separator";
 import { ParticipantTicketsSection, GuideTicketsSection, TotalTicketsSection } from "./tickets";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { logger } from "@/utils/logger";
 import { useTicketRecalculation } from "@/hooks/tour-details/useTicketRecalculation";
 
@@ -34,18 +34,9 @@ export const TicketsCard = ({
   tourGroups = [],
   tourId = ""
 }: TicketsCardProps) => {
-  // Use ticket recalculation hook with an empty callback for now
+  // Use ticket recalculation hook
   const tourIdString = String(tourId || '');
-  const { notifyParticipantChange, notifyGuideChange } = useTicketRecalculation(tourIdString, () => {
-    logger.debug("🎟️ [TicketsCard] Recalculating tickets for tour", tourIdString);
-  });
-  
-  // State to track the last calculation
-  const [lastCalculation, setLastCalculation] = useState({
-    adultTickets,
-    childTickets,
-    guides: [guide1Info, guide2Info, guide3Info].filter(Boolean).map(g => g?.name || '').join(',')
-  });
+  useTicketRecalculation(tourIdString);
   
   // Calculate guide ticket requirements
   const { locationNeedsGuideTickets, guideTickets } = useGuideTicketRequirements(
@@ -70,43 +61,23 @@ export const TicketsCard = ({
     guide3Info
   );
   
-  // Function to handle guide changes
-  const handleGuideChange = useCallback(() => {
-    notifyGuideChange();
-    logger.debug("🎟️ [TicketsCard] Detected guide change, recalculating tickets");
-  }, [notifyGuideChange]);
-
-  // Function to handle participant changes
-  const handleParticipantChange = useCallback(() => {
-    notifyParticipantChange();
-    logger.debug("🎟️ [TicketsCard] Detected participant change, recalculating tickets");
-  }, [notifyParticipantChange]);
-  
-  // Listen for the custom refresh events
-  useEffect(() => {
-    const handleRefreshGuideTickets = () => {
-      logger.debug("🎟️ [TicketsCard] Refresh guide tickets event received");
-    };
-    
-    const handleRefreshParticipantCounts = () => {
-      logger.debug("🎟️ [TicketsCard] Refresh participant counts event received");
-    };
-    
-    window.addEventListener('refresh-guide-tickets', handleRefreshGuideTickets);
-    window.addEventListener('refresh-participant-counts', handleRefreshParticipantCounts);
-    
-    return () => {
-      window.removeEventListener('refresh-guide-tickets', handleRefreshGuideTickets);
-      window.removeEventListener('refresh-participant-counts', handleRefreshParticipantCounts);
-    };
-  }, []);
+  // Track the last calculated data to detect changes
+  const [lastCalculation, setLastCalculation] = useState({
+    adultTickets,
+    childTickets,
+    guideAdultTickets: guideTickets.adultTickets,
+    guideChildTickets: guideTickets.childTickets,
+    guides: guideTickets.guides.map(g => g.guideName).join(',')
+  });
   
   // Log changes to participant counts or guides to help with debugging
   useEffect(() => {
     const currentData = {
       adultTickets,
       childTickets,
-      guides: [guide1Info, guide2Info, guide3Info].filter(Boolean).map(g => g?.name || '').join(',')
+      guideAdultTickets: guideTickets.adultTickets,
+      guideChildTickets: guideTickets.childTickets,
+      guides: guideTickets.guides.map(g => g.guideName).join(',')
     };
     
     // Check if anything has changed
@@ -160,7 +131,7 @@ export const TicketsCard = ({
     requiredTickets : totalTicketsNeeded;
     
   // Format the total tickets as "x + y" where x is adult and y is child
-  const formattedTotalTickets = `${adultTickets + guideTickets.adultTickets} + ${childTickets + guideTickets.childTickets}`;
+  const formattedTotalTickets = `${adultTickets} + ${childTickets}`;
   
   return (
     <Card>

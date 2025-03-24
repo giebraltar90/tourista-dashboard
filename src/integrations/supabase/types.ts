@@ -252,53 +252,6 @@ export type Database = {
           },
         ]
       }
-      ticket_requirements: {
-        Row: {
-          created_at: string
-          guide_adult_tickets: number
-          guide_child_tickets: number
-          id: string
-          participant_adult_tickets: number
-          participant_child_tickets: number
-          timestamp: string
-          total_tickets_required: number
-          tour_id: string
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          guide_adult_tickets?: number
-          guide_child_tickets?: number
-          id?: string
-          participant_adult_tickets?: number
-          participant_child_tickets?: number
-          timestamp?: string
-          total_tickets_required?: number
-          tour_id: string
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          guide_adult_tickets?: number
-          guide_child_tickets?: number
-          id?: string
-          participant_adult_tickets?: number
-          participant_child_tickets?: number
-          timestamp?: string
-          total_tickets_required?: number
-          tour_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ticket_requirements_tour_id_fkey"
-            columns: ["tour_id"]
-            isOneToOne: true
-            referencedRelation: "tours"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tickets: {
         Row: {
           created_at: string

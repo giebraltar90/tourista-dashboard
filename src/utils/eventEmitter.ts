@@ -1,39 +1,66 @@
-import { EventEmitter as Emitter } from 'eventemitter3';
 
-// Event emitter singleton for application-wide events
-export const EventEmitter = new Emitter();
+type EventCallback = (...args: any[]) => void;
 
-// Define event types with strong typing
-export const EVENTS = {
-  // Tour data events
-  TOUR_UPDATED: (tourId: string) => `tour-updated:${tourId}`,
-  TOUR_DATA_LOADED: (tourId: string) => `tour-data-loaded:${tourId}`,
-  
-  // Guide assignment events
-  GUIDE_CHANGED: (tourId: string) => `guide-change:${tourId}`,
-  GUIDE_ASSIGNMENT_UPDATED: (tourId: string) => `guide-assignment-updated:${tourId}`,
-  
-  // Participant events
-  PARTICIPANT_MOVED: (tourId: string) => `participant-moved:${tourId}`,
-  PARTICIPANT_ADDED: (tourId: string) => `participant-added:${tourId}`,
-  PARTICIPANT_REMOVED: (tourId: string) => `participant-removed:${tourId}`,
-  PARTICIPANTS_LOADED: (tourId: string) => `participants-loaded:${tourId}`,
-  PARTICIPANTS_REFRESHED: (tourId: string) => `participants-refreshed:${tourId}`,
-  PARTICIPANT_CHANGED: (tourId: string) => `participant-changed:${tourId}`,
-  
-  // Ticket events
-  RECALCULATE_TICKETS: (tourId: string) => `recalculate-tickets:${tourId}`,
-  TICKETS_UPDATED: (tourId: string) => `tickets-updated:${tourId}`,
-  
-  // Other events
-  REFETCH_REQUIRED: 'refetch-required',
-  REFRESH_PARTICIPANTS: 'refresh-participants',
-  AUTH_ERROR: 'auth-error'
-};
+class EventEmitterClass {
+  private events: Record<string, EventCallback[]> = {};
+  private lastErrors: Record<string, Error | null> = {};
 
-// Attach a listener for a tour event
-export const listenToTourEvent = (eventName: string, tourId: string, callback: (data?: any) => void) => {
-  const fullEventName = `${eventName}:${tourId}`;
-  EventEmitter.on(fullEventName, callback);
-  return () => EventEmitter.off(fullEventName, callback);
-};
+  on(event: string, callback: EventCallback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+    return this;
+  }
+
+  off(event: string, callback: EventCallback) {
+    if (!this.events[event]) return this;
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
+    return this;
+  }
+
+  emit(event: string, ...args: any[]) {
+    if (!this.events[event]) return false;
+    
+    // Log event emission for debugging
+    console.log(`EventEmitter: Emitting "${event}" with ${this.events[event].length} listeners`);
+    
+    // Execute each callback in a try/catch to prevent one bad callback from blocking others
+    this.events[event].forEach(callback => {
+      try {
+        callback(...args);
+      } catch (error) {
+        console.error(`Error in "${event}" event listener:`, error);
+        this.lastErrors[event] = error instanceof Error ? error : new Error(String(error));
+      }
+    });
+    
+    return true;
+  }
+
+  once(event: string, callback: EventCallback) {
+    const onceCallback = (...args: any[]) => {
+      this.off(event, onceCallback);
+      callback(...args);
+    };
+    return this.on(event, onceCallback);
+  }
+
+  // Helper to clear all listeners for testing/cleanup
+  clear(event?: string) {
+    if (event) {
+      delete this.events[event];
+    } else {
+      this.events = {};
+    }
+    return this;
+  }
+
+  // Get number of listeners for a given event
+  listenerCount(event: string): number {
+    return this.events[event]?.length || 0;
+  }
+}
+
+// Create a singleton instance
+export const EventEmitter = new EventEmitterClass();
