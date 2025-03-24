@@ -12,6 +12,7 @@ interface GroupDialogsContainerProps {
   guide3Info: GuideInfo | null;
   selectedGroupIndex: number | null;
   setSelectedGroupIndex: (index: number | null) => void;
+  onGuideAssigned?: () => void;
 }
 
 export const GroupDialogsContainer = ({
@@ -20,7 +21,8 @@ export const GroupDialogsContainer = ({
   guide2Info,
   guide3Info,
   selectedGroupIndex,
-  setSelectedGroupIndex
+  setSelectedGroupIndex,
+  onGuideAssigned
 }: GroupDialogsContainerProps) => {
   // Dialog states
   const [isAddGroupOpen, setIsAddGroupOpen] = useState(false);
@@ -60,6 +62,14 @@ export const GroupDialogsContainer = ({
       setSelectedGroupIndex(null);
     }
   };
+  
+  // Handle dialog close with guide assignment
+  const handleAssignGuideDialogClose = (open: boolean) => {
+    setIsAssignGuideOpen(open);
+    if (!open && onGuideAssigned) {
+      onGuideAssigned();
+    }
+  };
 
   // Return an object with all the dialog states, handlers, and the rendered component
   return {
@@ -96,7 +106,7 @@ export const GroupDialogsContainer = ({
         isEditGroupOpen={isEditGroupOpen}
         setIsEditGroupOpen={setIsEditGroupOpen}
         isAssignGuideOpen={isAssignGuideOpen}
-        setIsAssignGuideOpen={setIsAssignGuideOpen}
+        setIsAssignGuideOpen={handleAssignGuideDialogClose}
         isDeleteDialogOpen={isDeleteDialogOpen}
         setIsDeleteDialogOpen={setIsDeleteDialogOpen}
         guide1Info={guide1Info}

@@ -1,64 +1,47 @@
 
-type EventCallback = (...args: any[]) => void;
+type EventHandler = (...args: any[]) => void;
 
 class EventEmitterClass {
-  private events: Record<string, EventCallback[]> = {};
-  private lastErrors: Record<string, Error | null> = {};
+  private events: Record<string, EventHandler[]> = {};
 
-  on(event: string, callback: EventCallback) {
+  // Add an event listener
+  on(event: string, handler: EventHandler): void {
     if (!this.events[event]) {
       this.events[event] = [];
     }
-    this.events[event].push(callback);
-    return this;
+    this.events[event].push(handler);
   }
 
-  off(event: string, callback: EventCallback) {
-    if (!this.events[event]) return this;
-    this.events[event] = this.events[event].filter(cb => cb !== callback);
-    return this;
-  }
+  // Remove an event listener
+  off(event: string, handler?: EventHandler): void {
+    if (!this.events[event]) return;
 
-  emit(event: string, ...args: any[]) {
-    if (!this.events[event]) return false;
-    
-    // Log event emission for debugging
-    console.log(`EventEmitter: Emitting "${event}" with ${this.events[event].length} listeners`);
-    
-    // Execute each callback in a try/catch to prevent one bad callback from blocking others
-    this.events[event].forEach(callback => {
-      try {
-        callback(...args);
-      } catch (error) {
-        console.error(`Error in "${event}" event listener:`, error);
-        this.lastErrors[event] = error instanceof Error ? error : new Error(String(error));
-      }
-    });
-    
-    return true;
-  }
-
-  once(event: string, callback: EventCallback) {
-    const onceCallback = (...args: any[]) => {
-      this.off(event, onceCallback);
-      callback(...args);
-    };
-    return this.on(event, onceCallback);
-  }
-
-  // Helper to clear all listeners for testing/cleanup
-  clear(event?: string) {
-    if (event) {
+    if (!handler) {
+      // Remove all handlers for this event
       delete this.events[event];
     } else {
-      this.events = {};
+      // Remove specific handler
+      this.events[event] = this.events[event].filter(h => h !== handler);
     }
-    return this;
   }
 
-  // Get number of listeners for a given event
-  listenerCount(event: string): number {
-    return this.events[event]?.length || 0;
+  // Emit an event
+  emit(event: string, ...args: any[]): void {
+    if (!this.events[event]) return;
+
+    // Call each handler with the provided arguments
+    this.events[event].forEach(handler => {
+      try {
+        handler(...args);
+      } catch (error) {
+        console.error(`Error in event handler for ${event}:`, error);
+      }
+    });
+  }
+
+  // Get all registered events
+  getEvents(): string[] {
+    return Object.keys(this.events);
   }
 }
 

@@ -11,7 +11,7 @@ import { GroupsHeader } from "./components/GroupsHeader";
 import { DatabaseErrorAlert } from "./components/DatabaseErrorAlert";
 import { GroupsFooter } from "./components/GroupsFooter";
 import { GroupDialogsContainer } from "./components/GroupDialogsContainer";
-import { GroupGuideManagement } from "./GroupGuideManagement";
+import { useGuideAssignmentCache } from "@/hooks/group-management/useGuideAssignmentCache";
 
 interface GroupsManagementProps {
   tour: TourCardProps;
@@ -30,6 +30,9 @@ export const GroupsManagement = ({
 }: GroupsManagementProps) => {
   console.log("GroupsManagement rendering with tourId:", tourId);
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
+
+  // Get guide assignments from cache
+  const { assignments, refreshAssignments } = useGuideAssignmentCache(tourId);
 
   // Get group management hooks and functions
   const {
@@ -54,7 +57,10 @@ export const GroupsManagement = ({
   );
   
   // Manual refresh hook
-  const { isManualRefreshing, handleManualRefresh } = useManualRefresh(refreshParticipants);
+  const { isManualRefreshing, handleManualRefresh } = useManualRefresh(() => {
+    refreshParticipants();
+    refreshAssignments();
+  });
   
   // Initial load of participants
   useEffect(() => {
@@ -64,6 +70,17 @@ export const GroupsManagement = ({
       loadParticipants(tourId); 
     }
   }, [tourId, loadParticipants]);
+
+  // Sync localTourGroups with guide assignments
+  useEffect(() => {
+    if (localTourGroups && localTourGroups.length > 0 && assignments.length > 0) {
+      // We don't modify localTourGroups directly, but this ensures the correct guide names are displayed
+      console.log("Syncing localTourGroups with assignments:", {
+        localTourGroups: localTourGroups.map(g => ({ id: g.id, name: g.name })),
+        assignments: assignments.map(a => ({ id: a.groupId, guideName: a.guideName }))
+      });
+    }
+  }, [localTourGroups, assignments]);
   
   // Get dialog management - pass the tour object
   const dialogUtils = GroupDialogsContainer({
@@ -72,7 +89,8 @@ export const GroupsManagement = ({
     guide2Info,
     guide3Info,
     selectedGroupIndex,
-    setSelectedGroupIndex
+    setSelectedGroupIndex,
+    onGuideAssigned: refreshAssignments
   });
 
   const { dialogsComponent } = dialogUtils;
@@ -111,6 +129,7 @@ export const GroupsManagement = ({
             <GroupsGrid 
               tour={tour}
               localTourGroups={localTourGroups}
+              guideAssignments={assignments}
               selectedParticipant={selectedParticipant}
               setSelectedParticipant={setSelectedParticipant}
               handleDragStart={handleDragStart}

@@ -1,108 +1,164 @@
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { AssignGuideForm } from "../guide-assignment/AssignGuideForm";
-import { GuideInfo } from "@/types/ventrata";
-import { toast } from "sonner";
-import { useEffect, useState } from "react";
-import { logger } from "@/utils/logger";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Info } from "lucide-react";
+import { useGuideAssignmentForm } from "@/hooks/group-management/guide-assignment/useGuideAssignmentForm";
+import { useAssignGuide } from "@/hooks/group-management/useAssignGuide";
+import { EventEmitter } from "@/utils/eventEmitter";
+
+interface GuideOption {
+  id: string;
+  name: string;
+  info: any;
+}
 
 interface AssignGuideDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   tourId: string;
   groupIndex: number;
-  guides: Array<{
-    id: string;
-    name: string;
-    info: GuideInfo | null;
-  }>;
+  guides: GuideOption[];
   currentGuideId?: string;
+  tour?: any; // Optional tour data
 }
 
-export const AssignGuideDialog = ({ 
-  isOpen, 
-  onOpenChange, 
-  tourId, 
-  groupIndex, 
-  guides: inputGuides, 
-  currentGuideId 
+export const AssignGuideDialog = ({
+  isOpen,
+  onOpenChange,
+  tourId,
+  groupIndex,
+  guides,
+  currentGuideId,
+  tour
 }: AssignGuideDialogProps) => {
-  // Process guide data to ensure readable names
-  const [processedGuides, setProcessedGuides] = useState(inputGuides);
-  const [isClosing, setIsClosing] = useState(false);
+  const { assignGuide } = useAssignGuide(tourId);
   
-  useEffect(() => {
-    // Ensure all guides have readable names
-    const processedGuidesList = inputGuides.map(guide => {
-      // If guide has a UUID as name or name with "..." in it, give it a better name
-      if (!guide.name || guide.name.includes('...') || guide.name === guide.id) {
-        return {
-          ...guide,
-          name: guide.info?.name || `Guide (ID: ${guide.id.substring(0, 8)})`
-        };
-      }
-      return guide;
-    });
-    
-    // Filter out duplicates by ID (keep the first occurrence)
-    const uniqueGuides = processedGuidesList.filter((guide, index, self) => 
-      index === self.findIndex(g => g.id === guide.id)
-    );
-    
-    logger.debug('🔍 [AssignGuideDialog] Processing guides:', {
-      tourId,
-      groupIndex,
-      guidesCount: uniqueGuides.length,
-      currentGuideId,
-      guides: uniqueGuides.map(g => ({ id: g.id, name: g.name, type: g.info?.guideType }))
-    });
-    
-    setProcessedGuides(uniqueGuides);
-  }, [inputGuides, tourId, groupIndex, currentGuideId]);
-
-  const handleSuccess = () => {
-    toast.success("Guide assignment updated successfully");
-    // Set a small delay to allow UI to update before closing
-    setIsClosing(true);
-    setTimeout(() => {
+  // Get the form and its handlers
+  const {
+    form,
+    isSubmitting,
+    handleSubmit,
+    handleRemoveGuide,
+    hasChanges,
+    hasCurrentGuide
+  } = useGuideAssignmentForm({
+    tourId,
+    groupIndex,
+    guides,
+    currentGuideId,
+    onSuccess: () => {
       onOpenChange(false);
-      setIsClosing(false);
-    }, 100);
-  };
-
-  // Ensure dialog can be closed properly
-  const handleOpenChange = (open: boolean) => {
-    if (isClosing) return;
-    
-    if (!open) {
-      // When closing, make sure we call the parent's onOpenChange
-      setIsClosing(true);
-      setTimeout(() => {
-        onOpenChange(false);
-        setIsClosing(false);
-      }, 100);
-    } else {
-      onOpenChange(true);
-    }
-  };
-
+      
+      // Emit an event to refresh guide assignments
+      EventEmitter.emit(`guide-change:${tourId}`);
+    },
+    tour
+  });
+  
+  // Get the selected guide's info
+  const selectedGuideId = form.watch("guideId");
+  const selectedGuide = guides.find(g => g.id === selectedGuideId);
+  const guideHasInfo = selectedGuide && selectedGuide.info;
+  
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Assign Guide to Group {groupIndex + 1}</DialogTitle>
-          <DialogDescription>
-            Select a guide to assign to this group or remove the current guide.
-          </DialogDescription>
         </DialogHeader>
         
-        <AssignGuideForm
-          tourId={tourId}
-          groupIndex={groupIndex}
-          guides={processedGuides}
-          currentGuideId={currentGuideId}
-          onSuccess={handleSuccess}
-        />
+        <Form {...form}>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="guideId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Select Guide</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                    disabled={isSubmitting}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a guide" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="_none">None (Unassigned)</SelectItem>
+                      {guides.map((guide) => (
+                        <SelectItem key={guide.id} value={guide.id}>
+                          {guide.name} {guide.info?.guideType ? `(${guide.info.guideType})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {guideHasInfo && selectedGuide.info.guideType && (
+              <Alert variant="info" className="bg-blue-50">
+                <Info className="h-4 w-4 text-blue-500" />
+                <AlertDescription>
+                  <div className="font-medium mb-1">Guide Type: {selectedGuide.info.guideType}</div>
+                  {selectedGuide.info.guideType === "GA Ticket" && (
+                    <div className="text-sm text-muted-foreground">
+                      GA Ticket guide requires an adult ticket. Cannot guide inside.
+                    </div>
+                  )}
+                  {selectedGuide.info.guideType === "GA Free" && (
+                    <div className="text-sm text-muted-foreground">
+                      GA Free guide requires a child ticket (under 26). Cannot guide inside.
+                    </div>
+                  )}
+                  {selectedGuide.info.guideType === "GC" && (
+                    <div className="text-sm text-muted-foreground">
+                      GC guide can guide inside. No ticket required.
+                    </div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <DialogFooter className="gap-2 sm:gap-0">
+              {hasCurrentGuide && (
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  className="mr-auto"
+                  onClick={handleRemoveGuide}
+                  disabled={isSubmitting}
+                >
+                  Remove Guide
+                </Button>
+              )}
+              
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => onOpenChange(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              
+              <Button 
+                type="submit"
+                disabled={!hasChanges || isSubmitting}
+              >
+                {isSubmitting ? "Assigning..." : "Assign Guide"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

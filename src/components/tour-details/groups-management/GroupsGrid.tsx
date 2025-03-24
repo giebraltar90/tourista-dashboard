@@ -3,9 +3,18 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
 import { GroupGrid } from "./group-assignment/GroupGrid";
 
+interface GuideAssignment {
+  groupId: string;
+  guideId: string | null;
+  guideName: string | null;
+  groupIndex: number;
+  groupName: string;
+}
+
 interface GroupsGridProps {
   tour: TourCardProps;
   localTourGroups: VentrataTourGroup[];
+  guideAssignments?: GuideAssignment[];
   selectedParticipant: { participant: VentrataParticipant; fromGroupIndex: number } | null;
   setSelectedParticipant: (data: { participant: VentrataParticipant; fromGroupIndex: number }) => void;
   handleDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
@@ -22,6 +31,7 @@ interface GroupsGridProps {
 export const GroupsGrid = ({
   tour,
   localTourGroups,
+  guideAssignments = [],
   selectedParticipant,
   setSelectedParticipant,
   handleDragStart,
@@ -40,6 +50,7 @@ export const GroupsGrid = ({
     <GroupGrid
       tour={tour}
       localTourGroups={localTourGroups}
+      guideAssignments={guideAssignments}
       handleDragStart={handleDragStart}
       handleDragOver={handleDragOver}
       handleDragLeave={handleDragLeave}

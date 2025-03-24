@@ -7,9 +7,18 @@ import { GroupCard } from "../GroupCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
+interface GuideAssignment {
+  groupId: string;
+  guideId: string | null;
+  guideName: string | null;
+  groupIndex: number;
+  groupName: string;
+}
+
 interface GroupGridProps {
   tour: TourCardProps;
   localTourGroups: VentrataTourGroup[];
+  guideAssignments?: GuideAssignment[];
   handleDragStart: (e: React.DragEvent, participant: VentrataParticipant, fromGroupIndex: number) => void;
   handleDragOver: (e: React.DragEvent) => void;
   handleDragLeave: (e: React.DragEvent) => void;
@@ -25,6 +34,7 @@ interface GroupGridProps {
 export const GroupGrid = ({ 
   tour,
   localTourGroups,
+  guideAssignments = [],
   handleDragStart,
   handleDragOver,
   handleDragLeave,
@@ -49,7 +59,8 @@ export const GroupGrid = ({
   console.log("DATABASE DEBUG: GroupGrid rendering with", {
     localTourGroupsLength: localTourGroups?.length || 0,
     tourGroupsLength: tour?.tourGroups?.length || 0,
-    hasParticipants: localTourGroups?.some(g => g.participants?.length > 0)
+    hasParticipants: localTourGroups?.some(g => g.participants?.length > 0),
+    guideAssignmentsLength: guideAssignments?.length || 0
   });
   
   const stableTourGroups = useMemo(() => {
@@ -57,19 +68,31 @@ export const GroupGrid = ({
       console.log("DATABASE DEBUG: Using tour.tourGroups as fallback");
       if (!tour?.tourGroups) return [];
       
-      return tour.tourGroups.map((group, index) => ({
-        ...group,
-        originalIndex: index,
-        displayName: group.name || `Group ${index + 1}`
-      }));
+      return tour.tourGroups.map((group, index) => {
+        // Find matching guide assignment
+        const assignment = guideAssignments.find(a => a.groupId === group.id);
+        
+        return {
+          ...group,
+          originalIndex: index,
+          displayName: assignment?.groupName || group.name || `Group ${index + 1}`,
+          guideName: assignment?.guideName
+        };
+      });
     }
     
-    return localTourGroups.map((group, index) => ({
-      ...group,
-      originalIndex: index,
-      displayName: group.name || `Group ${index + 1}`
-    }));
-  }, [localTourGroups, tour?.tourGroups]);
+    return localTourGroups.map((group, index) => {
+      // Find matching guide assignment
+      const assignment = guideAssignments.find(a => a.groupId === group.id);
+      
+      return {
+        ...group,
+        originalIndex: index,
+        displayName: assignment?.groupName || group.name || `Group ${index + 1}`,
+        guideName: assignment?.guideName
+      };
+    });
+  }, [localTourGroups, tour?.tourGroups, guideAssignments]);
   
   if (!stableTourGroups || stableTourGroups.length === 0) {
     return (

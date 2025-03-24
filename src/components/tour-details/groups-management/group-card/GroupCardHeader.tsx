@@ -1,7 +1,7 @@
 
+import { RefreshCw, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 
 interface GroupCardHeaderProps {
   groupName: string;
@@ -23,49 +23,43 @@ export const GroupCardHeader = ({
   isRefreshing
 }: GroupCardHeaderProps) => {
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center space-x-3 flex-1">
-        <h3 className="text-base font-medium">{groupName}</h3>
-        <Badge 
-          variant="outline" 
-          className={`text-xs ${
-            totalParticipants >= 15 
-              ? "bg-red-100 text-red-800" 
-              : totalParticipants >= 10 
-                ? "bg-amber-100 text-amber-800" 
-                : "bg-green-100 text-green-800"
-          }`}
-        >
-          {displayParticipants}
-        </Badge>
-      </div>
-      <div className="flex items-center space-x-1">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0" 
-          onClick={handleRefreshParticipants}
-          disabled={isRefreshing}
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          <span className="sr-only">Refresh participants</span>
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          className="h-8 w-8 p-0" 
+    <div className="flex items-start justify-between">
+      <div className="flex items-center space-x-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="p-0 h-8 w-8"
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? (
-            <ChevronUp className="h-4 w-4" />
+            <ChevronDown className="h-5 w-5" />
           ) : (
-            <ChevronDown className="h-4 w-4" />
+            <ChevronRight className="h-5 w-5" />
           )}
-          <span className="sr-only">
-            {isExpanded ? "Collapse" : "Expand"}
-          </span>
         </Button>
+        
+        <div className="flex flex-col">
+          <div className="flex items-center">
+            <h3 className="font-semibold text-base">{groupName}</h3>
+            <Badge variant="secondary" className="ml-2">
+              {totalParticipants}
+            </Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {displayParticipants}
+          </p>
+        </div>
       </div>
+      
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-8 w-8 p-0"
+        onClick={handleRefreshParticipants}
+        disabled={isRefreshing}
+      >
+        <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+      </Button>
     </div>
   );
 };

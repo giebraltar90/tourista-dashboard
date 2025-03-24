@@ -6,7 +6,10 @@ import { GroupCardContainer } from "./group-card/GroupCardContainer";
 import { useGroupCardState } from "./group-card";
 
 interface GroupCardProps {
-  group: VentrataTourGroup;
+  group: VentrataTourGroup & { 
+    displayName?: string;
+    guideName?: string | null;
+  };
   groupIndex: number;
   tour: TourCardProps;
   guide1Info: GuideInfo | null;
@@ -44,9 +47,22 @@ export const GroupCard = ({
   onRefreshParticipants,
   onAssignGuide
 }: GroupCardProps) => {
-  // Get guide information
+  // Get guide information, using the cached guideName if available
   const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
-  const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
+  
+  // Use the cached guideName from the assignment if available, otherwise get it from guideId
+  let guideName = group.guideName;
+  let guideInfo = null;
+  
+  if (guideName === undefined) {
+    // Fall back to calculating from guideId
+    const result = getGuideNameAndInfo(group.guideId);
+    guideName = result.name;
+    guideInfo = result.info;
+  } else if (group.guideId) {
+    // We have a guideName but need the info
+    guideInfo = getGuideNameAndInfo(group.guideId).info;
+  }
 
   // Use the extracted state management hook
   const {
@@ -62,16 +78,17 @@ export const GroupCard = ({
   } = useGroupCardState(
     group.participants,
     group.id,
-    group.name || `Group ${groupIndex + 1}`,
+    group.displayName || group.name || `Group ${groupIndex + 1}`,
     groupIndex,
     group.size,
     group.childCount,
     onRefreshParticipants
   );
 
-  console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] initial render with:`, {
+  console.log(`PARTICIPANTS DEBUG: GroupCard[${groupIndex}] rendering with:`, {
     groupId: group.id,
-    groupName: group.name || `Group ${groupIndex + 1}`,
+    groupName: group.displayName || group.name || `Group ${groupIndex + 1}`,
+    guideName,
     participantsLength: Array.isArray(group.participants) ? group.participants.length : 0
   });
 
@@ -80,7 +97,7 @@ export const GroupCard = ({
     <GroupCardContainer
       group={group}
       groupIndex={groupIndex}
-      guideName={guideName}
+      guideName={guideName || "Unassigned"}
       guideInfo={guideInfo}
       isExpanded={isExpanded}
       setIsExpanded={setIsExpanded}
