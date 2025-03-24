@@ -7,19 +7,10 @@ import { useRole } from "@/contexts/RoleContext";
 import { useTourById } from "@/hooks/useTourData";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { logger } from "@/utils/logger";
-import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
-
-// Create a query client for this component
-const queryClient = new QueryClient();
 
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TourDetailsContent tourId={id || ""} />
-    </QueryClientProvider>
-  );
+  return <TourDetailsContent tourId={id || ""} />;
 };
 
 // Separate component for the tour details content

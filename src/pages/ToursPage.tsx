@@ -13,47 +13,40 @@ import { TourFilters } from "@/components/tours/TourFilters";
 import { CalendarView } from "@/components/tours/CalendarView";
 import { TabbedToursView } from "@/components/tours/TabbedToursView";
 import { TourBusinessRules } from "@/components/tours/TourBusinessRules";
-import { useGuideTours } from "@/hooks/guides";
+import { useGuideTours } from "@/hooks/guides/useGuideTours";
 import { useRole } from "@/contexts/RoleContext";
 import { TestDataControls } from "@/components/tours/TestDataControls";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-
-// Create a query client instance for the component
-const queryClient = new QueryClient();
 
 const ToursPage = () => {
   const { guideView } = useRole();
   
-  // Wrap the component content in a QueryClientProvider
   return (
-    <QueryClientProvider client={queryClient}>
-      <DashboardLayout>
-        <div className="space-y-6 py-4">
-          <ToursPageHeader />
-          
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <CardTitle>
-                  {guideView ? "My Tours" : "Tour Overview"}
-                </CardTitle>
-                <TourFilters 
-                  timeRange={null}
-                  onTimeRangeChange={() => {}}
-                  viewMode="calendar"
-                  onViewModeChange={() => {}}
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <ToursContent guideView={guideView} />
-            </CardContent>
-          </Card>
-          
-          {!guideView && <TourBusinessRules />}
-        </div>
-      </DashboardLayout>
-    </QueryClientProvider>
+    <DashboardLayout>
+      <div className="space-y-6 py-4">
+        <ToursPageHeader />
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <CardTitle>
+                {guideView ? "My Tours" : "Tour Overview"}
+              </CardTitle>
+              <TourFilters 
+                timeRange={null}
+                onTimeRangeChange={() => {}}
+                viewMode="calendar"
+                onViewModeChange={() => {}}
+              />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ToursContent guideView={guideView} />
+          </CardContent>
+        </Card>
+        
+        {!guideView && <TourBusinessRules />}
+      </div>
+    </DashboardLayout>
   );
 };
 
@@ -76,7 +69,7 @@ const ToursContent = ({ guideView }: { guideView: boolean }) => {
     timeRange,
     setTimeRange,
     filteredTours
-  } = useTourFilters(tours);
+  } = useTourFilters(tours || []);
   
   return (
     <>

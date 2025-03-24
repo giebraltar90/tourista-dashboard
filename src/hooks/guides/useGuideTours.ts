@@ -30,5 +30,13 @@ export const useGuideTours = () => {
       }
     },
     enabled: !!guideName,
+    // Add retry configuration to be more resilient
+    retry: 2,
+    // Add proper error handling
+    meta: {
+      onError: (error: Error) => {
+        console.error("Error in useGuideTours:", error);
+      }
+    }
   });
 };
