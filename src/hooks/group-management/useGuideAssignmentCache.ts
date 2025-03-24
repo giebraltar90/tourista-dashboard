@@ -1,11 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { EventEmitter } from "@/utils/eventEmitter";
 import { logger } from "@/utils/logger";
 
-interface GuideAssignment {
+export interface GuideAssignment {
   groupId: string;
   guideId: string | null;
   guideName: string | null;
@@ -21,17 +21,21 @@ export const useGuideAssignmentCache = (tourId: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const queryClient = useQueryClient();
   
-  // Fetch initial assignments
+  // Fetch initial assignments with improved error handling and retries
   const loadAssignments = async () => {
     if (!tourId) return;
     
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('tour_groups')
-        .select('id, name, guide_id, guides(name)')
-        .eq('tour_id', tourId)
-        .order('entry_time', { ascending: true });
+      
+      // Use retry mechanism for more reliable loading
+      const { data, error } = await supabaseWithRetry(async () => {
+        return await supabase
+          .from('tour_groups')
+          .select('id, name, guide_id, guides(name, guide_type)')
+          .eq('tour_id', tourId)
+          .order('entry_time', { ascending: true });
+      });
         
       if (error) {
         logger.error("Error loading guide assignments:", error);
@@ -43,13 +47,18 @@ export const useGuideAssignmentCache = (tourId: string) => {
         return;
       }
       
-      const processedAssignments = data.map((group, index) => ({
-        groupId: group.id,
-        guideId: group.guide_id,
-        guideName: group.guides ? group.guides.name : null,
-        groupIndex: index,
-        groupName: group.name || `Group ${index + 1}`
-      }));
+      const processedAssignments = data.map((group, index) => {
+        // Handle the guides object properly
+        const guideName = group.guides ? group.guides.name : null;
+                
+        return {
+          groupId: group.id,
+          guideId: group.guide_id,
+          guideName: guideName,
+          groupIndex: index,
+          groupName: group.name || `Group ${index + 1}`
+        };
+      });
       
       setAssignments(processedAssignments);
       logger.debug("Loaded guide assignments:", processedAssignments);

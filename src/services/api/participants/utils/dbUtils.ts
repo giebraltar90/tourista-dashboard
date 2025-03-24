@@ -1,5 +1,6 @@
 
 import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
 
 /**
  * Check if the tour exists in the database with retry mechanism
@@ -15,15 +16,15 @@ export const checkTourExists = async (tourId: string) => {
         .single();
         
       if (tourError) {
-        console.error("DATABASE DEBUG: Error fetching tour data:", tourError);
+        logger.error("DATABASE DEBUG: Error fetching tour data:", tourError);
         return { exists: false, error: tourError.message };
       }
       
-      console.log("DATABASE DEBUG: Found tour with ID:", tourData.id);
+      logger.debug("DATABASE DEBUG: Found tour with ID:", tourData.id);
       return { exists: true, id: tourData.id };
     });
   } catch (error) {
-    console.error("DATABASE DEBUG: Error in checkTourExists:", error);
+    logger.error("DATABASE DEBUG: Error in checkTourExists:", error);
     return { exists: false, error: String(error) };
   }
 };
@@ -41,15 +42,15 @@ export const debugCheckParticipantsTable = async (groupIds: string[]) => {
       ).single();
       
       if (directError) {
-        console.error("DATABASE DEBUG: Error in debug_check_participants:", directError);
+        logger.error("DATABASE DEBUG: Error in debug_check_participants:", directError);
         return { success: false, error: directError.message };
       } else {
-        console.log("DATABASE DEBUG: Direct SQL check result:", directCheck);
+        logger.debug("DATABASE DEBUG: Direct SQL check result:", directCheck);
         return { success: true, data: directCheck };
       }
     });
   } catch (error) {
-    console.error("DATABASE DEBUG: Error in debugCheckParticipantsTable:", error);
+    logger.error("DATABASE DEBUG: Error in debugCheckParticipantsTable:", error);
     return { success: false, error: String(error) };
   }
 };
@@ -65,7 +66,7 @@ export const executeWithFallback = async <T>(
   try {
     return await operation();
   } catch (error) {
-    console.error(errorMessage, error);
+    logger.error(errorMessage, error);
     return fallbackData;
   }
 };

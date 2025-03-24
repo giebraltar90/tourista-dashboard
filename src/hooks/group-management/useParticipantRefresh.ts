@@ -1,135 +1,188 @@
 
-import { useState, useCallback, useRef } from "react";
-import { VentrataTourGroup } from "@/types/ventrata";
-import { loadParticipantsData } from "@/services/api/participants/participantDbService";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { supabaseWithRetry } from "@/integrations/supabase/client";
+import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
+import { checkTourExists } from "@/services/api/participants/utils/dbUtils";
+import { syncTourGroupSizes } from "./services/participantService/syncService";
+import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
+import { EventEmitter } from "@/utils/eventEmitter";
+
+const MAX_CONCURRENT_OPERATIONS = 3;
+let pendingOperations = 0;
 
 /**
- * Hook for refreshing and loading participants for a tour
+ * Hook for refreshing participant data with improved error handling
  */
-export const useParticipantRefresh = (
-  tourId: string,
-  localTourGroups: VentrataTourGroup[],
-  setLocalTourGroups: (groups: VentrataTourGroup[]) => void,
-  recalculateGroupSizes: () => void
-) => {
-  const [isLoadingParticipants, setIsLoadingParticipants] = useState(false);
-  const lastToastTime = useRef(Date.now());
-  const initialLoadComplete = useRef(false);
-  const loadOperationInProgress = useRef(false);
+export const useParticipantRefresh = (tourId: string) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null);
   
-  /**
-   * Load participants for a tour with improved error handling
-   */
-  const loadParticipants = useCallback(async (tourIdParam: string = tourId, showToast: boolean = false) => {
-    const usedTourId = tourIdParam || tourId;
-    if (!usedTourId) {
-      console.error("DATABASE DEBUG: No tour ID provided for loading participants");
-      return;
-    }
-    
-    // Prevent concurrent refreshes
-    if (loadOperationInProgress.current) {
-      console.log("DATABASE DEBUG: Skipping participant load - operation already in progress");
-      return;
-    }
-    
-    // Prevent frequent refreshes - add a time-based guard
-    const now = Date.now();
-    const timeSinceLastLoad = now - lastToastTime.current;
-    if (timeSinceLastLoad < 2000 && initialLoadComplete.current) {
-      console.log("DATABASE DEBUG: Skipping too frequent participant refresh");
-      return;
-    }
-    
-    console.log("DATABASE DEBUG: loadParticipants called for tourId:", usedTourId);
-    setIsLoadingParticipants(true);
-    loadOperationInProgress.current = true;
-    
+  // Track whether any toast is currently displayed to avoid toast spam
+  const [isToastActive, setIsToastActive] = useState(false);
+  
+  // Function to load participants with retries and better error handling
+  const loadParticipants = useCallback(async (groupIds: string[]) => {
     try {
-      // Use retry mechanism for more reliable access
+      if (pendingOperations >= MAX_CONCURRENT_OPERATIONS) {
+        console.warn("Too many concurrent operations, delaying participant load");
+        return [];
+      }
+      
+      pendingOperations++;
+      
+      // Use retry mechanism for better reliability
       const result = await supabaseWithRetry(async () => {
-        return await loadParticipantsData(usedTourId);
+        const { data, error } = await supabase
+          .from('participants')
+          .select('*')
+          .in('group_id', groupIds);
+          
+        if (error) throw error;
+        return data || [];
       });
       
-      if (result.success) {
-        console.log("DATABASE DEBUG: Loaded participants successfully");
-        
-        // Update the local tour groups with the participants
-        if (result.groups && result.groups.length > 0) {
-          const updatedGroups = [...result.groups].map(group => {
-            // Find participants for this group
-            const groupParticipants = Array.isArray(result.participants) 
-              ? result.participants.filter(p => p.group_id === group.id)
-              : [];
-            
-            // Return the updated group
-            return {
-              ...group,
-              guideId: group.guide_id || undefined,
-              entryTime: group.entry_time || "",
-              childCount: group.child_count || 0,
-              participants: groupParticipants.map(p => ({
-                id: p.id,
-                name: p.name,
-                count: p.count,
-                childCount: p.child_count || 0,
-                bookingRef: p.booking_ref || "",
-                groupId: p.group_id
-              }))
-            };
-          });
-          
-          console.log("DATABASE DEBUG: Updated groups with participants:", updatedGroups);
-          setLocalTourGroups(updatedGroups);
-          
-          // Recalculate group sizes
-          recalculateGroupSizes();
-          
-          // Show success toast if needed and not too frequent
-          const isInitialLoad = !initialLoadComplete.current;
-          if (showToast && !isInitialLoad && timeSinceLastLoad > 5000) {
-            toast.success("Participants loaded successfully");
-            lastToastTime.current = now;
-          }
-          
-          // Mark initial load as complete
-          initialLoadComplete.current = true;
-        } else {
-          console.log("DATABASE DEBUG: No groups returned from loadParticipantsData");
-        }
-      } else {
-        console.error("DATABASE DEBUG: Failed to load participant data:", result.error);
-        if (showToast) {
-          toast.error(`Failed to load participants: ${result.error}`);
-        }
-      }
-    } catch (error) {
-      console.error("DATABASE DEBUG: Error loading participants:", error);
-      if (showToast && !toast.isActive('participants-error')) {
-        toast.error("Error loading participants", {
-          id: 'participants-error',
-          duration: 3000
-        });
-      }
+      return result;
+    } catch (err) {
+      console.error("DATABASE DEBUG: Failed to load participants:", err);
+      throw err;
     } finally {
-      setIsLoadingParticipants(false);
-      loadOperationInProgress.current = false;
+      pendingOperations--;
     }
-  }, [tourId, setLocalTourGroups, recalculateGroupSizes]);
+  }, []);
   
-  /**
-   * Refresh participants for a tour
-   */
-  const refreshParticipants = useCallback(() => {
-    console.log("DATABASE DEBUG: Refreshing participants for tour:", tourId);
-    loadParticipants(tourId, true);
-  }, [tourId, loadParticipants]);
+  // Primary refresh function with improved reliability
+  const refreshParticipants = useCallback(async () => {
+    if (!tourId) return;
+    if (isLoading) return;
+    
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Show loading toast only if none is active
+      if (!isToastActive) {
+        setIsToastActive(true);
+        toast.loading("Refreshing participant data...");
+      }
+      
+      // First check if tour exists
+      const tourCheck = await checkTourExists(tourId);
+      if (!tourCheck.exists) {
+        setError("Tour not found");
+        toast.error("Error: Tour not found");
+        setIsToastActive(false);
+        return;
+      }
+      
+      // Get all groups for this tour with retry
+      const { data: groups, error: groupsError } = await supabaseWithRetry(async () => {
+        return await supabase
+          .from('tour_groups')
+          .select('id')
+          .eq('tour_id', tourId);
+      });
+      
+      if (groupsError || !groups) {
+        console.error("DATABASE DEBUG: Failed to load tour groups:", groupsError);
+        setError(groupsError?.message || "Failed to load tour groups");
+        toast.error("Error loading tour groups");
+        setIsToastActive(false);
+        return;
+      }
+      
+      const groupIds = groups.map(g => g.id);
+      if (groupIds.length === 0) {
+        setLastRefreshed(new Date());
+        toast.success("No groups to refresh");
+        setIsToastActive(false);
+        return;
+      }
+      
+      // Get participants for these groups
+      await loadParticipants(groupIds);
+      
+      // Synchronize group sizes based on participants
+      await syncTourGroupSizes(tourId);
+      
+      // Emit event to notify other components
+      EventEmitter.emit(`participant-change:${tourId}`);
+      
+      setLastRefreshed(new Date());
+      toast.success("Participants refreshed successfully");
+      setIsToastActive(false);
+    } catch (err) {
+      console.error("DATABASE DEBUG: Failed to load participant data:", err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(errorMessage);
+      
+      // Show error toast only if none is active
+      if (!isToastActive) {
+        toast.error(`Error refreshing participants: ${errorMessage}`);
+      }
+      setIsToastActive(false);
+    } finally {
+      setIsLoading(false);
+      // Always clear toast active state after operation completes
+      setTimeout(() => setIsToastActive(false), 100);
+    }
+  }, [tourId, isLoading, isToastActive, loadParticipants]);
+  
+  // Function to move participants between groups with retries
+  const moveParticipant = useCallback(async (
+    participant: VentrataParticipant, 
+    fromGroupId: string, 
+    toGroupId: string
+  ) => {
+    if (!tourId || isLoading) return false;
+    
+    try {
+      setIsLoading(true);
+      
+      // Update participant to new group
+      const { error } = await supabaseWithRetry(async () => {
+        return await supabase
+          .from('participants')
+          .update({ group_id: toGroupId })
+          .eq('id', participant.id);
+      });
+      
+      if (error) {
+        console.error("Failed to move participant:", error);
+        toast.error("Failed to move participant");
+        return false;
+      }
+      
+      // Sync group sizes after move
+      await syncTourGroupSizes(tourId);
+      
+      // Notify other components
+      EventEmitter.emit(`participant-change:${tourId}`);
+      
+      toast.success("Participant moved successfully");
+      return true;
+    } catch (err) {
+      console.error("Error moving participant:", err);
+      toast.error("Error moving participant");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [tourId, isLoading]);
+  
+  // Initial load on mount
+  useEffect(() => {
+    if (tourId) {
+      refreshParticipants();
+    }
+  }, [tourId, refreshParticipants]);
   
   return {
-    loadParticipants,
+    isLoading,
+    error,
+    lastRefreshed,
     refreshParticipants,
-    isLoadingParticipants
+    moveParticipant,
+    loadParticipants
   };
 };

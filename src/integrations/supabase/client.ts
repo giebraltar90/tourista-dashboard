@@ -1,7 +1,7 @@
 
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-// Supabase client initialization with custom fetch options
+// Supabase client initialization with improved retry and timeout settings
 export const supabase = createSupabaseClient(
   import.meta.env.VITE_SUPABASE_URL || 'https://hznwikjmwmskvoqgkvjk.supabase.co',
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
@@ -11,7 +11,7 @@ export const supabase = createSupabaseClient(
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          signal: AbortSignal.timeout(30000), // Increase timeout to 30 seconds
+          signal: AbortSignal.timeout(60000), // Increase timeout to 60 seconds for better reliability
         });
       },
     },
@@ -31,10 +31,10 @@ export const supabase = createSupabaseClient(
   }
 );
 
-// Add a helper for checking database connection
+// Add a helper for checking database connection with improved error handling
 export const checkDatabaseConnection = async () => {
   try {
-    // Try accessing a table that we know should exist
+    // Try accessing a table that we know should exist with a short timeout
     const { data, error } = await supabase
       .from('tours')
       .select('id')
@@ -51,23 +51,14 @@ export const checkDatabaseConnection = async () => {
       };
     }
     
-    // Use a more type-safe approach for checking table existence
-    const checkTable = async (tableName: string) => {
-      try {
-        const { error } = await supabase.rpc('check_table_exists', { 
-          table_name_param: tableName 
-        });
-        return !error;
-      } catch (err) {
-        console.error(`Error checking table ${tableName}:`, err);
-        return false;
-      }
-    };
-    
-    // Check if the bucket_tour_assignments table exists
-    const bucketTableExists = await checkTable('bucket_tour_assignments');
-    if (!bucketTableExists) {
-      console.warn("Bucket assignment table does not exist");
+    // Check connectivity to tour_groups table
+    const tourGroupsCheck = await supabase
+      .from('tour_groups')
+      .select('id')
+      .limit(1);
+      
+    if (tourGroupsCheck.error) {
+      console.warn("Tour groups table access error:", tourGroupsCheck.error);
     }
     
     return { connected: true, error: null };
@@ -82,20 +73,26 @@ export const checkDatabaseConnection = async () => {
   }
 };
 
-// Create a utility for Supabase retries
-export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = 3) => {
+// Create a utility for Supabase retries with exponential backoff
+export const supabaseWithRetry = async (operation: () => Promise<any>, maxRetries = 5) => {
   let lastError;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
+      // Add delay before retries (except the first attempt)
+      if (attempt > 0) {
+        const delay = Math.min(500 * Math.pow(2, attempt), 8000) + Math.random() * 500;
+        console.log(`Retry attempt ${attempt+1}/${maxRetries} after ${delay.toFixed(0)}ms delay`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+      
       return await operation();
     } catch (error) {
       console.error(`Supabase operation failed (attempt ${attempt + 1}/${maxRetries}):`, error);
       lastError = error;
-      // Exponential backoff with jitter
-      const delay = Math.min(100 * 2 ** attempt, 2000) + Math.random() * 200;
-      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
+  
+  console.error('All retry attempts failed:', lastError);
   throw lastError;
 };
 

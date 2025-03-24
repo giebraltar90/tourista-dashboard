@@ -1,10 +1,11 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
 import { isValidUuid } from "./utils/guidesUtils";
 import { logger } from "@/utils/logger";
+import { EventEmitter } from "@/utils/eventEmitter";
 
 /**
- * Updates a guide's assignment to a group in Supabase directly
+ * Updates a guide's assignment to a group in Supabase and synchronizes with tours table
  */
 export const updateGuideInSupabase = async (
   tourId: string, 
@@ -45,12 +46,14 @@ export const updateGuideInSupabase = async (
     // Log the actual data being sent to the database
     logger.debug("Sending to database:", updateData);
 
-    // Update the guide assignment in the database
-    const { error } = await supabase
-      .from('tour_groups')
-      .update(updateData)
-      .eq('id', groupId)
-      .eq('tour_id', tourId);
+    // Use retry mechanism for reliable database updates
+    const { error } = await supabaseWithRetry(async () => {
+      return await supabase
+        .from('tour_groups')
+        .update(updateData)
+        .eq('id', groupId)
+        .eq('tour_id', tourId);
+    });
       
     if (error) {
       logger.error("Error updating guide assignment:", error);
@@ -58,30 +61,74 @@ export const updateGuideInSupabase = async (
     }
     
     // Now also update the guide assignment in the tours table if needed
-    // (This is the fix for the reported issue with guide assignments not being properly saved)
-    if (guideId && guideId !== "_none" && guideId.startsWith("guide")) {
-      // Determine which guide field we're updating (guide1_id, guide2_id, guide3_id)
-      const guideField = `${guideId}_id`.replace('guide', 'guide');
+    if (guideId && guideId !== "_none") {
+      let tourUpdateSuccess = false;
       
-      // Use a direct SQL update instead of the RPC function since TypeScript doesn't recognize it
-      // We're using a manual update to the tours table for the appropriate guide field
-      if (guideField === 'guide1_id' || guideField === 'guide2_id' || guideField === 'guide3_id') {
-        const updateObj: any = {};
-        updateObj[guideField] = isValidUuid(guideId) ? guideId : null;
+      // Determine which guide field we're updating (guide1_id, guide2_id, guide3_id)
+      if (guideId.startsWith("guide")) {
+        const guideField = `${guideId}_id`;
         
-        const { error: tourUpdateError } = await supabase
-          .from('tours')
-          .update(updateObj)
-          .eq('id', tourId);
-        
-        if (tourUpdateError) {
-          logger.error(`Error updating ${guideField} in tours table:`, tourUpdateError);
-          // Not returning false here as the group update succeeded
-        } else {
-          logger.debug(`Successfully updated ${guideField} in tours table`);
+        if (guideField === 'guide1_id' || guideField === 'guide2_id' || guideField === 'guide3_id') {
+          const updateObj: any = {};
+          updateObj[guideField] = isValidUuid(guideId) ? guideId : null;
+          
+          // Update tours table with retry
+          const { error: tourUpdateError } = await supabaseWithRetry(async () => {
+            return await supabase
+              .from('tours')
+              .update(updateObj)
+              .eq('id', tourId);
+          });
+          
+          if (tourUpdateError) {
+            logger.error(`Error updating ${guideField} in tours table:`, tourUpdateError);
+          } else {
+            logger.debug(`Successfully updated ${guideField} in tours table`);
+            tourUpdateSuccess = true;
+          }
+        }
+      }
+      
+      // If we failed to update the tours table directly, try an alternative approach
+      if (!tourUpdateSuccess) {
+        try {
+          // Get current tour data
+          const { data: tourData } = await supabase
+            .from('tours')
+            .select('guide1_id, guide2_id, guide3_id')
+            .eq('id', tourId)
+            .single();
+            
+          if (tourData) {
+            // Check if any of the guides matches our guide ID
+            const guideSlot = guideId.startsWith('guide') ? guideId : 
+              (tourData.guide1_id === guideId ? 'guide1' :
+               tourData.guide2_id === guideId ? 'guide2' :
+               tourData.guide3_id === guideId ? 'guide3' : null);
+               
+            if (guideSlot) {
+              const updateField = `${guideSlot}_id`;
+              const updateObject: any = {};
+              updateObject[updateField] = guideId;
+              
+              const { error: updateError } = await supabase
+                .from('tours')
+                .update(updateObject)
+                .eq('id', tourId);
+                
+              if (!updateError) {
+                logger.debug(`Successfully updated ${updateField} in tours table`);
+              }
+            }
+          }
+        } catch (err) {
+          logger.error("Error in alternative tour update strategy:", err);
         }
       }
     }
+    
+    // Emit event to notify other components about the guide change
+    EventEmitter.emit(`guide-change:${tourId}`);
     
     logger.debug("Successfully updated guide assignment in Supabase");
     return true;
@@ -123,20 +170,98 @@ export const updateTourGuidesInDatabase = async (
       return true;
     }
     
-    const { error } = await supabase
-      .from('tours')
-      .update(updateData)
-      .eq('id', tourId);
+    // Use retry mechanism for better reliability
+    const { error } = await supabaseWithRetry(async () => {
+      return await supabase
+        .from('tours')
+        .update(updateData)
+        .eq('id', tourId);
+    });
       
     if (error) {
       logger.error("Error updating tour guides:", error);
       return false;
     }
     
+    // Emit event to notify other components about the guide change
+    EventEmitter.emit(`guide-change:${tourId}`);
+    
     logger.debug("Successfully updated all guides for tour");
     return true;
   } catch (error) {
     logger.error("Error updating tour guides:", error);
+    return false;
+  }
+};
+
+/**
+ * Synchronizes guide assignments between tour_groups and tours tables
+ * to ensure consistency across the application
+ */
+export const syncGuideAssignmentsAcrossTables = async (tourId: string): Promise<boolean> => {
+  if (!tourId) return false;
+  
+  try {
+    logger.debug(`Synchronizing guide assignments for tour ${tourId}`);
+    
+    // Get tour data
+    const { data: tourData, error: tourError } = await supabase
+      .from('tours')
+      .select('id, guide1_id, guide2_id, guide3_id')
+      .eq('id', tourId)
+      .single();
+      
+    if (tourError || !tourData) {
+      logger.error("Error fetching tour data for sync:", tourError);
+      return false;
+    }
+    
+    // Get all groups for this tour
+    const { data: groups, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id, guide_id')
+      .eq('tour_id', tourId);
+      
+    if (groupsError || !groups) {
+      logger.error("Error fetching tour groups for sync:", groupsError);
+      return false;
+    }
+    
+    // Check for inconsistencies and fix them
+    let changesNeeded = false;
+    const groupUpdates = [];
+    
+    for (const group of groups) {
+      // If a group has a guide ID that matches a special guide ID (guide1, guide2, guide3)
+      // but the tour doesn't have this guide, update the tour
+      if (group.guide_id && (
+          (group.guide_id === 'guide1' && !tourData.guide1_id) ||
+          (group.guide_id === 'guide2' && !tourData.guide2_id) ||
+          (group.guide_id === 'guide3' && !tourData.guide3_id)
+      )) {
+        changesNeeded = true;
+        const guideField = `${group.guide_id}_id`;
+        const updateObj: any = {};
+        updateObj[guideField] = group.guide_id;
+        
+        // Update tour with the guide ID from the group
+        await supabase
+          .from('tours')
+          .update(updateObj)
+          .eq('id', tourId);
+          
+        logger.debug(`Updated tour ${tourId} with ${guideField} from group ${group.id}`);
+      }
+    }
+    
+    // If we made any changes, emit guide change event
+    if (changesNeeded) {
+      EventEmitter.emit(`guide-change:${tourId}`);
+    }
+    
+    return true;
+  } catch (error) {
+    logger.error("Error synchronizing guide assignments:", error);
     return false;
   }
 };
