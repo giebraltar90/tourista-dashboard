@@ -6,12 +6,14 @@ interface GroupsHeaderProps {
   isManualRefreshing: boolean;
   isFixingDatabase: boolean;
   onManualRefresh: () => void;
+  onAddParticipants?: () => void;
 }
 
 export const GroupsHeader = ({ 
   isManualRefreshing, 
   isFixingDatabase, 
-  onManualRefresh 
+  onManualRefresh,
+  onAddParticipants
 }: GroupsHeaderProps) => {
   return (
     <div className="flex justify-between items-center">
@@ -24,6 +26,18 @@ export const GroupsHeader = ({
         {isManualRefreshing && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
         {isManualRefreshing ? "Refreshing..." : "Refresh Participants"}
       </Button>
+      
+      {onAddParticipants && (
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={onAddParticipants}
+          disabled={isFixingDatabase}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Test Participants
+        </Button>
+      )}
     </div>
   );
 };

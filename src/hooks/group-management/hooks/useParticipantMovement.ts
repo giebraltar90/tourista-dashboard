@@ -63,9 +63,9 @@ export const useParticipantMovement = (tourId?: string, onSuccess?: () => void) 
         return updatedGroups;
       });
       
-      // Then actually update database
+      // Then actually update database - FIX: Pass the participant ID instead of the entire participant object
       const success = await moveParticipantService(
-        participant,
+        participant.id,
         fromGroupId,
         toGroupId
       );
