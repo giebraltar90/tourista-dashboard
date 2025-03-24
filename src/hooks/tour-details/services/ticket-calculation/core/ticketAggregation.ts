@@ -1,4 +1,6 @@
 
+import { GuideInfo } from "@/types/ventrata";
+
 /**
  * Count tickets by type from guide requirements
  */
@@ -33,16 +35,27 @@ export const mapGuidesToResultFormat = (
     guideType: string;
     needsTicket: boolean;
     ticketType: "adult" | "child" | null;
-  }>
+    guideId?: string;
+  }>,
+  guideInfos: Array<GuideInfo | null> = []
 ): Array<{
   guideName: string;
   guideType: string;
   ticketType: "adult" | "child" | null;
+  guideInfo: GuideInfo | null;
 }> => {
-  return guideResults.map(guide => ({
-    guideName: guide.guideName,
-    guideType: guide.guideType,
-    // Only set ticketType if guide needs a ticket
-    ticketType: guide.needsTicket ? guide.ticketType : null
-  }));
+  return guideResults.map((guide, index) => {
+    // Find the corresponding guide info by matching guide ID or fallback to index
+    const guideInfo = guide.guideId 
+      ? guideInfos.find(g => g?.id === guide.guideId) || null
+      : guideInfos[index] || null;
+      
+    return {
+      guideName: guide.guideName,
+      guideType: guide.guideType,
+      // Only set ticketType if guide needs a ticket
+      ticketType: guide.needsTicket ? guide.ticketType : null,
+      guideInfo: guideInfo
+    };
+  });
 };

@@ -22,7 +22,8 @@ export const calculateBasicGuideTickets = (
   guides: Array<{ 
     guideName: string; 
     guideType: string; 
-    ticketType: "adult" | "child" | null 
+    ticketType: "adult" | "child" | null;
+    guideInfo: GuideInfo | null;
   }> 
 } => {
   // Special logging for tour #324598820
@@ -104,7 +105,8 @@ export const calculateBasicGuideTickets = (
           guides: [{
             guideName: guide1Result.guideName,
             guideType: guide1Result.guideType || "Unknown",
-            ticketType: guide1Result.ticketType
+            ticketType: guide1Result.ticketType,
+            guideInfo: guide1Info
           }]
         };
         
@@ -168,7 +170,7 @@ export const calculateBasicGuideTickets = (
   const { adultTickets, childTickets } = countTicketsByType(guidesWithRequirements);
   
   // Map all guides to the result format (needed or not)
-  const guides = mapGuidesToResultFormat(allGuideResults);
+  const guides = mapGuidesToResultFormat(allGuideResults, [guide1Info, guide2Info, guide3Info]);
   
   // Log final counts
   if (isSpecialTour) {

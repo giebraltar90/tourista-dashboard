@@ -69,7 +69,7 @@ export const calculateCompleteTicketRequirements = (
           totalTickets,
           guides: [{
             guideName: guide1Req.guideName,
-            guideInfo: guide1Req.guideInfo,
+            guideInfo: guide1Info,
             needsTicket: true,
             ticketType: guide1Req.ticketType
           }]
@@ -96,7 +96,9 @@ export const calculateCompleteTicketRequirements = (
     guide1Req, guide2Req, guide3Req
   ].filter(g => g.needsTicket).map(g => ({
     guideName: g.guideName,
-    guideInfo: g.guideInfo,
+    guideInfo: g.guideId === "guide1" ? guide1Info : 
+               g.guideId === "guide2" ? guide2Info : 
+               g.guideId === "guide3" ? guide3Info : null,
     needsTicket: g.needsTicket,
     ticketType: g.ticketType
   }));
