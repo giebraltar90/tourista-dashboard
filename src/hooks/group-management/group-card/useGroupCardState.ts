@@ -98,8 +98,8 @@ export const useGroupCardState = (
   // Calculate adult count
   const adultCount = Math.max(0, totalParticipants - childCount1);
   
-  // Format the participant count for display
-  const displayParticipants = formatParticipantCount(totalParticipants, childCount1);
+  // Format the participant count in the standard format: "adult + child"
+  const displayParticipants = `${adultCount} + ${childCount1}`;
   
   console.log(`DATABASE DEBUG: Final calculations for ${groupName}:`, {
     totalParticipants,

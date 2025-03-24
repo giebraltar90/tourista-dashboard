@@ -42,11 +42,11 @@ export const GroupCardHeader = ({
           <div className="flex items-center">
             <h3 className="font-semibold text-base">{groupName}</h3>
             <Badge variant="secondary" className="ml-2">
-              {totalParticipants}
+              {displayParticipants}
             </Badge>
           </div>
           <p className="text-xs text-muted-foreground">
-            {displayParticipants}
+            Participants
           </p>
         </div>
       </div>

@@ -28,10 +28,8 @@ export const ParticipantItem = ({
   const childCount = participant.childCount || 0;
   const adultCount = totalCount - childCount;
   
-  // Format display label
-  const countLabel = childCount > 0 
-    ? `${adultCount}+${childCount}` 
-    : `${totalCount}`;
+  // Format display label in our standard format: "adult + child"
+  const countLabel = `${adultCount} + ${childCount}`;
   
   return (
     <Card
