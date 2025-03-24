@@ -14,10 +14,11 @@ export const useGuideTicketRequirements = (
   // Use the centralized calculation service
   return useMemo(() => {
     return calculateCompleteTicketRequirements(
-      tour,
       guide1Info, 
       guide2Info,
-      guide3Info
+      guide3Info,
+      tour?.location || "",
+      tour?.tourGroups || []
     );
   }, [tour, guide1Info, guide2Info, guide3Info]);
 };

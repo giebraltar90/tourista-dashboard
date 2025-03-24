@@ -2,7 +2,7 @@
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
 import { GuideTicketCounts } from "../../utils/guideTicketTypes";
-import { calculateBasicGuideTickets, calculateCompleteTicketRequirements } from "./core";
+import { calculateCompleteTicketRequirements } from "./core/completeCalculator";
 
 /**
  * Calculate how many tickets are needed for all guides on a tour
@@ -17,13 +17,15 @@ export const calculateGuideTicketsNeeded = (
 ): { adultTickets: number; childTickets: number; guides: Array<{ guideName: string; guideType: string; ticketType: "adult" | "child" | null }> } => {
   logger.debug(`🎟️ [CalculateTickets] Starting calculation for location "${location}"`);
   
-  return calculateBasicGuideTickets(
+  const result = calculateCompleteTicketRequirements(
     guide1Info,
     guide2Info,
     guide3Info,
     location,
     tourGroups
   );
+  
+  return result.guideTickets;
 };
 
 /**

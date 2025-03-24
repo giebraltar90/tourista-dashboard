@@ -26,10 +26,13 @@ export const calculateCompleteTicketRequirements = (
   if (!needsGuideTickets) {
     logger.debug(`🎟️ [CompleteCalculator] Location "${location}" doesn't require guide tickets, returning zero`);
     return {
-      adultTickets: 0,
-      childTickets: 0,
-      totalTickets: 0,
-      guides: []
+      locationNeedsGuideTickets: false,
+      guideTickets: {
+        adultTickets: 0,
+        childTickets: 0,
+        guides: []
+      },
+      hasAssignedGuides: false
     };
   }
   
@@ -63,25 +66,30 @@ export const calculateCompleteTicketRequirements = (
         let childTickets = guide1Req.ticketType === 'child' ? 1 : 0;
         
         return {
-          adultTickets,
-          childTickets,
-          totalTickets: adultTickets + childTickets,
-          guides: [{
-            guideName: guide1Req.guideName,
-            guideInfo: guide1Req.guideInfo,
-            needsTicket: true,
-            ticketType: guide1Req.ticketType
-          }]
+          locationNeedsGuideTickets: true,
+          guideTickets: {
+            adultTickets,
+            childTickets,
+            guides: [{
+              guideName: guide1Req.guideName,
+              guideType: guide1Req.guideInfo?.guideType || '',
+              ticketType: guide1Req.ticketType
+            }]
+          },
+          hasAssignedGuides: false
         };
       }
     }
     
     logger.debug(`🎟️ [CompleteCalculator] No assigned guides found, returning zero tickets`);
     return {
-      adultTickets: 0,
-      childTickets: 0,
-      totalTickets: 0,
-      guides: []
+      locationNeedsGuideTickets: needsGuideTickets,
+      guideTickets: {
+        adultTickets: 0,
+        childTickets: 0,
+        guides: []
+      },
+      hasAssignedGuides: false
     };
   }
   
@@ -95,8 +103,7 @@ export const calculateCompleteTicketRequirements = (
     guide1Req, guide2Req, guide3Req
   ].filter(g => g.needsTicket).map(g => ({
     guideName: g.guideName,
-    guideInfo: g.guideInfo,
-    needsTicket: g.needsTicket,
+    guideType: g.guideInfo?.guideType || '',
     ticketType: g.ticketType
   }));
   
@@ -114,9 +121,12 @@ export const calculateCompleteTicketRequirements = (
   });
   
   return {
-    adultTickets,
-    childTickets,
-    totalTickets,
-    guides: guidesWithRequirements
+    locationNeedsGuideTickets: needsGuideTickets,
+    guideTickets: {
+      adultTickets,
+      childTickets,
+      guides: guidesWithRequirements
+    },
+    hasAssignedGuides: assignedGuideIds.size > 0
   };
 };
