@@ -1,134 +1,42 @@
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { checkParticipantsTable } from "@/services/api/checkParticipantsTable";
-import { autoFixDatabaseIssues } from "@/services/api/checkDatabaseTables";
+import { useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { checkDatabaseConnection } from "@/integrations/supabase/client";
-import { EventEmitter } from "@/utils/eventEmitter";
+import { checkDatabaseConsistency, fixDatabaseIssues } from "@/services/api/databaseConsistencyService";
 
-/**
- * Hook to check the database and fix any issues
- */
-export const useDatabaseCheck = (tourId: string, refreshParticipants: () => void) => {
+export const useDatabaseCheck = (tourId: string, onRefresh: () => void) => {
   const [databaseError, setDatabaseError] = useState<string | null>(null);
   const [isFixingDatabase, setIsFixingDatabase] = useState(false);
-  const [lastCheckTime, setLastCheckTime] = useState(0);
-  const checkAttempts = useRef(0);
-  const maxAttempts = 3;
-  
-  // Check database status with network error handling
-  const checkDatabaseStatus = useCallback(async (forceCheck = false) => {
-    try {
-      console.log("DATABASE DEBUG: Checking database status...");
-      const now = Date.now();
-      
-      // Prevent excessive checks (no more than once per 5 seconds)
-      if (!forceCheck && now - lastCheckTime < 5000) {
-        console.log("DATABASE DEBUG: Skipping check, too soon since last check");
-        return;
-      }
-      
-      setLastCheckTime(now);
-      
-      // First check database connectivity
-      const connectionCheck = await checkDatabaseConnection();
-      if (!connectionCheck.connected) {
-        console.error("DATABASE DEBUG: Database connection failed:", connectionCheck.error);
-        setDatabaseError(`Database connection error: ${connectionCheck.error}`);
-        
-        // Emit a global event that connection failed so other components can react
-        EventEmitter.emit('database-connection-error', connectionCheck);
-        
-        // If we haven't tried too many times, schedule another attempt
-        if (checkAttempts.current < maxAttempts) {
-          checkAttempts.current++;
-          console.log(`DATABASE DEBUG: Scheduling retry attempt ${checkAttempts.current}/${maxAttempts} in 5 seconds...`);
-          setTimeout(() => checkDatabaseStatus(true), 5000);
-        }
-        return;
-      }
-      
-      // Reset attempt counter on successful connection
-      checkAttempts.current = 0;
-      
-      // Check participants table
-      const tableCheck = await checkParticipantsTable();
-      console.log("DATABASE DEBUG: Participants table check result:", tableCheck);
-      
-      if (!tableCheck.exists) {
-        console.error("DATABASE DEBUG: Participants table doesn't exist:", tableCheck.message);
-        setDatabaseError(tableCheck.message);
-        // Emit event for missing table
-        EventEmitter.emit('missing-participants-table', tableCheck);
-      } else {
-        setDatabaseError(null);
-        // Emit event for successful check
-        EventEmitter.emit('database-check-success', null);
-      }
-    } catch (error) {
-      console.error("DATABASE DEBUG: Error checking database status:", error);
-      setDatabaseError("Error checking database status. Please try again.");
-      // Increment retry counter
-      if (checkAttempts.current < maxAttempts) {
-        checkAttempts.current++;
-        setTimeout(() => checkDatabaseStatus(true), 5000);
-      }
-    }
-  }, [lastCheckTime]);
-  
-  // Automatically check database status on mount
-  useEffect(() => {
-    checkDatabaseStatus();
-    
-    // Listen for global refresh events
-    const handleRefreshRequest = () => {
-      checkDatabaseStatus(true);
-    };
-    
-    EventEmitter.on('refresh-database-status', handleRefreshRequest);
-    
-    return () => {
-      EventEmitter.off('refresh-database-status', handleRefreshRequest);
-    };
-  }, [checkDatabaseStatus]);
-  
-  // Fix database issues
+
+  // Function to check and fix database issues
   const handleFixDatabase = useCallback(async () => {
+    if (!tourId || isFixingDatabase) return;
+    
     setIsFixingDatabase(true);
     
     try {
-      console.log("DATABASE DEBUG: Attempting to fix database issues...");
+      const result = await fixDatabaseIssues(tourId);
       
-      const success = await autoFixDatabaseIssues();
-      
-      if (success) {
-        console.log("DATABASE DEBUG: Successfully fixed database issues");
-        toast.success("Successfully fixed database issues");
+      if (result.success) {
+        toast.success("Database issues fixed successfully");
         setDatabaseError(null);
-        
-        // Reset check attempts
-        checkAttempts.current = 0;
-        
-        // Force refresh database status
-        checkDatabaseStatus(true);
-        
-        // Refresh participants after fixing the database
-        setTimeout(() => {
-          refreshParticipants();
-        }, 1000);
+        // Refresh data after fixes
+        onRefresh();
       } else {
-        console.error("DATABASE DEBUG: Failed to fix database issues");
-        toast.error("Failed to fix database issues. Please contact support.");
-        setDatabaseError("Failed to fix database issues");
+        toast.error(`Failed to fix database issues: ${result.error}`);
       }
     } catch (error) {
-      console.error("DATABASE DEBUG: Error fixing database issues:", error);
-      toast.error("Error fixing database issues. Please contact support.");
-      setDatabaseError("Error fixing database issues");
+      console.error("Error fixing database:", error);
+      toast.error("An error occurred while fixing database issues");
     } finally {
       setIsFixingDatabase(false);
     }
-  }, [refreshParticipants, checkDatabaseStatus]);
-  
-  return { databaseError, isFixingDatabase, handleFixDatabase, checkDatabaseStatus };
+  }, [tourId, isFixingDatabase, onRefresh]);
+
+  return {
+    databaseError,
+    setDatabaseError,
+    isFixingDatabase,
+    handleFixDatabase
+  };
 };

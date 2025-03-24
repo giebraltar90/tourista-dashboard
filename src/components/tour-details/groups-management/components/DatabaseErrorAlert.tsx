@@ -1,10 +1,10 @@
 
-import { AlertTriangle } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DatabaseErrorAlertProps {
-  error: string | undefined;
+  error: string | null;
   isFixingDatabase: boolean;
   onFixDatabase: () => void;
 }
@@ -16,26 +16,25 @@ export const DatabaseErrorAlert = ({
 }: DatabaseErrorAlertProps) => {
   if (!error) return null;
   
-  // Improve error message formatting
-  const errorMessage = error.includes('JSON object requested')
-    ? 'Database error: No tour data found'
-    : error.includes('NetworkError') 
-      ? 'Network error: Unable to connect to database'
-      : `Database error: ${error}`;
-  
   return (
     <Alert variant="destructive">
-      <AlertTriangle className="h-4 w-4" />
-      <AlertDescription className="flex items-center justify-between">
-        <span>{errorMessage}</span>
-        <Button 
-          onClick={onFixDatabase} 
-          disabled={isFixingDatabase}
-          size="sm" 
-          variant="destructive"
-        >
-          {isFixingDatabase ? 'Fixing...' : 'Fix Database'}
-        </Button>
+      <AlertCircle className="h-4 w-4" />
+      <AlertTitle>Database Error</AlertTitle>
+      <AlertDescription className="flex flex-col space-y-2">
+        <p>{error}</p>
+        <div>
+          <Button 
+            variant="secondary"
+            size="sm"
+            onClick={onFixDatabase}
+            disabled={isFixingDatabase}
+          >
+            {isFixingDatabase && (
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            {isFixingDatabase ? "Fixing..." : "Fix Database Issues"}
+          </Button>
+        </div>
       </AlertDescription>
     </Alert>
   );
