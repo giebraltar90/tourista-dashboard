@@ -41,7 +41,8 @@ export const forceRefreshTourData = async (tourId: string): Promise<boolean> => 
     // Then refresh the materialized view
     const viewResult = await refreshTourStatisticsView();
     
-    // Invalidate query cache for this tour - fixed to use proper Promise chain
+    // Invalidate query cache for this tour - fixed to use proper Promise handling
+    // Using .then() with an explicit Promise chain
     supabase.rpc('invalidate_tour_cache', {
       p_tour_id: tourId
     }).then(result => {
