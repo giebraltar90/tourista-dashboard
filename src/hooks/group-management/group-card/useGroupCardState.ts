@@ -64,7 +64,7 @@ export const useGroupCardState = (
   const adultCount = totalParticipants - childCount;
   
   // Format the display string in our standard format: "adult + child"
-  const displayParticipants = formatParticipantCount(totalParticipants, childCount);
+  const displayParticipants: string = formatParticipantCount(totalParticipants, childCount);
   
   return {
     isExpanded,

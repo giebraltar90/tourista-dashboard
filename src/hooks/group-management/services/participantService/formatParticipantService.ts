@@ -4,7 +4,7 @@ import { toast } from "sonner";
 /**
  * Format the participant count to show adults + children if there are children
  */
-export const formatParticipantCount = (totalParticipants: number, childCount: number) => {
+export const formatParticipantCount = (totalParticipants: number, childCount: number): string => {
   console.log("PARTICIPANTS DEBUG: formatParticipantCount called with", {
     totalParticipants,
     childCount
