@@ -29,27 +29,14 @@ export const TourCardDetails = ({
   const { guides = [] } = useGuideData() || { guides: [] };
   
   // Calculate total participants and child count only once
-  const participantCounts = (() => {
-    console.log("PARTICIPANTS DEBUG: TourCardDetails calculating counts");
-    
+  const participantCounts = (() => {    
     let calculatedTotalParticipants = 0;
     let calculatedTotalChildCount = 0;
     
     // Only process if tourGroups is an array
     if (Array.isArray(tourGroups)) {
-      console.log("PARTICIPANTS DEBUG: Processing tourGroups:", tourGroups.map(g => ({
-        id: g.id,
-        name: g.name || 'Unnamed',
-        size: g.size,
-        childCount: g.childCount,
-        hasParticipantsArray: Array.isArray(g.participants),
-        participantsCount: Array.isArray(g.participants) ? g.participants.length : 0
-      })));
-      
       for (const group of tourGroups) {
         if (Array.isArray(group.participants) && group.participants.length > 0) {
-          console.log(`PARTICIPANTS DEBUG: Processing ${group.participants.length} participants in group ${group.name || 'Unnamed'}`);
-          
           // Count directly from participants array
           for (const participant of group.participants) {
             const count = participant.count || 1;
@@ -62,26 +49,12 @@ export const TourCardDetails = ({
           // Use size value as fallback if no participants array
           calculatedTotalParticipants += group.size;
           calculatedTotalChildCount += group.childCount || 0;
-          
-          console.log(`PARTICIPANTS DEBUG: Using size fallback for group ${group.name || 'Unnamed'}:`, {
-            size: group.size,
-            childCount: group.childCount || 0,
-            runningTotal: calculatedTotalParticipants,
-            runningChildCount: calculatedTotalChildCount
-          });
         }
       }
     }
     
     // If calculated value is 0, fall back to provided value
     const finalTotalParticipants = calculatedTotalParticipants > 0 ? calculatedTotalParticipants : totalParticipants;
-    
-    console.log("PARTICIPANTS DEBUG: TourCardDetails final calculation:", {
-      calculatedTotalParticipants,
-      calculatedTotalChildCount,
-      providedTotalParticipants: totalParticipants,
-      finalTotalParticipants
-    });
     
     return {
       totalParticipants: finalTotalParticipants,
@@ -92,32 +65,25 @@ export const TourCardDetails = ({
   
   // Get the actual guides assigned to the groups
   const getAssignedGuideNames = () => {
-    const assignedGuideIds = (tourGroups || [])
-      .filter(group => group.guideId)
-      .map(group => group.guideId);
-      
-    // Remove duplicates
-    const uniqueGuideIds = [...new Set(assignedGuideIds)];
+    // Start with the primary guides if they exist
+    const guideNames = [];
+    if (guide1) guideNames.push(guide1);
+    if (guide2) guideNames.push(guide2);
     
-    console.log("PARTICIPANTS DEBUG: Unique guide IDs:", uniqueGuideIds);
-    
-    // Map guide IDs to guide names using findGuideName
-    return uniqueGuideIds.map(guideId => {
-      // Create a simplified tour object with just the guides we need
-      const tourObj = {
-        guide1,
-        guide2,
-      };
+    // If we have group-assigned guides, add those too
+    const groupGuideNames = (tourGroups || [])
+      .filter(group => group.guideName)
+      .map(group => group.guideName)
+      .filter(name => name && !guideNames.includes(name)); // Only unique names not already in list
       
-      // Use the utility function to find the proper name
-      const guideName = findGuideName(guideId, tourObj, guides);
-      console.log(`PARTICIPANTS DEBUG: Resolved guide ${guideId} to name "${guideName}"`);
-      return guideName;
-    });
+    // Add unique group guide names
+    guideNames.push(...groupGuideNames);
+    
+    // Return joined guide names or default text
+    return guideNames.length > 0 
+      ? guideNames.join(" / ")
+      : "No guides assigned";
   };
-  
-  // Get the actual guide names assigned to the groups
-  const assignedGuideNames = getAssignedGuideNames();
   
   // Format participant count to show adults+children
   const formattedParticipants = formatParticipantCount(
@@ -130,7 +96,7 @@ export const TourCardDetails = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-y-2">
         <div className="flex items-center space-x-1 text-sm">
           <span className="text-muted-foreground">Location:</span>
-          <span className="font-medium">{location}</span>
+          <span className="font-medium">{location || "Not specified"}</span>
         </div>
         
         <div className="flex items-center space-x-1 text-sm">
@@ -140,11 +106,7 @@ export const TourCardDetails = ({
         
         <div className="flex items-center space-x-1 text-sm">
           <span className="text-muted-foreground">Guides:</span>
-          <span className="font-medium">
-            {assignedGuideNames.length > 0 
-              ? assignedGuideNames.join(" / ")
-              : "No guides assigned"}
-          </span>
+          <span className="font-medium">{getAssignedGuideNames()}</span>
         </div>
         
         <div className="flex items-center space-x-1 text-sm">

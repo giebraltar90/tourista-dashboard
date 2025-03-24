@@ -17,6 +17,7 @@ export const TourCard = ({
   location,
   guide1,
   guide2,
+  guide3,
   referenceCode,
   numTickets,
   isCondensed = false
