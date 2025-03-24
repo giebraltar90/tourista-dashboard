@@ -1,6 +1,6 @@
 
 import { useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import Dashboard from "./pages/Dashboard";
 import NewTourPage from "./pages/NewTourPage";
@@ -9,6 +9,7 @@ import EditTourPage from "./pages/EditTourPage";
 import TicketBucketsPage from "./pages/TicketBucketsPage";
 import { initializeDatabaseFunctions } from "./services/api/db/initialize";
 import { logger } from "./utils/logger";
+import { RoleProvider } from "./contexts/RoleContext";
 
 function App() {
   // Initialize database functions on app start
@@ -25,7 +26,7 @@ function App() {
   }, []);
 
   return (
-    <Router>
+    <RoleProvider>
       <Toaster position="top-right" richColors />
       <Routes>
         <Route path="/" element={<Dashboard />} />
@@ -34,7 +35,7 @@ function App() {
         <Route path="/tours/:id/edit" element={<EditTourPage />} />
         <Route path="/ticket-buckets" element={<TicketBucketsPage />} />
       </Routes>
-    </Router>
+    </RoleProvider>
   );
 }
 

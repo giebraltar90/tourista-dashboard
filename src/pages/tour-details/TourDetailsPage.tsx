@@ -1,98 +1,70 @@
 
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { useTourDetailsData } from "@/hooks/tour-details/useTourDetailsData";
-import { LoadingState } from "@/components/tour-details/LoadingState";
-import { ErrorState } from "@/components/tour-details/ErrorState";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
-import { useTourDatabaseCheck } from "./hooks/useTourDatabaseCheck";
+import { Loading } from "@/components/ui/loading";
+import { useRole } from "@/contexts/RoleContext";
+import { useTourById } from "@/hooks/useTourData";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
-import { useParticipantRefreshEvents } from "./hooks/useParticipantRefreshEvents";
-import { useEffect, useCallback, memo } from "react";
+import { logger } from "@/utils/logger";
 
-/**
- * Main tour details page component - refactored for cleaner organization
- */
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  
-  // Always ensure id has a value for the query
-  const tourId = id || "";
-  console.log("🚀 [TourDetailsPage] Rendering with ID:", tourId);
-  
-  // Extract hooks functionality for better organization
-  useTourDatabaseCheck(tourId);
-  
-  const {
-    tour,
-    isLoading,
-    error,
-    activeTab,
-    handleTabChange,
-    handleRefetch
-  } = useTourDetailsData(tourId);
-  
-  // Debug tour data - using useCallback to prevent recreation on each render
-  const logTourData = useCallback(() => {
-    if (tour) {
-      console.log("🚀 [TourDetailsPage] Tour data loaded:", {
-        id: tour.id,
-        guide1: tour.guide1 || 'none',
-        guide2: tour.guide2 || 'none',
-        guide3: tour.guide3 || 'none',
-        groupCount: tour.tourGroups?.length || 0,
-        location: tour.location
-      });
-    } else if (error) {
-      console.error("🚀 [TourDetailsPage] Error loading tour:", error);
-    } else if (isLoading) {
-      console.log("🚀 [TourDetailsPage] Loading tour data...");
-    } else {
-      console.log("🚀 [TourDetailsPage] No tour data available yet");
-    }
-  }, [tour, error, isLoading]);
-  
-  // Log tour data only when dependencies change
-  useEffect(() => {
-    logTourData();
-  }, [logTourData]);
-  
-  // Custom hook for guide information - safely pass tour
+  const { data: tour, isLoading, error } = useTourById(id || "");
   const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
+  const [activeTab, setActiveTab] = useState("overview");
   
-  // Listen for refresh-participants event
-  useParticipantRefreshEvents(tourId, handleRefetch);
-
-  // Early return if we have an error that's not just "no tour data"
-  if (error && !isLoading) {
-    console.error("🚀 [TourDetailsPage] Error rendering tour:", error);
+  // Log errors for debugging
+  useEffect(() => {
+    if (error) {
+      logger.error(`Failed to load tour with ID ${id}:`, error);
+    }
+  }, [error, id]);
+  
+  // When a tour is loaded, log its basic details
+  useEffect(() => {
+    if (tour) {
+      logger.debug(`Loaded tour: ${tour.tourName}`, {
+        tourId: tour.id,
+        date: tour.date,
+        location: tour.location,
+        guide1: tour.guide1,
+        guide2: tour.guide2,
+        guide3: tour.guide3,
+        numGroups: tour.tourGroups?.length || 0
+      });
+    }
+  }, [tour]);
+  
+  if (isLoading) {
+    return <Loading />;
+  }
+  
+  if (error || !tour) {
     return (
-      <DashboardLayout>
-        <ErrorState tourId={tourId} onRetry={handleRefetch} />
-      </DashboardLayout>
+      <div className="container mx-auto py-6">
+        <div className="p-8 text-center bg-muted rounded-lg">
+          <h2 className="text-xl font-medium mb-2">Tour not found</h2>
+          <p className="text-muted-foreground">We couldn't find a tour with the specified ID.</p>
+          {error && (
+            <p className="text-red-500 mt-2">Error: {error.message}</p>
+          )}
+        </div>
+      </div>
     );
   }
-
+  
   return (
-    <DashboardLayout>
-      {isLoading ? (
-        <LoadingState />
-      ) : !tour ? (
-        <ErrorState tourId={tourId} onRetry={handleRefetch} />
-      ) : (
-        <NormalizedTourContent
-          tour={tour}
-          tourId={tourId}
-          guide1Info={guide1Info}
-          guide2Info={guide2Info}
-          guide3Info={guide3Info}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
-      )}
-    </DashboardLayout>
+    <NormalizedTourContent
+      tour={tour}
+      tourId={id || ""}
+      guide1Info={guide1Info}
+      guide2Info={guide2Info}
+      guide3Info={guide3Info}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+    />
   );
 };
 
-// Use memo to prevent unnecessary re-renders
-export default memo(TourDetailsPage);
+export default TourDetailsPage;

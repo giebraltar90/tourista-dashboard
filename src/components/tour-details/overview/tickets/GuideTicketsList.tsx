@@ -1,12 +1,9 @@
 
 import { Badge } from "@/components/ui/badge";
+import { GuideWithTicket } from "./types";
 
 interface GuideTicketsListProps {
-  guides: Array<{
-    guideName: string;
-    guideType: string;
-    ticketType: "adult" | "child" | null;
-  }>;
+  guides: GuideWithTicket[];
 }
 
 export const GuideTicketsList = ({ guides }: GuideTicketsListProps) => {

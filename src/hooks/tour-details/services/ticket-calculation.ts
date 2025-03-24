@@ -6,9 +6,9 @@ import { logger } from "@/utils/logger";
 export const doesGuideNeedTicket = (
   guideType: string | undefined,
   location: string
-): { needsTicket: boolean; ticketType: 'adult' | 'child' | 'none' } => {
+): { needsTicket: boolean; ticketType: 'adult' | 'child' | null } => {
   if (!guideType) {
-    return { needsTicket: false, ticketType: 'none' };
+    return { needsTicket: false, ticketType: null };
   }
   
   // Guide type determines ticket requirements
@@ -21,7 +21,7 @@ export const doesGuideNeedTicket = (
     return { needsTicket: true, ticketType: 'adult' };
   }
   
-  return { needsTicket: false, ticketType: 'none' };
+  return { needsTicket: false, ticketType: null };
 };
 
 // Function to check if a location requires guide tickets
@@ -50,19 +50,19 @@ export const calculateCompleteTicketRequirements = (
   const guidesWithTickets: {
     guideName: string;
     guideType: string;
-    ticketType: 'adult' | 'child' | 'none';
+    ticketType: 'adult' | 'child' | null;
   }[] = [];
   
   // Process guide1
   if (guide1Info) {
-    const { needsTicket, ticketType } = doesGuideNeedTicket(guide1Info.guide_type, location);
+    const { needsTicket, ticketType } = doesGuideNeedTicket(guide1Info.guideType, location);
     if (needsTicket) {
       if (ticketType === 'adult') adultTickets++;
       if (ticketType === 'child') childTickets++;
       
       guidesWithTickets.push({
         guideName: guide1Info.name || 'Guide 1',
-        guideType: guide1Info.guide_type || 'Unknown',
+        guideType: guide1Info.guideType || 'Unknown',
         ticketType
       });
     }
@@ -70,14 +70,14 @@ export const calculateCompleteTicketRequirements = (
   
   // Process guide2
   if (guide2Info) {
-    const { needsTicket, ticketType } = doesGuideNeedTicket(guide2Info.guide_type, location);
+    const { needsTicket, ticketType } = doesGuideNeedTicket(guide2Info.guideType, location);
     if (needsTicket) {
       if (ticketType === 'adult') adultTickets++;
       if (ticketType === 'child') childTickets++;
       
       guidesWithTickets.push({
         guideName: guide2Info.name || 'Guide 2',
-        guideType: guide2Info.guide_type || 'Unknown',
+        guideType: guide2Info.guideType || 'Unknown',
         ticketType
       });
     }
@@ -85,14 +85,14 @@ export const calculateCompleteTicketRequirements = (
   
   // Process guide3
   if (guide3Info) {
-    const { needsTicket, ticketType } = doesGuideNeedTicket(guide3Info.guide_type, location);
+    const { needsTicket, ticketType } = doesGuideNeedTicket(guide3Info.guideType, location);
     if (needsTicket) {
       if (ticketType === 'adult') adultTickets++;
       if (ticketType === 'child') childTickets++;
       
       guidesWithTickets.push({
         guideName: guide3Info.name || 'Guide 3',
-        guideType: guide3Info.guide_type || 'Unknown',
+        guideType: guide3Info.guideType || 'Unknown',
         ticketType
       });
     }
@@ -103,7 +103,7 @@ export const calculateCompleteTicketRequirements = (
     tourGroups.forEach(group => {
       if (group.guideInfo && !guidesWithTickets.some(g => g.guideName === group.guideInfo.name)) {
         const { needsTicket, ticketType } = doesGuideNeedTicket(
-          group.guideInfo.guide_type, 
+          group.guideInfo.guideType, 
           location
         );
         
@@ -113,7 +113,7 @@ export const calculateCompleteTicketRequirements = (
           
           guidesWithTickets.push({
             guideName: group.guideInfo.name || 'Group Guide',
-            guideType: group.guideInfo.guide_type || 'Unknown',
+            guideType: group.guideInfo.guideType || 'Unknown',
             ticketType
           });
         }

@@ -2,12 +2,7 @@
 import { cn } from "@/lib/utils";
 import { logger } from "@/utils/logger";
 import { GuideTicketsList } from "./GuideTicketsList";
-
-interface GuideWithTicket {
-  guideName: string;
-  guideType: string;
-  ticketType: "adult" | "child" | null;
-}
+import { GuideWithTicket } from "./types";
 
 interface GuideTicketsSectionProps {
   guides: GuideWithTicket[];
