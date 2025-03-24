@@ -1,3 +1,4 @@
+
 import { useMemo } from 'react';
 import { VentrataTourGroup } from '@/types/ventrata';
 import { useTourStatistics } from './useTourStatistics';
@@ -8,6 +9,10 @@ export interface ParticipantCounts {
   adultTickets: number;
   childTickets: number;
   totalTickets: number;
+  // Add the missing properties to fix TypeScript errors
+  adultCount: number;
+  childCount: number;
+  totalTicketsNeeded: number;
 }
 
 /**
@@ -28,7 +33,11 @@ export const useParticipantCounts = (
         totalChildCount: statistics.total_child_count,
         adultTickets: statistics.total_adult_count,
         childTickets: statistics.total_child_count,
-        totalTickets: statistics.total_participants
+        totalTickets: statistics.total_participants,
+        // Add the missing properties with appropriate values
+        adultCount: statistics.total_adult_count,
+        childCount: statistics.total_child_count,
+        totalTicketsNeeded: statistics.total_participants
       };
     }
     
@@ -49,12 +58,17 @@ export const useParticipantCounts = (
     
     const adultTickets = totalParticipants - totalChildCount;
     
+    // Return the complete object with all required properties
     return {
       totalParticipants,
       totalChildCount,
       adultTickets,
       childTickets: totalChildCount,
-      totalTickets: totalParticipants
+      totalTickets: totalParticipants,
+      // Add the missing properties with appropriate values
+      adultCount: adultTickets,
+      childCount: totalChildCount,
+      totalTicketsNeeded: totalParticipants
     };
   }, [tourGroups, statistics]);
 };

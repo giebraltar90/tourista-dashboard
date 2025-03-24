@@ -17,7 +17,7 @@ export const InformationCardsSection = ({
   participantCounts, 
   isHighSeason 
 }: InformationCardsSectionProps) => {
-  // Ensure we get the correct values from participantCounts
+  // Use the properties that exist in the ParticipantCounts type
   const { 
     totalParticipants,
     adultCount,

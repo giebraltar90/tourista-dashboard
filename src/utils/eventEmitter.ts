@@ -5,11 +5,16 @@ class EventEmitterClass {
   private events: Record<string, EventHandler[]> = {};
 
   // Add an event listener
-  on(event: string, handler: EventHandler): void {
+  on(event: string, handler: EventHandler): { off: () => void } {
     if (!this.events[event]) {
       this.events[event] = [];
     }
     this.events[event].push(handler);
+    
+    // Return an object with an off method for easier cleanup
+    return {
+      off: () => this.off(event, handler)
+    };
   }
 
   // Remove an event listener

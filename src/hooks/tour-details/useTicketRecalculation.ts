@@ -38,14 +38,15 @@ export const useTicketRecalculation = (tourId: string) => {
       refetch();
     };
     
-    // Register event listeners
+    // Register event listeners with proper cleanup functions
     const participantMovedListener = EventEmitter.on('participant-moved', handleParticipantChange);
     const participantChangeListener = EventEmitter.on(`participant-change:${tourId}`, handleParticipantChange);
     
     return () => {
-      // Clean up event listeners
-      participantMovedListener.off();
-      participantChangeListener.off();
+      // Properly clean up event listeners
+      // Fixed: Use EventEmitter's off method with correct event names
+      EventEmitter.off('participant-moved', handleParticipantChange);
+      EventEmitter.off(`participant-change:${tourId}`, handleParticipantChange);
     };
   }, [tourId, refetch]);
   
