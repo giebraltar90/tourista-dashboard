@@ -1,122 +1,47 @@
 
-import { useDebugMode } from '@/contexts/DebugContext';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error';
 
-export type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
+class LoggerService {
+  private logLevel: LogLevel = 'info';
+  private isProduction = process.env.NODE_ENV === 'production';
 
-// Standard emoji prefixes for different log types 
-const LOG_PREFIXES = {
-  participant: "👤",
-  group: "👥",
-  guide: "🧭",
-  ticket: "🎟️",
-  db: "💾",
-  api: "🔌",
-  sync: "🔄",
-  move: "↔️",
-  error: "❌",
-  success: "✅",
-};
-
-class Logger {
-  // Store original console methods
-  private originalConsole: Record<LogLevel, (...args: any[]) => void>;
-  private debugEnabled: boolean = true; // Changed to true to ensure logs are visible
-  private forceDebug: boolean = true; // Changed to true to enable all logs
-
-  constructor() {
-    // Save original console methods
-    this.originalConsole = {
-      log: console.log,
-      info: console.info,
-      warn: console.warn,
-      error: console.error,
-      debug: console.debug
-    };
+  /**
+   * Sets the minimum log level
+   */
+  setLogLevel(level: LogLevel): void {
+    this.logLevel = level;
   }
 
-  setDebugMode(enabled: boolean) {
-    this.debugEnabled = enabled || this.forceDebug;
+  /**
+   * Debug level logging - only shown in development by default
+   */
+  debug(message: string, ...optionalParams: any[]): void {
+    if (this.isProduction && this.logLevel !== 'debug') return;
+    console.debug(`📋 ${message}`, ...optionalParams);
   }
 
-  formatArgs(args: any[]): any[] {
-    if (args.length === 0) return args;
-    
-    // Extract the first argument if it's a string
-    if (typeof args[0] === 'string') {
-      const firstArg = args[0];
-      const restArgs = args.slice(1);
-      
-      // If we already have a prefix, don't add timestamp
-      if (firstArg.startsWith('🎟️') || 
-          firstArg.startsWith('🔍') || 
-          firstArg.startsWith('✅') || 
-          firstArg.startsWith('❌') ||
-          firstArg.startsWith('❓') ||
-          firstArg.startsWith('👤') ||
-          firstArg.startsWith('👥') ||
-          firstArg.startsWith('🧭') ||
-          firstArg.startsWith('💾') ||
-          firstArg.startsWith('🔌') ||
-          firstArg.startsWith('🔄') ||
-          firstArg.startsWith('↔️')) {
-        return [firstArg, ...restArgs];
-      }
-      
-      // Add timestamp to first arg if it's a string
-      const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
-      return [`[${timestamp}] ${firstArg}`, ...restArgs];
-    }
-    
-    return args;
+  /**
+   * Info level logging
+   */
+  info(message: string, ...optionalParams: any[]): void {
+    if (this.logLevel === 'warn' || this.logLevel === 'error') return;
+    console.info(`ℹ️ ${message}`, ...optionalParams);
   }
 
-  // Make sure error objects are properly captured
-  formatErrorObjects(args: any[]): any[] {
-    return args.map(arg => {
-      if (arg instanceof Error) {
-        return {
-          name: arg.name,
-          message: arg.message,
-          stack: arg.stack,
-          toString: () => arg.toString()
-        };
-      }
-      return arg;
-    });
+  /**
+   * Warning level logging
+   */
+  warn(message: string, ...optionalParams: any[]): void {
+    if (this.logLevel === 'error') return;
+    console.warn(`⚠️ ${message}`, ...optionalParams);
   }
 
-  log(...args: any[]) {
-    // Show all logs
-    this.originalConsole.log(...this.formatArgs(args));
-  }
-
-  info(...args: any[]) {
-    // Show all info messages
-    this.originalConsole.info(...this.formatArgs(args));
-  }
-
-  warn(...args: any[]) {
-    // Always show warnings
-    this.originalConsole.warn(...this.formatArgs(args));
-  }
-
-  error(...args: any[]) {
-    // Always show errors
-    const formattedArgs = this.formatArgs(this.formatErrorObjects(args));
-    this.originalConsole.error(...formattedArgs);
-  }
-
-  debug(...args: any[]) {
-    // Show all debug logs
-    this.originalConsole.debug(...this.formatArgs(args));
+  /**
+   * Error level logging
+   */
+  error(message: string, ...optionalParams: any[]): void {
+    console.error(`❌ ${message}`, ...optionalParams);
   }
 }
 
-export const logger = new Logger();
-
-// Hook to use in React components
-export const useLogger = () => {
-  const debugMode = useDebugMode();
-  logger.setDebugMode(debugMode || true); // Force debug mode on
-  return logger;
-};
+export const logger = new LoggerService();

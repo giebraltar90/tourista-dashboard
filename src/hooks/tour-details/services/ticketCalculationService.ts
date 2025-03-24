@@ -94,7 +94,7 @@ export function findAssignedGuidesForTour(tour: TourCardProps | undefined): stri
   return assignedGuides;
 }
 
-export function getGuideTicketRequirement(guide: GuideInfo | null | undefined): "adult" | "child" | "none" | null {
+export function getGuideTicketRequirement(guide: GuideInfo | null | undefined): "adult" | "child" | "none" {
   if (!guide) return "none";
   
   if (needsTicketForGuideType(guide.guideType)) {

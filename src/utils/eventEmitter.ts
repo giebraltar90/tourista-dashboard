@@ -1,54 +1,53 @@
 
-type EventHandler = (...args: any[]) => void;
+type EventCallback = (...args: any[]) => void;
+
+interface EventSubscription {
+  off: () => void;
+}
 
 class EventEmitterClass {
-  private events: Record<string, EventHandler[]> = {};
+  private events: Record<string, EventCallback[]> = {};
 
-  // Add an event listener with improved return value for easier cleanup
-  on(event: string, handler: EventHandler): { off: () => void } {
+  on(event: string, callback: EventCallback): EventSubscription {
     if (!this.events[event]) {
       this.events[event] = [];
     }
-    this.events[event].push(handler);
     
-    // Return an object with an off method for easier cleanup
+    this.events[event].push(callback);
+    
     return {
-      off: () => this.off(event, handler)
+      off: () => {
+        this.events[event] = this.events[event].filter(cb => cb !== callback);
+      }
     };
   }
 
-  // Remove an event listener
-  off(event: string, handler?: EventHandler): void {
-    if (!this.events[event]) return;
-
-    if (!handler) {
-      // Remove all handlers for this event
-      delete this.events[event];
-    } else {
-      // Remove specific handler
-      this.events[event] = this.events[event].filter(h => h !== handler);
-    }
-  }
-
-  // Emit an event
   emit(event: string, ...args: any[]): void {
-    if (!this.events[event]) return;
-
-    // Call each handler with the provided arguments
-    this.events[event].forEach(handler => {
+    if (!this.events[event]) {
+      return;
+    }
+    
+    this.events[event].forEach(callback => {
       try {
-        handler(...args);
+        callback(...args);
       } catch (error) {
-        console.error(`Error in event handler for ${event}:`, error);
+        console.error(`Error in event ${event} callback:`, error);
       }
     });
   }
 
-  // Get all registered events
-  getEvents(): string[] {
-    return Object.keys(this.events);
+  off(event: string, callback?: EventCallback): void {
+    if (!callback) {
+      delete this.events[event];
+      return;
+    }
+    
+    if (!this.events[event]) {
+      return;
+    }
+    
+    this.events[event] = this.events[event].filter(cb => cb !== callback);
   }
 }
 
-// Create a singleton instance
 export const EventEmitter = new EventEmitterClass();
