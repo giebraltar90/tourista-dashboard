@@ -3,6 +3,33 @@ import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
 
 /**
+ * Find which guides are assigned to groups for this tour
+ */
+export const findAssignedGuides = (
+  tourGroups: any[] = [],
+  guide1Info: GuideInfo | null,
+  guide2Info: GuideInfo | null,
+  guide3Info: GuideInfo | null
+): Set<string> => {
+  const assignedGuideIds = new Set<string>();
+  
+  // Add all available guides by default
+  if (guide1Info) assignedGuideIds.add("guide1");
+  if (guide2Info) assignedGuideIds.add("guide2");
+  if (guide3Info) assignedGuideIds.add("guide3");
+  
+  // Log the results
+  logger.debug(`🎟️ [findAssignedGuides] Found ${assignedGuideIds.size} assigned guides:`, {
+    assignedGuidePositions: Array.from(assignedGuideIds),
+    guide1: guide1Info?.name || 'none',
+    guide2: guide2Info?.name || 'none',
+    guide3: guide3Info?.name || 'none'
+  });
+  
+  return assignedGuideIds;
+};
+
+/**
  * Helper function to detect if a guide is the default guide for a tour
  * when no guides are explicitly assigned
  */

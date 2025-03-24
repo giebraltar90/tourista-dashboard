@@ -37,7 +37,11 @@ export const calculateGuideTicketsNeeded = (
     location
   );
   
-  return result.guideTickets || { adultTickets: 0, childTickets: 0 };
+  // The returned object has adultTickets and childTickets properties
+  return {
+    adultTickets: result.guideAdultTickets || 0,
+    childTickets: result.guideChildTickets || 0
+  };
 };
 
 export const getGuideTicketRequirement = (
