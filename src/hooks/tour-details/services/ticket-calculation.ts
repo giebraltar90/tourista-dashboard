@@ -1,5 +1,21 @@
+
 import { GuideInfo } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
+
+// Define TicketRequirements interface
+export interface TicketRequirements {
+  locationNeedsGuideTickets: boolean;
+  hasAssignedGuides: boolean;
+  guideTickets: {
+    adultTickets: number;
+    childTickets: number;
+    guides: Array<{
+      guideName: string;
+      guideType: string;
+      ticketType: 'adult' | 'child' | null;
+    }>;
+  };
+}
 
 // Function to determine if a guide needs a ticket based on type and location
 export const doesGuideNeedTicket = (

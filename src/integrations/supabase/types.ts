@@ -596,6 +596,12 @@ export type Database = {
         }
         Returns: string
       }
+      invalidate_tour_cache: {
+        Args: {
+          p_tour_id: string
+        }
+        Returns: undefined
+      }
       move_participant: {
         Args: {
           p_participant_id: string

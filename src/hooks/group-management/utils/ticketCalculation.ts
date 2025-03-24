@@ -1,24 +1,24 @@
 
 // This file is now a re-export file that uses our new service module
 import { 
-  locationRequiresGuideTickets,
-  guideTypeNeedsTicket,
-  determineTicketTypeForGuide,
+  doesLocationRequireGuideTickets,
+  needsTicketForGuideType,
+  determineTicketType,
   getGuideTicketRequirement,
-  findAssignedGuides,
-  processGuideTicketRequirement,
+  findAssignedGuidesForTour,
+  processGuideTickets,
   calculateGuideTicketsNeeded,
-  calculateCompleteGuideTicketRequirements
+  calculateCompleteTicketRequirements
 } from '@/hooks/tour-details/services/ticketCalculationService';
 
 // Re-export all the functions for backward compatibility
 export {
-  locationRequiresGuideTickets,
-  guideTypeNeedsTicket,
-  determineTicketTypeForGuide,
+  doesLocationRequireGuideTickets as locationRequiresGuideTickets,
+  needsTicketForGuideType as guideTypeNeedsTicket,
+  determineTicketType as determineTicketTypeForGuide,
   getGuideTicketRequirement,
-  findAssignedGuides,
-  processGuideTicketRequirement,
+  findAssignedGuidesForTour as findAssignedGuides,
+  processGuideTickets as processGuideTicketRequirement,
   calculateGuideTicketsNeeded,
-  calculateCompleteGuideTicketRequirements
+  calculateCompleteTicketRequirements as calculateCompleteGuideTicketRequirements
 };

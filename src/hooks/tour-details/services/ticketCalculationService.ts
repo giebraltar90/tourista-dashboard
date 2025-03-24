@@ -1,3 +1,4 @@
+
 import { GuideInfo } from "@/types/ventrata";
 import { GuideWithTicket } from "@/components/tour-details/overview/tickets/types";
 import { TourCardProps } from "@/components/tours/tour-card/types";
