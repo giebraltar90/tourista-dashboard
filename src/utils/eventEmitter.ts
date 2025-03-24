@@ -4,7 +4,7 @@ type EventHandler = (...args: any[]) => void;
 class EventEmitterClass {
   private events: Record<string, EventHandler[]> = {};
 
-  // Add an event listener
+  // Add an event listener with improved return value for easier cleanup
   on(event: string, handler: EventHandler): { off: () => void } {
     if (!this.events[event]) {
       this.events[event] = [];

@@ -610,6 +610,12 @@ export type Database = {
         }
         Returns: undefined
       }
+      sync_guide_assignments_across_tables: {
+        Args: {
+          p_tour_id: string
+        }
+        Returns: boolean
+      }
       update_groups_after_move: {
         Args: {
           source_group_id: string
