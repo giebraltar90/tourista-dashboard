@@ -1,13 +1,35 @@
 
-// Export all utility functions from the participant service
-export * from './syncService';
-export * from './countingService';
+/**
+ * Entry point for the participant service
+ * Re-exports functionality from specialized submodules
+ */
 
-// Selectively export from formatParticipantService to avoid duplicate export
+// Export sync-related functionality
+export { 
+  syncTourData, 
+  syncTourGroupSizes, 
+  ensureSyncFunction,
+  updateGroupGuideDirectly
+} from './sync';
+
+// Export counting and formatting utilities
+export { 
+  calculateTotalParticipants,
+  calculateTotalChildCount,
+  calculateAdultCount,
+  formatParticipantCounts
+} from './countingService';
+
 export { 
   formatParticipantCount, 
   formatParticipantCountShort 
 } from './formatParticipantService';
+
+// Export movement-related functionality
+export {
+  moveParticipant,
+  updateParticipantGroupInDatabase
+} from './movementService';
 
 // Define a useParticipantService hook for backward compatibility
 export const useParticipantService = () => {

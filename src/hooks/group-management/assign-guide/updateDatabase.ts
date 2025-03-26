@@ -2,6 +2,7 @@
 import { supabase, supabaseWithRetry } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 import { toast } from "sonner";
+import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 
 /**
  * Update guide assignment in the database with improved persistence strategies
@@ -18,7 +19,18 @@ export const updateDatabase = async (
       updatedName 
     });
     
-    // Strategy 1: Use the direct update approach first as it's most reliable
+    // Strategy 1: Use updateGuideInSupabase which has multiple fallback strategies
+    try {
+      const success = await updateGuideInSupabase(null, groupId, guideId, updatedName);
+      if (success) {
+        logger.debug("🔄 [AssignGuide] Successfully updated guide with updateGuideInSupabase");
+        return true;
+      }
+    } catch (error) {
+      logger.debug("🔄 [AssignGuide] updateGuideInSupabase failed:", error);
+    }
+    
+    // Strategy 2: Use direct update approach
     try {
       const updateData = { 
         guide_id: guideId,
@@ -41,7 +53,7 @@ export const updateDatabase = async (
       logger.debug("🔄 [AssignGuide] Standard update exception:", directError);
     }
     
-    // Strategy 2: Use the assign_guide_safely function
+    // Strategy 3: Use the assign_guide_safely function
     try {
       const { error } = await supabase.rpc(
         'assign_guide_safely',
@@ -62,7 +74,7 @@ export const updateDatabase = async (
       logger.debug("🔄 [AssignGuide] assign_guide_safely function not available:", rpcError);
     }
     
-    // Strategy 3: Use the update_group_guide_no_triggers function
+    // Strategy 4: Use the update_group_guide_no_triggers function
     try {
       const { error } = await supabase.rpc(
         'update_group_guide_no_triggers',
@@ -83,7 +95,7 @@ export const updateDatabase = async (
       logger.debug("🔄 [AssignGuide] update_group_guide_no_triggers function not available:", rpcError);
     }
     
-    // Strategy 4: Use the safe_update_tour_group function with all fields
+    // Strategy 5: Use the safe_update_tour_group function with all fields
     try {
       // First fetch the current group data to preserve other fields
       const { data: groupData, error: fetchError } = await supabase
@@ -119,7 +131,7 @@ export const updateDatabase = async (
       logger.debug("🔄 [AssignGuide] safe_update_tour_group function not available:", safeUpdateError);
     }
     
-    // Strategy 5: Retry with backoff using supabaseWithRetry
+    // Strategy 6: Retry with backoff using supabaseWithRetry
     try {
       const updateData = { 
         guide_id: guideId,
@@ -145,7 +157,7 @@ export const updateDatabase = async (
       logger.debug("🔄 [AssignGuide] All retries failed:", retryError);
     }
     
-    // Strategy 6: Try multiple small updates
+    // Strategy 7: Try multiple small updates
     try {
       // Update only guide_id first
       const { error: guideError } = await supabase
