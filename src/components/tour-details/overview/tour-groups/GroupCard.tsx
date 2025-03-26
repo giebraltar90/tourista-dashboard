@@ -1,9 +1,10 @@
 
 import { Button } from "@/components/ui/button";
+import { VentrataTourGroup } from "@/types/ventrata";
 
 interface GroupCardProps {
   index: number;
-  group: any;
+  group: VentrataTourGroup;
   tourId: string;
   guideName: string;
   guideInfo: any;

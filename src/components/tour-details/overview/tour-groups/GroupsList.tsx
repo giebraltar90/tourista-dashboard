@@ -1,8 +1,9 @@
 
 import { GroupCard } from "./GroupCard";
+import { VentrataTourGroup } from "@/types/ventrata";
 
 interface GroupsListProps {
-  tourGroups: any[];
+  tourGroups: VentrataTourGroup[];
   getGuideNameAndInfo: (guideId?: string) => { name: string; info: any };
   tourId: string;
   handleAssignGuide: (groupIndex: number) => void;

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Guide, GuideInfo } from "@/types/ventrata";
+import { GuideInfo } from "@/types/ventrata";
 import { Badge } from "@/components/ui/badge";
 
 export const getGuideTypeBadge = (guideType: string | undefined): JSX.Element => {
@@ -33,11 +33,11 @@ export const getGuideTypeDescription = (guideType: string | undefined): string =
   }
 };
 
-export const formatGuideDetails = (guide: Guide | GuideInfo | null): string => {
+export const formatGuideDetails = (guide: GuideInfo | null): string => {
   if (!guide) return "Unknown guide";
   
   const guideName = guide.name || "Unnamed";
-  const guideType = guide.guideType || guide.guide_type || "Unknown type";
+  const guideType = guide.guideType || "Unknown type";
   
   return `${guideName} (${guideType})`;
 };

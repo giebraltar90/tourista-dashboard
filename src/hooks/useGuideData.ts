@@ -1,6 +1,6 @@
 
-import { useQuery } from "@tanstack/react-query";
-import { fetchGuides } from "@/services/api/guideApi";
+import { useQuery } from '@tanstack/react-query';
+import { fetchAllGuides } from "@/services/api/guideApi";
 import { GuideInfo } from "@/types/ventrata";
 
 export function useGuideData() {
@@ -11,7 +11,7 @@ export function useGuideData() {
     refetch
   } = useQuery({
     queryKey: ["guides"],
-    queryFn: fetchGuides,
+    queryFn: fetchAllGuides,
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });

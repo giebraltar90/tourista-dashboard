@@ -1,10 +1,13 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VentrataTourGroup } from "@/types/ventrata";
-import { GuideInfo, Guide } from "@/types/ventrata";
+import { GuideInfo } from "@/types/ventrata";
 import { GroupsList } from "./GroupsList";
 import { logger } from "@/utils/logger";
+import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { AssignGuideDialog } from "@/components/tour-details/groups-management/dialogs/AssignGuideDialog";
 
 interface TourGroupsSectionProps {
   tourGroups: VentrataTourGroup[];
@@ -39,6 +42,34 @@ export const TourGroupsSection = ({
     });
   }, [guide1Info, guide2Info, guide3Info]);
 
+  // Create a minimal tour object for the useGuideNameInfo hook
+  const minimalTour: TourCardProps = { 
+    id: tourId, 
+    guide1: '', 
+    guide2: '', 
+    guide3: '',
+    date: new Date(),
+    location: '',
+    tourName: '',
+    tourType: 'default',
+    startTime: '',
+    referenceCode: '',
+    tourGroups: [],
+    numTickets: 0,
+    isHighSeason: false
+  };
+
+  const { getGuideNameAndInfo } = useGuideNameInfo(minimalTour, guide1Info, guide2Info, guide3Info);
+  
+  // State for guide assignment dialog
+  const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
+  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number>(-1);
+  
+  const handleAssignGuide = (groupIndex: number) => {
+    setSelectedGroupIndex(groupIndex);
+    setIsAssignGuideOpen(true);
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -46,12 +77,22 @@ export const TourGroupsSection = ({
       </CardHeader>
       <CardContent>
         <GroupsList 
-          groups={tourGroups}
+          tourGroups={tourGroups}
           tourId={tourId}
-          guide1Info={guide1Info}
-          guide2Info={guide2Info}
-          guide3Info={guide3Info}
+          getGuideNameAndInfo={getGuideNameAndInfo}
+          handleAssignGuide={handleAssignGuide}
         />
+        
+        {isAssignGuideOpen && selectedGroupIndex >= 0 && tourGroups[selectedGroupIndex] && (
+          <AssignGuideDialog
+            isOpen={isAssignGuideOpen}
+            onOpenChange={setIsAssignGuideOpen}
+            tourId={tourId}
+            groupIndex={selectedGroupIndex}
+            guides={[]}
+            currentGuideId={tourGroups[selectedGroupIndex].guideId}
+          />
+        )}
       </CardContent>
     </Card>
   );
