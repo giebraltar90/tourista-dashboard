@@ -5,7 +5,7 @@
  */
 
 export { performOptimisticUpdate } from './optimistic';
-export { persistGuideAssignmentChanges } from './persistenceService';
+export { persistGuideAssignmentChanges } from './guidePersistenceService';
 export { handleUIUpdates } from './notificationService';
 
 // Re-export participant service functionality from the new location
