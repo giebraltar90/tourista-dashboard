@@ -13,7 +13,7 @@ interface GuideNameAndInfo {
  * Hook for getting guide name and info from guide ID
  */
 export const useGuideNameInfo = (
-  tour: TourCardProps,
+  tour: any,
   guide1Info: GuideInfo | null,
   guide2Info: GuideInfo | null,
   guide3Info: GuideInfo | null
@@ -38,21 +38,21 @@ export const useGuideNameInfo = (
     }
     
     // Look for primary guides first by ID
-    if (guideId === "guide1" || guideId === tour.guide1Id) {
+    if (guideId === "guide1" || guideId === tour.guide1_id) {
       return {
         name: tour.guide1 || "Guide 1",
         info: guide1Info
       };
     }
     
-    if (guideId === "guide2" || guideId === tour.guide2Id) {
+    if (guideId === "guide2" || guideId === tour.guide2_id) {
       return {
         name: tour.guide2 || "Guide 2",
         info: guide2Info
       };
     }
     
-    if (guideId === "guide3" || guideId === tour.guide3Id) {
+    if (guideId === "guide3" || guideId === tour.guide3_id) {
       return {
         name: tour.guide3 || "Guide 3",
         info: guide3Info
@@ -64,7 +64,7 @@ export const useGuideNameInfo = (
       // Look in the guides array for a match
       const matchingGuide = guides.find(guide => guide.id === guideId);
       if (matchingGuide) {
-        // Make sure we're using the correct property name
+        // Fix: Make sure we're using the correct GuideType
         const guideType: GuideType = (matchingGuide.guide_type || "GA Ticket") as GuideType;
           
         return {

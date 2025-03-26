@@ -31,7 +31,7 @@ export const TourGroupsSection = ({
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
   const { guides = [] } = useGuideData();
-  const { mutateAsync: updateGroups } = useUpdateTourGroups();
+  const { mutateAsync: updateGroups } = useUpdateTourGroups(tourId);
   
   // Create a mock tour object from the data we have 
   const mockTour: TourCardProps = {
@@ -85,10 +85,7 @@ export const TourGroupsSection = ({
     
     try {
       // Update the database
-      await updateGroups({
-        tourId,
-        updatedGroups,
-      });
+      await updateGroups(updatedGroups);
       
       // Create a modification record
       await updateTourModification(tourId, {
