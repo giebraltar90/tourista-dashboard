@@ -69,41 +69,84 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
     // For each group, update its size and child_count based on participants
     let success = true;
     for (const group of groups) {
-      // Get participants for this group
-      const { data: participants, error: participantsError } = await supabase
-        .from('participants')
-        .select('count, child_count')
-        .eq('group_id', group.id);
+      // Try using our new safe update function first
+      try {
+        // Get participants for this group
+        const { data: participants, error: participantsError } = await supabase
+          .from('participants')
+          .select('count, child_count')
+          .eq('group_id', group.id);
+          
+        if (participantsError) {
+          logger.error(`Error fetching participants for group ${group.id}:`, participantsError);
+          success = false;
+          continue;
+        }
         
-      if (participantsError) {
-        logger.error(`Error fetching participants for group ${group.id}:`, participantsError);
-        success = false;
-        continue;
+        // Calculate size and child_count
+        let size = 0;
+        let childCount = 0;
+        
+        if (participants && participants.length > 0) {
+          participants.forEach(p => {
+            size += p.count || 0;
+            childCount += p.child_count || 0;
+          });
+        }
+        
+        // Try to get current group data
+        const { data: groupData, error: groupError } = await supabase
+          .from('tour_groups')
+          .select('name, guide_id, entry_time')
+          .eq('id', group.id)
+          .single();
+          
+        if (groupError) {
+          logger.error(`Error fetching group data for ${group.id}:`, groupError);
+          continue;
+        }
+        
+        // Use safe_update_tour_group function with all fields
+        const { error: safeUpdateError } = await supabase.rpc(
+          'safe_update_tour_group',
+          {
+            p_id: group.id,
+            p_name: groupData.name,
+            p_size: size,
+            p_guide_id: groupData.guide_id,
+            p_entry_time: groupData.entry_time || '00:00',
+            p_child_count: childCount
+          }
+        );
+        
+        if (!safeUpdateError) {
+          logger.debug(`Successfully updated group ${group.id} with safe_update_tour_group`);
+          continue;
+        }
+        
+        logger.debug(`Could not use safe_update_tour_group for group ${group.id}:`, safeUpdateError);
+      } catch (safeUpdateError) {
+        logger.debug(`Error using safe_update_tour_group for group ${group.id}:`, safeUpdateError);
       }
       
-      // Calculate size and child_count
-      let size = 0;
-      let childCount = 0;
-      
-      if (participants && participants.length > 0) {
-        participants.forEach(p => {
-          size += p.count || 0;
-          childCount += p.child_count || 0;
-        });
-      }
-      
-      // Try direct update first (less likely to trigger materialized view refresh)
-      const { error: directUpdateError } = await supabase
-        .from('tour_groups')
-        .update({ 
-          size,
-          child_count: childCount,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', group.id)
-        .select();
+      // Fall back to standard update methods
+      try {
+        // Try direct update first (less likely to trigger materialized view refresh)
+        const { error: directUpdateError } = await supabase
+          .from('tour_groups')
+          .update({ 
+            size,
+            child_count: childCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', group.id)
+          .select();
+          
+        if (!directUpdateError) {
+          logger.debug(`Successfully updated group ${group.id} with direct update`);
+          continue;
+        }
         
-      if (directUpdateError) {
         // Fall back to standard update
         const { error: updateError } = await supabase
           .from('tour_groups')
@@ -118,6 +161,9 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
           logger.error(`Error updating group ${group.id} during manual sync:`, updateError);
           success = false;
         }
+      } catch (error) {
+        logger.error(`Error updating group ${group.id}:`, error);
+        success = false;
       }
     }
     

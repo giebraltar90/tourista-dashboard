@@ -48,7 +48,7 @@ export const persistGuideAssignmentChanges = async (
     return false;
   }
   
-  // BUGFIX: Extract participants from the target group for preservation
+  // Extract participants from the target group for preservation
   const participantsToPreserve = Array.isArray(targetGroup.participants) 
     ? targetGroup.participants 
     : [];
@@ -59,14 +59,71 @@ export const persistGuideAssignmentChanges = async (
     details: participantsToPreserve
   });
   
-  // Direct update approach - most reliable
+  // Strategy 1: Use our new safe_update_tour_group RPC function
+  try {
+    // Fetch current group data to preserve fields
+    const { data: groupData, error: fetchError } = await supabase
+      .from("tour_groups")
+      .select("size, entry_time, child_count")
+      .eq("id", groupId)
+      .single();
+      
+    if (!fetchError && groupData) {
+      // Use safe update function with all required fields
+      const { error: safeUpdateError } = await supabase.rpc(
+        'safe_update_tour_group',
+        {
+          p_id: groupId,
+          p_name: groupName,
+          p_size: groupData.size || 0,
+          p_guide_id: actualGuideId,
+          p_entry_time: groupData.entry_time || '00:00',
+          p_child_count: groupData.child_count || 0
+        }
+      );
+      
+      if (!safeUpdateError) {
+        logger.debug("Successfully updated guide via safe_update_tour_group function");
+        updateSuccess = true;
+        return true;
+      }
+      
+      logger.debug("safe_update_tour_group function failed:", safeUpdateError);
+    }
+  } catch (safeUpdateError) {
+    logger.debug("safe_update_tour_group function not available:", safeUpdateError);
+  }
+  
+  // Strategy 2: Use the assign_guide_safely function
+  try {
+    const { data, error } = await supabase.rpc(
+      'assign_guide_safely',
+      {
+        p_group_id: groupId,
+        p_guide_id: actualGuideId,
+        p_group_name: groupName
+      }
+    );
+    
+    if (!error) {
+      logger.debug("Successfully updated guide via assign_guide_safely function");
+      updateSuccess = true;
+      return true;
+    }
+    
+    logger.debug("assign_guide_safely function failed:", error);
+  } catch (rpcError) {
+    logger.debug("assign_guide_safely function not available:", rpcError);
+  }
+  
+  // Strategy 3: Direct update approach - most reliable
   try {
     // Make a direct update to the table without triggering the materialized view refresh
     const { supabase } = await import("@/integrations/supabase/client");
     
     logger.debug(`Direct update for group ${groupId} with guide ${actualGuideId || 'null'}`);
     
-    // Strategy 1: Try RPC function first
+    // Try update_group_guide_no_triggers function 
     try {
       const { error: rpcError } = await supabase.rpc(
         'update_group_guide_no_triggers',
@@ -88,13 +145,41 @@ export const persistGuideAssignmentChanges = async (
       logger.debug("RPC function not available:", rpcErr);
     }
     
-    // Strategy 2: Direct update with select to avoid triggering materialized view refresh
+    // Strategy 4: Direct update with select to avoid triggering materialized view refresh
     const updateData = {
       guide_id: actualGuideId,
       name: groupName,
       updated_at: new Date().toISOString()
     };
     
+    // Try with separate update for guide_id only
+    try {
+      const { error: guideError } = await supabase
+        .from('tour_groups')
+        .update({ guide_id: actualGuideId })
+        .eq('id', groupId);
+        
+      if (!guideError) {
+        logger.debug("Successfully updated just the guide_id");
+        updateSuccess = true;
+        
+        // Also try to update the name
+        const { error: nameError } = await supabase
+          .from('tour_groups')
+          .update({ name: groupName })
+          .eq('id', groupId);
+          
+        if (nameError) {
+          logger.debug("Could not update name, but guide_id was updated:", nameError);
+        }
+        
+        return true;
+      }
+    } catch (separateError) {
+      logger.debug("Separate update approach failed:", separateError);
+    }
+    
+    // Strategy 5: try standard update with .select()
     const { error } = await supabase
       .from('tour_groups')
       .update(updateData)
@@ -109,7 +194,7 @@ export const persistGuideAssignmentChanges = async (
       // Try alternative approach for permission issues
       logger.debug("Permission issue detected, trying alternative approach");
       
-      // Strategy 3: Use a simple update query without .select()
+      // Strategy 6: Use a simple update query without .select()
       try {
         const { error: directError } = await supabase
           .from('tour_groups')
@@ -155,7 +240,7 @@ export const persistGuideAssignmentChanges = async (
     }
   }
   
-  // Third attempt: if all direct updates failed, try updating all groups at once
+  // Last attempt: if all direct updates failed, try updating all groups at once
   if (!updateSuccess) {
     logger.debug("Falling back to updateTourGroups API as last resort");
     try {
@@ -167,6 +252,7 @@ export const persistGuideAssignmentChanges = async (
         // If this is the group we're updating, ensure it has the new guide ID
         if (sanitizedGroup.id === groupId) {
           sanitizedGroup.guideId = actualGuideId;
+          sanitizedGroup.guide_id = actualGuideId;
           sanitizedGroup.name = groupName;
           
           // CRITICAL FIX: Ensure the group maintains its original participants
@@ -179,12 +265,12 @@ export const persistGuideAssignmentChanges = async (
         // Before sending to database, set guide_id field for database column
         sanitizedGroup.guide_id = sanitizedGroup.guideId;
         
-        // BUGFIX: Make sure participants array is preserved for all groups
+        // Make sure participants array is preserved for all groups
         if (!Array.isArray(sanitizedGroup.participants)) {
           sanitizedGroup.participants = [];
         }
         
-        // BUGFIX: Ensure size and childCount are consistent with participants array
+        // Ensure size and childCount are consistent with participants array
         if (Array.isArray(sanitizedGroup.participants) && sanitizedGroup.participants.length > 0) {
           // Count each participant directly for accurate totals
           let calculatedSize = 0;
@@ -195,9 +281,22 @@ export const persistGuideAssignmentChanges = async (
             calculatedChildCount += participant.childCount || 0;
           }
           
-          // CRITICAL FIX: Always set size and childCount based on participants count
-          sanitizedGroup.size = calculatedSize;
-          sanitizedGroup.childCount = calculatedChildCount;
+          // Always set size and childCount based on participants count
+          sanitizedGroup.size = calculatedSize || 0;
+          sanitizedGroup.childCount = calculatedChildCount || 0;
+        }
+        
+        // Ensure size is never null (causes database errors)
+        if (sanitizedGroup.size === null || sanitizedGroup.size === undefined) {
+          sanitizedGroup.size = 0;
+        }
+        
+        // Ensure child_count is never null
+        if (sanitizedGroup.childCount === null || sanitizedGroup.childCount === undefined) {
+          sanitizedGroup.childCount = 0;
+        }
+        if (sanitizedGroup.child_count === null || sanitizedGroup.child_count === undefined) {
+          sanitizedGroup.child_count = 0;
         }
         
         return sanitizedGroup;
@@ -212,3 +311,13 @@ export const persistGuideAssignmentChanges = async (
   
   return updateSuccess;
 };
+
+// Helper function to get the Supabase client
+let supabase: any;
+async function getSupabase() {
+  if (!supabase) {
+    const { supabase: client } = await import("@/integrations/supabase/client");
+    supabase = client;
+  }
+  return supabase;
+}

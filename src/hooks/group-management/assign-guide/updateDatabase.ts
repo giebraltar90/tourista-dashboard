@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
 /**
- * Update guide assignment in the database with improved error handling for permission issues
+ * Update guide assignment in the database with improved persistence strategies
  */
 export const updateDatabase = async (
   groupId: string, 
@@ -17,14 +17,28 @@ export const updateDatabase = async (
       updatedName 
     });
     
-    // Prepare update data
-    const updateData = { 
-      guide_id: guideId,
-      name: updatedName,
-      updated_at: new Date().toISOString()
-    };
+    // Strategy 1: Use the new assign_guide_safely function
+    try {
+      const { data, error } = await supabase.rpc(
+        'assign_guide_safely',
+        {
+          p_group_id: groupId,
+          p_guide_id: guideId,
+          p_group_name: updatedName
+        }
+      );
+      
+      if (!error) {
+        logger.debug("🔄 [AssignGuide] Successfully updated guide via assign_guide_safely RPC function");
+        return true;
+      }
+      
+      logger.debug("🔄 [AssignGuide] assign_guide_safely function failed, trying alternative approach:", error);
+    } catch (rpcError) {
+      logger.debug("🔄 [AssignGuide] assign_guide_safely function not available:", rpcError);
+    }
     
-    // Strategy 1: Direct update with no triggers
+    // Strategy 2: Use the update_group_guide_no_triggers function
     try {
       const { error } = await supabase.rpc(
         'update_group_guide_no_triggers',
@@ -36,93 +50,132 @@ export const updateDatabase = async (
       );
       
       if (!error) {
-        logger.debug("🔄 [AssignGuide] Successfully updated guide via RPC function");
+        logger.debug("🔄 [AssignGuide] Successfully updated guide via update_group_guide_no_triggers function");
         return true;
       }
       
-      logger.debug("🔄 [AssignGuide] RPC function failed, trying alternative approach:", error);
+      logger.debug("🔄 [AssignGuide] update_group_guide_no_triggers function failed, trying alternative approach:", error);
     } catch (rpcError) {
-      logger.debug("🔄 [AssignGuide] RPC function not available:", rpcError);
+      logger.debug("🔄 [AssignGuide] update_group_guide_no_triggers function not available:", rpcError);
     }
     
-    // Strategy 2: Standard update
-    const { error } = await supabase
-      .from("tour_groups")
-      .update(updateData)
-      .eq("id", groupId);
-      
-    if (!error) {
-      logger.debug("🔄 [AssignGuide] Successfully updated guide with standard update");
-      return true;
-    }
-    
-    // If we get a permission error related to materialized view
-    if (error.message.includes('materialized view')) {
-      logger.debug("🔄 [AssignGuide] Permission error detected, trying alternative update approach");
-      
-      // Strategy 3: Raw update with select to avoid triggering the materialized view refresh
-      const { error: rawError } = await supabase
+    // Strategy 3: Use the safe_update_tour_group function with all fields
+    try {
+      // First fetch the current group data to preserve other fields
+      const { data: groupData, error: fetchError } = await supabase
         .from("tour_groups")
-        .update(updateData)
+        .select("size, entry_time, child_count")
         .eq("id", groupId)
-        .select();
+        .single();
         
-      if (!rawError) {
-        logger.debug("🔄 [AssignGuide] Successfully updated guide with raw update");
-        return true;
-      }
-      
-      logger.error("🔄 [AssignGuide] Raw update also failed:", rawError);
-      
-      // Strategy 4: Final attempt with simple insert
-      try {
-        // Get the tour_id for this group first
-        const { data: groupData } = await supabase
-          .from("tour_groups")
-          .select("tour_id")
-          .eq("id", groupId)
-          .single();
-          
-        if (groupData?.tour_id) {
-          // Try a direct upsert operation
-          const { error: upsertError } = await supabase
-            .from("tour_groups")
-            .upsert({
-              id: groupId,
-              tour_id: groupData.tour_id,
-              guide_id: guideId,
-              name: updatedName,
-              updated_at: new Date().toISOString()
-            });
-            
-          if (!upsertError) {
-            logger.debug("🔄 [AssignGuide] Successfully updated guide with upsert operation");
-            return true;
+      if (fetchError) {
+        logger.error("🔄 [AssignGuide] Error fetching group data:", fetchError);
+      } else if (groupData) {
+        // Use the safe update function with all fields
+        const { error: safeUpdateError } = await supabase.rpc(
+          'safe_update_tour_group',
+          {
+            p_id: groupId,
+            p_name: updatedName,
+            p_size: groupData.size || 0,
+            p_guide_id: guideId,
+            p_entry_time: groupData.entry_time || '00:00',
+            p_child_count: groupData.child_count || 0
           }
-          
-          logger.error("🔄 [AssignGuide] Upsert operation failed:", upsertError);
+        );
+        
+        if (!safeUpdateError) {
+          logger.debug("🔄 [AssignGuide] Successfully updated guide via safe_update_tour_group function");
+          return true;
         }
-      } catch (finalError) {
-        logger.error("🔄 [AssignGuide] Final attempt failed:", finalError);
+        
+        logger.debug("🔄 [AssignGuide] safe_update_tour_group function failed:", safeUpdateError);
       }
-    } else {
-      // For other errors, try a second time with a delay
-      logger.debug("🔄 [AssignGuide] Standard error, trying with delay:", error);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const { error: retryError } = await supabase
+    } catch (safeUpdateError) {
+      logger.debug("🔄 [AssignGuide] safe_update_tour_group function not available:", safeUpdateError);
+    }
+    
+    // Strategy 4: Standard update with retry mechanism
+    const updateData = { 
+      guide_id: guideId,
+      name: updatedName,
+      updated_at: new Date().toISOString()
+    };
+    
+    // Try setting the session replication role via a custom RPC if possible
+    try {
+      await supabase.rpc('fix_materialized_view_permissions');
+    } catch (error) {
+      logger.debug("🔄 [AssignGuide] Could not fix materialized view permissions:", error);
+    }
+    
+    // Attempt standard update with retries
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const { error } = await supabase
         .from("tour_groups")
         .update(updateData)
         .eq("id", groupId);
         
-      if (!retryError) {
-        logger.debug("🔄 [AssignGuide] Successfully updated guide with delayed retry");
+      if (!error) {
+        logger.debug("🔄 [AssignGuide] Successfully updated guide with standard update (attempt " + (attempt+1) + ")");
         return true;
       }
       
-      logger.error("🔄 [AssignGuide] Retry also failed:", retryError);
+      logger.debug(`🔄 [AssignGuide] Standard update failed (attempt ${attempt+1}):`, error);
+      
+      // Small delay before retry
+      if (attempt < 2) {
+        await new Promise(resolve => setTimeout(resolve, 300 * (attempt + 1)));
+      }
     }
     
+    // Strategy 5: Direct database update with minimum information
+    try {
+      // This approach uses a very simple update to minimize chances of error
+      const { error } = await supabase.rpc(
+        'update_tour_group_without_refresh',
+        {
+          p_group_id: groupId,
+          p_guide_id: guideId,
+          p_name: updatedName
+        }
+      );
+      
+      if (!error) {
+        logger.debug("🔄 [AssignGuide] Successfully updated guide with direct update");
+        return true;
+      }
+      
+      logger.error("🔄 [AssignGuide] Direct update also failed:", error);
+    } catch (directError) {
+      logger.error("🔄 [AssignGuide] Direct update error:", directError);
+    }
+    
+    // Strategy 6: Last resort - multiple small updates
+    try {
+      // Update only guide_id first
+      const { error: guideError } = await supabase
+        .from("tour_groups")
+        .update({ guide_id: guideId })
+        .eq("id", groupId);
+        
+      if (!guideError) {
+        // Then update name separately
+        const { error: nameError } = await supabase
+          .from("tour_groups")
+          .update({ name: updatedName })
+          .eq("id", groupId);
+          
+        if (!nameError) {
+          logger.debug("🔄 [AssignGuide] Successfully updated guide with separate updates");
+          return true;
+        }
+      }
+    } catch (error) {
+      logger.error("🔄 [AssignGuide] Separate updates failed:", error);
+    }
+    
+    logger.error("🔄 [AssignGuide] All update strategies failed for group:", groupId);
     return false;
   } catch (error) {
     logger.error("🔄 [AssignGuide] Unexpected error in updateDatabase:", error);

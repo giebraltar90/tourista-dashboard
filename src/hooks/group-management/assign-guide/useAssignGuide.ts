@@ -9,11 +9,14 @@ import { prepareGroupName } from "./createGroupName";
 import { updateDatabase } from "./updateDatabase";
 import { EventEmitter } from "@/utils/eventEmitter";
 import { logger } from "@/utils/logger";
+import { syncTourData } from "@/hooks/group-management/services/participantService/syncService";
 import { syncTourGuideAssignments } from "@/services/api/guideAssignmentService";
+import { useQueryClient } from "@tanstack/react-query";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
   const { addModification } = useModifications(tourId);
+  const queryClient = useQueryClient();
   
   const assignGuide = useCallback(
     async (groupIndex: number, guideId: string | null) => {
@@ -28,6 +31,9 @@ export const useAssignGuide = (tourId: string) => {
           groupIndex,
           guideId: guideId || "_none"
         });
+        
+        // Cancel any existing queries to prevent race conditions
+        await queryClient.cancelQueries({ queryKey: ['tour', tourId] });
         
         // Resolve group ID from index
         const result = await resolveGroupId(tourId, groupIndex);
@@ -58,19 +64,30 @@ export const useAssignGuide = (tourId: string) => {
         }
         
         // Sync guide assignments to ensure consistency
-        await syncTourGuideAssignments(tourId);
+        try {
+          await syncTourGuideAssignments(tourId);
+          await syncTourData(tourId);
+        } catch (syncError) {
+          logger.error("Error during sync after guide assignment:", syncError);
+          // Continue even if sync fails
+        }
         
         // Record the modification
-        const guideName = processedGuideId ? "new guide" : "removed guide";
-        await addModification({
-          description: `Group ${groupIndex + 1}: ${processedGuideId ? "Assigned" : "Removed"} guide`,
-          details: {
-            type: "guide_assignment",
-            groupId,
-            guideId: processedGuideId,
-            timestamp: new Date().toISOString()
-          }
-        });
+        try {
+          const guideName = processedGuideId ? "new guide" : "removed guide";
+          await addModification({
+            description: `Group ${groupIndex + 1}: ${processedGuideId ? "Assigned" : "Removed"} guide`,
+            details: {
+              type: "guide_assignment",
+              groupId,
+              guideId: processedGuideId,
+              timestamp: new Date().toISOString()
+            }
+          });
+        } catch (modError) {
+          logger.error("Error adding modification:", modError);
+          // Continue even if modification recording fails
+        }
         
         // Notify of guide change to trigger ticket recalculation
         EventEmitter.emit(`guide-change:${tourId}`);
@@ -81,6 +98,7 @@ export const useAssignGuide = (tourId: string) => {
         });
         
         // Refetch tour data to update UI
+        await queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
         await refetch();
         
         return true;
@@ -90,7 +108,7 @@ export const useAssignGuide = (tourId: string) => {
         return false;
       }
     },
-    [tour, refetch, addModification, tourId]
+    [tour, refetch, addModification, tourId, queryClient]
   );
   
   return { assignGuide };
