@@ -19,7 +19,7 @@ export const updateDatabase = async (
     
     // Strategy 1: Use the new assign_guide_safely function
     try {
-      const { data, error } = await supabase.rpc(
+      const { error } = await supabase.rpc(
         'assign_guide_safely',
         {
           p_group_id: groupId,
@@ -95,19 +95,20 @@ export const updateDatabase = async (
       logger.debug("🔄 [AssignGuide] safe_update_tour_group function not available:", safeUpdateError);
     }
     
-    // Strategy 4: Standard update with retry mechanism
+    // Strategy 4: Fix permissions before attempting standard update
+    try {
+      await supabase.rpc('fix_materialized_view_permissions');
+      logger.debug("🔄 [AssignGuide] Attempted to fix materialized view permissions");
+    } catch (error) {
+      logger.debug("🔄 [AssignGuide] Could not fix materialized view permissions:", error);
+    }
+    
+    // Strategy 5: Standard update with retry mechanism
     const updateData = { 
       guide_id: guideId,
       name: updatedName,
       updated_at: new Date().toISOString()
     };
-    
-    // Try setting the session replication role via a custom RPC if possible
-    try {
-      await supabase.rpc('fix_materialized_view_permissions');
-    } catch (error) {
-      logger.debug("🔄 [AssignGuide] Could not fix materialized view permissions:", error);
-    }
     
     // Attempt standard update with retries
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -129,7 +130,7 @@ export const updateDatabase = async (
       }
     }
     
-    // Strategy 5: Direct database update with minimum information
+    // Strategy 6: Direct database update with minimum information
     try {
       // This approach uses a very simple update to minimize chances of error
       const { error } = await supabase.rpc(
@@ -151,7 +152,7 @@ export const updateDatabase = async (
       logger.error("🔄 [AssignGuide] Direct update error:", directError);
     }
     
-    // Strategy 6: Last resort - multiple small updates
+    // Strategy 7: Last resort - multiple small updates
     try {
       // Update only guide_id first
       const { error: guideError } = await supabase

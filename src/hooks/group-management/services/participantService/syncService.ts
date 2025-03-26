@@ -84,13 +84,13 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
         }
         
         // Calculate size and child_count
-        let size = 0;
-        let childCount = 0;
+        let groupSize = 0;
+        let groupChildCount = 0;
         
         if (participants && participants.length > 0) {
           participants.forEach(p => {
-            size += p.count || 0;
-            childCount += p.child_count || 0;
+            groupSize += p.count || 0;
+            groupChildCount += p.child_count || 0;
           });
         }
         
@@ -112,10 +112,10 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
           {
             p_id: group.id,
             p_name: groupData.name,
-            p_size: size,
+            p_size: groupSize,
             p_guide_id: groupData.guide_id,
             p_entry_time: groupData.entry_time || '00:00',
-            p_child_count: childCount
+            p_child_count: groupChildCount
           }
         );
         
@@ -131,12 +131,35 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
       
       // Fall back to standard update methods
       try {
+        // Get participants for this group
+        const { data: participants, error: participantsError } = await supabase
+          .from('participants')
+          .select('count, child_count')
+          .eq('group_id', group.id);
+          
+        if (participantsError) {
+          logger.error(`Error fetching participants for group ${group.id}:`, participantsError);
+          success = false;
+          continue;
+        }
+        
+        // Calculate size and child_count
+        let groupSize = 0;
+        let groupChildCount = 0;
+        
+        if (participants && participants.length > 0) {
+          participants.forEach(p => {
+            groupSize += p.count || 0;
+            groupChildCount += p.child_count || 0;
+          });
+        }
+        
         // Try direct update first (less likely to trigger materialized view refresh)
         const { error: directUpdateError } = await supabase
           .from('tour_groups')
           .update({ 
-            size,
-            child_count: childCount,
+            size: groupSize,
+            child_count: groupChildCount,
             updated_at: new Date().toISOString()
           })
           .eq('id', group.id)
@@ -151,8 +174,8 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
         const { error: updateError } = await supabase
           .from('tour_groups')
           .update({ 
-            size,
-            child_count: childCount,
+            size: groupSize,
+            child_count: groupChildCount,
             updated_at: new Date().toISOString()
           })
           .eq('id', group.id);

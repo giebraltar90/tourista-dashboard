@@ -572,6 +572,14 @@ export type Database = {
       }
     }
     Functions: {
+      assign_guide_safely: {
+        Args: {
+          p_group_id: string
+          p_guide_id: string
+          p_group_name: string
+        }
+        Returns: boolean
+      }
       check_table_exists: {
         Args: {
           table_name_param: string
@@ -589,6 +597,10 @@ export type Database = {
           sql_query: string
         }
         Returns: undefined
+      }
+      fix_materialized_view_permissions: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       get_bucket_type: {
         Args: {
@@ -610,6 +622,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      safe_update_tour_group: {
+        Args: {
+          p_id: string
+          p_name: string
+          p_size: number
+          p_guide_id: string
+          p_entry_time: string
+          p_child_count: number
+        }
+        Returns: boolean
+      }
       sync_all_tour_groups: {
         Args: {
           p_tour_id: string
@@ -621,6 +644,14 @@ export type Database = {
           p_tour_id: string
         }
         Returns: boolean
+      }
+      update_group_guide_no_triggers: {
+        Args: {
+          p_group_id: string
+          p_guide_id: string
+          p_name: string
+        }
+        Returns: undefined
       }
       update_groups_after_move: {
         Args: {
@@ -636,6 +667,14 @@ export type Database = {
       update_participant_counts: {
         Args: {
           p_tour_id: string
+        }
+        Returns: boolean
+      }
+      update_tour_group_without_refresh: {
+        Args: {
+          p_group_id: string
+          p_guide_id: string
+          p_name: string
         }
         Returns: boolean
       }

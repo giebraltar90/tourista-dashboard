@@ -55,11 +55,17 @@ export const useAssignGuide = (tourId: string) => {
         // Prepare the updated group name
         const updatedName = await prepareGroupName(groupId, processedGuideId);
         
+        // Show a loading toast
+        const loadingToast = toast.loading("Assigning guide...");
+        
         // Update the database
         const success = await updateDatabase(groupId, processedGuideId, updatedName);
         
+        // Dismiss the loading toast
+        toast.dismiss(loadingToast);
+        
         if (!success) {
-          toast.error("Failed to assign guide");
+          toast.error("Failed to assign guide - please try again");
           return false;
         }
         
@@ -97,7 +103,10 @@ export const useAssignGuide = (tourId: string) => {
           guideId: processedGuideId
         });
         
-        // Refetch tour data to update UI
+        // Add success toast 
+        toast.success(processedGuideId ? "Guide assigned successfully" : "Guide removed successfully");
+        
+        // Invalidate and refetch tour data to update UI
         await queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
         await refetch();
         
