@@ -30,9 +30,21 @@ export const guideTypeNeedsTicket = (guideType: string = ""): boolean => {
     return true;
   }
   
-  // If the guide type doesn't match any known types, log a warning and assume no ticket needed
-  logger.debug(`🎟️ [guideTypeNeedsTicket] Unknown guide type "${guideType}" - assuming no ticket needed`);
-  return false;
+  // Special case for free tickets  
+  if (normalizedType.includes("free")) {
+    logger.debug(`🎟️ [guideTypeNeedsTicket] Type "${guideType}" contains free - ticket needed`);
+    return true;
+  }
+  
+  // Special case for known guide types that need tickets
+  if (normalizedType === "guide" || normalizedType === "adult" || normalizedType === "child") {
+    logger.debug(`🎟️ [guideTypeNeedsTicket] Type "${guideType}" is a standard guide type - ticket needed`);
+    return true;
+  }
+  
+  // If the guide type doesn't match any known types, log a warning and assume ticket needed
+  logger.debug(`🎟️ [guideTypeNeedsTicket] Unknown guide type "${guideType}" - assuming ticket needed`);
+  return true;
 };
 
 /**

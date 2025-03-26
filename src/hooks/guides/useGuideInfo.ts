@@ -2,6 +2,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { GuideInfo } from '@/types/ventrata';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from "@/utils/logger";
 
 /**
  * Fetch guide information by ID
@@ -17,17 +18,18 @@ const fetchGuideInfo = async (guideId: string): Promise<GuideInfo | null> => {
       .single();
       
     if (error || !data) {
-      console.error('Error fetching guide info:', error);
+      logger.error('Error fetching guide info:', error);
       return null;
     }
     
+    // Map from database format to application format
     return {
       id: data.id,
       name: data.name,
       guideType: data.guide_type
     };
   } catch (error) {
-    console.error('Error in fetchGuideInfo:', error);
+    logger.error('Error in fetchGuideInfo:', error);
     return null;
   }
 };
@@ -39,6 +41,7 @@ export const useGuideInfo = (guideId: string) => {
   return useQuery({
     queryKey: ['guide', guideId],
     queryFn: () => fetchGuideInfo(guideId),
-    enabled: !!guideId
+    enabled: !!guideId,
+    staleTime: 60000, // 1 minute
   });
 };

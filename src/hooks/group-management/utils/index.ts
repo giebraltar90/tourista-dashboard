@@ -20,7 +20,7 @@ export {
 // Export guide info utilities
 export { 
   useGuideNameInfo 
-} from './guideInfoUtils';
+} from './useGuideNameInfo';
 
 // Export guide name utilities with explicit naming
 export {

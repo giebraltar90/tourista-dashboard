@@ -1,43 +1,84 @@
 
-import React from "react";
-import { GuideInfo } from "@/types/ventrata";
+import { 
+  Check, 
+  Users, 
+  Ticket, 
+  User, 
+  UserMinus 
+} from "lucide-react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { GuideInfo, Guide } from "@/types/ventrata";
 
-export const getGuideTypeBadge = (guideType: string | undefined): JSX.Element => {
-  if (!guideType) return <Badge variant="outline">Unknown</Badge>;
-  
-  switch (guideType) {
-    case 'GA Ticket':
-      return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">GA Ticket</Badge>;
-    case 'GA Free':
-      return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">GA Free</Badge>;
-    case 'GC':
-      return <Badge variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-100">GC</Badge>;
-    default:
-      return <Badge variant="outline">{guideType}</Badge>;
+interface GuideSelectionListProps {
+  guides: any[];
+  currentGuideId: string | null;
+  onSelect: (guideId: string) => void;
+}
+
+export const GuideSelectionList = ({ 
+  guides, 
+  currentGuideId, 
+  onSelect 
+}: GuideSelectionListProps) => {
+  if (!guides || guides.length === 0) {
+    return <div className="text-center py-4">No guides available</div>;
   }
+
+  return (
+    <ScrollArea className="h-[300px] pr-4">
+      <div className="space-y-2">
+        {guides.map((guide) => {
+          const isSelected = currentGuideId === guide.id;
+          const guideType = 'guideType' in guide 
+            ? guide.guideType 
+            : (guide.guide_type || 'Unknown');
+          
+          return (
+            <div
+              key={guide.id}
+              className={`p-3 border rounded-md flex items-center justify-between cursor-pointer transition-colors ${
+                isSelected ? "bg-primary/10 border-primary/30" : "hover:bg-muted"
+              }`}
+              onClick={() => onSelect(guide.id)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-primary/10 w-8 h-8 rounded-full flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <div className="font-medium">{guide.name}</div>
+                  <div className="text-xs text-muted-foreground">{guideType}</div>
+                </div>
+              </div>
+              {isSelected && <Check className="h-4 w-4 text-primary" />}
+            </div>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
 };
 
-export const getGuideTypeDescription = (guideType: string | undefined): string => {
-  if (!guideType) return "Unknown guide type";
+export const GuideTicketBadge = ({ guideType }: { guideType: string }) => {
+  if (!guideType) return null;
   
-  switch (guideType) {
-    case 'GA Ticket':
-      return "Guide needs an adult ticket for entry";
-    case 'GA Free':
-      return "Guide needs a child ticket for entry";
-    case 'GC':
-      return "Guide can enter without a ticket";
-    default:
-      return `Guide type: ${guideType}`;
+  if (guideType === "GC" || guideType.includes("skip") || guideType.includes("no ticket")) {
+    return <Badge variant="outline">No Ticket Required</Badge>;
   }
-};
-
-export const formatGuideDetails = (guide: GuideInfo | null): string => {
-  if (!guide) return "Unknown guide";
   
-  const guideName = guide.name || "Unnamed";
-  const guideType = guide.guideType || "Unknown type";
+  if (guideType.includes("Free") || guideType.includes("FREE") || guideType.includes("Child")) {
+    return <Badge variant="secondary">Child Ticket Required</Badge>;
+  }
   
-  return `${guideName} (${guideType})`;
+  return <Badge variant="secondary">Adult Ticket Required</Badge>;
 };
