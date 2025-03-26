@@ -1,3 +1,4 @@
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { updateTourGroups } from "@/services/ventrataApi";
@@ -17,6 +18,7 @@ export const useUpdateTourGroups = (tourId: string) => {
         groups: updatedGroups.map(g => ({
           id: g.id,
           name: g.name,
+          guideId: g.guideId,
           participantsCount: g.participants?.length || 0
         }))
       });
@@ -25,11 +27,18 @@ export const useUpdateTourGroups = (tourId: string) => {
         // Make a deep copy of the updated groups to avoid reference issues
         const groupsToUpdate = JSON.parse(JSON.stringify(updatedGroups));
         
-        // Ensure each group has valid, safe references
+        // Ensure each group has valid properties before updating
         groupsToUpdate.forEach((group: VentrataTourGroup) => {
           // Make sure participants array exists
           if (!Array.isArray(group.participants)) {
             group.participants = [];
+          }
+          
+          // Ensure the guideId is also set as guide_id for database compatibility
+          if (group.guideId) {
+            group.guide_id = group.guideId;
+          } else if (group.guide_id) {
+            group.guideId = group.guide_id;
           }
           
           // Calculate size and childCount directly from participants
@@ -46,7 +55,6 @@ export const useUpdateTourGroups = (tourId: string) => {
           group.childCount = childCount;
         });
         
-        // Use the simplified API call
         return await updateTourGroups(tourId, groupsToUpdate);
       } catch (error) {
         logger.error("Error updating tour groups:", error);
@@ -79,7 +87,10 @@ export const useUpdateTourGroups = (tourId: string) => {
           // Create a safe copy
           return {
             ...updatedGroup,
-            participants: JSON.parse(JSON.stringify(participants))
+            participants: JSON.parse(JSON.stringify(participants)),
+            // Ensure guide_id and guideId are both set for compatibility
+            guide_id: updatedGroup.guideId || updatedGroup.guide_id,
+            guideId: updatedGroup.guideId || updatedGroup.guide_id
           };
         });
         
@@ -91,6 +102,8 @@ export const useUpdateTourGroups = (tourId: string) => {
           withParticipants: newData.tourGroups.map((g: any) => ({
             id: g.id,
             name: g.name,
+            guideId: g.guideId,
+            guide_id: g.guide_id,
             participantsCount: g.participants?.length || 0
           }))
         });
@@ -101,17 +114,13 @@ export const useUpdateTourGroups = (tourId: string) => {
       return { previousTour };
     },
     onSuccess: () => {
-      // CRITICAL: Keep the optimistic update but still allow normal background revalidation
-      // This prevents the UI from reverting to previous state after tab switches
-      // while still allowing for future data refreshes
-      
       logger.debug("Successfully updated tour groups - keeping optimistic update");
       toast.success("Changes saved successfully");
       
       // Invalidate the query after a delay to ensure our optimistic update gets rendered first
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-      }, 5000);
+      }, 1000);
     },
     onError: (error, _, context) => {
       logger.error("Error updating tour groups:", error);

@@ -38,21 +38,22 @@ export const useGuideNameInfo = (
     }
     
     // Look for primary guides first by ID
-    if (guideId === "guide1" || guideId === tour.guide1_id) {
+    // Support both camelCase and snake_case property names
+    if (guideId === "guide1" || guideId === tour.guide1Id || guideId === tour.guide1_id) {
       return {
         name: tour.guide1 || "Guide 1",
         info: guide1Info
       };
     }
     
-    if (guideId === "guide2" || guideId === tour.guide2_id) {
+    if (guideId === "guide2" || guideId === tour.guide2Id || guideId === tour.guide2_id) {
       return {
         name: tour.guide2 || "Guide 2",
         info: guide2Info
       };
     }
     
-    if (guideId === "guide3" || guideId === tour.guide3_id) {
+    if (guideId === "guide3" || guideId === tour.guide3Id || guideId === tour.guide3_id) {
       return {
         name: tour.guide3 || "Guide 3",
         info: guide3Info
