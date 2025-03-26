@@ -17,6 +17,7 @@ export const updateDatabase = async (
       updatedName 
     });
     
+    // First attempt with direct update
     const { error } = await supabase
       .from("tour_groups")
       .update({ 
@@ -28,7 +29,23 @@ export const updateDatabase = async (
       
     if (error) {
       logger.error("🔄 [AssignGuide] Error updating group:", error);
-      return false;
+      
+      // Try a second time with a delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const { error: retryError } = await supabase
+        .from("tour_groups")
+        .update({ 
+          guide_id: guideId,
+          name: updatedName,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", groupId);
+        
+      if (retryError) {
+        logger.error("🔄 [AssignGuide] Retry also failed:", retryError);
+        return false;
+      }
     }
     
     logger.debug("🔄 [AssignGuide] Successfully updated guide assignment");

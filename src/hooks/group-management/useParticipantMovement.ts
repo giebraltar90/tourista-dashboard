@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { VentrataParticipant, VentrataTourGroup } from '@/types/ventrata';
 import { moveParticipant as moveParticipantService } from './services/participantService/movementService';
-import { syncParticipantCounts } from '@/services/api/participants/syncService';
+import { syncTourData } from './services/participantService/syncService';
 import { toast } from 'sonner';
 import { logger } from '@/utils/logger';
 import { EventEmitter } from '@/utils/eventEmitter';
@@ -74,6 +74,9 @@ export const useParticipantMovement = (tourId?: string, onSuccess?: () => void) 
       
       if (success) {
         logger.debug("🔄 [PARTICIPANT_MOVEMENT] Participant moved successfully");
+        
+        // Synchronize tour data to ensure everything is up to date
+        await syncTourData(tourId || '');
         
         // Notify of participant change
         if (tourId) {

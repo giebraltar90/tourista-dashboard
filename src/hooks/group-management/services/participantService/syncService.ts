@@ -32,6 +32,13 @@ export const syncTourData = async (tourId: string): Promise<boolean> => {
 };
 
 /**
+ * Backward compatibility function for existing code
+ */
+export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
+  return syncTourData(tourId);
+};
+
+/**
  * Ensure the sync function exists
  */
 export const ensureSyncFunction = async (): Promise<void> => {

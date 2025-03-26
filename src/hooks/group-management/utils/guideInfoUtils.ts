@@ -3,8 +3,9 @@ import { TourCardProps } from "@/components/tours/tour-card/types";
 import { GuideInfo, GuideType } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
 import { useGuideData } from "@/hooks/guides/useGuideData";
+import { logger } from "@/utils/logger";
 
-interface GuideNameAndInfo {
+export interface GuideNameAndInfo {
   name: string;
   info: GuideInfo | null;
 }
@@ -37,25 +38,42 @@ export const useGuideNameInfo = (
       };
     }
     
+    // Logging to debug guide finding process
+    logger.debug("Looking for guide with ID:", guideId, {
+      tourDetails: {
+        guide1: tour?.guide1,
+        guide2: tour?.guide2, 
+        guide3: tour?.guide3,
+        guide1Id: tour?.guide1Id || tour?.guide1_id,
+        guide2Id: tour?.guide2Id || tour?.guide2_id,
+        guide3Id: tour?.guide3Id || tour?.guide3_id
+      },
+      guideInfos: {
+        guide1InfoExists: !!guide1Info,
+        guide2InfoExists: !!guide2Info,
+        guide3InfoExists: !!guide3Info
+      }
+    });
+    
     // Look for primary guides first by ID
     // Support both camelCase and snake_case property names
-    if (guideId === "guide1" || guideId === tour.guide1Id || guideId === tour.guide1_id) {
+    if (guideId === "guide1" || guideId === tour?.guide1Id || guideId === tour?.guide1_id) {
       return {
-        name: tour.guide1 || "Guide 1",
+        name: tour?.guide1 || "Guide 1",
         info: guide1Info
       };
     }
     
-    if (guideId === "guide2" || guideId === tour.guide2Id || guideId === tour.guide2_id) {
+    if (guideId === "guide2" || guideId === tour?.guide2Id || guideId === tour?.guide2_id) {
       return {
-        name: tour.guide2 || "Guide 2",
+        name: tour?.guide2 || "Guide 2",
         info: guide2Info
       };
     }
     
-    if (guideId === "guide3" || guideId === tour.guide3Id || guideId === tour.guide3_id) {
+    if (guideId === "guide3" || guideId === tour?.guide3Id || guideId === tour?.guide3_id) {
       return {
-        name: tour.guide3 || "Guide 3",
+        name: tour?.guide3 || "Guide 3",
         info: guide3Info
       };
     }
@@ -78,6 +96,28 @@ export const useGuideNameInfo = (
         };
       }
       
+      // Check if the UUID matches one of the main guide IDs
+      if (guideId === tour?.guide1Id || guideId === tour?.guide1_id) {
+        return {
+          name: tour?.guide1 || "Guide 1",
+          info: guide1Info
+        };
+      }
+      
+      if (guideId === tour?.guide2Id || guideId === tour?.guide2_id) {
+        return {
+          name: tour?.guide2 || "Guide 2",
+          info: guide2Info
+        };
+      }
+      
+      if (guideId === tour?.guide3Id || guideId === tour?.guide3_id) {
+        return {
+          name: tour?.guide3 || "Guide 3",
+          info: guide3Info
+        };
+      }
+      
       // If not found anywhere, return a formatted UUID
       return {
         name: `Guide (${guideId.substring(0, 6)}...)`,
@@ -86,21 +126,21 @@ export const useGuideNameInfo = (
     }
     
     // Last resort: check if the ID matches a guide name directly
-    if (tour.guide1 === guideId) {
+    if (tour?.guide1 === guideId) {
       return {
         name: guideId,
         info: guide1Info
       };
     }
     
-    if (tour.guide2 === guideId) {
+    if (tour?.guide2 === guideId) {
       return {
         name: guideId,
         info: guide2Info
       };
     }
     
-    if (tour.guide3 === guideId) {
+    if (tour?.guide3 === guideId) {
       return {
         name: guideId,
         info: guide3Info

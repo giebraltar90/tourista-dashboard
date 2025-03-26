@@ -62,7 +62,7 @@ export const updateParticipantGroupInDatabase = async (
   newGroupId: string
 ): Promise<boolean> => {
   try {
-    // Use our new move_participant function which handles all the updates
+    // Use our move_participant function which handles all the updates
     // We don't have the fromGroupId, so we pass null and let the function
     // fetch it from the database
     const { data, error } = await supabase.rpc('move_participant', {

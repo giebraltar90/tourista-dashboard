@@ -8,6 +8,8 @@ import { processGuideId } from "./processGuideId";
 import { prepareGroupName } from "./createGroupName";
 import { updateDatabase } from "./updateDatabase";
 import { EventEmitter } from "@/utils/eventEmitter";
+import { logger } from "@/utils/logger";
+import { syncTourGuideAssignments } from "@/services/api/guideAssignmentService";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
@@ -21,6 +23,12 @@ export const useAssignGuide = (tourId: string) => {
           return false;
         }
         
+        logger.debug("🔄 [ASSIGN_GUIDE] Starting guide assignment", {
+          tourId,
+          groupIndex,
+          guideId: guideId || "_none"
+        });
+        
         // Resolve group ID from index
         const result = await resolveGroupId(tourId, groupIndex);
         if (!result || !result.groupId) {
@@ -33,6 +41,11 @@ export const useAssignGuide = (tourId: string) => {
         // Process guide ID (handle special cases like "guide1", "_none", etc.)
         const processedGuideId = await processGuideId(guideId || "_none");
         
+        logger.debug("🔄 [ASSIGN_GUIDE] Processed guide ID:", {
+          original: guideId,
+          processed: processedGuideId
+        });
+        
         // Prepare the updated group name
         const updatedName = await prepareGroupName(groupId, processedGuideId);
         
@@ -43,6 +56,9 @@ export const useAssignGuide = (tourId: string) => {
           toast.error("Failed to assign guide");
           return false;
         }
+        
+        // Sync guide assignments to ensure consistency
+        await syncTourGuideAssignments(tourId);
         
         // Record the modification
         const guideName = processedGuideId ? "new guide" : "removed guide";
@@ -59,12 +75,17 @@ export const useAssignGuide = (tourId: string) => {
         // Notify of guide change to trigger ticket recalculation
         EventEmitter.emit(`guide-change:${tourId}`);
         
+        logger.debug("🔄 [ASSIGN_GUIDE] Guide assignment completed successfully", {
+          groupId,
+          guideId: processedGuideId
+        });
+        
         // Refetch tour data to update UI
         await refetch();
         
         return true;
       } catch (error) {
-        console.error("Error assigning guide:", error);
+        logger.error("🔄 [ASSIGN_GUIDE] Error assigning guide:", error);
         toast.error("An error occurred while assigning the guide");
         return false;
       }
