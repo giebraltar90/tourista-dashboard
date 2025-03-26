@@ -41,7 +41,7 @@ export interface GuideInfo {
   id?: string; // Added id for reference
 }
 
-// Add Guide interface definition
+// Explicitly define the Guide interface
 export interface Guide {
   id: string;
   name: string;
