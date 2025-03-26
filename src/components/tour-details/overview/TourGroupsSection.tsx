@@ -78,32 +78,13 @@ export const TourGroupsSection = ({
   // Get valid guide options - making sure each guide has all required properties
   // Updated to match the GuideOption interface with the info property
   const validGuides = guides.map(guide => {
-    // Handle different types of birthday fields safely
-    let birthdayStr = "";
-    if (guide.birthday) {
-      if (typeof guide.birthday === 'object' && guide.birthday !== null) {
-        birthdayStr = guide.birthday.toString();
-      } else if (typeof guide.birthday === 'string') {
-        birthdayStr = guide.birthday;
-      }
-    }
-    
-    // Create a birthday Date, handling null/undefined safely
-    const birthdayDate = guide.birthday 
-      ? (typeof guide.birthday === 'object' 
-          ? guide.birthday 
-          : new Date(String(guide.birthday)))
-      : new Date();
-    
     return {
       id: guide.id,
       name: guide.name,
       guide_type: guide.guide_type || "GA Ticket",
-      birthday: birthdayStr,
       guideType: guide.guide_type || "GA Ticket",
       info: {
         name: guide.name,
-        birthday: birthdayDate,
         guideType: (guide.guide_type || "GA Ticket") as GuideType
       }
     };

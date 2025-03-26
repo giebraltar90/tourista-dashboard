@@ -1,7 +1,6 @@
 
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, IdCard, Users } from "lucide-react";
-import { format } from "date-fns";
+import { IdCard, Users } from "lucide-react";
 import { GuideInfo } from "@/types/ventrata";
 import { VentrataTourGroup } from "@/types/ventrata";
 import { Button } from "@/components/ui/button";
@@ -131,10 +130,6 @@ export const GuideAssignmentDisplay = ({
         
         {guideInfo && (
           <div className="mt-2 space-y-1.5">
-            <div className="flex items-center text-sm">
-              <CalendarIcon className="h-3.5 w-3.5 mr-1.5 text-muted-foreground" />
-              <span>{guideInfo.birthday ? format(new Date(guideInfo.birthday), 'MMMM d, yyyy') : 'Unknown'}</span>
-            </div>
             <Badge variant="outline" className={getGuideTypeBadgeColor(guideInfo.guideType)}>
               <IdCard className="h-3.5 w-3.5 mr-1.5" />
               {guideInfo.guideType}

@@ -64,11 +64,6 @@ export const useGuideNameInfo = (
       // Look in the guides array for a match
       const matchingGuide = guides.find(guide => guide.id === guideId);
       if (matchingGuide) {
-        // Fix: Convert string birthday to Date if needed
-        const birthday = typeof matchingGuide.birthday === 'string' 
-          ? new Date(matchingGuide.birthday) 
-          : (matchingGuide.birthday || new Date());
-          
         // Fix: Make sure we're using the correct GuideType
         const guideType: GuideType = (matchingGuide.guide_type || "GA Ticket") as GuideType;
           
@@ -76,7 +71,6 @@ export const useGuideNameInfo = (
           name: matchingGuide.name,
           info: {
             name: matchingGuide.name,
-            birthday: birthday,
             guideType: guideType
           }
         };

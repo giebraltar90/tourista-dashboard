@@ -94,9 +94,16 @@ export type GuideType = 'GA Ticket' | 'GA Free' | 'GC';
 // Guide information
 export interface GuideInfo {
   name: string;
-  birthday: Date;
   guideType: GuideType;
   id?: string; // Unique ID for the guide
+}
+
+// Explicitly define the Guide interface
+export interface Guide {
+  id: string;
+  name: string;
+  guide_type?: GuideType | string;
+  guideType?: GuideType | string;
 }
 
 // Tour capacity settings

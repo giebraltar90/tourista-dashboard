@@ -36,7 +36,6 @@ export type GuideType = "GA Ticket" | "GA Free" | "GC";
 
 export interface GuideInfo {
   name: string;
-  birthday: Date;
   guideType: GuideType;
   id?: string; // Added id for reference
 }
@@ -46,6 +45,5 @@ export interface Guide {
   id: string;
   name: string;
   guide_type?: GuideType | string;
-  birthday?: string | Date | null;
   guideType?: GuideType | string;
 }

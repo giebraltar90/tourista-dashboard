@@ -25,8 +25,6 @@ export const TourGroupsSection = ({
     name: guide.name,
     info: {
       name: guide.name,
-      // Safely handle potentially null birthday
-      birthday: guide.birthday ? new Date(guide.birthday) : new Date(),
       guideType: guide.guide_type
     } as GuideInfo
   }));
