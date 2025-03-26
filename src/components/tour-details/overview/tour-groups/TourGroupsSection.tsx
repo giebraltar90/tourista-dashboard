@@ -1,8 +1,7 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GuideInfo, VentrataTourGroup, GuideType } from "@/types/ventrata";
-import { useGuideNameInfo } from "@/hooks/group-management/utils/guideInfoUtils";
 import { Button } from "@/components/ui/button";
 import { useGuideData } from "@/hooks/guides/useGuideData";
 import { TourCardProps } from "@/components/tours/tour-card/types";
@@ -12,6 +11,7 @@ import { GuideSelectionDialog } from "./GuideSelectionDialog";
 import { EventEmitter } from "@/utils/eventEmitter";
 import { updateTourModification } from "@/services/ventrataApi";
 import { useUpdateTourGroups } from "@/hooks/useTourData";
+import { useGuideNameInfo } from "@/hooks/group-management/utils/guideInfoUtils";
 
 interface TourGroupsSectionProps {
   tourGroups: VentrataTourGroup[];
@@ -30,7 +30,7 @@ export const TourGroupsSection = ({
 }: TourGroupsSectionProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
-  const { guides = [] } = useGuideData() || { guides: [] };
+  const { guides = [] } = useGuideData();
   const { mutateAsync: updateGroups } = useUpdateTourGroups();
   
   // Create a mock tour object from the data we have 
@@ -53,7 +53,7 @@ export const TourGroupsSection = ({
     isHighSeason: false
   };
   
-  // Get the guide name and info helper - Pass the tour object
+  // Get the guide name and info helper
   const { getGuideNameAndInfo } = useGuideNameInfo(
     mockTour,
     guide1Info,

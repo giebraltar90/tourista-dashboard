@@ -1,7 +1,7 @@
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from "@/integrations/supabase/client";
-import { Guide } from "@/types/ventrata";
+import { GuideInfo, Guide as GuideType } from "@/types/ventrata";
 
 export interface Guide {
   id: string;

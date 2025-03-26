@@ -28,7 +28,7 @@ export const GroupsList = ({
         const { name: guideName, info: guideInfo } = getGuideNameAndInfo(group.guideId);
         
         // Hide unknown guides
-        if (guideName.startsWith('Unknown')) {
+        if (guideName && guideName.startsWith('Unknown')) {
           return null;
         }
         
