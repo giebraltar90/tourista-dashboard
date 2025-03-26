@@ -3,17 +3,18 @@ import { supabase } from './client';
 import { queryCache } from './cache';
 import { logger } from '@/utils/logger';
 import { supabaseWithRetry } from './retry';
+import { API_ANON_KEY, API_BASE_URL } from './constants';
 
 // Add a helper for checking database connection with improved error handling
 export const checkDatabaseConnection = async () => {
   try {
     // First, check if we can reach the Supabase URL
-    const healthCheckUrl = `${supabase.supabaseUrl}/rest/v1/`;
+    const healthCheckUrl = `${API_BASE_URL}/rest/v1/`;
     try {
       const response = await fetch(healthCheckUrl, {
         method: 'HEAD',
         headers: {
-          'apikey': supabase.supabaseKey,
+          'apikey': API_ANON_KEY,
         }
       });
       

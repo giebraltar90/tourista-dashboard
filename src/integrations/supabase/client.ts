@@ -53,6 +53,10 @@ export const supabase = createSupabaseClient(
   }
 );
 
+// Helper functions to safely get protected properties
+export const getSupabaseUrl = () => API_BASE_URL;
+export const getSupabaseKey = () => API_ANON_KEY;
+
 // Re-export createClient with a better name to avoid circular dependencies
 export const createClient = createSupabaseClient;
 

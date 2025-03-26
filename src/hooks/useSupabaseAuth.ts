@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { checkAuth, API_ANON_KEY } from '@/integrations/supabase/auth';
 import { logger } from '@/utils/logger';
+import { API_BASE_URL } from '@/integrations/supabase/constants';
 
 /**
  * Hook to check and monitor Supabase authentication status
@@ -52,6 +53,6 @@ export const useSupabaseAuth = () => {
     isChecking,
     error,
     apiKey: API_ANON_KEY,
-    supabaseUrl: supabase.supabaseUrl
+    supabaseUrl: API_BASE_URL
   };
 };

@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
-import { API_ANON_KEY } from "@/integrations/supabase/constants";
+import { API_ANON_KEY, API_BASE_URL } from "@/integrations/supabase/constants";
 
 /**
  * Update a participant's group assignment with enhanced error handling
@@ -23,7 +23,7 @@ export const updateParticipantGroup = async (participantId: string, newGroupId: 
     // Log the detailed update being performed
     logger.debug("🔄 [PARTICIPANT_MOVE] Sending update to database", { 
       updateData, 
-      url: `${supabase.supabaseUrl}/rest/v1/participants?id=eq.${participantId}` 
+      url: `${API_BASE_URL}/rest/v1/participants?id=eq.${participantId}` 
     });
     
     // CRITICAL FIX: Use a more reliable update with return values to confirm changes
@@ -41,7 +41,7 @@ export const updateParticipantGroup = async (participantId: string, newGroupId: 
       logger.debug("🔄 [PARTICIPANT_MOVE] Attempting manual fallback request");
       
       try {
-        const response = await fetch(`${supabase.supabaseUrl}/rest/v1/participants?id=eq.${participantId}`, {
+        const response = await fetch(`${API_BASE_URL}/rest/v1/participants?id=eq.${participantId}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',

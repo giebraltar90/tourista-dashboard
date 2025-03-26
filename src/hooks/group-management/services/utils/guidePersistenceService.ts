@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { API_ANON_KEY } from "@/integrations/supabase/constants";
+import { API_ANON_KEY, API_BASE_URL } from "@/integrations/supabase/constants";
 import { updateGuideInSupabase } from "@/services/api/guideAssignmentService";
 import { logger } from "@/utils/logger";
 
@@ -56,7 +56,7 @@ export const persistGuideAssignmentChanges = async (
       
       logger.debug("Attempting direct Supabase update", {
         updateData,
-        url: `${supabase.supabaseUrl}/rest/v1/tour_groups?id=eq.${groupId}&tour_id=eq.${tourId}`
+        url: `${API_BASE_URL}/rest/v1/tour_groups?id=eq.${groupId}&tour_id=eq.${tourId}`
       });
       
       const { error } = await supabase
@@ -77,7 +77,7 @@ export const persistGuideAssignmentChanges = async (
           try {
             logger.debug("Attempting manual fetch request as last resort");
             
-            const response = await fetch(`${supabase.supabaseUrl}/rest/v1/tour_groups?id=eq.${groupId}&tour_id=eq.${tourId}`, {
+            const response = await fetch(`${API_BASE_URL}/rest/v1/tour_groups?id=eq.${groupId}&tour_id=eq.${tourId}`, {
               method: 'PATCH',
               headers: {
                 'Content-Type': 'application/json',
