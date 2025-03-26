@@ -6,7 +6,7 @@ import { useState } from "react";
 import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectionDialog } from "./GuideSelectionDialog";
 import { useGuideData } from "@/hooks/useGuideData";
-import { useGuideNameInfo } from "@/hooks/group-management/useGuideNameInfo";
+import { useGuideNameInfo } from "@/hooks/group-management/utils/guideInfoUtils";
 import { useUpdateTourGroups } from "@/hooks/useTourData";
 import { updateTourModification } from "@/services/ventrataApi";
 import { v4 as uuidv4 } from "uuid";
@@ -36,12 +36,21 @@ export const TourGroupsSection = ({
   // Create a mock tour object from the data we have 
   const mockTour = {
     id: tourId,
+    date: new Date(),
+    location: "",
+    tourName: "",
+    tourType: "default" as const,
+    startTime: "",
+    referenceCode: "",
     guide1: guide1Info?.name || "",
     guide2: guide2Info?.name || "",
     guide3: guide3Info?.name || "",
-    guide1_id: guide1Info?.id || "",
-    guide2_id: guide2Info?.id || "",
-    guide3_id: guide3Info?.id || "",
+    guide1Id: guide1Info?.id || "",
+    guide2Id: guide2Info?.id || "",
+    guide3Id: guide3Info?.id || "",
+    tourGroups: [],
+    numTickets: 0,
+    isHighSeason: false
   };
   
   // Get the guide name and info helper

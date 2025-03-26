@@ -8,41 +8,46 @@ import { logger } from "@/utils/logger";
  * Hook to fetch guide info for a tour
  */
 export const useTourGuideInfo = (tour: TourCardProps | null | undefined) => {
+  // If tour is null or undefined, we'll use empty strings for guide IDs
+  const guide1Id = tour?.guide1Id || "";
+  const guide2Id = tour?.guide2Id || "";
+  const guide3Id = tour?.guide3Id || "";
+  
   // Fetch guide1 info
   const { 
     data: guide1InfoData, 
     isLoading: isGuide1Loading 
-  } = useGuideInfo(tour?.guide1_id || "");
+  } = useGuideInfo(guide1Id);
   
   // Fetch guide2 info
   const { 
     data: guide2InfoData, 
     isLoading: isGuide2Loading 
-  } = useGuideInfo(tour?.guide2_id || "");
+  } = useGuideInfo(guide2Id);
   
   // Fetch guide3 info
   const { 
     data: guide3InfoData, 
     isLoading: isGuide3Loading 
-  } = useGuideInfo(tour?.guide3_id || "");
+  } = useGuideInfo(guide3Id);
   
   // Create guide info objects
   const guide1Info: GuideInfo | null = guide1InfoData || (tour?.guide1 ? {
     name: tour.guide1,
     guideType: "GA Ticket", // Default guide type if not specified 
-    id: tour.guide1_id
+    id: guide1Id
   } : null);
   
   const guide2Info: GuideInfo | null = guide2InfoData || (tour?.guide2 ? {
     name: tour.guide2,
     guideType: "GA Ticket", // Default guide type if not specified
-    id: tour.guide2_id
+    id: guide2Id
   } : null);
   
   const guide3Info: GuideInfo | null = guide3InfoData || (tour?.guide3 ? {
     name: tour.guide3,
     guideType: "GA Ticket", // Default guide type if not specified
-    id: tour.guide3_id
+    id: guide3Id
   } : null);
 
   // Log guide info for debugging

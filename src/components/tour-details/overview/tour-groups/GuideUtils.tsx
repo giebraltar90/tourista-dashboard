@@ -1,84 +1,74 @@
 
-import { 
-  Check, 
-  Users, 
-  Ticket, 
-  User, 
-  UserMinus 
-} from "lucide-react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+import { User, UserCheck, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { GuideInfo, Guide } from "@/types/ventrata";
 
+interface GuideOptionProps {
+  guide: Guide;
+  isSelected: boolean;
+  onSelect: () => void;
+}
+
+export const GuideOption = ({ guide, isSelected, onSelect }: GuideOptionProps) => {
+  return (
+    <Button
+      variant={isSelected ? "default" : "outline"}
+      className={`w-full justify-start ${isSelected ? "bg-primary text-primary-foreground" : ""}`}
+      onClick={onSelect}
+    >
+      {isSelected ? <UserCheck className="mr-2 h-4 w-4" /> : <User className="mr-2 h-4 w-4" />}
+      <span>{guide.name}</span>
+      <span className="ml-auto text-xs opacity-70">
+        {guide.guideType || guide.guide_type || "GA Ticket"}
+      </span>
+    </Button>
+  );
+};
+
 interface GuideSelectionListProps {
-  guides: any[];
+  guides: Guide[];
   currentGuideId: string | null;
   onSelect: (guideId: string) => void;
 }
 
-export const GuideSelectionList = ({ 
-  guides, 
-  currentGuideId, 
-  onSelect 
-}: GuideSelectionListProps) => {
+export const GuideSelectionList = ({ guides, currentGuideId, onSelect }: GuideSelectionListProps) => {
   if (!guides || guides.length === 0) {
-    return <div className="text-center py-4">No guides available</div>;
+    return (
+      <div className="text-center p-4">
+        No guides available
+      </div>
+    );
   }
 
   return (
-    <ScrollArea className="h-[300px] pr-4">
-      <div className="space-y-2">
-        {guides.map((guide) => {
-          const isSelected = currentGuideId === guide.id;
-          const guideType = 'guideType' in guide 
-            ? guide.guideType 
-            : (guide.guide_type || 'Unknown');
-          
-          return (
-            <div
-              key={guide.id}
-              className={`p-3 border rounded-md flex items-center justify-between cursor-pointer transition-colors ${
-                isSelected ? "bg-primary/10 border-primary/30" : "hover:bg-muted"
-              }`}
-              onClick={() => onSelect(guide.id)}
-            >
-              <div className="flex items-center gap-3">
-                <div className="bg-primary/10 w-8 h-8 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <div className="font-medium">{guide.name}</div>
-                  <div className="text-xs text-muted-foreground">{guideType}</div>
-                </div>
-              </div>
-              {isSelected && <Check className="h-4 w-4 text-primary" />}
-            </div>
-          );
-        })}
-      </div>
-    </ScrollArea>
+    <div className="py-4 space-y-2">
+      {guides.map((guide) => (
+        <GuideOption
+          key={guide.id}
+          guide={guide}
+          isSelected={currentGuideId === guide.id}
+          onSelect={() => onSelect(guide.id)}
+        />
+      ))}
+    </div>
   );
 };
 
-export const GuideTicketBadge = ({ guideType }: { guideType: string }) => {
-  if (!guideType) return null;
-  
-  if (guideType === "GC" || guideType.includes("skip") || guideType.includes("no ticket")) {
-    return <Badge variant="outline">No Ticket Required</Badge>;
+// Function to check if a guide is valid for selection
+export const isGuideValid = (
+  guide: Guide,
+  currentTour: any,
+  assignedGuides: string[] = []
+): boolean => {
+  // Skip if the guide is already assigned to this tour and not the current assignment
+  if (
+    assignedGuides.includes(guide.id) &&
+    guide.id !== currentTour.guide1Id &&
+    guide.id !== currentTour.guide2Id &&
+    guide.id !== currentTour.guide3Id
+  ) {
+    return false;
   }
   
-  if (guideType.includes("Free") || guideType.includes("FREE") || guideType.includes("Child")) {
-    return <Badge variant="secondary">Child Ticket Required</Badge>;
-  }
-  
-  return <Badge variant="secondary">Adult Ticket Required</Badge>;
+  return true;
 };

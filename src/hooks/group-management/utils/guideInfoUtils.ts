@@ -38,21 +38,21 @@ export const useGuideNameInfo = (
     }
     
     // Look for primary guides first by ID
-    if (guideId === "guide1") {
+    if (guideId === "guide1" || guideId === tour.guide1Id) {
       return {
         name: tour.guide1 || "Guide 1",
         info: guide1Info
       };
     }
     
-    if (guideId === "guide2") {
+    if (guideId === "guide2" || guideId === tour.guide2Id) {
       return {
         name: tour.guide2 || "Guide 2",
         info: guide2Info
       };
     }
     
-    if (guideId === "guide3") {
+    if (guideId === "guide3" || guideId === tour.guide3Id) {
       return {
         name: tour.guide3 || "Guide 3",
         info: guide3Info
@@ -65,7 +65,7 @@ export const useGuideNameInfo = (
       const matchingGuide = guides.find(guide => guide.id === guideId);
       if (matchingGuide) {
         // Fix: Make sure we're using the correct GuideType
-        const guideType: GuideType = (matchingGuide.guide_type || "GA Ticket") as GuideType;
+        const guideType: GuideType = (matchingGuide.guideType || matchingGuide.guide_type || "GA Ticket") as GuideType;
           
         return {
           name: matchingGuide.name,
@@ -74,28 +74,6 @@ export const useGuideNameInfo = (
             name: matchingGuide.name,
             guideType: guideType
           }
-        };
-      }
-      
-      // Check if this UUID matches one of the primary guides (when guides are stored as IDs)
-      if (tour.guide1 === guideId) {
-        return {
-          name: guides.find(g => g.id === guideId)?.name || `Guide (${guideId.substring(0, 6)}...)`,
-          info: guide1Info
-        };
-      }
-      
-      if (tour.guide2 === guideId) {
-        return {
-          name: guides.find(g => g.id === guideId)?.name || `Guide (${guideId.substring(0, 6)}...)`,
-          info: guide2Info
-        };
-      }
-      
-      if (tour.guide3 === guideId) {
-        return {
-          name: guides.find(g => g.id === guideId)?.name || `Guide (${guideId.substring(0, 6)}...)`,
-          info: guide3Info
         };
       }
       

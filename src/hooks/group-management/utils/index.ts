@@ -18,9 +18,7 @@ export {
 } from './guideAssignmentUtils';
 
 // Export guide info utilities
-export { 
-  useGuideNameInfo 
-} from './useGuideNameInfo';
+export { useGuideNameInfo } from './guideInfoUtils';
 
 // Export guide name utilities with explicit naming
 export {
