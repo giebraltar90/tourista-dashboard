@@ -17,7 +17,7 @@ export const updateDatabase = async (
       updatedName 
     });
     
-    // Strategy 1: Use the new assign_guide_safely function
+    // Strategy 1: Use the assign_guide_safely function
     try {
       const { error } = await supabase.rpc(
         'assign_guide_safely',
