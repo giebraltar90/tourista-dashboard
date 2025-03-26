@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { IdCard, CalendarIcon, Users } from "lucide-react";
-import { format } from "date-fns";
+import { IdCard, Users } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -84,10 +83,6 @@ export const TourCardGuide: React.FC<TourCardGuideProps> = ({
               <TooltipContent className="p-0">
                 <div className="p-2">
                   <div className="mb-1 font-medium">{guideInfo.name}</div>
-                  <div className="text-xs flex items-center">
-                    <CalendarIcon className="h-3 w-3 mr-1" />
-                    <span>Born: {format(guideInfo.birthday, 'MMM d, yyyy')}</span>
-                  </div>
                   <div className="text-xs mt-1">
                     {guideInfo.guideType === 'GA Ticket' && 'Needs adult ticket for Versailles'}
                     {guideInfo.guideType === 'GA Free' && 'Needs child ticket for Versailles'}

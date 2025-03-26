@@ -70,7 +70,6 @@ export const getGuideNameAndInfo = (
         info: {
           id: guide.id,
           name: guide.name || `Guide ${guideId.substring(0, 4)}...`,
-          birthday: guide.birthday || new Date(),
           guideType: guide.guideType || "GA Ticket"
         } 
       };

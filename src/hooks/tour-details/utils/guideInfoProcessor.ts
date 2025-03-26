@@ -36,7 +36,6 @@ export const processGuideInfo = (
   const fallbackGuide: GuideInfo = {
     id: guidePosition,
     name: guideName,
-    birthday: new Date(),
     guideType: isSophieMiller ? 'GC' : 'GA Ticket'
   };
   

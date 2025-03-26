@@ -12,7 +12,7 @@ const fetchGuideInfo = async (guideId: string): Promise<GuideInfo | null> => {
   try {
     const { data, error } = await supabase
       .from('guides')
-      .select('name, birthday, guide_type')
+      .select('name, guide_type')
       .eq('id', guideId)
       .single();
       
@@ -23,7 +23,6 @@ const fetchGuideInfo = async (guideId: string): Promise<GuideInfo | null> => {
     
     return {
       name: data.name,
-      birthday: new Date(data.birthday),
       guideType: data.guide_type
     };
   } catch (error) {

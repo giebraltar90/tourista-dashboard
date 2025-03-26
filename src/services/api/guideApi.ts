@@ -24,7 +24,6 @@ export const fetchGuides = async (): Promise<GuideInfo[]> => {
     return data ? data.map(guide => ({
       id: guide.id,
       name: guide.name,
-      birthday: guide.birthday ? new Date(guide.birthday) : new Date(),
       guideType: guide.guide_type
     })) : [];
   } catch (error) {
@@ -59,7 +58,6 @@ export const fetchGuideById = async (guideId: string): Promise<GuideInfo | null>
     return {
       id: data.id,
       name: data.name,
-      birthday: data.birthday ? new Date(data.birthday) : new Date(),
       guideType: data.guide_type
     };
   } catch (error) {
