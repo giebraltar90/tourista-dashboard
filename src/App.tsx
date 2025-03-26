@@ -1,54 +1,46 @@
 
-import { Routes, Route, Navigate } from "react-router-dom";
-import { Toaster } from "@/components/ui/toaster";
-import ToursPage from "@/pages/ToursPage";
-import TourDetailsPage from "@/pages/tour-details/TourDetailsPage";
+import { Routes, Route } from "react-router-dom";
+import HomePage from "./pages/HomePage";
+import ToursPage from "./pages/ToursPage";
+import TourDetailsPage from "./pages/tour-details/TourDetailsPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/react-query";
+import { Toaster } from "./components/ui/sonner";
+import GuideLogin from "@/components/admin/GuideLogin";
 import { RoleProvider } from "@/contexts/RoleContext";
-import { DebugDisplay } from "@/components/debug/DebugDisplay";
-import { ErrorBoundary } from "react-error-boundary";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ErrorBoundary } from "./components/ui/error-boundary";
+import { logger } from "./utils/logger";
+import { testSupabaseConnection } from "./integrations/supabase/client";
 
-// Create a query client for the entire app with enhanced settings
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5, // 5 minutes
-    },
-  },
-});
-
-// Error fallback component
-const ErrorFallback = ({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) => (
-  <div className="flex items-center justify-center min-h-screen bg-gray-50">
-    <Alert variant="destructive" className="max-w-xl">
-      <AlertTitle>Something went wrong!</AlertTitle>
-      <AlertDescription>
-        <div className="mt-2 text-sm whitespace-pre-wrap">{error.message}</div>
-        <div className="mt-4">
-          <Button onClick={resetErrorBoundary}>Try again</Button>
-        </div>
-      </AlertDescription>
-    </Alert>
-  </div>
-);
+// Test Supabase connection on app load
+logger.setDebugMode(true);
+testSupabaseConnection()
+  .then(result => {
+    if (result.success) {
+      logger.debug("✅ Initial Supabase connection test successful");
+    } else {
+      logger.error("❌ Initial Supabase connection test failed:", result.error);
+    }
+  })
+  .catch(err => {
+    logger.error("❌ Exception during initial Supabase connection test:", err);
+  });
 
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <RoleProvider>
-        <ErrorBoundary FallbackComponent={ErrorFallback}>
+        <ErrorBoundary>
           <Routes>
+            <Route path="/" element={<HomePage />} />
             <Route path="/tours" element={<ToursPage />} />
-            <Route path="/tours/:id" element={<TourDetailsPage />} />
-            <Route path="/" element={<Navigate to="/tours" replace />} />
+            <Route path="/tour/:id" element={<TourDetailsPage />} />
+            <Route path="/guide" element={<GuideLogin />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
-          <Toaster />
-          {process.env.NODE_ENV !== 'production' && <DebugDisplay />}
         </ErrorBoundary>
+        <Toaster position="top-right" closeButton />
       </RoleProvider>
     </QueryClientProvider>
   );

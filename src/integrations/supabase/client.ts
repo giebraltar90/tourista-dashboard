@@ -2,21 +2,29 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { queryCache } from './cache';
 import { supabaseWithRetry } from './retry';
-import { FETCH_TIMEOUT } from './constants';
+import { FETCH_TIMEOUT, API_BASE_URL, API_ANON_KEY } from './constants';
+import { logger } from '@/utils/logger';
 
 // Supabase client initialization with improved retry and timeout settings
 export const supabase = createSupabaseClient(
-  import.meta.env.VITE_SUPABASE_URL || 'https://hznwikjmwmskvoqgkvjk.supabase.co',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
+  API_BASE_URL,
+  API_ANON_KEY,
   {
     global: {
       fetch: (url, options) => {
-        // Add headers to avoid CORS issues
+        // Add headers to avoid CORS issues and ensure auth headers are sent
         const headers = {
           ...(options?.headers || {}),
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
+          'Pragma': 'no-cache',
+          'apikey': API_ANON_KEY,
+          'Authorization': `Bearer ${API_ANON_KEY}`
         };
+        
+        // Log the request URL and headers for debugging
+        logger.debug(`Supabase request to ${url}`, { 
+          headers: { ...headers, 'Authorization': '[REDACTED]' }
+        });
         
         // Use a longer timeout for fetch operations with AbortSignal
         return fetch(url, {
@@ -25,7 +33,7 @@ export const supabase = createSupabaseClient(
           signal: AbortSignal.timeout(FETCH_TIMEOUT),
           cache: 'no-store',
           mode: 'cors',
-          credentials: 'same-origin',
+          credentials: 'include',
         });
       },
     },
@@ -39,7 +47,7 @@ export const supabase = createSupabaseClient(
     // Add retry strategy for more resilient connections
     realtime: {
       params: {
-        eventsPerSecond: 5, // Reduce events per second to be gentler on the connection
+        eventsPerSecond: 2, // Reduce events per second to be gentler on the connection
       },
     },
   }
@@ -56,3 +64,25 @@ export {
   invalidateTourCache, 
   disableRealtimeSubscriptions 
 } from './connectivity';
+
+// Add a connection test helper for debugging
+export const testSupabaseConnection = async () => {
+  try {
+    logger.debug("Testing Supabase connection...");
+    const { data, error } = await supabase
+      .from('tours')
+      .select('id')
+      .limit(1);
+      
+    if (error) {
+      logger.error("Supabase connection test failed:", error);
+      return { success: false, error };
+    }
+    
+    logger.debug("Supabase connection test succeeded!", data);
+    return { success: true, data };
+  } catch (err) {
+    logger.error("Supabase connection test exception:", err);
+    return { success: false, error: err };
+  }
+};
