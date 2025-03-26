@@ -46,6 +46,7 @@ export const syncTourData = async (tourId: string): Promise<boolean> => {
 
 /**
  * Manual sync method that doesn't rely on database functions
+ * and doesn't trigger materialized view refresh
  */
 const manualSyncTourData = async (tourId: string): Promise<boolean> => {
   try {
@@ -91,19 +92,32 @@ const manualSyncTourData = async (tourId: string): Promise<boolean> => {
         });
       }
       
-      // Update the group
-      const { error: updateError } = await supabase
+      // Try direct update first (less likely to trigger materialized view refresh)
+      const { error: directUpdateError } = await supabase
         .from('tour_groups')
         .update({ 
           size,
           child_count: childCount,
           updated_at: new Date().toISOString()
         })
-        .eq('id', group.id);
+        .eq('id', group.id)
+        .select();
         
-      if (updateError) {
-        logger.error(`Error updating group ${group.id} during manual sync:`, updateError);
-        success = false;
+      if (directUpdateError) {
+        // Fall back to standard update
+        const { error: updateError } = await supabase
+          .from('tour_groups')
+          .update({ 
+            size,
+            child_count: childCount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', group.id);
+          
+        if (updateError) {
+          logger.error(`Error updating group ${group.id} during manual sync:`, updateError);
+          success = false;
+        }
       }
     }
     

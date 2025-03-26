@@ -25,7 +25,63 @@ export const updateGuideInSupabase = async (
       groupName
     });
     
-    // Update the group with the new guide ID
+    // Strategy 1: Use the RPC function to bypass materialized view refresh
+    try {
+      const { error: rpcError } = await supabase.rpc(
+        'update_group_guide_no_triggers',
+        {
+          p_group_id: groupId,
+          p_guide_id: guideId,
+          p_name: groupName || `Group ${Math.floor(Math.random() * 1000)}`
+        }
+      );
+      
+      if (!rpcError) {
+        logger.debug("Guide updated successfully via RPC function");
+        
+        // Emit events to notify of guide change
+        EventEmitter.emit(`guide-change:${tourId}`);
+        
+        return true;
+      }
+      
+      logger.debug("RPC function error, trying standard update:", rpcError);
+    } catch (rpcErr) {
+      logger.debug("RPC function not available, trying standard update:", rpcErr);
+    }
+    
+    // Strategy 2: Use a direct update with select (less likely to trigger materialized view)
+    try {
+      const { error: selectError } = await supabase
+        .from("tour_groups")
+        .update({ 
+          guide_id: guideId, 
+          name: groupName || `Group ${Math.floor(Math.random() * 1000)}`,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", groupId)
+        .eq("tour_id", tourId)
+        .select();
+        
+      if (!selectError) {
+        logger.debug("Guide updated successfully with select query");
+        
+        // Emit events to notify of guide change
+        EventEmitter.emit(`guide-change:${tourId}`);
+        
+        return true;
+      }
+      
+      if (selectError.message.includes('materialized view')) {
+        logger.debug("Materialized view error with select query, trying standard update");
+      } else {
+        logger.error("Error with select update:", selectError);
+      }
+    } catch (selectErr) {
+      logger.debug("Error with select update:", selectErr);
+    }
+    
+    // Strategy 3: Standard update
     const { error } = await supabase
       .from("tour_groups")
       .update({ 
@@ -38,7 +94,30 @@ export const updateGuideInSupabase = async (
       
     if (error) {
       logger.error("Error updating guide in Supabase:", error);
-      return false;
+      
+      // Try the fallback function if available
+      try {
+        const { error: altError } = await supabase.rpc('update_tour_group_without_refresh', {
+          p_group_id: groupId,
+          p_guide_id: guideId,
+          p_name: groupName || `Group ${Math.floor(Math.random() * 1000)}`
+        });
+        
+        if (altError) {
+          logger.error("Alternative update function failed:", altError);
+          return false;
+        }
+        
+        logger.debug("Guide updated successfully via alternative function");
+        
+        // Emit events to notify of guide change
+        EventEmitter.emit(`guide-change:${tourId}`);
+        
+        return true;
+      } catch (altErr) {
+        logger.error("Error with alternative update function:", altErr);
+        return false;
+      }
     }
     
     logger.debug("Guide updated successfully");

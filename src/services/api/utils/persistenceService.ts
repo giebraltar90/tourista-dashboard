@@ -66,6 +66,29 @@ export const persistGuideAssignmentChanges = async (
     
     logger.debug(`Direct update for group ${groupId} with guide ${actualGuideId || 'null'}`);
     
+    // Strategy 1: Try RPC function first
+    try {
+      const { error: rpcError } = await supabase.rpc(
+        'update_group_guide_no_triggers',
+        {
+          p_group_id: groupId,
+          p_guide_id: actualGuideId,
+          p_name: groupName
+        }
+      );
+      
+      if (!rpcError) {
+        logger.debug("Successfully updated guide assignment with RPC function");
+        updateSuccess = true;
+        return true;
+      }
+      
+      logger.debug("RPC function failed or not available:", rpcError);
+    } catch (rpcErr) {
+      logger.debug("RPC function not available:", rpcErr);
+    }
+    
+    // Strategy 2: Direct update with select to avoid triggering materialized view refresh
     const updateData = {
       guide_id: actualGuideId,
       name: groupName,
@@ -75,17 +98,18 @@ export const persistGuideAssignmentChanges = async (
     const { error } = await supabase
       .from('tour_groups')
       .update(updateData)
-      .eq('id', groupId);
+      .eq('id', groupId)
+      .select();
       
     if (!error) {
-      logger.debug("Successfully updated guide assignment with direct query");
+      logger.debug("Successfully updated guide assignment with direct query + select");
       updateSuccess = true;
       return true;
     } else if (error.message.includes('materialized view')) {
       // Try alternative approach for permission issues
       logger.debug("Permission issue detected, trying alternative approach");
       
-      // Use a simple update query with a different client
+      // Strategy 3: Use a simple update query without .select()
       try {
         const { error: directError } = await supabase
           .from('tour_groups')
@@ -94,8 +118,7 @@ export const persistGuideAssignmentChanges = async (
             name: groupName,
             updated_at: new Date().toISOString()
           })
-          .eq('id', groupId)
-          .select();
+          .eq('id', groupId);
           
         if (!directError) {
           logger.debug("Alternative update successful");
