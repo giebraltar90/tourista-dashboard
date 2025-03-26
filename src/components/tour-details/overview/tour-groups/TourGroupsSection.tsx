@@ -5,7 +5,7 @@ import { VentrataTourGroup } from "@/types/ventrata";
 import { useState } from "react";
 import { GuideInfo } from "@/types/ventrata";
 import { GuideSelectionDialog } from "./GuideSelectionDialog";
-import { useGuideData } from "@/hooks/useGuideData";
+import { useGuideData } from "@/hooks/guides/useGuideData";
 import { useGuideNameInfo } from "@/hooks/group-management/utils/guideInfoUtils";
 import { useUpdateTourGroups } from "@/hooks/useTourData";
 import { updateTourModification } from "@/services/ventrataApi";
@@ -53,7 +53,7 @@ export const TourGroupsSection = ({
     isHighSeason: false
   };
   
-  // Get the guide name and info helper
+  // Get the guide name and info helper - Fixed: Passing the required argument
   const { getGuideNameAndInfo } = useGuideNameInfo(
     mockTour,
     guide1Info,

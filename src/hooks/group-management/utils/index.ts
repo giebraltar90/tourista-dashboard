@@ -17,7 +17,7 @@ export {
   processGuideIdForAssignment
 } from './guideAssignmentUtils';
 
-// Export guide info utilities
+// Export guide info utilities - Fix: using the correct export name
 export { useGuideNameInfo } from './guideInfoUtils';
 
 // Export guide name utilities with explicit naming

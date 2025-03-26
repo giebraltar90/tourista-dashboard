@@ -10,6 +10,9 @@ interface GuideOptionProps {
 }
 
 export const GuideOption = ({ guide, isSelected, onSelect }: GuideOptionProps) => {
+  // Get the guide type from either property (for compatibility)
+  const guideType = guide.guideType || guide.guide_type || "GA Ticket";
+  
   return (
     <Button
       variant={isSelected ? "default" : "outline"}
@@ -19,7 +22,7 @@ export const GuideOption = ({ guide, isSelected, onSelect }: GuideOptionProps) =
       {isSelected ? <UserCheck className="mr-2 h-4 w-4" /> : <User className="mr-2 h-4 w-4" />}
       <span>{guide.name}</span>
       <span className="ml-auto text-xs opacity-70">
-        {guide.guideType || guide.guide_type || "GA Ticket"}
+        {guideType}
       </span>
     </Button>
   );
