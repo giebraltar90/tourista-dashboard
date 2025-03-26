@@ -64,7 +64,7 @@ export const useGuideNameInfo = (
       // Look in the guides array for a match
       const matchingGuide = guides.find(guide => guide.id === guideId);
       if (matchingGuide) {
-        // Fix: Make sure we're using the correct property name - guide_type instead of guideType
+        // Make sure we're using the correct property name
         const guideType: GuideType = (matchingGuide.guide_type || "GA Ticket") as GuideType;
           
         return {

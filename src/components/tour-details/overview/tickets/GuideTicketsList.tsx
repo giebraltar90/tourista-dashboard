@@ -10,10 +10,17 @@ export const GuideTicketsList = ({ guides }: GuideTicketsListProps) => {
   // Skip rendering if there are no guides
   if (!guides || guides.length === 0) return null;
   
+  // Filter out unknown guides
+  const filteredGuides = guides.filter(guide => 
+    guide.guideName && !guide.guideName.startsWith("Unknown")
+  );
+  
+  if (filteredGuides.length === 0) return null;
+  
   return (
     <div className="mt-2 space-y-1">
       <p className="text-xs text-muted-foreground">Guide details:</p>
-      {guides.map((guide, index) => {
+      {filteredGuides.map((guide, index) => {
         // Determine badge color based on ticket type
         let badgeClass = "bg-blue-100 text-blue-800 border-blue-300";
         let ticketText = "No Ticket";

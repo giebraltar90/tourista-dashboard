@@ -64,6 +64,11 @@ export const GroupCard = ({
     guideInfo = getGuideNameAndInfo(group.guideId).info;
   }
 
+  // Filter out unknown guides for display
+  if (guideName && guideName.startsWith("Unknown")) {
+    guideName = "Unassigned";
+  }
+
   // Use the extracted state management hook
   const {
     isExpanded,

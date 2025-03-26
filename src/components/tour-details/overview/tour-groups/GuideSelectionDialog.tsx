@@ -1,29 +1,9 @@
 
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { GuideSelectionList } from "./GuideUtils";
-import { User, UserMinus } from "lucide-react";
-import { GuideInfo } from "@/types/ventrata";
-import { useProcessGuides } from "@/hooks/group-management/useProcessGuides";
-
-interface GuideSelectionDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSelect: (guideId: string | null) => void;
-  guides: any[];
-  currentGuideId: string | null;
-  tour: any;
-  guide1Info: GuideInfo | null;
-  guide2Info: GuideInfo | null;
-  guide3Info: GuideInfo | null;
-}
+import { UserCheck, User, UserX } from "lucide-react";
+import { GuideSelectionDialogProps } from "./types";
+import { useGuideNameInfo } from "@/hooks/group-management/utils/guideInfoUtils";
 
 export const GuideSelectionDialog = ({
   isOpen,
@@ -34,56 +14,58 @@ export const GuideSelectionDialog = ({
   tour,
   guide1Info,
   guide2Info,
-  guide3Info,
+  guide3Info
 }: GuideSelectionDialogProps) => {
-  // Process guides for selection
-  const { validGuides } = useProcessGuides(tour, guides, guide1Info, guide2Info, guide3Info);
-  
-  // Handle guide selection
-  const handleGuideSelected = (guideId: string) => {
-    onSelect(guideId);
-  };
-  
-  // Handle removing guide assignment
-  const handleRemoveGuide = () => {
-    onSelect(null);
-  };
-  
+  const { getGuideNameAndInfo } = useGuideNameInfo(tour, guide1Info, guide2Info, guide3Info);
+
+  // Filter out unknown guides
+  const validGuides = guides.filter(guide => 
+    guide && guide.name && !guide.name.startsWith("Unknown")
+  );
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Select a guide</DialogTitle>
-          <DialogDescription>
-            Choose a guide to assign to this tour group
-          </DialogDescription>
+          <DialogTitle>Select Guide</DialogTitle>
         </DialogHeader>
         
-        <GuideSelectionList
-          guides={validGuides}
-          currentGuideId={currentGuideId}
-          onSelect={handleGuideSelected}
-        />
-        
-        <DialogFooter className="gap-2 sm:gap-0">
-          {currentGuideId && (
-            <Button
-              variant="outline"
-              className="w-full sm:w-auto"
-              onClick={handleRemoveGuide}
-            >
-              <UserMinus className="mr-2 h-4 w-4" />
-              Remove Guide
-            </Button>
-          )}
-          <Button 
-            variant="outline" 
-            className="w-full sm:w-auto" 
-            onClick={onClose}
+        <div className="py-4">
+          <Button
+            variant="outline"
+            className="w-full justify-start mb-4"
+            onClick={() => onSelect(null)}
           >
-            Cancel
+            <UserX className="mr-2 h-4 w-4" />
+            <span>Remove guide assignment</span>
           </Button>
-        </DialogFooter>
+          
+          <div className="space-y-2">
+            {validGuides.map((guide) => {
+              const isSelected = currentGuideId === guide.id;
+              const guideType = guide.guide_type || guide.guideType || "GA Ticket";
+              
+              return (
+                <Button
+                  key={guide.id}
+                  variant={isSelected ? "default" : "outline"}
+                  className={`w-full justify-start ${isSelected ? "bg-primary text-primary-foreground" : ""}`}
+                  onClick={() => onSelect(guide.id)}
+                >
+                  {isSelected ? (
+                    <UserCheck className="mr-2 h-4 w-4" />
+                  ) : (
+                    <User className="mr-2 h-4 w-4" />
+                  )}
+                  <span>{guide.name}</span>
+                  <span className="ml-auto text-xs opacity-70">
+                    {guideType}
+                  </span>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -1,40 +1,40 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GroupsList } from "./GroupsList";
-import { VentrataTourGroup } from "@/types/ventrata";
-import { useState } from "react";
-import { GuideInfo } from "@/types/ventrata";
-import { GuideSelectionDialog } from "./GuideSelectionDialog";
-import { useGuideData } from "@/hooks/guides/useGuideData";
+import { GuideInfo, VentrataTourGroup, GuideType } from "@/types/ventrata";
 import { useGuideNameInfo } from "@/hooks/group-management/utils/guideInfoUtils";
-import { useUpdateTourGroups } from "@/hooks/useTourData";
-import { updateTourModification } from "@/services/ventrataApi";
-import { v4 as uuidv4 } from "uuid";
-import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useGuideData } from "@/hooks/guides/useGuideData";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { logger } from "@/utils/logger";
+import { GroupsList } from "./GroupsList";
+import { GuideSelectionDialog } from "./GuideSelectionDialog";
 import { EventEmitter } from "@/utils/eventEmitter";
+import { updateTourModification } from "@/services/ventrataApi";
+import { useUpdateTourGroups } from "@/hooks/useTourData";
 
 interface TourGroupsSectionProps {
   tourGroups: VentrataTourGroup[];
   tourId: string;
-  guide1Info: GuideInfo | null;
-  guide2Info: GuideInfo | null;
-  guide3Info: GuideInfo | null;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
-export const TourGroupsSection = ({
-  tourGroups,
+export const TourGroupsSection = ({ 
+  tourGroups, 
   tourId,
-  guide1Info,
-  guide2Info,
-  guide3Info,
+  guide1Info = null, 
+  guide2Info = null, 
+  guide3Info = null 
 }: TourGroupsSectionProps) => {
   const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
   const [isGuideDialogOpen, setIsGuideDialogOpen] = useState(false);
-  const { guides = [] } = useGuideData();
+  const { guides = [] } = useGuideData() || { guides: [] };
   const { mutateAsync: updateGroups } = useUpdateTourGroups();
   
   // Create a mock tour object from the data we have 
-  const mockTour = {
+  const mockTour: TourCardProps = {
     id: tourId,
     date: new Date(),
     location: "",
@@ -53,7 +53,7 @@ export const TourGroupsSection = ({
     isHighSeason: false
   };
   
-  // Get the guide name and info helper - Fixed: Passing the required argument
+  // Get the guide name and info helper - Pass the tour object
   const { getGuideNameAndInfo } = useGuideNameInfo(
     mockTour,
     guide1Info,
@@ -103,11 +103,8 @@ export const TourGroupsSection = ({
       
       // Notify other components
       EventEmitter.emit(`guide-change:${tourId}`);
-      
-      toast.success(`${guideId ? `Guide ${guideName} assigned to` : 'Guide removed from'} Group ${selectedGroupIndex + 1}`);
     } catch (error) {
       console.error("Error updating guide assignment:", error);
-      toast.error("Failed to update guide assignment");
     }
     
     setIsGuideDialogOpen(false);
@@ -123,11 +120,10 @@ export const TourGroupsSection = ({
         <GroupsList 
           tourGroups={tourGroups}
           getGuideNameAndInfo={getGuideNameAndInfo}
-          tourId={tourId}
-          handleAssignGuide={handleAssignGuide}
+          onAssignGuide={handleAssignGuide}
         />
         
-        {isGuideDialogOpen && (
+        {isGuideDialogOpen && selectedGroupIndex !== null && (
           <GuideSelectionDialog
             isOpen={isGuideDialogOpen}
             onClose={() => setIsGuideDialogOpen(false)}

@@ -53,6 +53,9 @@ export const TicketsCard = ({
       guide1: guide1Info?.name || "",
       guide2: guide2Info?.name || "",
       guide3: guide3Info?.name || "",
+      guide1Id: guide1Info?.id || "",
+      guide2Id: guide2Info?.id || "",
+      guide3Id: guide3Info?.id || "",
       numTickets: totalTickets || 0,
       isHighSeason: false
     },
@@ -60,6 +63,17 @@ export const TicketsCard = ({
     guide2Info,
     guide3Info
   );
+  
+  // Filter out unknown guides
+  const filteredGuides = guideTickets.guides.filter(guide => 
+    !guide.guideName.startsWith("Unknown") && guide.guideName
+  );
+  
+  // Create a modified guideTickets object with filtered guides
+  const filteredGuideTickets = {
+    ...guideTickets,
+    guides: filteredGuides
+  };
   
   // Log changes to participant counts or guides to help with debugging
   useEffect(() => {
@@ -97,11 +111,11 @@ export const TicketsCard = ({
           validChildTickets={childTickets}
         />
         
-        {locationNeedsGuideTickets && (
+        {locationNeedsGuideTickets && filteredGuides.length > 0 && (
           <>
             <Separator className="my-2" />
             <GuideTicketsSection 
-              guides={guideTickets.guides}
+              guides={filteredGuides}
               adultTickets={guideTickets.adultTickets}
               childTickets={guideTickets.childTickets}
             />

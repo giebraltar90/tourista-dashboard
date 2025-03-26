@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Guide } from "@/types/ventrata";
 
 export interface Guide {
   id: string;
@@ -33,8 +34,17 @@ export function useGuideData() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
+  // Convert the guides to ensure consistent property names
+  const guides = data?.map(guide => ({
+    id: guide.id,
+    name: guide.name,
+    guide_type: guide.guide_type,
+    guideType: guide.guide_type, // Add consistent naming
+    birthday: guide.birthday
+  })) || [];
+  
   return {
-    guides: data,
+    guides,
     isLoading,
     error
   };
