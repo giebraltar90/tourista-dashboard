@@ -1,27 +1,43 @@
 
-import { Guide, GuideInfo, GuideType } from "@/types/ventrata";
+import React from "react";
+import { Guide, GuideInfo } from "@/types/ventrata";
+import { Badge } from "@/components/ui/badge";
 
-/**
- * Utility function to find and get guide name and info
- */
-export const getGuideNameAndInfo = (guides: Guide[], guideId?: string): { name: string; info: any } => {
-  if (!guideId) {
-    return { name: "Unassigned", info: null };
+export const getGuideTypeBadge = (guideType: string | undefined): JSX.Element => {
+  if (!guideType) return <Badge variant="outline">Unknown</Badge>;
+  
+  switch (guideType) {
+    case 'GA Ticket':
+      return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100">GA Ticket</Badge>;
+    case 'GA Free':
+      return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100">GA Free</Badge>;
+    case 'GC':
+      return <Badge variant="outline" className="bg-purple-100 text-purple-800 hover:bg-purple-100">GC</Badge>;
+    default:
+      return <Badge variant="outline">{guideType}</Badge>;
   }
+};
+
+export const getGuideTypeDescription = (guideType: string | undefined): string => {
+  if (!guideType) return "Unknown guide type";
   
-  // Try to find the guide by ID
-  const guide = guides.find(g => g.id === guideId);
-  
-  // If we found a guide, return its name and info
-  if (guide) {
-    return { 
-      name: guide.name || "Unnamed Guide", 
-      info: {
-        guideType: guide.guide_type,
-      }
-    };
+  switch (guideType) {
+    case 'GA Ticket':
+      return "Guide needs an adult ticket for entry";
+    case 'GA Free':
+      return "Guide needs a child ticket for entry";
+    case 'GC':
+      return "Guide can enter without a ticket";
+    default:
+      return `Guide type: ${guideType}`;
   }
+};
+
+export const formatGuideDetails = (guide: Guide | GuideInfo | null): string => {
+  if (!guide) return "Unknown guide";
   
-  // If the guide isn't found but there is a guideId
-  return { name: "Unknown Guide", info: null };
+  const guideName = guide.name || "Unnamed";
+  const guideType = guide.guideType || guide.guide_type || "Unknown type";
+  
+  return `${guideName} (${guideType})`;
 };

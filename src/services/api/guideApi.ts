@@ -1,19 +1,16 @@
 
+import { GuideInfo } from "@/types/ventrata";
 import { supabase } from "@/integrations/supabase/client";
-import { isValidUuid } from "@/services/api/utils/guidesUtils";
-import { VentrataTourGroup, GuideInfo } from "@/types/ventrata";
-import { updateTourModification } from "./modificationApi";
-import { Json } from "@/integrations/supabase/types";
-import { handleApiError, headers } from "./apiConfig";
+import { logger } from "@/utils/logger";
 
 /**
  * Fetch all guides from the database
  */
-export const fetchGuides = async (): Promise<GuideInfo[]> => {
+export const fetchAllGuides = async (): Promise<GuideInfo[]> => {
   try {
     const { data, error } = await supabase
       .from('guides')
-      .select('*')
+      .select('id, name, guide_type')
       .order('name');
       
     if (error) {
@@ -27,7 +24,7 @@ export const fetchGuides = async (): Promise<GuideInfo[]> => {
       guideType: guide.guide_type
     })) : [];
   } catch (error) {
-    console.error("Error in fetchGuides:", error);
+    console.error("Exception in fetchAllGuides:", error);
     return [];
   }
 };
@@ -36,24 +33,19 @@ export const fetchGuides = async (): Promise<GuideInfo[]> => {
  * Fetch a specific guide by ID
  */
 export const fetchGuideById = async (guideId: string): Promise<GuideInfo | null> => {
-  if (!guideId || !isValidUuid(guideId)) {
-    console.warn(`Invalid guide ID format: ${guideId}`);
-    return null;
-  }
-
+  if (!guideId) return null;
+  
   try {
     const { data, error } = await supabase
       .from('guides')
-      .select('*')
+      .select('id, name, guide_type')
       .eq('id', guideId)
       .single();
       
     if (error) {
-      console.error(`Error fetching guide with ID ${guideId}:`, error);
+      logger.warn(`Guide not found with ID ${guideId}:`, error);
       return null;
     }
-    
-    if (!data) return null;
     
     return {
       id: data.id,
@@ -61,117 +53,92 @@ export const fetchGuideById = async (guideId: string): Promise<GuideInfo | null>
       guideType: data.guide_type
     };
   } catch (error) {
-    console.error(`Error fetching guide with ID ${guideId}:`, error);
+    logger.error(`Error fetching guide with ID ${guideId}:`, error);
     return null;
   }
 };
 
 /**
- * Assign a guide to a specific tour group
+ * Create a new guide in the database
  */
-export const assignGuideToGroup = async (
-  tourId: string, 
-  groupIndex: number,
-  group: VentrataTourGroup,
-  guideId?: string
-): Promise<boolean> => {
+export const createGuide = async (
+  name: string, 
+  guideType: string
+): Promise<GuideInfo | null> => {
   try {
-    // Check if this is a UUID tour ID for direct database updates
-    const tourIsUuid = isValidUuid(tourId);
-    
-    // Track if any persistence method succeeded
-    let updateSuccess = false;
-    
-    // First, directly try to update the specific group in Supabase if it's a UUID tour
-    if (tourIsUuid) {
-      try {
-        const groupId = group.id;
-        
-        if (groupId) {
-          // Update existing group with targeted update to just the guide_id
-          const { error } = await supabase
-            .from('tour_groups')
-            .update({
-              guide_id: guideId,
-              name: group.name
-            })
-            .eq('id', groupId);
-            
-          if (error) {
-            console.error("Supabase direct group update failed:", error);
-          } else {
-            console.log("Successfully updated guide assignment in Supabase with direct update");
-            updateSuccess = true;
-          }
-        }
-      } catch (error) {
-        console.error("Error with direct Supabase update:", error);
-      }
+    const { data, error } = await supabase
+      .from('guides')
+      .insert([
+        { name, guide_type: guideType }
+      ])
+      .select()
+      .single();
+      
+    if (error) {
+      console.error("Error creating guide:", error);
+      return null;
     }
     
-    // If direct update failed or it's not a UUID tour, try the API function
-    if (!updateSuccess) {
-      console.log("Falling back to API update");
-      // In a real application, you would call an API endpoint here
-      updateSuccess = true; // Mock success for now
-    }
-    
-    // Record this modification if any method succeeded
-    if (updateSuccess) {
-      const guideName = guideId ? "Assigned Guide" : "Unassigned";
-      const modificationDescription = guideId
-        ? `Guide assigned to group ${group.name}`
-        : `Guide removed from group ${group.name}`;
-        
-      try {
-        await updateTourModification(tourId, {
-          description: modificationDescription,
-          details: {
-            type: "guide_assignment",
-            groupIndex,
-            guideId,
-            groupName: group.name
-          }
-        });
-      } catch (error) {
-        console.error("Failed to record modification:", error);
-      }
-    }
-    
-    return updateSuccess;
+    return {
+      id: data.id,
+      name: data.name,
+      guideType: data.guide_type
+    };
   } catch (error) {
-    console.error("Error assigning guide:", error);
-    throw error;
+    console.error("Exception in createGuide:", error);
+    return null;
   }
 };
 
 /**
- * Get guide names from their IDs - with improved error handling
+ * Update an existing guide
  */
-export const getGuideNames = async (guideIds: string[]) => {
-  if (!guideIds.length) return {};
-  
-  const validIds = guideIds.filter(id => id && isValidUuid(id));
-  
-  if (!validIds.length) return {};
-  
+export const updateGuide = async (
+  guideId: string, 
+  updates: Partial<GuideInfo>
+): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    // Convert to database column naming
+    const dbUpdates: any = {};
+    
+    if (updates.name !== undefined) dbUpdates.name = updates.name;
+    if (updates.guideType !== undefined) dbUpdates.guide_type = updates.guideType;
+    
+    const { error } = await supabase
       .from('guides')
-      .select('id, name')
-      .in('id', validIds);
+      .update(dbUpdates)
+      .eq('id', guideId);
       
-    if (error || !data) {
-      console.error("Error fetching guide names:", error);
-      return {};
+    if (error) {
+      console.error("Error updating guide:", error);
+      return false;
     }
     
-    return data.reduce((map, guide) => {
-      map[guide.id] = guide.name;
-      return map;
-    }, {});
+    return true;
   } catch (error) {
-    console.error("Error in getGuideNames:", error);
-    return {};
+    console.error("Exception in updateGuide:", error);
+    return false;
+  }
+};
+
+/**
+ * Delete a guide by ID
+ */
+export const deleteGuide = async (guideId: string): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('guides')
+      .delete()
+      .eq('id', guideId);
+      
+    if (error) {
+      console.error("Error deleting guide:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Exception in deleteGuide:", error);
+    return false;
   }
 };

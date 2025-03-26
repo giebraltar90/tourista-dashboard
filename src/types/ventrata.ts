@@ -93,9 +93,9 @@ export type GuideType = 'GA Ticket' | 'GA Free' | 'GC';
 
 // Guide information
 export interface GuideInfo {
+  id?: string; // Unique ID for the guide
   name: string;
   guideType: GuideType;
-  id?: string; // Unique ID for the guide
 }
 
 // Explicitly define the Guide interface

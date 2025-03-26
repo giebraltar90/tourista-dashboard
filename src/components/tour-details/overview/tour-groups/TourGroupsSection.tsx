@@ -1,67 +1,58 @@
 
-import { useState } from "react";
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VentrataTourGroup } from "@/types/ventrata";
+import { GuideInfo, Guide } from "@/types/ventrata";
 import { GroupsList } from "./GroupsList";
-import { getGuideNameAndInfo } from "./GuideUtils";
-import { AssignGuideDialog } from "../../groups-management/dialogs/AssignGuideDialog";
-import { useGuides } from "@/hooks/useGuides";
-import { Guide, GuideInfo } from "@/types/ventrata";
+import { logger } from "@/utils/logger";
 
 interface TourGroupsSectionProps {
-  tourGroups: any[];
+  tourGroups: VentrataTourGroup[];
   tourId: string;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
-export const TourGroupsSection = ({ 
+export const TourGroupsSection = ({
   tourGroups,
-  tourId
+  tourId,
+  guide1Info = null,
+  guide2Info = null,
+  guide3Info = null
 }: TourGroupsSectionProps) => {
-  const [selectedGroupIndex, setSelectedGroupIndex] = useState<number | null>(null);
-  const [isAssignGuideOpen, setIsAssignGuideOpen] = useState(false);
-  const { data: guides = [] } = useGuides();
-  
-  // Prepare guides data for the dialogs
-  const dialogGuides = guides.map(guide => ({
-    id: guide.id,
-    name: guide.name,
-    info: {
-      name: guide.name,
-      guideType: guide.guide_type
-    } as GuideInfo
-  }));
-  
-  const handleAssignGuide = (groupIndex: number) => {
-    setSelectedGroupIndex(groupIndex);
-    setIsAssignGuideOpen(true);
-  };
-  
-  // Helper function to get guide name and info
-  const getGuideInfo = (guideId?: string) => {
-    return getGuideNameAndInfo(guides as Guide[], guideId);
-  };
-  
+  // Log guide info for debugging
+  React.useEffect(() => {
+    logger.debug("TourGroupsSection received guide info:", {
+      guide1: guide1Info ? { 
+        name: guide1Info.name, 
+        type: guide1Info.guideType
+      } : null,
+      guide2: guide2Info ? { 
+        name: guide2Info.name, 
+        type: guide2Info.guideType
+      } : null,
+      guide3: guide3Info ? { 
+        name: guide3Info.name, 
+        type: guide3Info.guideType
+      } : null
+    });
+  }, [guide1Info, guide2Info, guide3Info]);
+
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Tour Groups</h3>
-      </div>
-    
-      <GroupsList
-        tourGroups={tourGroups}
-        getGuideNameAndInfo={getGuideInfo}
-        tourId={tourId}
-        handleAssignGuide={handleAssignGuide}
-      />
-      
-      {isAssignGuideOpen && selectedGroupIndex !== null && (
-        <AssignGuideDialog
-          isOpen={isAssignGuideOpen}
-          onOpenChange={setIsAssignGuideOpen}
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-medium">Tour Groups</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <GroupsList 
+          groups={tourGroups}
           tourId={tourId}
-          groupIndex={selectedGroupIndex}
-          guides={dialogGuides}
-          currentGuideId={tourGroups[selectedGroupIndex]?.guideId}
+          guide1Info={guide1Info}
+          guide2Info={guide2Info}
+          guide3Info={guide3Info}
         />
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };

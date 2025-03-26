@@ -1,102 +1,139 @@
 
-import { GuideInfo } from "@/types/ventrata";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { GuideInfo, GuideType } from "@/types/ventrata";
 import { isValidUuid } from "@/services/api/utils/guidesUtils";
+import { useGuideData } from "@/hooks/guides/useGuideData";
+
+interface GuideNameAndInfo {
+  name: string;
+  info: GuideInfo | null;
+}
 
 /**
- * Gets the guide name and info based on the guide ID
+ * Hook for getting guide name and info from guide ID
  */
-export const getGuideNameAndInfo = (
-  guide1Name?: string,
-  guide2Name?: string,
-  guide3Name?: string,
-  guide1Info?: GuideInfo | null,
-  guide2Info?: GuideInfo | null,
-  guide3Info?: GuideInfo | null,
-  allGuides: any[] = [],
-  guideId?: string
-): { name: string; info: GuideInfo | null } => {
-  console.log("GUIDE TICKET DEBUG: getGuideNameAndInfo called for guideId:", guideId, {
-    guide1Name, guide2Name, guide3Name,
-    guide1Info: guide1Info ? { id: guide1Info.id, name: guide1Info.name, guideType: guide1Info.guideType } : null,
-    guide2Info: guide2Info ? { id: guide2Info.id, name: guide2Info.name, guideType: guide2Info.guideType } : null,
-    guide3Info: guide3Info ? { id: guide3Info.id, name: guide3Info.name, guideType: guide3Info.guideType } : null,
-    allGuidesCount: allGuides.length,
-  });
+export const useGuideNameInfo = (
+  tour: TourCardProps,
+  guide1Info: GuideInfo | null,
+  guide2Info: GuideInfo | null,
+  guide3Info: GuideInfo | null
+) => {
+  const { guides = [] } = useGuideData() || { guides: [] };
   
-  // If no guide ID, return unassigned
-  if (!guideId) {
-    return { name: "Unassigned", info: null };
-  }
-  
-  // Handle specific guide IDs - use exact string comparison
-  if (guideId === "guide1" && guide1Name) {
-    console.log("GUIDE TICKET DEBUG: Matched guide1 by exact ID");
-    return { name: guide1Name, info: guide1Info || null };
-  }
-  
-  if (guideId === "guide2" && guide2Name) {
-    console.log("GUIDE TICKET DEBUG: Matched guide2 by exact ID");
-    return { name: guide2Name, info: guide2Info || null };
-  }
-  
-  if (guideId === "guide3" && guide3Name) {
-    console.log("GUIDE TICKET DEBUG: Matched guide3 by exact ID");
-    return { name: guide3Name, info: guide3Info || null };
-  }
-  
-  // Check if guideId directly matches one of the main guide IDs
-  if (guide1Info && (guideId === guide1Info.id)) {
-    console.log("GUIDE TICKET DEBUG: Matched guide1 by info.id");
-    return { name: guide1Name || "Guide 1", info: guide1Info };
-  }
-  
-  if (guide2Info && (guideId === guide2Info.id)) {
-    console.log("GUIDE TICKET DEBUG: Matched guide2 by info.id");
-    return { name: guide2Name || "Guide 2", info: guide2Info };
-  }
-  
-  if (guide3Info && (guideId === guide3Info.id)) {
-    console.log("GUIDE TICKET DEBUG: Matched guide3 by info.id");
-    return { name: guide3Name || "Guide 3", info: guide3Info };
-  }
-  
-  // Check if it's a UUID and try to find in all guides
-  if (isValidUuid(guideId) && allGuides && allGuides.length > 0) {
-    const guide = allGuides.find(g => g.id === guideId);
-    if (guide) {
-      console.log("GUIDE TICKET DEBUG: Matched guide from allGuides by UUID:", guide.name, guide.guideType);
-      return { 
-        name: guide.name || `Guide ${guideId.substring(0, 4)}...`, 
-        info: {
-          id: guide.id,
-          name: guide.name || `Guide ${guideId.substring(0, 4)}...`,
-          guideType: guide.guideType || "GA Ticket"
-        } 
+  const getGuideNameAndInfo = (guideId?: string): GuideNameAndInfo => {
+    // Handle undefined/empty case
+    if (!guideId) {
+      return {
+        name: "Unassigned",
+        info: null
       };
     }
-  }
+    
+    // Special case for "_none" value (used to remove a guide)
+    if (guideId === "_none") {
+      return {
+        name: "Unassigned",
+        info: null
+      };
+    }
+    
+    // Look for primary guides first by ID
+    if (guideId === "guide1") {
+      return {
+        name: tour.guide1 || "Guide 1",
+        info: guide1Info
+      };
+    }
+    
+    if (guideId === "guide2") {
+      return {
+        name: tour.guide2 || "Guide 2",
+        info: guide2Info
+      };
+    }
+    
+    if (guideId === "guide3") {
+      return {
+        name: tour.guide3 || "Guide 3",
+        info: guide3Info
+      };
+    }
+    
+    // Check for UUID format guide IDs
+    if (isValidUuid(guideId)) {
+      // Look in the guides array for a match
+      const matchingGuide = guides.find(guide => guide.id === guideId);
+      if (matchingGuide) {
+        // Fix: Make sure we're using the correct GuideType
+        const guideType: GuideType = (matchingGuide.guide_type || "GA Ticket") as GuideType;
+          
+        return {
+          name: matchingGuide.name,
+          info: {
+            id: matchingGuide.id,
+            name: matchingGuide.name,
+            guideType: guideType
+          }
+        };
+      }
+      
+      // Check if this UUID matches one of the primary guides (when guides are stored as IDs)
+      if (tour.guide1 === guideId) {
+        return {
+          name: guides.find(g => g.id === guideId)?.name || `Guide (${guideId.substring(0, 6)}...)`,
+          info: guide1Info
+        };
+      }
+      
+      if (tour.guide2 === guideId) {
+        return {
+          name: guides.find(g => g.id === guideId)?.name || `Guide (${guideId.substring(0, 6)}...)`,
+          info: guide2Info
+        };
+      }
+      
+      if (tour.guide3 === guideId) {
+        return {
+          name: guides.find(g => g.id === guideId)?.name || `Guide (${guideId.substring(0, 6)}...)`,
+          info: guide3Info
+        };
+      }
+      
+      // If not found anywhere, return a formatted UUID
+      return {
+        name: `Guide (${guideId.substring(0, 6)}...)`,
+        info: null
+      };
+    }
+    
+    // Last resort: check if the ID matches a guide name directly
+    if (tour.guide1 === guideId) {
+      return {
+        name: guideId,
+        info: guide1Info
+      };
+    }
+    
+    if (tour.guide2 === guideId) {
+      return {
+        name: guideId,
+        info: guide2Info
+      };
+    }
+    
+    if (tour.guide3 === guideId) {
+      return {
+        name: guideId,
+        info: guide3Info
+      };
+    }
+    
+    // If all else fails, use the ID itself
+    return {
+      name: guideId,
+      info: null
+    };
+  };
   
-  // If all else fails, return a formatted guide ID as the name
-  console.log("GUIDE TICKET DEBUG: Could not match guide, returning fallback name");
-  return { name: `Guide ${guideId.substring(0, 8)}...`, info: null };
-};
-
-// For backward compatibility and simpler usage
-export const findGuideName = (
-  guideId: string | undefined, 
-  tourObj?: any, 
-  guides: any[] = []
-): string => {
-  if (!guideId) return "Unassigned";
-  
-  const guide1Name = tourObj?.guide1;
-  const guide2Name = tourObj?.guide2;
-  const guide3Name = tourObj?.guide3;
-  
-  const result = getGuideNameAndInfo(
-    guide1Name, guide2Name, guide3Name, null, null, null, guides, guideId
-  );
-  
-  console.log("GUIDE TICKET DEBUG: findGuideName result for guideId:", guideId, "->", result.name);
-  return result.name;
+  return { getGuideNameAndInfo };
 };
