@@ -52,11 +52,22 @@ export const supabase = createSupabaseClient(
   import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh6bndpa2ptd21za3ZvcWdrdmprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIzOTg5MDgsImV4cCI6MjA1Nzk3NDkwOH0.P887Dped-kI5F4v8PNeIsA0gWHslZ8-YGeI4mBfecJY',
   {
     global: {
-      // Use a longer timeout for fetch operations with AbortSignal
       fetch: (url, options) => {
+        // Add headers to avoid CORS issues
+        const headers = {
+          ...(options?.headers || {}),
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        };
+        
+        // Use a longer timeout for fetch operations with AbortSignal
         return fetch(url, {
           ...options,
+          headers,
           signal: AbortSignal.timeout(FETCH_TIMEOUT),
+          cache: 'no-store',
+          mode: 'cors',
+          credentials: 'same-origin',
         });
       },
     },
@@ -199,4 +210,14 @@ export const getTourStatistics = async (tourId: string) => {
 export const invalidateTourCache = (tourId: string) => {
   queryCache.invalidate(`tour_${tourId}`);
   queryCache.invalidate(`tour_statistics_${tourId}`);
+};
+
+// Helper function to disable WebSocket connections if they're causing issues
+export const disableRealtimeSubscriptions = () => {
+  try {
+    supabase.removeAllChannels();
+    console.log("All realtime subscriptions have been disabled");
+  } catch (error) {
+    console.error("Error disabling realtime subscriptions:", error);
+  }
 };

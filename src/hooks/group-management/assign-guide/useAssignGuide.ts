@@ -12,6 +12,7 @@ import { logger } from "@/utils/logger";
 import { syncTourData } from "@/hooks/group-management/services/participantService/syncService";
 import { syncTourGuideAssignments } from "@/services/api/guideAssignmentService";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateTourCache } from "@/integrations/supabase/client";
 
 export const useAssignGuide = (tourId: string) => {
   const { data: tour, refetch } = useTourById(tourId);
@@ -69,6 +70,9 @@ export const useAssignGuide = (tourId: string) => {
           return false;
         }
         
+        // Invalidate cache for this tour
+        invalidateTourCache(tourId);
+        
         // Sync guide assignments to ensure consistency
         try {
           await syncTourGuideAssignments(tourId);
@@ -106,9 +110,17 @@ export const useAssignGuide = (tourId: string) => {
         // Add success toast 
         toast.success(processedGuideId ? "Guide assigned successfully" : "Guide removed successfully");
         
-        // Invalidate and refetch tour data to update UI
-        await queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
-        await refetch();
+        // Force invalidate and refetch tour data to update UI
+        queryClient.invalidateQueries({ queryKey: ['tour'] });
+        queryClient.invalidateQueries({ queryKey: ['tour', tourId] });
+        queryClient.invalidateQueries({ queryKey: ['tourStatistics'] });
+        queryClient.invalidateQueries({ queryKey: ['tourStatistics', tourId] });
+        queryClient.invalidateQueries({ queryKey: ['ticketRequirements'] });
+        
+        // Ensure refetch after a short delay to catch any lagging updates
+        setTimeout(() => {
+          refetch();
+        }, 300);
         
         return true;
       } catch (error) {

@@ -1,242 +1,113 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, supabaseWithRetry, invalidateTourCache } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
-import { EventEmitter } from "@/utils/eventEmitter";
+import { updateGroupGuideDirectly } from "@/hooks/group-management/services/participantService/syncService";
 
 /**
- * Update a guide assignment in Supabase with improved error handling and synchronization
+ * Sync all guide assignments for a tour to ensure consistency
  */
-export const updateGuideInSupabase = async (
-  tourId: string,
-  groupId: string,
-  guideId: string | null,
-  groupName: string = ""
-): Promise<boolean> => {
+export const syncTourGuideAssignments = async (tourId: string): Promise<boolean> => {
   try {
-    if (!tourId || !groupId) {
-      logger.error("Invalid parameters for guide update:", { tourId, groupId });
+    logger.debug("🔄 [GUIDE_SYNC] Syncing guide assignments for tour:", tourId);
+    
+    // Get all groups for this tour
+    const { data: groups, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id, guide_id, name')
+      .eq('tour_id', tourId);
+      
+    if (groupsError) {
+      logger.error("Error fetching groups for guide sync:", groupsError);
       return false;
     }
     
-    logger.debug("Updating guide in Supabase:", { 
-      tourId, 
-      groupId, 
-      guideId: guideId || 'None',
-      groupName
-    });
-    
-    // Strategy 1: Use the RPC function to bypass materialized view refresh
-    try {
-      const { error: rpcError } = await supabase.rpc(
-        'update_group_guide_no_triggers',
-        {
-          p_group_id: groupId,
-          p_guide_id: guideId,
-          p_name: groupName || `Group ${Math.floor(Math.random() * 1000)}`
-        }
-      );
-      
-      if (!rpcError) {
-        logger.debug("Guide updated successfully via RPC function");
-        
-        // Emit events to notify of guide change
-        EventEmitter.emit(`guide-change:${tourId}`);
-        
-        return true;
-      }
-      
-      logger.debug("RPC function error, trying standard update:", rpcError);
-    } catch (rpcErr) {
-      logger.debug("RPC function not available, trying standard update:", rpcErr);
+    if (!groups || groups.length === 0) {
+      logger.debug("No groups to sync for tour:", tourId);
+      return true;
     }
     
-    // Strategy 2: Use a direct update with select (less likely to trigger materialized view)
-    try {
-      const { error: selectError } = await supabase
-        .from("tour_groups")
-        .update({ 
-          guide_id: guideId, 
-          name: groupName || `Group ${Math.floor(Math.random() * 1000)}`,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", groupId)
-        .eq("tour_id", tourId)
-        .select();
-        
-      if (!selectError) {
-        logger.debug("Guide updated successfully with select query");
-        
-        // Emit events to notify of guide change
-        EventEmitter.emit(`guide-change:${tourId}`);
-        
-        return true;
-      }
-      
-      if (selectError.message.includes('materialized view')) {
-        logger.debug("Materialized view error with select query, trying standard update");
-      } else {
-        logger.error("Error with select update:", selectError);
-      }
-    } catch (selectErr) {
-      logger.debug("Error with select update:", selectErr);
-    }
-    
-    // Strategy 3: Standard update
-    const { error } = await supabase
-      .from("tour_groups")
-      .update({ 
-        guide_id: guideId, 
-        name: groupName || `Group ${Math.floor(Math.random() * 1000)}`,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", groupId)
-      .eq("tour_id", tourId);
-      
-    if (error) {
-      logger.error("Error updating guide in Supabase:", error);
-      
-      // Try the fallback function if available
+    // For each group, verify guide assignment is correctly set
+    let allSuccessful = true;
+    for (const group of groups) {
       try {
-        const { error: altError } = await supabase.rpc('update_tour_group_without_refresh', {
-          p_group_id: groupId,
-          p_guide_id: guideId,
-          p_name: groupName || `Group ${Math.floor(Math.random() * 1000)}`
+        // Use retry mechanism to handle intermittent issues
+        await supabaseWithRetry(async () => {
+          // Check if guide exists if guide_id is set
+          if (group.guide_id) {
+            const { data: guide, error: guideError } = await supabase
+              .from('guides')
+              .select('id, name')
+              .eq('id', group.guide_id)
+              .single();
+              
+            // If guide not found, clear the guide_id to prevent inconsistency
+            if (guideError || !guide) {
+              logger.warn(`Guide ${group.guide_id} not found for group ${group.id}, clearing guide assignment`);
+              
+              const { error: updateError } = await supabase
+                .from('tour_groups')
+                .update({ 
+                  guide_id: null,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', group.id);
+                
+              if (updateError) throw updateError;
+            }
+          }
+          
+          return { success: true };
         });
-        
-        if (altError) {
-          logger.error("Alternative update function failed:", altError);
-          return false;
-        }
-        
-        logger.debug("Guide updated successfully via alternative function");
-        
-        // Emit events to notify of guide change
-        EventEmitter.emit(`guide-change:${tourId}`);
-        
-        return true;
-      } catch (altErr) {
-        logger.error("Error with alternative update function:", altErr);
-        return false;
+      } catch (error) {
+        logger.error(`Error syncing guide for group ${group.id}:`, error);
+        allSuccessful = false;
       }
     }
     
-    logger.debug("Guide updated successfully");
+    // Invalidate any cached data for this tour
+    invalidateTourCache(tourId);
     
-    // Explicitly sync guide assignments across tables
-    try {
-      await supabase.rpc('sync_guide_assignments_across_tables', {
-        p_tour_id: tourId
-      });
-    } catch (syncError) {
-      logger.warn("Could not sync guide assignments:", syncError);
-      // Continue even if sync fails, as the trigger should handle it
-    }
-    
-    // Emit events to notify of guide change
-    EventEmitter.emit(`guide-change:${tourId}`);
-    
-    return true;
-  } catch (err) {
-    logger.error("Error in updateGuideInSupabase:", err);
+    return allSuccessful;
+  } catch (error) {
+    logger.error("Error in syncTourGuideAssignments:", error);
     return false;
   }
 };
 
 /**
- * Get all guides assigned to a tour
+ * Directly update a guide assignment, bypassing any problematic DB triggers
  */
-export const getTourGuideAssignments = async (tourId: string) => {
-  if (!tourId) return [];
-  
+export const assignGuideToGroup = async (
+  groupId: string,
+  guideId: string | null,
+  groupName: string
+): Promise<boolean> => {
   try {
-    const { data: tour, error: tourError } = await supabase
-      .from('tours')
-      .select('guide1_id, guide2_id, guide3_id')
-      .eq('id', tourId)
-      .single();
-      
-    if (tourError) {
-      logger.error("Error fetching tour guide assignments:", tourError);
-      return [];
-    }
+    logger.debug("🔄 [ASSIGN_GUIDE] Direct assignment:", { groupId, guideId, groupName });
     
-    const { data: groups, error: groupsError } = await supabase
-      .from('tour_groups')
-      .select('id, name, guide_id')
-      .eq('tour_id', tourId);
-      
-    if (groupsError) {
-      logger.error("Error fetching group guide assignments:", groupsError);
-      return [];
-    }
+    // Use the direct update function from syncService
+    const success = await updateGroupGuideDirectly(groupId, guideId, groupName);
     
-    // Combine main guides and group guides
-    const assignments = [];
-    
-    if (tour.guide1_id) {
-      assignments.push({
-        type: 'main',
-        position: 'guide1',
-        guideId: tour.guide1_id
-      });
-    }
-    
-    if (tour.guide2_id) {
-      assignments.push({
-        type: 'main',
-        position: 'guide2',
-        guideId: tour.guide2_id
-      });
-    }
-    
-    if (tour.guide3_id) {
-      assignments.push({
-        type: 'main',
-        position: 'guide3',
-        guideId: tour.guide3_id
-      });
-    }
-    
-    // Add group guides
-    if (groups && groups.length > 0) {
-      groups.forEach(group => {
-        if (group.guide_id) {
-          assignments.push({
-            type: 'group',
-            groupId: group.id,
-            groupName: group.name,
-            guideId: group.guide_id
-          });
-        }
-      });
-    }
-    
-    return assignments;
-  } catch (error) {
-    logger.error("Error retrieving guide assignments:", error);
-    return [];
-  }
-};
-
-/**
- * Sync guide assignments between tour and tour_groups tables
- */
-export const syncTourGuideAssignments = async (tourId: string): Promise<boolean> => {
-  try {
-    if (!tourId) return false;
-    
-    const { data, error } = await supabase.rpc('sync_guide_assignments_across_tables', {
-      p_tour_id: tourId
-    });
-    
-    if (error) {
-      logger.error("Error syncing guide assignments:", error);
-      return false;
+    if (!success) {
+      // Fallback to a simple update if the direct method fails
+      const { error } = await supabase
+        .from('tour_groups')
+        .update({ 
+          guide_id: guideId,
+          name: groupName,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', groupId);
+        
+      if (error) {
+        logger.error("🔄 [ASSIGN_GUIDE] Error in fallback update:", error);
+        return false;
+      }
     }
     
     return true;
-  } catch (err) {
-    logger.error("Exception in syncTourGuideAssignments:", err);
+  } catch (error) {
+    logger.error("Error in assignGuideToGroup:", error);
     return false;
   }
 };
