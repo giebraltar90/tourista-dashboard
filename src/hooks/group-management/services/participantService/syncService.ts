@@ -1,33 +1,57 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { logger } from "@/utils/logger";
+import { toast } from "sonner";
 
 /**
- * Synchronize tour group sizes with participants
+ * Synchronize all participants and group sizes for a tour
  */
-export const syncTourGroupSizes = async (tourId: string): Promise<boolean> => {
+export const syncTourData = async (tourId: string): Promise<boolean> => {
   try {
-    console.log(`Syncing group sizes for tour ${tourId}`);
+    if (!tourId) {
+      logger.error("Cannot sync tour data: missing tourId");
+      return false;
+    }
     
-    const { error } = await supabase.rpc('sync_all_tour_groups', {
+    // Call the Supabase function to synchronize all data
+    const { data, error } = await supabase.rpc('sync_all_tour_groups', {
       p_tour_id: tourId
     });
     
     if (error) {
-      console.error("Error syncing tour group sizes:", error);
+      logger.error("Error synchronizing tour data:", error);
       return false;
     }
     
+    logger.debug("Successfully synchronized tour data for tour:", tourId);
     return true;
-  } catch (error) {
-    console.error("Unexpected error syncing tour group sizes:", error);
+  } catch (err) {
+    logger.error("Unexpected error in syncTourData:", err);
     return false;
   }
 };
 
 /**
- * Ensure the sync function exists on the database
+ * Ensure the sync function exists
  */
-export const ensureSyncFunction = (): void => {
-  // This is a no-op function that just signals intent
-  console.log("Sync function ensured");
+export const ensureSyncFunction = async (): Promise<void> => {
+  try {
+    // Check if the function exists by trying to call it with an invalid UUID
+    // This will fail with a function-specific error rather than a "function not found" error
+    await supabase.rpc('sync_all_tour_groups', {
+      p_tour_id: '00000000-0000-0000-0000-000000000000'
+    });
+    
+    // If we get here, function exists
+    logger.debug("sync_all_tour_groups function exists");
+  } catch (error: any) {
+    // Check if this is a "function not found" error
+    if (error?.message?.includes('function "sync_all_tour_groups" does not exist')) {
+      logger.error("sync_all_tour_groups function does not exist, might need database migration");
+      // Don't show a toast here, as this is just a check
+    } else {
+      // This is an expected error (invalid UUID) which means the function exists
+      logger.debug("sync_all_tour_groups function exists (error was expected)");
+    }
+  }
 };
