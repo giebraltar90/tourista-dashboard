@@ -13,20 +13,103 @@ export const syncTourData = async (tourId: string): Promise<boolean> => {
       return false;
     }
     
-    // Call the Supabase function to synchronize all data
-    const { data, error } = await supabase.rpc('sync_all_tour_groups', {
-      p_tour_id: tourId
-    });
-    
-    if (error) {
+    // Try to use the RPC function if available
+    try {
+      const { data, error } = await supabase.rpc('sync_all_tour_groups', {
+        p_tour_id: tourId
+      });
+      
+      if (!error) {
+        logger.debug("Successfully synchronized tour data for tour:", tourId);
+        return true;
+      }
+      
+      // If we get a permission error, try manual sync
+      if (error.message.includes('materialized view')) {
+        logger.debug("Permission issue with materialized view, trying manual sync");
+        return await manualSyncTourData(tourId);
+      }
+      
       logger.error("Error synchronizing tour data:", error);
+      return false;
+      
+    } catch (err) {
+      // If RPC call fails, try manual sync
+      logger.debug("RPC function unavailable, falling back to manual sync");
+      return await manualSyncTourData(tourId);
+    }
+  } catch (err) {
+    logger.error("Unexpected error in syncTourData:", err);
+    return false;
+  }
+};
+
+/**
+ * Manual sync method that doesn't rely on database functions
+ */
+const manualSyncTourData = async (tourId: string): Promise<boolean> => {
+  try {
+    // Get all groups for this tour
+    const { data: groups, error: groupsError } = await supabase
+      .from('tour_groups')
+      .select('id')
+      .eq('tour_id', tourId);
+      
+    if (groupsError) {
+      logger.error("Error fetching groups for manual sync:", groupsError);
       return false;
     }
     
-    logger.debug("Successfully synchronized tour data for tour:", tourId);
-    return true;
-  } catch (err) {
-    logger.error("Unexpected error in syncTourData:", err);
+    if (!groups || groups.length === 0) {
+      logger.debug("No groups to sync for tour:", tourId);
+      return true;
+    }
+    
+    // For each group, update its size and child_count based on participants
+    let success = true;
+    for (const group of groups) {
+      // Get participants for this group
+      const { data: participants, error: participantsError } = await supabase
+        .from('participants')
+        .select('count, child_count')
+        .eq('group_id', group.id);
+        
+      if (participantsError) {
+        logger.error(`Error fetching participants for group ${group.id}:`, participantsError);
+        success = false;
+        continue;
+      }
+      
+      // Calculate size and child_count
+      let size = 0;
+      let childCount = 0;
+      
+      if (participants && participants.length > 0) {
+        participants.forEach(p => {
+          size += p.count || 0;
+          childCount += p.child_count || 0;
+        });
+      }
+      
+      // Update the group
+      const { error: updateError } = await supabase
+        .from('tour_groups')
+        .update({ 
+          size,
+          child_count: childCount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', group.id);
+        
+      if (updateError) {
+        logger.error(`Error updating group ${group.id} during manual sync:`, updateError);
+        success = false;
+      }
+    }
+    
+    return success;
+  } catch (error) {
+    logger.error("Error in manualSyncTourData:", error);
     return false;
   }
 };

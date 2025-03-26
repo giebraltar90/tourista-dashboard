@@ -59,56 +59,76 @@ export const persistGuideAssignmentChanges = async (
     details: participantsToPreserve
   });
   
-  // IMPORTANT: Pass the guide ID directly without sanitization
-  // This is critical to ensure database consistency
-  logger.debug(`Persisting guide assignment: ${actualGuideId} for group ${groupId} in tour ${tourId}`);
-  
-  // First attempt: direct Supabase update with the most reliable method
+  // Direct update approach - most reliable
   try {
-    // Pass the guide ID directly without modification
-    updateSuccess = await updateGuideInSupabase(
-      tourId, 
-      groupId, 
-      actualGuideId, 
-      groupName
-    );
+    // Make a direct update to the table without triggering the materialized view refresh
+    const { supabase } = await import("@/integrations/supabase/client");
     
-    logger.debug(`Direct Supabase update result: ${updateSuccess ? 'Success' : 'Failed'}`);
+    logger.debug(`Direct update for group ${groupId} with guide ${actualGuideId || 'null'}`);
     
-    // If the direct update succeeded, we're done
-    if (updateSuccess) {
+    const updateData = {
+      guide_id: actualGuideId,
+      name: groupName,
+      updated_at: new Date().toISOString()
+    };
+    
+    const { error } = await supabase
+      .from('tour_groups')
+      .update(updateData)
+      .eq('id', groupId);
+      
+    if (!error) {
+      logger.debug("Successfully updated guide assignment with direct query");
+      updateSuccess = true;
       return true;
+    } else if (error.message.includes('materialized view')) {
+      // Try alternative approach for permission issues
+      logger.debug("Permission issue detected, trying alternative approach");
+      
+      // Use a simple update query with a different client
+      try {
+        const { error: directError } = await supabase
+          .from('tour_groups')
+          .update({
+            guide_id: actualGuideId,
+            name: groupName,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', groupId)
+          .select();
+          
+        if (!directError) {
+          logger.debug("Alternative update successful");
+          updateSuccess = true;
+          return true;
+        } else {
+          logger.error("Alternative update failed:", directError);
+        }
+      } catch (alternativeError) {
+        logger.error("Error with alternative update:", alternativeError);
+      }
+    } else {
+      logger.error("Error updating via direct query:", error);
     }
   } catch (error) {
-    logger.error("Error with direct Supabase update:", error);
+    logger.error("Error with direct database update:", error);
   }
   
-  // Second attempt: try direct Supabase update without using a helper function
+  // If direct update failed, try the library function
   if (!updateSuccess) {
     try {
-      // Import and use supabase client directly for this attempt
-      const { supabase } = await import("@/integrations/supabase/client");
+      updateSuccess = await updateGuideInSupabase(
+        tourId, 
+        groupId, 
+        actualGuideId, 
+        groupName
+      );
       
-      logger.debug(`Trying direct database update for group ${groupId}`);
+      logger.debug(`Guide service update result: ${updateSuccess ? 'Success' : 'Failed'}`);
       
-      const { error } = await supabase
-        .from('tour_groups')
-        .update({
-          guide_id: actualGuideId,
-          name: groupName
-        })
-        .eq('id', groupId)
-        .eq('tour_id', tourId);
-        
-      if (!error) {
-        logger.debug("Successfully updated guide assignment with direct query");
-        updateSuccess = true;
-        return true;
-      } else {
-        logger.error("Error updating via direct query:", error);
-      }
+      if (updateSuccess) return true;
     } catch (error) {
-      logger.error("Error with direct database update:", error);
+      logger.error("Error with updateGuideInSupabase:", error);
     }
   }
   
@@ -155,22 +175,7 @@ export const persistGuideAssignmentChanges = async (
           // CRITICAL FIX: Always set size and childCount based on participants count
           sanitizedGroup.size = calculatedSize;
           sanitizedGroup.childCount = calculatedChildCount;
-        } else {
-          // CRITICAL FIX: If no participants, set size and childCount to 0
-          sanitizedGroup.size = 0;
-          sanitizedGroup.childCount = 0;
         }
-        
-        logger.debug(`BUGFIX: Group ${sanitizedGroup.id} after sanitization:`, {
-          name: sanitizedGroup.name,
-          participantsCount: Array.isArray(sanitizedGroup.participants) 
-            ? sanitizedGroup.participants.length 
-            : 0,
-          size: sanitizedGroup.size,
-          childCount: sanitizedGroup.childCount,
-          guideId: sanitizedGroup.guideId,
-          guide_id: sanitizedGroup.guide_id
-        });
         
         return sanitizedGroup;
       });
