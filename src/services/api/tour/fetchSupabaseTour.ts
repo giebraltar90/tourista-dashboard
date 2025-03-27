@@ -37,6 +37,9 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
     // Log successful fetch
     logger.debug(`DATABASE DEBUG: Successfully fetched tour ${tourId} from database`);
     
+    // Log raw tour data before processing
+    logger.info(`DATABASE DEBUG: Using Supabase tour data:`, [tour]);
+    
     // Fetch modifications
     const modifications = await fetchModificationsForTour(tourId);
     
@@ -48,11 +51,34 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
       return transformTourDataWithoutParticipants(tour, modifications);
     }
     
-    // Ensure tour_groups is an array
+    // We know the tour_groups field is in the database format, but let's be careful
     if (!tour.tour_groups || !Array.isArray(tour.tour_groups)) {
       logger.warn(`DATABASE DEBUG: Tour ${tourId} has no groups or invalid groups data`);
-      tour.tour_groups = [];
+      
+      // Before giving up, check if tourGroups might exist instead
+      if (tour.tourGroups && Array.isArray(tour.tourGroups)) {
+        tour.tour_groups = tour.tourGroups.map(group => ({
+          id: group.id,
+          name: group.name,
+          size: group.size,
+          child_count: group.childCount,
+          guide_id: group.guideId,
+          entry_time: group.entryTime
+        }));
+      } else {
+        // Initialize as empty array if not present
+        tour.tour_groups = [];
+      }
     }
+    
+    // Ensure the database format is valid for all tour_groups
+    tour.tour_groups = Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => ({
+      ...group,
+      id: group.id || crypto.randomUUID(), // Ensure ID exists
+      name: group.name || `Group (DB)`, // Ensure name exists
+      size: typeof group.size === 'number' ? group.size : 0, // Ensure size exists
+      child_count: typeof group.child_count === 'number' ? group.child_count : 0 // Ensure child_count exists
+    })) : [];
     
     // Fetch participants for each group
     const groupIds = tour.tour_groups ? tour.tour_groups.map(g => g.id).filter(Boolean) : [];

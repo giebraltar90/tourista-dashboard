@@ -24,14 +24,39 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     const tourData = await fetchTourFromSupabase(tourId);
     
     if (tourData) {
-      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`);
+      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`, {
+        rawData: JSON.stringify(tourData).slice(0, 200) + '...',
+        hasGroups: Array.isArray(tourData.tour_groups) || Array.isArray(tourData.tourGroups),
+        groupsCount: Array.isArray(tourData.tour_groups) 
+          ? tourData.tour_groups.length 
+          : (Array.isArray(tourData.tourGroups) ? tourData.tourGroups.length : 0),
+        location: tourData.location || 'Unknown'
+      });
+      
+      // Debug log to identify missing groups issue
+      if (tourData.tour_groups && Array.isArray(tourData.tour_groups)) {
+        logger.debug(`DATABASE DEBUG: Raw tour_groups from database:`, {
+          count: tourData.tour_groups.length,
+          groups: tourData.tour_groups.map(g => ({
+            id: g.id,
+            name: g.name,
+            size: g.size,
+            childCount: g.child_count
+          }))
+        });
+      }
       
       // Normalize data to ensure consistent format and safe date handling
       try {
         const normalizedTour = normalizeTourData(tourData, tourId);
         
         // Log successful normalization
-        logger.debug(`Tour data normalized successfully for ID ${tourId}`);
+        logger.debug(`Tour data normalized successfully for ID ${tourId}`, {
+          normalizedName: normalizedTour.tourName,
+          normalizedLocation: normalizedTour.location,
+          groupsCount: normalizedTour.tourGroups.length,
+          date: normalizedTour.date instanceof Date ? normalizedTour.date.toISOString() : String(normalizedTour.date)
+        });
         
         return normalizedTour;
       } catch (normalizeError) {

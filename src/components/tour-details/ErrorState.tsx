@@ -10,17 +10,23 @@ interface ErrorStateProps {
   message: string;
   tourId: string;
   onRetry?: () => void;
+  error?: Error | any;
 }
 
-export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
+export const ErrorState = ({ message, tourId, onRetry, error }: ErrorStateProps) => {
   // Log detailed error information
   useEffect(() => {
-    logger.error(`Tour details error state activated for tour ${tourId}:`, {
+    logger.error(`❌ Tour details error state activated for tour ${tourId}:`, {
       errorMessage: message,
+      errorObject: error ? { 
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      } : undefined,
       timestamp: new Date().toISOString(),
       hasRetryFunction: !!onRetry
     });
-  }, [message, tourId, onRetry]);
+  }, [message, tourId, onRetry, error]);
 
   return (
     <div className="container mx-auto py-6 space-y-6">
@@ -49,6 +55,15 @@ export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
         <p className="text-sm text-muted-foreground">
           This may be due to invalid data, connection issues, or the tour may no longer exist.
         </p>
+        
+        {error && (
+          <Alert variant="warning" className="max-w-lg mx-auto bg-amber-50 text-amber-800 border-amber-200">
+            <HelpCircle className="h-4 w-4" />
+            <AlertDescription className="text-left">
+              <strong>Error details:</strong> {error.message || 'Unknown error'}
+            </AlertDescription>
+          </Alert>
+        )}
         
         <div className="flex justify-center gap-4 mt-6">
           {onRetry && (

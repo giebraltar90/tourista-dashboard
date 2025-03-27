@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTour } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
@@ -28,7 +29,7 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     if (result.date) {
       try {
         // If it's a string that's not an ISO date, convert to a safe date format
-        if (typeof result.date === 'string' && !result.date.includes('T')) {
+        if (typeof result.date === 'string' && !result.date.toString().includes('T')) {
           // Force noon UTC to avoid timezone issues
           result.date = new Date(`${result.date}T12:00:00Z`);
         } 
@@ -62,6 +63,31 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     result.location = result.location || "Unknown location";
     result.startTime = result.startTime || "00:00";
     result.referenceCode = result.referenceCode || tourId.slice(0, 8);
+    
+    // Fix tour groups data if present from database
+    if (result.tour_groups && Array.isArray(result.tour_groups) && !result.tourGroups.length) {
+      logger.debug(`Converting tour_groups to tourGroups format for tour ${tourId}`);
+      
+      // Transform tour_groups (database format) to tourGroups (frontend format)
+      result.tourGroups = result.tour_groups.map(group => ({
+        id: group.id,
+        name: group.name || `Group ${group.id.slice(0, 6)}`,
+        size: group.size || 0,
+        childCount: group.child_count || 0,
+        guideId: group.guide_id || null,
+        guide_id: group.guide_id || null,
+        entryTime: group.entry_time || result.startTime || "00:00",
+        participants: group.participants || []
+      }));
+    }
+    
+    // Ensure guides are properly set
+    result.guide1 = result.guide1 || "";
+    result.guide2 = result.guide2 || "";
+    result.guide3 = result.guide3 || "";
+    result.guide1Id = result.guide1Id || result.guide1_id || "";
+    result.guide2Id = result.guide2Id || result.guide2_id || "";
+    result.guide3Id = result.guide3Id || result.guide3_id || "";
     
     logger.debug(`Successfully normalized tour ${tourId} data`);
     return result;

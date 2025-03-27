@@ -40,9 +40,14 @@ const TourDetailsPage = () => {
     if (tour) {
       logger.debug(`Successfully loaded tour: ${tour.tourName}`, {
         tourId: tour.id,
-        date: tour.date instanceof Date ? tour.date.toISOString() : 'Not a Date object',
+        date: tour.date instanceof Date ? tour.date.toISOString() : String(tour.date),
         tourDateType: typeof tour.date,
         location: tour.location,
+        groupsCount: tour.tourGroups?.length || 0,
+        firstGroupId: tour.tourGroups?.[0]?.id || 'none',
+        guide1: tour.guide1 || 'None',
+        guide2: tour.guide2 || 'None',
+        guide3: tour.guide3 || 'None'
       });
     }
   }, [tour]);
@@ -59,6 +64,39 @@ const TourDetailsPage = () => {
   
   if (isLoading || guidesLoading) {
     return <LoadingState />;
+  }
+  
+  // Handle edge case where tour data is empty but no error is thrown
+  if (!tour && !error) {
+    const mockTour = tryUseMockTour();
+    
+    if (mockTour) {
+      logger.debug("Tour data is empty but no error was thrown. Using mock tour as fallback.");
+      return (
+        <div className="container mx-auto py-6 space-y-8">
+          <div className="flex mb-4">
+            <Button 
+              variant="outline"
+              className="bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-200"
+              onClick={() => navigate("/tours")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Using demo data - Back to tours
+            </Button>
+          </div>
+          
+          <NormalizedTourContent
+            tour={mockTour}
+            tourId={tourId}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      );
+    }
   }
   
   if (error || !tour) {
@@ -100,7 +138,61 @@ const TourDetailsPage = () => {
       <ErrorState 
         message={errorMessage} 
         tourId={tourId} 
-        onRetry={() => refetch()} 
+        onRetry={() => refetch()}
+        error={error}
+      />
+    );
+  }
+  
+  // Check if we have a minimal valid tour with groups
+  const isTourDataValid = tour && 
+                       tour.id && 
+                       tour.tourName && 
+                       Array.isArray(tour.tourGroups);
+
+  if (!isTourDataValid) {
+    logger.error(`Tour data is invalid for ID ${tourId}:`, {
+      hasId: !!tour?.id,
+      hasTourName: !!tour?.tourName,
+      hasGroups: Array.isArray(tour?.tourGroups),
+      groupsCount: Array.isArray(tour?.tourGroups) ? tour.tourGroups.length : 0
+    });
+    
+    const mockTour = tryUseMockTour();
+    
+    if (mockTour) {
+      logger.debug("Tour data is invalid. Using mock tour as fallback.");
+      return (
+        <div className="container mx-auto py-6 space-y-8">
+          <div className="flex mb-4">
+            <Button 
+              variant="outline"
+              className="bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-200"
+              onClick={() => navigate("/tours")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Using demo data - Back to tours
+            </Button>
+          </div>
+          
+          <NormalizedTourContent
+            tour={mockTour}
+            tourId={tourId}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      );
+    }
+    
+    return (
+      <ErrorState 
+        message="The tour data appears to be invalid or incomplete." 
+        tourId={tourId} 
+        onRetry={() => refetch()}
       />
     );
   }
