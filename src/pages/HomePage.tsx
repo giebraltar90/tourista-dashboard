@@ -1,28 +1,68 @@
 
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useEffect } from "react";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { UpcomingTours } from "@/components/dashboard/UpcomingTours";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRole } from "@/contexts/RoleContext";
 
 const HomePage = () => {
-  const navigate = useNavigate();
+  const { adminView } = useRole();
   
-  useEffect(() => {
-    // Redirect to tours page for now
-    navigate("/tours");
-  }, [navigate]);
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="text-center space-y-6">
-        <h1 className="text-4xl font-bold">Welcome to Tour Management</h1>
-        <p className="max-w-md mx-auto text-muted-foreground">
-          Manage your tours, groups, and guides efficiently
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button onClick={() => navigate("/tours")}>View Tours</Button>
+    <DashboardLayout>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold tracking-tight">{adminView ? "Admin Dashboard" : "Tour Dashboard"}</h1>
         </div>
+        
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Tours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">24</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Guides</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Upcoming Tours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">8</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Today's Tours</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">2</div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Upcoming Tours</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <UpcomingTours />
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </DashboardLayout>
   );
 };
 

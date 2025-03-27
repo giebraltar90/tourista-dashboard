@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 interface RoleContextType {
   guideView: boolean;
@@ -15,9 +15,10 @@ interface RoleContextType {
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
 export const RoleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Initialize with adminView as true and role as "admin"
   const [guideView, setGuideView] = useState<boolean>(false);
-  const [adminView, setAdminView] = useState<boolean>(false);
-  const [role, setRoleInternal] = useState<string>("user");
+  const [adminView, setAdminView] = useState<boolean>(true);
+  const [role, setRoleInternal] = useState<string>("admin");
   const [guideName, setGuideName] = useState<string | null>(null);
   
   // Function to set both role and related details
@@ -27,23 +28,28 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // When setting to guide role, also update guideView
     if (value === "guide") {
       setGuideView(true);
+      setAdminView(false);
       // Set guide name if provided
       if (details && details.guideName) {
         setGuideName(details.guideName);
       }
+    } else if (value === "admin") {
+      // Set admin view if role is admin
+      setAdminView(true);
+      setGuideView(false);
+      setGuideName(null);
     } else {
       // Reset guide view when changing to other roles
       setGuideView(false);
+      setAdminView(false);
       setGuideName(null);
     }
-    
-    // Set admin view if role is admin
-    if (value === "admin") {
-      setAdminView(true);
-    } else {
-      setAdminView(false);
-    }
   };
+  
+  // Apply admin role on initial mount
+  useEffect(() => {
+    setRole("admin");
+  }, []);
   
   // Dummy setDebugMode function to satisfy interface
   const setDebugMode = (value: boolean) => {

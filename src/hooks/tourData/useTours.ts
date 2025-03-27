@@ -18,20 +18,30 @@ export const useTours = (options: UseToursOptions = {}) => {
     queryKey: ["tours"],
     queryFn: async (): Promise<TourCardProps[]> => {
       try {
-        logger.info("Fetching tours data");
-        return await fetchToursFromSupabase();
+        logger.debug("🔄 Fetching tours data from Supabase");
+        const toursData = await fetchToursFromSupabase();
+        
+        // Log response for debugging
+        logger.debug(`✅ Successfully fetched ${toursData.length} tours`);
+        
+        if (toursData.length === 0) {
+          logger.warn("⚠️ No tours returned from Supabase");
+        }
+        
+        return toursData;
       } catch (error) {
-        logger.error("Error in useTours hook:", error);
+        logger.error("❌ Error in useTours hook:", error);
         toast.error("Failed to load tours. Please try again.");
-        return [];
+        throw error; // Let React Query handle the retry
       }
     },
     // Pass through any options provided and add some defaults
     ...options,
-    enabled: (options.enabled !== false) && (isAuthenticated !== false),
-    staleTime: 60000, // 1 minute
+    enabled: (options.enabled !== false), // Always enable by default
+    staleTime: 30000, // 30 seconds
     retry: 3,
-    refetchOnWindowFocus: false,
-    refetchOnMount: true
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchInterval: 60000, // Refetch every minute
   });
 };
