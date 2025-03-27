@@ -1,92 +1,51 @@
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { checkAuth, API_ANON_KEY } from '@/integrations/supabase/auth';
+import { API_ANON_KEY } from '@/integrations/supabase/constants';
 import { logger } from '@/utils/logger';
-import { API_BASE_URL } from '@/integrations/supabase/constants';
 
 /**
- * Hook to check and monitor Supabase authentication status
+ * Hook to track Supabase authentication status
  */
 export const useSupabaseAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isChecking, setIsChecking] = useState(true);
-  
-  // Check authentication on mount
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    const checkAuthentication = async () => {
+    const checkAuth = async () => {
       try {
-        setIsChecking(true);
-        setError(null);
+        setIsLoading(true);
         
-        // Check network connectivity first
-        if (!navigator.onLine) {
-          logger.warn("Browser is offline, assuming authentication failed");
+        // Check API key validity
+        if (!API_ANON_KEY || API_ANON_KEY === 'YOUR_ANON_KEY') {
+          logger.warn("Missing or invalid Supabase API key");
           setIsAuthenticated(false);
-          setError("Network is offline");
-          setIsChecking(false);
           return;
         }
         
-        // Use try-catch for the auth check
-        try {
-          const authStatus = await checkAuth();
+        // Try a simple test query
+        const { error } = await supabase
+          .from('tours')
+          .select('id')
+          .limit(1);
           
-          setIsAuthenticated(authStatus.authenticated);
-          
-          if (!authStatus.authenticated) {
-            logger.error("Supabase authentication failed:", authStatus);
-            
-            if (authStatus.error) {
-              setError(authStatus.error);
-            } else {
-              setError("Authentication failed");
-            }
-          } else {
-            logger.debug("Supabase authentication is working");
-          }
-        } catch (authErr) {
-          logger.error("Error during auth check:", authErr);
+        if (error) {
+          logger.error("Auth check failed:", error);
           setIsAuthenticated(false);
-          setError(authErr instanceof Error ? authErr.message : String(authErr));
+        } else {
+          logger.debug("Auth check successful - API key is valid");
+          setIsAuthenticated(true);
         }
-      } catch (e) {
-        logger.error("Error in useSupabaseAuth hook:", e);
+      } catch (err) {
+        logger.error("Auth check exception:", err);
         setIsAuthenticated(false);
-        setError(e instanceof Error ? e.message : String(e));
       } finally {
-        setIsChecking(false);
+        setIsLoading(false);
       }
     };
     
-    // Execute authentication check
-    checkAuthentication();
-    
-    // Set up an interval to recheck auth status periodically
-    const authCheckInterval = setInterval(() => {
-      if (navigator.onLine) {
-        checkAuthentication();
-      }
-    }, 300000); // Check every 5 minutes
-    
-    // Also recheck when the app comes back online
-    const handleOnline = () => checkAuthentication();
-    window.addEventListener('online', handleOnline);
-    
-    // Clean up
-    return () => {
-      clearInterval(authCheckInterval);
-      window.removeEventListener('online', handleOnline);
-    };
+    checkAuth();
   }, []);
-  
-  // Provide auth information to components
-  return {
-    isAuthenticated,
-    isChecking,
-    error,
-    apiKey: API_ANON_KEY,
-    supabaseUrl: API_BASE_URL
-  };
+
+  return { isAuthenticated, isLoading };
 };

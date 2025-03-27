@@ -3,7 +3,7 @@ import { queryCache } from '../cache';
 import { logger } from '@/utils/logger';
 
 /**
- * Function to invalidate cache for a specific tour
+ * Invalidate cache for a specific tour
  */
 export const invalidateTourCache = (tourId: string) => {
   logger.debug(`Invalidating cache for tour ${tourId}`);

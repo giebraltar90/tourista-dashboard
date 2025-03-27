@@ -1,47 +1,33 @@
 
-import { useQuery } from '@tanstack/react-query';
-import { GuideInfo } from '@/types/ventrata';
-import { supabase } from '@/integrations/supabase/client';
-import { logger } from "@/utils/logger";
+import { TourCardProps } from "@/components/tours/tour-card/types";
+import { useGuides } from "../useGuides";
+import { GuideInfo } from "@/types/ventrata";
+import { useMemo } from "react";
 
 /**
- * Fetch guide information by ID
+ * Hook to extract guide information from a tour
  */
-const fetchGuideInfo = async (guideId: string): Promise<GuideInfo | null> => {
-  if (!guideId) return null;
+export const useGuideInfo = (tour?: TourCardProps | null) => {
+  const { guides, isLoading } = useGuides();
   
-  try {
-    const { data, error } = await supabase
-      .from('guides')
-      .select('id, name, guide_type')
-      .eq('id', guideId)
-      .single();
-      
-    if (error || !data) {
-      logger.error('Error fetching guide info:', error);
-      return null;
+  return useMemo(() => {
+    if (!tour || !guides || guides.length === 0) {
+      return { guide1Info: null, guide2Info: null, guide3Info: null, isLoading };
     }
-    
-    // Map from database format to application format
-    return {
-      id: data.id,
-      name: data.name,
-      guideType: data.guide_type
-    };
-  } catch (error) {
-    logger.error('Error in fetchGuideInfo:', error);
-    return null;
-  }
-};
 
-/**
- * Hook to get guide information by ID
- */
-export const useGuideInfo = (guideId: string) => {
-  return useQuery({
-    queryKey: ['guide', guideId],
-    queryFn: () => fetchGuideInfo(guideId),
-    enabled: !!guideId,
-    staleTime: 60000, // 1 minute
-  });
+    // Find the guide objects that match the IDs in the tour
+    const guide1Info = tour.guide1 
+      ? guides.find(guide => guide.id === tour.guide1) as GuideInfo || null
+      : null;
+      
+    const guide2Info = tour.guide2 
+      ? guides.find(guide => guide.id === tour.guide2) as GuideInfo || null
+      : null;
+      
+    const guide3Info = tour.guide3 
+      ? guides.find(guide => guide.id === tour.guide3) as GuideInfo || null
+      : null;
+
+    return { guide1Info, guide2Info, guide3Info, isLoading };
+  }, [tour, guides, isLoading]);
 };
