@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { LoadingState } from "@/components/tour-details/LoadingState";
@@ -6,33 +5,31 @@ import { ErrorState } from "@/components/tour-details/ErrorState";
 import { useTourById } from "@/hooks/useTourData";
 import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 import { logger } from "@/utils/logger";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { mockTours } from "@/data/mockData";
+import { ArrowLeft } from "lucide-react";
 
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("overview");
   
-  // Safeguard against undefined ID
   const tourId = id || "";
   
-  // Fetch tour data with error handling
   const { data: tour, isLoading, error, refetch } = useTourById(tourId);
   
-  // Fetch guide information if available
   const { guide1Info, guide2Info, guide3Info, isLoading: guidesLoading } = useTourGuideInfo(tour);
 
-  // Log errors for debugging
   useEffect(() => {
     if (error) {
       logger.error(`Failed to load tour with ID ${tourId}:`, error);
-      toast.error("Error loading tour data");
+      toast.error("Error loading tour data", {
+        description: "We couldn't load this tour. Please try again or check the ID."
+      });
     }
   }, [error, tourId]);
   
-  // Log when the tour is successfully loaded
   useEffect(() => {
     if (tour) {
       logger.debug(`Loaded tour: ${tour.tourName}`, {
@@ -42,12 +39,50 @@ const TourDetailsPage = () => {
       });
     }
   }, [tour]);
+
+  const tryUseMockTour = () => {
+    const mockTour = mockTours.find(t => t.id === tourId);
+    if (mockTour) {
+      logger.debug("Using mock tour data as fallback");
+      return mockTour;
+    }
+    return null;
+  };
   
   if (isLoading || guidesLoading) {
     return <LoadingState />;
   }
   
   if (error || !tour) {
+    const mockTour = tryUseMockTour();
+    
+    if (mockTour) {
+      logger.debug("Using mock tour as fallback after fetch error");
+      return (
+        <div className="container mx-auto py-6 space-y-8">
+          <div className="flex mb-4">
+            <button 
+              className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md text-sm flex items-center gap-2"
+              onClick={() => navigate("/tours")}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Using demo data - Back to tours
+            </button>
+          </div>
+          
+          <NormalizedTourContent
+            tour={mockTour}
+            tourId={tourId}
+            guide1Info={guide1Info}
+            guide2Info={guide2Info}
+            guide3Info={guide3Info}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </div>
+      );
+    }
+      
     const errorMessage = error instanceof Error 
       ? error.message 
       : "Unable to load tour. Please try again later.";
@@ -63,17 +98,14 @@ const TourDetailsPage = () => {
   
   return (
     <div className="container mx-auto py-6 space-y-8">
-      {/* Back button */}
       <div>
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <button 
+          className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md text-sm flex items-center gap-2"
           onClick={() => navigate("/tours")}
-          className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Tour Overview
-        </Button>
+        </button>
       </div>
       
       <NormalizedTourContent
@@ -82,8 +114,8 @@ const TourDetailsPage = () => {
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}
-        activeTab="overview"
-        onTabChange={(tab) => logger.debug(`Tab changed to ${tab}`)}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
       />
     </div>
   );

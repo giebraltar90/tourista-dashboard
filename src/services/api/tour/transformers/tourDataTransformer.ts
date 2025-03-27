@@ -7,9 +7,19 @@ import { SupabaseTourData, SupabaseModification, SupabaseParticipant } from "../
  */
 export const transformTourData = (
   tour: SupabaseTourData, 
-  modifications: SupabaseModification[],
+  modifications: SupabaseModification[] = [],
   participants: SupabaseParticipant[] = []
 ): TourCardProps => {
+  // Safeguard against undefined tour data
+  if (!tour) {
+    console.error("Null or undefined tour data provided to transformTourData");
+    throw new Error("Invalid tour data");
+  }
+
+  // Ensure tour_groups is always an array
+  const tourGroups = Array.isArray(tour.tour_groups) ? tour.tour_groups : [];
+  console.log("DATABASE DEBUG: Processing tour groups:", tourGroups);
+
   return {
     id: tour.id,
     date: new Date(tour.date),
@@ -21,10 +31,24 @@ export const transformTourData = (
     guide1: tour.guide1_id || "",
     guide2: tour.guide2_id || "",
     guide3: tour.guide3_id || "",
-    tourGroups: tour.tour_groups.map(group => {
+    tourGroups: tourGroups.map(group => {
+      // Ensure group is not null
+      if (!group) {
+        console.warn("Null group found in tour data");
+        return {
+          id: "unknown",
+          name: "Unknown Group",
+          size: 0,
+          entryTime: "9:00",
+          childCount: 0,
+          guideId: null,
+          participants: []
+        };
+      }
+
       // Find participants for this group
       const groupParticipants = participants
-        .filter(p => p.group_id === group.id)
+        .filter(p => p && p.group_id === group.id)
         .map(p => ({
           id: p.id,
           name: p.name,
@@ -61,14 +85,14 @@ export const transformTourData = (
     }),
     numTickets: tour.num_tickets || 0,
     isHighSeason: Boolean(tour.is_high_season),
-    modifications: modifications.map(mod => ({
+    modifications: modifications ? modifications.map(mod => ({
       id: mod.id,
       date: new Date(mod.created_at),
       user: mod.user_id || "System",
       description: mod.description,
       status: mod.status,
       details: mod.details || {}
-    }))
+    })) : []
   };
 };
 
@@ -77,8 +101,17 @@ export const transformTourData = (
  */
 export const transformTourDataWithoutParticipants = (
   tour: SupabaseTourData, 
-  modifications: SupabaseModification[]
+  modifications: SupabaseModification[] = []
 ): TourCardProps => {
+  // Safeguard against undefined tour data
+  if (!tour) {
+    console.error("Null or undefined tour data provided to transformTourDataWithoutParticipants");
+    throw new Error("Invalid tour data");
+  }
+
+  // Ensure tour_groups is always an array
+  const tourGroups = Array.isArray(tour.tour_groups) ? tour.tour_groups : [];
+
   return {
     id: tour.id,
     date: new Date(tour.date),
@@ -90,15 +123,29 @@ export const transformTourDataWithoutParticipants = (
     guide1: tour.guide1_id || "",
     guide2: tour.guide2_id || "",
     guide3: tour.guide3_id || "",
-    tourGroups: tour.tour_groups ? tour.tour_groups.map(group => ({
-      id: group.id,
-      name: group.name,
-      size: group.size || 0,
-      entryTime: group.entry_time || "9:00",
-      childCount: group.child_count || 0,
-      guideId: group.guide_id,
-      participants: []
-    })) : [],
+    tourGroups: tourGroups.map(group => {
+      if (!group) {
+        return {
+          id: "unknown",
+          name: "Unknown Group",
+          size: 0,
+          entryTime: "9:00",
+          childCount: 0,
+          guideId: null,
+          participants: []
+        };
+      }
+      
+      return {
+        id: group.id,
+        name: group.name,
+        size: group.size || 0,
+        entryTime: group.entry_time || "9:00",
+        childCount: group.child_count || 0,
+        guideId: group.guide_id,
+        participants: []
+      };
+    }),
     numTickets: tour.num_tickets || 0,
     isHighSeason: Boolean(tour.is_high_season),
     modifications: modifications ? modifications.map(mod => ({
