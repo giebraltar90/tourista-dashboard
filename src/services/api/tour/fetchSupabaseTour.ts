@@ -55,8 +55,9 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
     if (!tour.tour_groups || !Array.isArray(tour.tour_groups)) {
       logger.warn(`DATABASE DEBUG: Tour ${tourId} has no groups or invalid groups data`);
       
-      // Before giving up, check if tourGroups might exist instead
+      // Before giving up, check if tourGroups might exist instead (though unlikely in DB format)
       if (tour.tourGroups && Array.isArray(tour.tourGroups)) {
+        // Convert from frontend format to database format for consistency
         tour.tour_groups = tour.tourGroups.map(group => ({
           id: group.id,
           name: group.name,
