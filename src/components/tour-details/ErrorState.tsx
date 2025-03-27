@@ -31,11 +31,13 @@ export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
       </Alert>
       
       <div className="p-8 bg-muted rounded-lg text-center space-y-4">
-        <h2 className="text-xl font-medium">Unable to Load Tour Data</h2>
+        <h2 className="text-xl font-medium">Unable to Load Tour Details</h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          {message || "There was an error loading the tour information. Please try again."}
+          We couldn't load the tour with ID: {tourId || "Unknown"}
         </p>
-        <p className="text-sm text-muted-foreground">Tour ID: {tourId || "Unknown"}</p>
+        <p className="text-sm text-muted-foreground">
+          {message || "There was an error loading the tour information."}
+        </p>
         
         <div className="flex justify-center gap-4 mt-6">
           {onRetry && (

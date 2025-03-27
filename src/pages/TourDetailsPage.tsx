@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { LoadingState } from "@/components/tour-details/LoadingState";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { mockTours } from "@/data/mockData";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,6 +18,8 @@ const TourDetailsPage = () => {
   const [activeTab, setActiveTab] = useState("overview");
   
   const tourId = id || "";
+  
+  logger.debug(`Attempting to load tour with ID: ${tourId}`);
   
   const { data: tour, isLoading, error, refetch } = useTourById(tourId);
   
@@ -32,7 +36,7 @@ const TourDetailsPage = () => {
   
   useEffect(() => {
     if (tour) {
-      logger.debug(`Loaded tour: ${tour.tourName}`, {
+      logger.debug(`Successfully loaded tour: ${tour.tourName}`, {
         tourId: tour.id,
         date: tour.date,
         location: tour.location,
@@ -61,13 +65,14 @@ const TourDetailsPage = () => {
       return (
         <div className="container mx-auto py-6 space-y-8">
           <div className="flex mb-4">
-            <button 
-              className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md text-sm flex items-center gap-2"
+            <Button 
+              variant="warning"
+              className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
               onClick={() => navigate("/tours")}
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-4 w-4 mr-2" />
               Using demo data - Back to tours
-            </button>
+            </Button>
           </div>
           
           <NormalizedTourContent
@@ -99,13 +104,14 @@ const TourDetailsPage = () => {
   return (
     <div className="container mx-auto py-6 space-y-8">
       <div>
-        <button 
-          className="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md text-sm flex items-center gap-2"
+        <Button 
+          variant="outline"
           onClick={() => navigate("/tours")}
+          className="flex items-center gap-2"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to Tour Overview
-        </button>
+        </Button>
       </div>
       
       <NormalizedTourContent

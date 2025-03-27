@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { CalendarIcon, Clock, Map, Tag } from "lucide-react";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 
 interface TourInfoGridProps {
   tour: TourCardProps;
@@ -13,13 +13,18 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
   // Format the date properly, handling both Date objects and string dates
   const formatTourDate = (date: Date | string) => {
     try {
-      if (typeof date === 'string') {
-        return format(new Date(date), 'PP');
+      // Convert string dates to Date objects
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+      
+      // Check if the date is valid before formatting
+      if (!isValid(dateObj)) {
+        return "Invalid date";
       }
-      return format(date, 'PP');
+      
+      return format(dateObj, 'PP');
     } catch (error) {
       console.error("Error formatting date:", error);
-      return String(date);
+      return "Date unavailable";
     }
   };
 
