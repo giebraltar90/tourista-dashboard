@@ -8,6 +8,8 @@ import { GroupsManagement } from "./groups-management/GroupsManagement";
 import { useEffect } from "react";
 import { logger } from "@/utils/logger";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
 interface NormalizedTourContentProps {
   tour: TourCardProps;
@@ -32,9 +34,9 @@ export const NormalizedTourContent = ({
   useEffect(() => {
     logger.debug("NormalizedTourContent rendered with tour:", {
       tourId,
-      tourName: tour.tourName,
-      date: tour.date,
-      location: tour.location
+      tourName: tour?.tourName || 'Unknown',
+      date: tour?.date ? (tour.date instanceof Date ? tour.date.toISOString() : tour.date) : 'Unknown',
+      location: tour?.location || 'Unknown'
     });
   }, [tour, tourId]);
 
@@ -47,6 +49,19 @@ export const NormalizedTourContent = ({
       toast.error("An error occurred while changing tabs");
     }
   };
+
+  // Validate tour data
+  if (!tour || !tour.id) {
+    return (
+      <Alert variant="destructive">
+        <AlertTriangle className="h-4 w-4" />
+        <AlertTitle>Invalid Tour Data</AlertTitle>
+        <AlertDescription>
+          The tour data appears to be missing or invalid. Please try returning to the tour list and selecting again.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <Card>

@@ -66,7 +66,7 @@ const TourDetailsPage = () => {
         <div className="container mx-auto py-6 space-y-8">
           <div className="flex mb-4">
             <Button 
-              variant="warning"
+              variant="secondary"
               className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
               onClick={() => navigate("/tours")}
             >

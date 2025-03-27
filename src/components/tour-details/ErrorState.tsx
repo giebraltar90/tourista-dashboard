@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ArrowLeft, RefreshCw, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { logger } from "@/utils/logger";
 
 interface ErrorStateProps {
   message: string;
@@ -11,6 +13,15 @@ interface ErrorStateProps {
 }
 
 export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
+  // Log detailed error information
+  useEffect(() => {
+    logger.error(`Tour details error state activated for tour ${tourId}:`, {
+      errorMessage: message,
+      timestamp: new Date().toISOString(),
+      hasRetryFunction: !!onRetry
+    });
+  }, [message, tourId, onRetry]);
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex mb-4">

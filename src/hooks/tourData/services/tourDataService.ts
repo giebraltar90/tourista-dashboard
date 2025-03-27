@@ -17,12 +17,34 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
   }
   
   try {
+    // Log the start of the fetch operation
+    logger.debug(`Starting tour data fetch for ID: ${tourId}`);
+    
     // Try to fetch from Supabase first
     const tourData = await fetchTourFromSupabase(tourId);
     
     if (tourData) {
-      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`);
-      return normalizeTourData(tourData, tourId);
+      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`, {
+        tourId: tourData.id,
+        tourName: tourData.tourName,
+        dateType: typeof tourData.date,
+        dateValue: JSON.stringify(tourData.date),
+        groupCount: tourData.tourGroups?.length || 0
+      });
+      
+      // Normalize data to ensure consistent format
+      const normalizedTour = normalizeTourData(tourData, tourId);
+      
+      // Log the normalized data
+      logger.debug(`Tour data normalized for ID ${tourId}`, {
+        tourId: normalizedTour.id,
+        dateType: typeof normalizedTour.date,
+        dateValue: normalizedTour.date instanceof Date 
+          ? normalizedTour.date.toISOString() 
+          : JSON.stringify(normalizedTour.date)
+      });
+      
+      return normalizedTour;
     }
     
     // If no data found in Supabase, use fallback to mock data
@@ -30,6 +52,7 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     const mockTour = mockTours.find(tour => tour.id === tourId);
     
     if (mockTour) {
+      logger.debug(`Found matching mock tour for ID ${tourId}`);
       return normalizeTourData(mockTour, tourId);
     }
     
@@ -48,6 +71,7 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     const mockTour = mockTours.find(tour => tour.id === tourId);
     
     if (mockTour) {
+      logger.debug(`Found matching mock tour for ID ${tourId} to use as fallback`);
       return normalizeTourData(mockTour, tourId);
     }
     
