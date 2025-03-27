@@ -1,4 +1,3 @@
-
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTour } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
@@ -19,7 +18,20 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     // Ensure tourGroups is an array
     if (!Array.isArray(result.tourGroups)) {
       logger.warn(`Tour ${tourId} has invalid or missing tour groups, initializing empty array`);
-      result.tourGroups = [];
+      result.tourGroups = tourData.tour_groups ? [...tourData.tour_groups] : [];
+    }
+    
+    // Convert snake_case to camelCase if needed
+    if (!result.tourGroups.length && Array.isArray(tourData.tour_groups)) {
+      result.tourGroups = tourData.tour_groups.map((group: any) => ({
+        id: group.id,
+        name: group.name || `Group`,
+        size: group.size || 0,
+        childCount: group.child_count || 0,
+        guideId: group.guide_id || null,
+        entryTime: group.entry_time || "00:00",
+        participants: group.participants || []
+      }));
     }
     
     // Ensure ID is set
@@ -64,46 +76,25 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
       result.date = new Date();
     }
     
+    // Fix property mappings from database fields
+    if (tourData.tour_name && !result.tourName) result.tourName = tourData.tour_name;
+    if (tourData.tour_type && !result.tourType) result.tourType = tourData.tour_type;
+    if (tourData.location && !result.location) result.location = tourData.location;
+    if (tourData.start_time && !result.startTime) result.startTime = tourData.start_time;
+    if (tourData.reference_code && !result.referenceCode) result.referenceCode = tourData.reference_code;
+    if (tourData.guide1_id && !result.guide1) result.guide1 = tourData.guide1_id;
+    if (tourData.guide2_id && !result.guide2) result.guide2 = tourData.guide2_id;
+    if (tourData.guide3_id && !result.guide3) result.guide3 = tourData.guide3_id;
+    
     // Ensure other essential properties have default values
     result.tourName = result.tourName || `Tour ${tourId.slice(0, 8)}`;
     result.tourType = result.tourType || "default";
     result.location = result.location || "Unknown location";
     result.startTime = result.startTime || "00:00";
     result.referenceCode = result.referenceCode || tourId.slice(0, 8);
-    
-    // Handle snake_case to camelCase conversion for database properties
-    // The issue is that the database returns snake_case but our frontend uses camelCase
-    const dbData = tourData as Record<string, any>;
-    if (dbData.tour_name && !result.tourName) result.tourName = dbData.tour_name;
-    if (dbData.tour_type && !result.tourType) result.tourType = dbData.tour_type;
-    if (dbData.start_time && !result.startTime) result.startTime = dbData.start_time;
-    if (dbData.reference_code && !result.referenceCode) result.referenceCode = dbData.reference_code;
-    
-    // Fix tour groups data if present from database
-    if (dbData.tour_groups && Array.isArray(dbData.tour_groups) && !result.tourGroups.length) {
-      logger.debug(`Converting tour_groups to tourGroups format for tour ${tourId}`);
-      
-      // Transform tour_groups (database format) to tourGroups (frontend format)
-      result.tourGroups = dbData.tour_groups.map((group: any) => ({
-        id: group.id,
-        name: group.name || `Group ${group.id.slice(0, 6)}`,
-        size: group.size || 0,
-        childCount: group.child_count || 0,
-        guideId: group.guide_id || null,
-        entryTime: group.entry_time || result.startTime || "00:00",
-        participants: group.participants || []
-      }));
-    }
-    
-    // Ensure guides are properly set using camelCase
     result.guide1 = result.guide1 || "";
     result.guide2 = result.guide2 || "";
     result.guide3 = result.guide3 || "";
-    
-    // Handle guide ID conversions from snake_case to camelCase
-    if (!result.guide1Id) result.guide1Id = dbData.guide1_id || "";
-    if (!result.guide2Id) result.guide2Id = dbData.guide2_id || "";
-    if (!result.guide3Id) result.guide3Id = dbData.guide3_id || "";
     
     logger.debug(`Successfully normalized tour ${tourId} data`);
     return result as TourCardProps;

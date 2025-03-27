@@ -25,10 +25,10 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     
     if (tourData) {
       logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`, {
-        rawData: JSON.stringify(tourData).slice(0, 200) + '...',
+        tourName: tourData.tourName || 'Unknown',
+        location: tourData.location || 'Unknown',
         hasGroups: Array.isArray(tourData.tourGroups),
-        groupsCount: Array.isArray(tourData.tourGroups) ? tourData.tourGroups.length : 0,
-        location: tourData.location || 'Unknown'
+        groupsCount: Array.isArray(tourData.tourGroups) ? tourData.tourGroups.length : 0
       });
       
       // Normalize data to ensure consistent format and safe date handling
@@ -46,12 +46,25 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
         return normalizedTour;
       } catch (normalizeError) {
         logger.error(`Failed to normalize tour data for ID ${tourId}:`, normalizeError);
-        throw normalizeError;
+        
+        // If normalization fails, try to use the original data with minimal fixing
+        try {
+          // Apply minimal fixes to make it valid
+          tourData.date = tourData.date || new Date();
+          tourData.tourGroups = Array.isArray(tourData.tourGroups) ? tourData.tourGroups : [];
+          tourData.tourName = tourData.tourName || `Tour ${tourId.slice(0, 8)}`;
+          tourData.location = tourData.location || 'Unknown location';
+          
+          return tourData;
+        } catch (e) {
+          logger.error(`Even minimal fixing failed for tour ${tourId}:`, e);
+          throw normalizeError;
+        }
       }
     }
     
     // If no data found in Supabase, use fallback to mock data
-    logger.info(`No tour data found in Supabase for tour ${tourId}, using mock data`);
+    logger.info(`No tour data found in Supabase for tour ${tourId}, checking mock data`);
     const mockTour = mockTours.find(tour => tour.id === tourId);
     
     if (mockTour) {

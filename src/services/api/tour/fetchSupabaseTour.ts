@@ -38,7 +38,7 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
     logger.debug(`DATABASE DEBUG: Successfully fetched tour ${tourId} from database`);
     
     // Log raw tour data before processing
-    logger.info(`DATABASE DEBUG: Using Supabase tour data:`, [tour]);
+    logger.debug(`DATABASE DEBUG: Raw tour data from Supabase:`, tour);
     
     // Fetch modifications
     const modifications = await fetchModificationsForTour(tourId);
@@ -46,33 +46,41 @@ export const fetchTourFromSupabase = async (tourId: string): Promise<TourCardPro
     // Check if the participants table exists
     const participantsTableExists = await checkParticipantsTable();
     
+    // Make sure tour_groups is not undefined or null
+    if (!tour.tour_groups) {
+      logger.warn(`DATABASE DEBUG: Tour ${tourId} has no groups data, initializing as empty array`);
+      tour.tour_groups = [];
+    } else if (!Array.isArray(tour.tour_groups)) {
+      logger.warn(`DATABASE DEBUG: Tour ${tourId} has invalid tour_groups data, expected array`);
+      // Try to convert it to an array if possible
+      tour.tour_groups = Array.isArray(tour.tour_groups) ? tour.tour_groups : [];
+    }
+    
+    // Ensure the database format is valid for all tour_groups
+    tour.tour_groups = Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => {
+      if (!group) return null;
+      
+      return {
+        ...group,
+        id: group.id || crypto.randomUUID(), // Ensure ID exists
+        name: group.name || `Group`, // Ensure name exists
+        size: typeof group.size === 'number' ? group.size : 0, // Ensure size exists
+        child_count: typeof group.child_count === 'number' ? group.child_count : 0 // Ensure child_count exists
+      };
+    }).filter(Boolean) : [];
+    
+    logger.debug(`DATABASE DEBUG: Processed ${tour.tour_groups.length} tour groups`);
+    
     if (!participantsTableExists) {
       logger.debug("DATABASE DEBUG: Participants table doesn't exist, returning tour without participants");
       return transformTourDataWithoutParticipants(tour, modifications);
     }
     
-    // We know the tour_groups field is in the database format, but let's be careful
-    if (!tour.tour_groups || !Array.isArray(tour.tour_groups)) {
-      logger.warn(`DATABASE DEBUG: Tour ${tourId} has no groups or invalid groups data`);
-      
-      // Initialize as empty array if not present
-      tour.tour_groups = [];
-    }
-    
-    // Ensure the database format is valid for all tour_groups
-    tour.tour_groups = Array.isArray(tour.tour_groups) ? tour.tour_groups.map(group => ({
-      ...group,
-      id: group.id || crypto.randomUUID(), // Ensure ID exists
-      name: group.name || `Group (DB)`, // Ensure name exists
-      size: typeof group.size === 'number' ? group.size : 0, // Ensure size exists
-      child_count: typeof group.child_count === 'number' ? group.child_count : 0 // Ensure child_count exists
-    })) : [];
-    
     // Fetch participants for each group
-    const groupIds = tour.tour_groups ? tour.tour_groups.map(g => g.id).filter(Boolean) : [];
+    const groupIds = tour.tour_groups.map(g => g.id).filter(Boolean);
     
     if (groupIds.length === 0) {
-      logger.debug(`DATABASE DEBUG: No groups found for tour ${tourId}`);
+      logger.debug(`DATABASE DEBUG: No valid groups found for tour ${tourId}`);
       return transformTourDataWithoutParticipants(tour, modifications);
     }
     

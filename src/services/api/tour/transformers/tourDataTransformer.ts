@@ -17,10 +17,6 @@ export const transformTourData = (
     throw new Error("Invalid tour data");
   }
 
-  // Ensure tour_groups is always an array
-  const tourGroups = Array.isArray(tour.tour_groups) ? tour.tour_groups : [];
-  logger.debug("DATABASE DEBUG: Processing tour groups:", tourGroups);
-
   try {
     // Safely create a date
     let tourDate: Date;
@@ -43,14 +39,18 @@ export const transformTourData = (
       tourDate = new Date(); // Fallback to current date
     }
 
+    // Ensure tour_groups is always an array
+    const tourGroups = Array.isArray(tour.tour_groups) ? tour.tour_groups : [];
+    logger.debug("DATABASE DEBUG: Processing tour groups:", tourGroups);
+
     const result: TourCardProps = {
       id: tour.id,
       date: tourDate,
-      location: tour.location,
-      tourName: tour.tour_name,
-      tourType: tour.tour_type,
-      startTime: tour.start_time,
-      referenceCode: tour.reference_code,
+      location: tour.location || "Unknown location",
+      tourName: tour.tour_name || "Unknown Tour",
+      tourType: tour.tour_type || "default",
+      startTime: tour.start_time || "00:00",
+      referenceCode: tour.reference_code || "Unknown",
       guide1: tour.guide1_id || "",
       guide2: tour.guide2_id || "",
       guide3: tour.guide3_id || "",
@@ -88,8 +88,8 @@ export const transformTourData = (
         const participantChildCount = groupParticipants.reduce((total, p) => total + (p.childCount || 0), 0);
         
         return {
-          id: group.id,
-          name: group.name,
+          id: group.id || crypto.randomUUID(),
+          name: group.name || `Group`,
           size: groupParticipants.length > 0 ? participantSize : (group.size || 0),
           entryTime: group.entry_time || "9:00", // Default if not provided
           childCount: groupParticipants.length > 0 ? participantChildCount : (group.child_count || 0),
@@ -117,7 +117,7 @@ export const transformTourData = (
     return {
       id: tour.id,
       date: new Date(),
-      location: tour.location || "Unknown",
+      location: tour.location || "Unknown location",
       tourName: tour.tour_name || "Unknown Tour",
       tourType: tour.tour_type || "default",
       startTime: tour.start_time || "00:00",

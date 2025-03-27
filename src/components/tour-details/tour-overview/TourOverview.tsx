@@ -27,7 +27,8 @@ export const TourOverview = ({ tour, guide1Info, guide2Info, guide3Info }: TourO
       startTime: tour.startTime,
       hasGuide1: !!guide1Info,
       hasGuide2: !!guide2Info,
-      hasGuide3: !!guide3Info
+      hasGuide3: !!guide3Info,
+      tourGroups: tour.tourGroups?.length || 0
     });
   }, [tour, guide1Info, guide2Info, guide3Info]);
 
