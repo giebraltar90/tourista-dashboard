@@ -7,6 +7,7 @@ import { TourOverview } from "./tour-overview/TourOverview";
 import { GroupsManagement } from "./groups-management/GroupsManagement";
 import { useEffect } from "react";
 import { logger } from "@/utils/logger";
+import { toast } from "sonner";
 
 interface NormalizedTourContentProps {
   tour: TourCardProps;
@@ -37,10 +38,20 @@ export const NormalizedTourContent = ({
     });
   }, [tour, tourId]);
 
+  // Handle tab changes safely
+  const handleTabChange = (value: string) => {
+    try {
+      onTabChange(value);
+    } catch (error) {
+      logger.error("Error changing tab:", error);
+      toast.error("An error occurred while changing tabs");
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-0">
-        <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="grid grid-cols-2 w-full rounded-b-none">
             <TabsTrigger value="overview">Tour Overview</TabsTrigger>
             <TabsTrigger value="groups">Groups & Participants</TabsTrigger>

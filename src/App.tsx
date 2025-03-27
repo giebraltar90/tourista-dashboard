@@ -36,6 +36,7 @@ function App() {
             <Route path="/" element={<HomePage />} />
             <Route path="/tours" element={<ToursPage />} />
             <Route path="/tour/:id" element={<TourDetailsPage />} />
+            <Route path="/tours/:id" element={<TourDetailsPage />} />
             <Route path="/guide" element={<GuideLogin />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>

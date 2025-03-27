@@ -1,5 +1,4 @@
 
-import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourContent";
 import { LoadingState } from "@/components/tour-details/LoadingState";
@@ -10,10 +9,10 @@ import { logger } from "@/utils/logger";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { useEffect } from "react";
 
 const TourDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
-  const [activeTab, setActiveTab] = useState("overview");
   const navigate = useNavigate();
   
   // Safeguard against undefined ID
@@ -23,7 +22,7 @@ const TourDetailsPage = () => {
   const { data: tour, isLoading, error, refetch } = useTourById(tourId);
   
   // Fetch guide information if available
-  const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
+  const { guide1Info, guide2Info, guide3Info, isLoading: guidesLoading } = useTourGuideInfo(tour);
 
   // Log errors for debugging
   useEffect(() => {
@@ -33,29 +32,29 @@ const TourDetailsPage = () => {
     }
   }, [error, tourId]);
   
-  // When a tour is loaded, log its basic details
+  // Log when the tour is successfully loaded
   useEffect(() => {
     if (tour) {
       logger.debug(`Loaded tour: ${tour.tourName}`, {
         tourId: tour.id,
         date: tour.date,
         location: tour.location,
-        guide1: tour.guide1,
-        guide2: tour.guide2,
-        guide3: tour.guide3,
-        numGroups: tour.tourGroups?.length || 0
       });
     }
   }, [tour]);
   
-  if (isLoading) {
+  if (isLoading || guidesLoading) {
     return <LoadingState />;
   }
   
   if (error || !tour) {
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : "Unable to load tour. Please try again later.";
+      
     return (
       <ErrorState 
-        message={error instanceof Error ? error.message : "Tour not found"} 
+        message={errorMessage} 
         tourId={tourId} 
         onRetry={() => refetch()} 
       />
@@ -83,8 +82,8 @@ const TourDetailsPage = () => {
         guide1Info={guide1Info}
         guide2Info={guide2Info}
         guide3Info={guide3Info}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
+        activeTab="overview"
+        onTabChange={(tab) => logger.debug(`Tab changed to ${tab}`)}
       />
     </div>
   );

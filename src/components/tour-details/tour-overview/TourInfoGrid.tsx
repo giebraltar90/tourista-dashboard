@@ -8,6 +8,15 @@ interface TourInfoGridProps {
 }
 
 export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMMM d, yyyy');
+    } catch (error) {
+      console.error("Invalid date format:", dateString);
+      return dateString;
+    }
+  };
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card>
@@ -20,7 +29,7 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
       <Card>
         <CardContent className="p-4">
           <h3 className="font-medium text-sm text-muted-foreground mb-1">Date</h3>
-          <p className="font-semibold">{format(new Date(tour.date), 'MMMM d, yyyy')}</p>
+          <p className="font-semibold">{formatDate(tour.date)}</p>
         </CardContent>
       </Card>
       

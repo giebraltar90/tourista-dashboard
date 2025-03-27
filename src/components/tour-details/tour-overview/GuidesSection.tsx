@@ -10,17 +10,13 @@ interface GuidesSectionProps {
 }
 
 export const GuidesSection = ({ guide1Info, guide2Info, guide3Info }: GuidesSectionProps) => {
-  const guides = [
-    { info: guide1Info, label: "Primary Guide" },
-    { info: guide2Info, label: "Secondary Guide" },
-    { info: guide3Info, label: "Third Guide" }
-  ].filter(guide => guide.info);
+  const hasAnyGuide = guide1Info || guide2Info || guide3Info;
   
-  if (guides.length === 0) {
+  if (!hasAnyGuide) {
     return (
       <Card>
         <CardContent className="p-4">
-          <p className="text-muted-foreground">No guides assigned to this tour.</p>
+          <p className="text-muted-foreground">No guides have been assigned to this tour yet.</p>
         </CardContent>
       </Card>
     );
@@ -28,17 +24,41 @@ export const GuidesSection = ({ guide1Info, guide2Info, guide3Info }: GuidesSect
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {guides.map((guide, index) => (
-        <Card key={index}>
+      {guide1Info && (
+        <Card>
           <CardContent className="p-4">
-            <h3 className="font-medium text-sm text-muted-foreground mb-1">{guide.label}</h3>
-            <div className="flex flex-col gap-1">
-              <p className="font-semibold">{guide.info?.name || "Unnamed Guide"}</p>
-              <Badge variant="outline" className="w-fit">{guide.info?.guideType || "GA Ticket"}</Badge>
-            </div>
+            <h3 className="font-medium text-sm text-muted-foreground mb-1">Guide 1</h3>
+            <p className="font-semibold">{guide1Info.name}</p>
+            <Badge variant="outline" className="mt-2">
+              {guide1Info.guideType}
+            </Badge>
           </CardContent>
         </Card>
-      ))}
+      )}
+      
+      {guide2Info && (
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-medium text-sm text-muted-foreground mb-1">Guide 2</h3>
+            <p className="font-semibold">{guide2Info.name}</p>
+            <Badge variant="outline" className="mt-2">
+              {guide2Info.guideType}
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
+      
+      {guide3Info && (
+        <Card>
+          <CardContent className="p-4">
+            <h3 className="font-medium text-sm text-muted-foreground mb-1">Guide 3</h3>
+            <p className="font-semibold">{guide3Info.name}</p>
+            <Badge variant="outline" className="mt-2">
+              {guide3Info.guideType}
+            </Badge>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -24,9 +24,9 @@ export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
       <div className="p-8 bg-muted rounded-lg text-center space-y-4">
         <h2 className="text-xl font-medium">Error Loading Tour</h2>
         <p className="text-muted-foreground max-w-lg mx-auto">
-          {message}
+          {message || "There was an error loading the tour information. Please try again."}
         </p>
-        <p className="text-sm text-muted-foreground">Tour ID: {tourId}</p>
+        <p className="text-sm text-muted-foreground">Tour ID: {tourId || "Unknown"}</p>
         
         {onRetry && (
           <Button onClick={onRetry} className="mt-4 flex items-center gap-2">
