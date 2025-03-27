@@ -1,6 +1,6 @@
 
 import { supabase, testSupabaseConnection } from './client';
-import { checkDatabaseConnection } from './connectivity';
+import { checkDatabaseConnection } from './connectivity/databaseCheck';
 import { logger } from '@/utils/logger';
 
 // Export all functionality

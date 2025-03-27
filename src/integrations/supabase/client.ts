@@ -4,6 +4,7 @@ import { queryCache } from './cache';
 import { supabaseWithRetry } from './retry';
 import { FETCH_TIMEOUT, API_BASE_URL, API_ANON_KEY } from './constants';
 import { logger } from '@/utils/logger';
+import { checkDatabaseConnection } from './connectivity/databaseCheck';
 
 // Custom fetch implementation with better error handling and CORS support
 const customFetch = (url, options) => {
@@ -73,7 +74,7 @@ export const createClient = createSupabaseClient;
 // Re-export utility functions for easier access
 export { queryCache, supabaseWithRetry };
 export { 
-  checkDatabaseConnection, 
+  checkDatabaseConnection,
   getTourStatistics, 
   invalidateTourCache, 
   disableRealtimeSubscriptions 
