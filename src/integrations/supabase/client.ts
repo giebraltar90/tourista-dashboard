@@ -5,6 +5,7 @@ import { supabaseWithRetry } from './retry';
 import { API_BASE_URL, API_ANON_KEY } from './constants';
 import { customFetch } from './fetch';
 import { getSupabaseUrl, getSupabaseKey } from './helpers';
+import { testSupabaseConnection } from './connectionTest';
 
 // Supabase client initialization with improved retry and timeout settings
 export const supabase = createSupabaseClient(
@@ -36,6 +37,7 @@ export const createClient = createSupabaseClient;
 // Re-export utility functions for easier access
 export { queryCache, supabaseWithRetry };
 export { getSupabaseUrl, getSupabaseKey };
+export { testSupabaseConnection };
 
 // Re-export connectivity functions for backward compatibility
 export { 

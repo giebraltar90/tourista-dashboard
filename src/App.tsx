@@ -2,7 +2,7 @@
 import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import ToursPage from "./pages/ToursPage";
-import TourDetailsPage from "./pages/tour-details/TourDetailsPage";
+import TourDetailsPage from "./pages/TourDetailsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/react-query";
@@ -11,13 +11,13 @@ import GuideLogin from "./components/admin/GuideLogin";
 import { RoleProvider } from "./contexts/RoleContext";
 import { ErrorBoundary } from "./components/ui/error-boundary";
 import { logger } from "./utils/logger";
-import { testSupabaseConnection } from "./integrations/supabase/client";
+import { checkDatabaseConnection } from "./integrations/supabase/connectivity";
 
 // Test Supabase connection on app load
 logger.setDebugMode(true);
-testSupabaseConnection()
+checkDatabaseConnection()
   .then(result => {
-    if (result.success) {
+    if (result.connected) {
       logger.debug("✅ Initial Supabase connection test successful");
     } else {
       logger.error("❌ Initial Supabase connection test failed:", result.error);
