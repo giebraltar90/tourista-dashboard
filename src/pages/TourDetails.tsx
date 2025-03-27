@@ -1,3 +1,3 @@
 
-import TourDetailsPage from './tour-details/TourDetailsPage';
+import TourDetailsPage from './TourDetailsPage';
 export default TourDetailsPage;

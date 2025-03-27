@@ -5,7 +5,7 @@ import { NormalizedTourContent } from "@/components/tour-details/NormalizedTourC
 import { LoadingState } from "@/components/tour-details/LoadingState";
 import { ErrorState } from "@/components/tour-details/ErrorState";
 import { useState } from "react";
-import { useGuideInfo } from "@/hooks/guides/useGuideInfo";
+import { useTourGuideInfo } from "@/hooks/tour-details/useTourGuideInfo";
 
 export default function TourDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,7 +18,7 @@ export default function TourDetailsPage() {
   const { data: tour, isLoading, error, refetch } = useTourById(tourId);
   
   // Fetch guide information if available
-  const { guide1Info, guide2Info, guide3Info } = useGuideInfo(tour);
+  const { guide1Info, guide2Info, guide3Info } = useTourGuideInfo(tour);
   
   // Handle loading state
   if (isLoading) {
@@ -29,7 +29,7 @@ export default function TourDetailsPage() {
   if (error || !tour) {
     return (
       <ErrorState 
-        error={error} 
+        message={error instanceof Error ? error.message : "Tour not found"} 
         tourId={tourId} 
         onRetry={() => refetch()} 
       />

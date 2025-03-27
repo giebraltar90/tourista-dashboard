@@ -9,9 +9,9 @@ import { logger } from "@/utils/logger";
  */
 export const useTourGuideInfo = (tour: TourCardProps | null | undefined) => {
   // If tour is null or undefined, we'll use empty strings for guide IDs
-  const guide1Id = tour?.guide1Id || "";
-  const guide2Id = tour?.guide2Id || "";
-  const guide3Id = tour?.guide3Id || "";
+  const guide1Id = tour?.guide1 || "";
+  const guide2Id = tour?.guide2 || "";
+  const guide3Id = tour?.guide3 || "";
   
   // Fetch guide1 info
   const { 
@@ -49,21 +49,14 @@ export const useTourGuideInfo = (tour: TourCardProps | null | undefined) => {
     name: tour.guide3,
     guideType: "GA Ticket" // Default guide type if not specified
   } : null);
-
-  // Log guide info for debugging
-  logger.debug("Tour guide info loaded:", {
-    guide1: guide1Info?.name,
-    guide1Type: guide1Info?.guideType,
-    guide2: guide2Info?.name,
-    guide2Type: guide2Info?.guideType,
-    guide3: guide3Info?.name,
-    guide3Type: guide3Info?.guideType,
-  });
   
-  return {
-    guide1Info,
-    guide2Info,
+  // Combine loading states
+  const isLoading = isGuide1Loading || isGuide2Loading || isGuide3Loading;
+  
+  return { 
+    guide1Info, 
+    guide2Info, 
     guide3Info,
-    isLoading: isGuide1Loading || isGuide2Loading || isGuide3Loading
+    isLoading
   };
 };

@@ -1,8 +1,7 @@
-
 import { useMemo } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
-import { useGuideInfo } from "@/hooks/guides";
+import { GuideInfo } from "@/types/ventrata";
 import { GroupCard } from "../GroupCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -46,15 +45,10 @@ export const GroupGrid = ({
   isMovePending,
   onRefreshParticipants
 }: GroupGridProps) => {
-  // Get guide information - extract query objects
-  const guide1Query = tour?.guide1 ? useGuideInfo(tour.guide1) : null;
-  const guide2Query = tour?.guide2 ? useGuideInfo(tour.guide2) : null;
-  const guide3Query = tour?.guide3 ? useGuideInfo(tour.guide3) : null;
-  
-  // Extract the actual data
-  const guide1Info = guide1Query?.data || null;
-  const guide2Info = guide2Query?.data || null;
-  const guide3Info = guide3Query?.data || null;
+  // Get guide information - fixed by using direct objects instead of query results
+  const guide1Info = tour?.guide1 ? tour.guide1Info : null;
+  const guide2Info = tour?.guide2 ? tour.guide2Info : null;
+  const guide3Info = tour?.guide3 ? tour.guide3Info : null;
   
   console.log("DATABASE DEBUG: GroupGrid rendering with", {
     localTourGroupsLength: localTourGroups?.length || 0,

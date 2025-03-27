@@ -1,22 +1,17 @@
 
-import { supabase } from '../client';
+import { supabase } from '@/integrations/supabase/client';
 import { queryCache } from '../cache';
 import { logger } from '@/utils/logger';
+import { TourStatistics } from '@/hooks/tour-details/useTourStatistics';
 
 /**
- * Get tour statistics from materialized view or fallback to direct calculation
+ * Fetch tour statistics from the materialized view
  */
-export const getTourStatistics = async (tourId: string) => {
-  // Check cache first
-  const cacheKey = `tour_statistics_${tourId}`;
-  const cachedData = queryCache.get(cacheKey);
-  if (cachedData) {
-    return cachedData;
-  }
+export const getTourStatistics = async (tourId: string): Promise<TourStatistics | null> => {
+  if (!tourId) return null;
   
   try {
-    logger.debug(`Fetching tour statistics for tour ${tourId}`);
-    
+    // Query the materialized view directly
     const { data, error } = await supabase
       .from('tour_statistics')
       .select('*')
@@ -25,65 +20,10 @@ export const getTourStatistics = async (tourId: string) => {
       
     if (error) {
       logger.error("Error fetching tour statistics:", error);
-      
-      // If the materialized view fails, try direct queries
-      try {
-        logger.debug("Falling back to direct queries for tour statistics");
-        
-        // Get group counts
-        const { data: groups, error: groupsError } = await supabase
-          .from('tour_groups')
-          .select('id, size, child_count')
-          .eq('tour_id', tourId);
-          
-        if (groupsError) {
-          logger.error("Error in fallback group query:", groupsError);
-          return null;
-        }
-        
-        // Get tour data
-        const { data: tour, error: tourError } = await supabase
-          .from('tours')
-          .select('tour_name, location, date')
-          .eq('id', tourId)
-          .single();
-          
-        if (tourError) {
-          logger.error("Error in fallback tour query:", tourError);
-          return null;
-        }
-        
-        // Calculate statistics
-        const totalParticipants = groups.reduce((sum, g) => sum + (g.size || 0), 0);
-        const totalChildCount = groups.reduce((sum, g) => sum + (g.child_count || 0), 0);
-        
-        const fallbackStats = {
-          tour_id: tourId,
-          tour_name: tour.tour_name,
-          location: tour.location,
-          date: tour.date,
-          group_count: groups.length,
-          total_participants: totalParticipants,
-          total_child_count: totalChildCount,
-          total_adult_count: totalParticipants - totalChildCount,
-          guides_assigned: 0 // We don't have this info in fallback mode
-        };
-        
-        // Cache the fallback result
-        queryCache.set(cacheKey, fallbackStats);
-        
-        return fallbackStats;
-      } catch (fallbackErr) {
-        logger.error("Error in statistics fallback:", fallbackErr);
-        return null;
-      }
+      return null;
     }
     
-    // Cache the result
-    queryCache.set(cacheKey, data);
-    
-    logger.debug("Successfully fetched tour statistics");
-    return data;
+    return data as TourStatistics;
   } catch (err) {
     logger.error("Exception fetching tour statistics:", err);
     return null;
@@ -91,32 +31,122 @@ export const getTourStatistics = async (tourId: string) => {
 };
 
 /**
- * Manually refresh the tour statistics materialized view
+ * Refresh the materialized view to update statistics
  */
-export const refreshTourStatistics = async (tourId: string) => {
+export const refreshTourStatistics = async (tourId: string): Promise<boolean> => {
+  if (!tourId) return false;
+  
   try {
-    logger.debug(`Manually refreshing statistics for tour ${tourId}`);
+    // We can manually refresh the materialized view if needed
+    const { error } = await supabase.rpc('refresh_tour_statistics');
     
-    // First invalidate the cache
-    invalidateTourCache(tourId);
-    
-    // Try to call the database function to refresh the statistics
-    try {
-      const { error } = await supabase.rpc('refresh_tour_statistics');
-      
-      if (error) {
-        logger.error("Error calling refresh_tour_statistics RPC:", error);
-      } else {
-        logger.debug("Successfully refreshed tour statistics view");
-      }
-    } catch (rpcError) {
-      logger.error("Exception calling refresh_tour_statistics RPC:", rpcError);
+    if (error) {
+      logger.error("Error refreshing tour statistics:", error);
+      return false;
     }
     
-    // Fetch fresh statistics
-    return await getTourStatistics(tourId);
-  } catch (error) {
-    logger.error("Error refreshing tour statistics:", error);
-    return null;
+    // Invalidate cache entries
+    queryCache.invalidate(`tour_${tourId}`);
+    queryCache.invalidate(`tour_statistics_${tourId}`);
+    
+    return true;
+  } catch (err) {
+    logger.error("Exception refreshing tour statistics:", err);
+    return false;
+  }
+};
+
+/**
+ * Calculate the total tickets required for a tour
+ */
+export const calculateTotalTicketsRequired = (
+  adultParticipants: number,
+  childParticipants: number,
+  adultGuides: number,
+  childGuides: number
+): number => {
+  return (adultParticipants || 0) + 
+         (childParticipants || 0) + 
+         (adultGuides || 0) + 
+         (childGuides || 0);
+};
+
+/**
+ * Save ticket requirements for a tour
+ */
+export const saveTicketRequirements = async (
+  tourId: string,
+  adultParticipants: number,
+  childParticipants: number,
+  adultGuides: number,
+  childGuides: number
+): Promise<boolean> => {
+  try {
+    const totalTickets = calculateTotalTicketsRequired(
+      adultParticipants,
+      childParticipants,
+      adultGuides,
+      childGuides
+    );
+    
+    // Check if an entry already exists
+    const { data: existing, error: checkError } = await supabase
+      .from('ticket_requirements')
+      .select('id')
+      .eq('tour_id', tourId)
+      .maybeSingle();
+      
+    if (checkError) {
+      logger.error("Error checking existing ticket requirements:", checkError);
+      return false;
+    }
+    
+    // Update or insert as needed
+    if (existing?.id) {
+      // Update existing record
+      const { error } = await supabase
+        .from('ticket_requirements')
+        .update({
+          participant_adult_tickets: adultParticipants,
+          participant_child_tickets: childParticipants,
+          guide_adult_tickets: adultGuides,
+          guide_child_tickets: childGuides,
+          total_tickets_required: totalTickets,
+          updated_at: new Date().toISOString(),
+          timestamp: new Date().toISOString()
+        })
+        .eq('tour_id', tourId);
+        
+      if (error) {
+        logger.error("Error updating ticket requirements:", error);
+        return false;
+      }
+    } else {
+      // Insert new record
+      const { error } = await supabase
+        .from('ticket_requirements')
+        .insert({
+          tour_id: tourId,
+          participant_adult_tickets: adultParticipants,
+          participant_child_tickets: childParticipants,
+          guide_adult_tickets: adultGuides,
+          guide_child_tickets: childGuides,
+          total_tickets_required: totalTickets
+        });
+        
+      if (error) {
+        logger.error("Error inserting ticket requirements:", error);
+        return false;
+      }
+    }
+    
+    // Invalidate any cached data for this tour
+    queryCache.invalidate(`tour_${tourId}`);
+    queryCache.invalidate(`tour_statistics_${tourId}`);
+    
+    return true;
+  } catch (err) {
+    logger.error("Exception in saveTicketRequirements:", err);
+    return false;
   }
 };
