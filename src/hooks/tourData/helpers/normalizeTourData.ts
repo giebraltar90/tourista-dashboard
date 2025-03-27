@@ -29,9 +29,15 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     if (result.date) {
       try {
         // If it's a string that's not an ISO date, convert to a safe date format
-        if (typeof result.date === 'string' && !result.date.includes('T')) {
-          // Force noon UTC to avoid timezone issues
-          result.date = new Date(`${result.date}T12:00:00Z`);
+        if (typeof result.date === 'string') {
+          // Check if it's not already an ISO date with time component
+          if (!result.date.includes('T')) {
+            // Force noon UTC to avoid timezone issues
+            result.date = new Date(`${result.date}T12:00:00Z`);
+          } else {
+            // It's already in ISO format, convert to Date
+            result.date = new Date(result.date);
+          }
         } 
         // If it's already a Date object, keep it as is
         else if (result.date instanceof Date) {
