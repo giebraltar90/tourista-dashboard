@@ -26,18 +26,18 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     if (tourData) {
       logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`, {
         rawData: JSON.stringify(tourData).slice(0, 200) + '...',
-        hasGroups: Array.isArray(tourData.tourGroups) || Array.isArray(tourData.tour_groups),
-        groupsCount: Array.isArray(tourData.tour_groups) 
-          ? tourData.tour_groups.length 
+        hasGroups: Array.isArray(tourData.tourGroups) || Array.isArray((tourData as any).tour_groups),
+        groupsCount: Array.isArray((tourData as any).tour_groups) 
+          ? (tourData as any).tour_groups.length 
           : (Array.isArray(tourData.tourGroups) ? tourData.tourGroups.length : 0),
         location: tourData.location || 'Unknown'
       });
       
       // Debug log to identify missing groups issue
-      if (tourData.tour_groups && Array.isArray(tourData.tour_groups)) {
+      if ((tourData as any).tour_groups && Array.isArray((tourData as any).tour_groups)) {
         logger.debug(`DATABASE DEBUG: Raw tour_groups from database:`, {
-          count: tourData.tour_groups.length,
-          groups: tourData.tour_groups.map(g => ({
+          count: (tourData as any).tour_groups.length,
+          groups: (tourData as any).tour_groups.map((g: any) => ({
             id: g.id,
             name: g.name,
             size: g.size,

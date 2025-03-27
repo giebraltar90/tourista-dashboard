@@ -13,7 +13,7 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
   
   try {
     // First, copy the raw tourData to avoid mutations
-    const result: TourCardProps = { ...tourData };
+    const result: Partial<TourCardProps> = { ...tourData };
     
     // Ensure tourGroups is an array
     if (!Array.isArray(result.tourGroups)) {
@@ -64,18 +64,18 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     result.referenceCode = result.referenceCode || tourId.slice(0, 8);
     
     // Handle snake_case to camelCase conversion for database properties
-    // Check if database format properties exist and map them to the frontend format
-    if (result.tour_name && !result.tourName) result.tourName = result.tour_name;
-    if (result.tour_type && !result.tourType) result.tourType = result.tour_type;
-    if (result.start_time && !result.startTime) result.startTime = result.start_time;
-    if (result.reference_code && !result.referenceCode) result.referenceCode = result.reference_code;
+    // The issue is that the database returns snake_case but our frontend uses camelCase
+    if ((tourData as any).tour_name && !result.tourName) result.tourName = (tourData as any).tour_name;
+    if ((tourData as any).tour_type && !result.tourType) result.tourType = (tourData as any).tour_type;
+    if ((tourData as any).start_time && !result.startTime) result.startTime = (tourData as any).start_time;
+    if ((tourData as any).reference_code && !result.referenceCode) result.referenceCode = (tourData as any).reference_code;
     
     // Fix tour groups data if present from database
-    if (result.tour_groups && Array.isArray(result.tour_groups) && !result.tourGroups.length) {
+    if ((tourData as any).tour_groups && Array.isArray((tourData as any).tour_groups) && !result.tourGroups.length) {
       logger.debug(`Converting tour_groups to tourGroups format for tour ${tourId}`);
       
       // Transform tour_groups (database format) to tourGroups (frontend format)
-      result.tourGroups = result.tour_groups.map(group => ({
+      result.tourGroups = (tourData as any).tour_groups.map((group: any) => ({
         id: group.id,
         name: group.name || `Group ${group.id.slice(0, 6)}`,
         size: group.size || 0,
@@ -92,22 +92,12 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     result.guide3 = result.guide3 || "";
     
     // Handle guide ID conversions from snake_case to camelCase
-    result.guide1Id = result.guide1Id || result.guide1_id || "";
-    result.guide2Id = result.guide2Id || result.guide2_id || "";
-    result.guide3Id = result.guide3Id || result.guide3_id || "";
-    
-    // Cleanup: remove any snake_case properties to avoid confusion
-    delete result.tour_groups;
-    delete result.guide1_id;
-    delete result.guide2_id;
-    delete result.guide3_id;
-    delete result.tour_name;
-    delete result.tour_type;
-    delete result.reference_code;
-    delete result.start_time;
+    if (!result.guide1Id) result.guide1Id = (tourData as any).guide1_id || "";
+    if (!result.guide2Id) result.guide2Id = (tourData as any).guide2_id || "";
+    if (!result.guide3Id) result.guide3Id = (tourData as any).guide3_id || "";
     
     logger.debug(`Successfully normalized tour ${tourId} data`);
-    return result;
+    return result as TourCardProps;
   } catch (error) {
     logger.error(`Error in normalizeTourData for tour ${tourId}:`, error);
     throw new Error(`Failed to normalize tour data: ${error instanceof Error ? error.message : 'Unknown error'}`);
