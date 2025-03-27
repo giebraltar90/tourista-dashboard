@@ -46,10 +46,23 @@ export const RoleProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
   
-  // Apply admin role on initial mount
+  // Force admin role on initial mount and store it in localStorage
   useEffect(() => {
-    setRole("admin");
+    // Check if there's a saved role in localStorage
+    const savedRole = localStorage.getItem('userRole');
+    if (savedRole) {
+      setRole(savedRole);
+    } else {
+      // Default to admin and save it
+      setRole("admin");
+      localStorage.setItem('userRole', "admin");
+    }
   }, []);
+  
+  // Save role changes to localStorage
+  useEffect(() => {
+    localStorage.setItem('userRole', role);
+  }, [role]);
   
   // Dummy setDebugMode function to satisfy interface
   const setDebugMode = (value: boolean) => {

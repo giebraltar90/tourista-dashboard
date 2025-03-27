@@ -18,11 +18,22 @@ export const fetchToursFromSupabase = async (params?: {
   try {
     logger.debug("🔍 Fetching tours from Supabase", params);
     
-    // Test connection first
-    const connectionTest = await testSupabaseConnection();
-    if (!connectionTest.success) {
-      logger.error("❌ Supabase connection failed before fetching tours:", connectionTest.error);
-      throw new Error(`Connection error: ${connectionTest.error}`);
+    // Check for network connectivity first
+    if (!navigator.onLine) {
+      logger.warn("⚠️ Browser is offline, returning mock data");
+      return mockTours;
+    }
+    
+    // Test connection first with improved error handling
+    try {
+      const connectionTest = await testSupabaseConnection();
+      if (!connectionTest.success) {
+        logger.error("❌ Supabase connection failed before fetching tours:", connectionTest.error);
+        return mockTours;
+      }
+    } catch (connErr) {
+      logger.error("❌ Exception during connection test:", connErr);
+      return mockTours;
     }
     
     // Build query
@@ -61,24 +72,13 @@ export const fetchToursFromSupabase = async (params?: {
         hint: error.hint
       });
       
-      // Try to diagnose the issue
-      const authStatus = await checkAuthStatus();
-      logger.debug("🔑 Auth status during tour fetch:", authStatus);
-      
       // Fall back to mock data after logging the error
       logger.warn("⚠️ Falling back to mock data due to Supabase error");
-      toast.error("Database connection error. Using sample data instead.");
       return mockTours;
     }
     
     if (!supabaseTours || supabaseTours.length === 0) {
       logger.debug("⚠️ No tours found in Supabase");
-      // Check if table exists and has data
-      const tableCheck = await supabase.rpc('check_table_exists', {
-        table_name_param: 'tours'
-      });
-      
-      logger.debug("📋 Table existence check result:", tableCheck);
       
       // Return mock data as fallback
       logger.warn("⚠️ Returning mock data since no tours were found");
@@ -110,26 +110,30 @@ export const fetchToursFromSupabase = async (params?: {
     let guideMap: Record<string, string> = {};
     
     if (guideIds.size > 0) {
-      const guideIdsArray = Array.from(guideIds);
-      logger.debug("🔍 Fetching guide data for IDs:", guideIdsArray);
-      
-      const { data: guides, error: guidesError } = await supabase
-        .from('guides')
-        .select('id, name')
-        .in('id', guideIdsArray);
+      try {
+        const guideIdsArray = Array.from(guideIds);
+        logger.debug("🔍 Fetching guide data for IDs:", guideIdsArray);
         
-      if (guidesError) {
-        logger.error("❌ Error fetching guides:", guidesError);
-      } else if (guides && guides.length > 0) {
-        guideMap = guides.reduce((map, guide) => {
-          map[guide.id] = guide.name;
-          return map;
-        }, {} as Record<string, string>);
-        
-        logger.debug("✅ Successfully built guide map", { 
-          requestedCount: guideIds.size, 
-          retrievedCount: guides.length 
-        });
+        const { data: guides, error: guidesError } = await supabase
+          .from('guides')
+          .select('id, name')
+          .in('id', guideIdsArray);
+          
+        if (guidesError) {
+          logger.error("❌ Error fetching guides:", guidesError);
+        } else if (guides && guides.length > 0) {
+          guideMap = guides.reduce((map, guide) => {
+            map[guide.id] = guide.name;
+            return map;
+          }, {} as Record<string, string>);
+          
+          logger.debug("✅ Successfully built guide map", { 
+            requestedCount: guideIds.size, 
+            retrievedCount: guides.length 
+          });
+        }
+      } catch (guideErr) {
+        logger.error("❌ Exception while fetching guides:", guideErr);
       }
     }
     
@@ -184,14 +188,34 @@ export const fetchToursFromSupabase = async (params?: {
     logger.error("❌ Exception in fetchToursFromSupabase:", error);
     // Return mock data as fallback to prevent UI crashes
     logger.warn("⚠️ Falling back to mock data after exception");
-    toast.error("Failed to fetch tour data. Using sample data instead.");
     return mockTours;
   }
 };
 
-// Helper function to check connection before fetching
+// Helper function to check connection before fetching with better error handling
 const testSupabaseConnection = async () => {
   try {
+    // Simple health check that doesn't depend on auth
+    const response = await fetch(`${API_BASE_URL}/rest/v1/`, {
+      method: 'HEAD',
+      headers: {
+        'apikey': API_ANON_KEY,
+        'Content-Type': 'application/json'
+      },
+      // Add timeout to prevent hanging
+      signal: AbortSignal.timeout(5000)
+    }).catch(err => {
+      throw new Error(`Network error accessing Supabase: ${err.message}`);
+    });
+    
+    if (!response.ok) {
+      return { 
+        success: false, 
+        error: `Supabase API returned status: ${response.status} ${response.statusText}` 
+      };
+    }
+    
+    // If health check passes, try an actual query
     const { data, error } = await supabase
       .from('tours')
       .select('id')
@@ -203,22 +227,29 @@ const testSupabaseConnection = async () => {
     
     return { success: true, data };
   } catch (err) {
-    return { success: false, error: err };
+    return { 
+      success: false, 
+      error: err instanceof Error ? err : new Error('Unknown error during connection test')
+    };
   }
 };
 
-// Check authentication status
+// Check authentication status with improved error handling
 const checkAuthStatus = async () => {
   try {
     const headers = {
       'apikey': API_ANON_KEY,
-      'Authorization': `Bearer ${API_ANON_KEY}`
+      'Authorization': `Bearer ${API_ANON_KEY}`,
+      'Content-Type': 'application/json'
     };
     
-    // Basic connectivity test
+    // Basic connectivity test with timeout
     const response = await fetch(`${API_BASE_URL}/rest/v1/tours?select=id&limit=1`, {
       method: 'GET',
-      headers
+      headers,
+      signal: AbortSignal.timeout(5000)
+    }).catch(err => {
+      throw new Error(`Network error during auth check: ${err.message}`);
     });
     
     return {
@@ -229,7 +260,7 @@ const checkAuthStatus = async () => {
   } catch (error) {
     return {
       success: false,
-      error
+      error: error instanceof Error ? error.message : String(error)
     };
   }
 };

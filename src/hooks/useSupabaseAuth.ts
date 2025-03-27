@@ -20,23 +20,39 @@ export const useSupabaseAuth = () => {
         setIsChecking(true);
         setError(null);
         
-        const authStatus = await checkAuth();
+        // Check network connectivity first
+        if (!navigator.onLine) {
+          logger.warn("Browser is offline, assuming authentication failed");
+          setIsAuthenticated(false);
+          setError("Network is offline");
+          setIsChecking(false);
+          return;
+        }
         
-        setIsAuthenticated(authStatus.authenticated);
-        
-        if (!authStatus.authenticated) {
-          logger.error("Supabase authentication failed:", authStatus);
+        // Use try-catch for the auth check
+        try {
+          const authStatus = await checkAuth();
           
-          if (authStatus.error) {
-            setError(authStatus.error);
+          setIsAuthenticated(authStatus.authenticated);
+          
+          if (!authStatus.authenticated) {
+            logger.error("Supabase authentication failed:", authStatus);
+            
+            if (authStatus.error) {
+              setError(authStatus.error);
+            } else {
+              setError("Authentication failed");
+            }
           } else {
-            setError("Authentication failed");
+            logger.debug("Supabase authentication is working");
           }
-        } else {
-          logger.debug("Supabase authentication is working");
+        } catch (authErr) {
+          logger.error("Error during auth check:", authErr);
+          setIsAuthenticated(false);
+          setError(authErr instanceof Error ? authErr.message : String(authErr));
         }
       } catch (e) {
-        logger.error("Error checking authentication:", e);
+        logger.error("Error in useSupabaseAuth hook:", e);
         setIsAuthenticated(false);
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -44,7 +60,25 @@ export const useSupabaseAuth = () => {
       }
     };
     
+    // Execute authentication check
     checkAuthentication();
+    
+    // Set up an interval to recheck auth status periodically
+    const authCheckInterval = setInterval(() => {
+      if (navigator.onLine) {
+        checkAuthentication();
+      }
+    }, 300000); // Check every 5 minutes
+    
+    // Also recheck when the app comes back online
+    const handleOnline = () => checkAuthentication();
+    window.addEventListener('online', handleOnline);
+    
+    // Clean up
+    return () => {
+      clearInterval(authCheckInterval);
+      window.removeEventListener('online', handleOnline);
+    };
   }, []);
   
   // Provide auth information to components
