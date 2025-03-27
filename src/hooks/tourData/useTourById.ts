@@ -2,21 +2,22 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchTourData } from './services/tourDataService';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
+import { useEffect } from 'react';
 
 /**
  * Custom hook to fetch tour data by ID with improved caching and error handling
  */
 export const useTourById = (tourId: string) => {
-  console.log("DATABASE DEBUG: useTourById hook called with ID:", tourId);
+  logger.debug("DATABASE DEBUG: useTourById hook called with ID:", tourId);
   
-  return useQuery({
+  const query = useQuery({
     queryKey: ['tour', tourId],
     queryFn: async () => {
-      console.log("DATABASE DEBUG: Executing fetchTourData for:", tourId);
+      logger.debug("DATABASE DEBUG: Executing fetchTourData for:", tourId);
       
       if (!tourId) {
-        console.error("DATABASE DEBUG: Empty tour ID provided to useTourById");
-        toast.error("Invalid tour ID");
+        logger.error("DATABASE DEBUG: Empty tour ID provided to useTourById");
         throw new Error("Invalid tour ID");
       }
       
@@ -25,7 +26,7 @@ export const useTourById = (tourId: string) => {
         
         // Log the result after fetching
         if (result) {
-          console.log("DATABASE DEBUG: Tour data fetched successfully with groups:", {
+          logger.debug("DATABASE DEBUG: Tour data fetched successfully with groups:", {
             tourId: result.id,
             tourName: result.tourName,
             groupCount: result.tourGroups?.length || 0,
@@ -36,14 +37,14 @@ export const useTourById = (tourId: string) => {
             }))
           });
         } else {
-          console.log("DATABASE DEBUG: No tour data returned from fetchTourData");
+          logger.error("DATABASE DEBUG: No tour data returned from fetchTourData");
           toast.error("Tour data not found");
+          throw new Error("Tour not found. Please check the tour ID and try again.");
         }
         
         return result;
       } catch (error) {
-        console.error("DATABASE DEBUG: Error in useTourById:", error);
-        toast.error("Failed to load tour data. Please try again.");
+        logger.error("DATABASE DEBUG: Error in useTourById:", error);
         throw error;
       }
     },
@@ -57,8 +58,18 @@ export const useTourById = (tourId: string) => {
     // Properly type the error handling
     meta: {
       onError: (error: Error) => {
-        console.error('DATABASE DEBUG: Error fetching tour data:', error);
+        logger.error('DATABASE DEBUG: Error fetching tour data:', error);
+        toast.error("Failed to load tour data. Please try again.");
       }
     }
   });
+
+  // Add an effect to log when there's an error
+  useEffect(() => {
+    if (query.error) {
+      logger.error(`Error fetching tour ${tourId}:`, query.error);
+    }
+  }, [query.error, tourId]);
+
+  return query;
 };

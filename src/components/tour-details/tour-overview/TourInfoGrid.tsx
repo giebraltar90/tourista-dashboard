@@ -20,7 +20,7 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
       <Card>
         <CardContent className="p-4">
           <h3 className="font-medium text-sm text-muted-foreground mb-1">Date</h3>
-          <p className="font-semibold">{format(tour.date, 'MMMM d, yyyy')}</p>
+          <p className="font-semibold">{format(new Date(tour.date), 'MMMM d, yyyy')}</p>
         </CardContent>
       </Card>
       

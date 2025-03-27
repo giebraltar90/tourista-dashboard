@@ -1,8 +1,7 @@
 
 import { useMemo } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
-import { GuideInfo } from "@/types/ventrata";
+import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 import { GroupCard } from "../GroupCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
@@ -93,7 +92,7 @@ export const GroupGrid = ({
   if (!stableTourGroups || stableTourGroups.length === 0) {
     return (
       <Alert variant="warning">
-        <AlertTriangle className="h-4 w-4 mr-2" />
+        <AlertTriangle className="h-4 w-4" />
         <AlertDescription>
           No tour groups available. Please try adding test participants.
         </AlertDescription>

@@ -2,110 +2,100 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logger } from "@/utils/logger";
 
-/**
- * Calculate and save ticket requirements to the database
- */
-export const calculateAndSaveTicketRequirements = async (
-  tourId: string,
-  participantAdultTickets: number,
-  participantChildTickets: number,
-  guideAdultTickets: number,
-  guideChildTickets: number
-): Promise<boolean> => {
-  try {
-    const totalTicketsRequired = 
-      participantAdultTickets + 
-      participantChildTickets + 
-      guideAdultTickets + 
-      guideChildTickets;
-      
-    logger.debug("🎟️ [SAVE_REQUIREMENTS] Saving ticket requirements:", {
-      tourId,
-      participantAdultTickets,
-      participantChildTickets,
-      guideAdultTickets,
-      guideChildTickets,
-      totalTicketsRequired
-    });
-    
-    // Check if we already have a record for this tour
-    const { data: existingData, error: checkError } = await supabase
-      .from('ticket_requirements')
-      .select('id')
-      .eq('tour_id', tourId)
-      .maybeSingle();
-      
-    if (checkError) {
-      logger.error("🎟️ [SAVE_REQUIREMENTS] Error checking for existing record:", checkError);
-      return false;
-    }
-    
-    if (existingData?.id) {
-      // Update existing record
-      const { error: updateError } = await supabase
-        .from('ticket_requirements')
-        .update({
-          participant_adult_tickets: participantAdultTickets,
-          participant_child_tickets: participantChildTickets,
-          guide_adult_tickets: guideAdultTickets,
-          guide_child_tickets: guideChildTickets,
-          total_tickets_required: totalTicketsRequired,
-          timestamp: new Date().toISOString()
-        })
-        .eq('id', existingData.id);
-        
-      if (updateError) {
-        logger.error("🎟️ [SAVE_REQUIREMENTS] Error updating requirements:", updateError);
-        return false;
-      }
-    } else {
-      // Insert new record
-      const { error: insertError } = await supabase
-        .from('ticket_requirements')
-        .insert({
-          tour_id: tourId,
-          participant_adult_tickets: participantAdultTickets,
-          participant_child_tickets: participantChildTickets,
-          guide_adult_tickets: guideAdultTickets,
-          guide_child_tickets: guideChildTickets,
-          total_tickets_required: totalTicketsRequired
-        });
-        
-      if (insertError) {
-        logger.error("🎟️ [SAVE_REQUIREMENTS] Error inserting requirements:", insertError);
-        return false;
-      }
-    }
-    
-    logger.debug("🎟️ [SAVE_REQUIREMENTS] Successfully saved ticket requirements");
-    return true;
-  } catch (error) {
-    logger.error("🎟️ [SAVE_REQUIREMENTS] Unexpected error:", error);
-    return false;
-  }
-};
+// Define the ticket requirements interface
+export interface TicketRequirements {
+  tourId: string;
+  participantAdultCount: number;
+  participantChildCount: number;
+  guideAdultTickets: number;
+  guideChildTickets: number;
+  totalTicketsRequired: number;
+  updatedAt?: string;
+}
 
 /**
- * Get ticket requirements for a specific tour
+ * Fetch ticket requirements for a tour
  */
-export const getTicketRequirements = async (tourId: string) => {
+export const getTicketRequirements = async (tourId: string): Promise<TicketRequirements> => {
   try {
-    logger.debug("🎟️ [GET_REQUIREMENTS] Fetching ticket requirements for tour:", tourId);
-    
+    // Try to get requirements from database first
     const { data, error } = await supabase
       .from('ticket_requirements')
       .select('*')
       .eq('tour_id', tourId)
-      .maybeSingle();
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .single();
       
     if (error) {
-      logger.error("🎟️ [GET_REQUIREMENTS] Error fetching requirements:", error);
-      return null;
+      logger.debug("No ticket requirements found in database:", error);
+      // Return default values if not found
+      return {
+        tourId,
+        participantAdultCount: 0,
+        participantChildCount: 0,
+        guideAdultTickets: 0,
+        guideChildTickets: 0,
+        totalTicketsRequired: 0
+      };
     }
     
-    return data;
+    return {
+      tourId: data.tour_id,
+      participantAdultCount: data.participant_adult_tickets || 0,
+      participantChildCount: data.participant_child_tickets || 0,
+      guideAdultTickets: data.guide_adult_tickets || 0,
+      guideChildTickets: data.guide_child_tickets || 0,
+      totalTicketsRequired: data.total_tickets_required || 0,
+      updatedAt: data.updated_at
+    };
   } catch (error) {
-    logger.error("🎟️ [GET_REQUIREMENTS] Unexpected error:", error);
-    return null;
+    logger.error("Error fetching ticket requirements:", error);
+    // Return default values in case of error
+    return {
+      tourId,
+      participantAdultCount: 0,
+      participantChildCount: 0,
+      guideAdultTickets: 0,
+      guideChildTickets: 0,
+      totalTicketsRequired: 0
+    };
+  }
+};
+
+/**
+ * Calculate and save ticket requirements for a tour
+ */
+export const calculateAndSaveTicketRequirements = async (
+  tourId: string,
+  adultCount: number,
+  childCount: number,
+  guideAdultTickets: number,
+  guideChildTickets: number
+): Promise<boolean> => {
+  try {
+    const totalTicketsRequired = adultCount + childCount + guideAdultTickets + guideChildTickets;
+    
+    const { error } = await supabase
+      .from('ticket_requirements')
+      .upsert({
+        tour_id: tourId,
+        participant_adult_tickets: adultCount,
+        participant_child_tickets: childCount,
+        guide_adult_tickets: guideAdultTickets,
+        guide_child_tickets: guideChildTickets,
+        total_tickets_required: totalTicketsRequired,
+        timestamp: new Date().toISOString()
+      });
+      
+    if (error) {
+      logger.error("Error saving ticket requirements:", error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    logger.error("Exception saving ticket requirements:", error);
+    return false;
   }
 };

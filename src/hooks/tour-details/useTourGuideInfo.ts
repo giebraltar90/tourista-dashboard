@@ -32,21 +32,21 @@ export const useTourGuideInfo = (tour: TourCardProps | null | undefined) => {
   } = useGuideInfo(guide3Id);
   
   // Create guide info objects
-  const guide1Info: GuideInfo | null = guide1InfoData || (tour?.guide1 ? {
+  const guide1Info: GuideInfo | null = guide1InfoData || (guide1Id ? {
     id: guide1Id,
-    name: tour.guide1,
+    name: guide1Id,
     guideType: "GA Ticket" // Default guide type if not specified 
   } : null);
   
-  const guide2Info: GuideInfo | null = guide2InfoData || (tour?.guide2 ? {
+  const guide2Info: GuideInfo | null = guide2InfoData || (guide2Id ? {
     id: guide2Id,
-    name: tour.guide2,
+    name: guide2Id,
     guideType: "GA Ticket" // Default guide type if not specified
   } : null);
   
-  const guide3Info: GuideInfo | null = guide3InfoData || (tour?.guide3 ? {
+  const guide3Info: GuideInfo | null = guide3InfoData || (guide3Id ? {
     id: guide3Id,
-    name: tour.guide3,
+    name: guide3Id,
     guideType: "GA Ticket" // Default guide type if not specified
   } : null);
   

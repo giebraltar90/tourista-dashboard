@@ -1,47 +1,107 @@
 
-import { useMemo } from "react";
-import { calculateCompleteTicketRequirements } from "./services/ticket-calculation/core/completeCalculator";
-import { logger } from "@/utils/logger";
+import { useMemo } from 'react';
+import { TourCardProps } from '@/components/tours/tour-card/types';
+import { GuideInfo } from '@/types/ventrata';
+import { logger } from '@/utils/logger';
+
+interface GuideTickets {
+  adultTickets: number;
+  childTickets: number;
+  guides: {
+    guideName: string;
+    guideType: string;
+    ticketType: 'adult' | 'child';
+  }[];
+}
 
 /**
- * Hook to calculate guide ticket requirements in a consistent, reusable way
+ * Hook to determine guide ticket requirements based on guide types and location
  */
 export const useGuideTicketRequirements = (
-  tour: any,
-  guide1Info: any,
-  guide2Info: any,
-  guide3Info: any
+  tour: TourCardProps | undefined | null,
+  guide1Info: GuideInfo | null | undefined,
+  guide2Info: GuideInfo | null | undefined,
+  guide3Info: GuideInfo | null | undefined
 ) => {
-  // Use the centralized calculation service
-  const result = useMemo(() => {
-    logger.debug(`🎟️ [useGuideTicketRequirements] Calculating requirements for tour:`, {
-      location: tour?.location || "",
-      guide1: guide1Info?.name || "none",
-      guide2: guide2Info?.name || "none",
-      guide3: guide3Info?.name || "none",
-    });
+  // Determine if the location requires guide tickets
+  const locationNeedsGuideTickets = useMemo(() => {
+    if (!tour) return false;
     
-    return calculateCompleteTicketRequirements(
-      guide1Info, 
-      guide2Info,
-      guide3Info,
-      tour?.location || "",
-      tour?.tourGroups || []
-    );
-  }, [tour, guide1Info, guide2Info, guide3Info]);
+    const location = (tour.location || '').toLowerCase();
+    const requiresTickets = [
+      'louvre', 'versailles', 'palace', 'museum', 'gallery'
+    ].some(keyword => location.includes(keyword));
+    
+    return requiresTickets;
+  }, [tour]);
   
-  // Log the calculated requirements
-  logger.debug(`🎟️ [useGuideTicketRequirements] Calculated ticket requirements:`, {
-    locationNeedsGuideTickets: result.locationNeedsGuideTickets,
-    hasAssignedGuides: result.hasAssignedGuides,
-    adultTickets: result.guideTickets.adultTickets,
-    childTickets: result.guideTickets.childTickets,
-    totalTickets: result.guideTickets.adultTickets + result.guideTickets.childTickets,
-    guides: result.guideTickets.guides.map(g => ({
-      name: g.guideName,
-      type: g.ticketType
-    }))
-  });
+  // Check if there are any assigned guides
+  const hasAssignedGuides = useMemo(() => {
+    return !!(guide1Info || guide2Info || guide3Info);
+  }, [guide1Info, guide2Info, guide3Info]);
   
-  return result;
+  // Calculate guide tickets
+  const guideTickets = useMemo<GuideTickets>(() => {
+    if (!tour || !locationNeedsGuideTickets) {
+      return { adultTickets: 0, childTickets: 0, guides: [] };
+    }
+    
+    const guidesWithTickets: {
+      guideName: string;
+      guideType: string;
+      ticketType: 'adult' | 'child';
+    }[] = [];
+    
+    let adultTickets = 0;
+    let childTickets = 0;
+    
+    // Process each guide
+    const processGuide = (guide: GuideInfo | null | undefined) => {
+      if (!guide) return;
+      
+      const guideType = (guide.guideType || '').toLowerCase();
+      
+      // Determine if the guide needs a ticket based on guide type
+      const needsTicket = !['employee', 'staff', 'permanent'].includes(guideType);
+      
+      if (needsTicket) {
+        // Determine ticket type (adult or child) based on guide type
+        const isChildTicket = guideType.includes('child') || guideType.includes('junior');
+        
+        if (isChildTicket) {
+          childTickets++;
+          guidesWithTickets.push({
+            guideName: guide.name || 'Unknown',
+            guideType: guide.guideType || 'Unknown',
+            ticketType: 'child'
+          });
+        } else {
+          adultTickets++;
+          guidesWithTickets.push({
+            guideName: guide.name || 'Unknown',
+            guideType: guide.guideType || 'Unknown',
+            ticketType: 'adult'
+          });
+        }
+      }
+    };
+    
+    // Process each guide
+    processGuide(guide1Info);
+    processGuide(guide2Info);
+    processGuide(guide3Info);
+    
+    // Return the calculated tickets
+    return {
+      adultTickets,
+      childTickets,
+      guides: guidesWithTickets
+    };
+  }, [tour, locationNeedsGuideTickets, guide1Info, guide2Info, guide3Info]);
+  
+  return {
+    locationNeedsGuideTickets,
+    hasAssignedGuides,
+    guideTickets
+  };
 };

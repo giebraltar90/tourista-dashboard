@@ -4,14 +4,15 @@ import { TourCardProps } from '@/components/tours/tour-card/types';
 import { normalizeTourData } from '../helpers/normalizeTourData';
 import { mockTours } from '@/data/mockData';
 import { toast } from 'sonner';
+import { logger } from '@/utils/logger';
 
 /**
- * Service function to fetch tour data with error handling
+ * Service function to fetch tour data with improved error handling
  */
 export const fetchTourData = async (tourId: string): Promise<TourCardProps | null> => {
   // Guard against empty tour IDs
   if (!tourId) {
-    console.error('fetchTourData called with empty tourId');
+    logger.error('fetchTourData called with empty tourId');
     return null;
   }
   
@@ -20,26 +21,30 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     const tourData = await fetchTourFromSupabase(tourId);
     
     if (tourData) {
+      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`);
       return normalizeTourData(tourData, tourId);
     }
     
     // If no data found in Supabase, use fallback to mock data
-    console.log(`No tour data found in Supabase for tour ${tourId}, using mock data`);
+    logger.info(`No tour data found in Supabase for tour ${tourId}, using mock data`);
     const mockTour = mockTours.find(tour => tour.id === tourId);
     
     if (mockTour) {
       return normalizeTourData(mockTour, tourId);
     }
     
+    // If neither source has the tour, log the issue
+    logger.error(`No tour found with ID ${tourId} in either database or mock data`);
+    toast.error("Tour not found. Please check the ID and try again.");
     return null;
   } catch (error) {
-    console.error(`Error in fetchTourData for tour ${tourId}:`, error);
+    logger.error(`Error in fetchTourData for tour ${tourId}:`, error);
     
     // Show error toast
     toast.error(`Failed to fetch tour data: ${error instanceof Error ? error.message : 'Unknown error'}`);
     
     // Fallback to mock data when there's an error
-    console.log(`Error fetching tour ${tourId}, using mock data`);
+    logger.info(`Error fetching tour ${tourId}, using mock data as fallback`);
     const mockTour = mockTours.find(tour => tour.id === tourId);
     
     if (mockTour) {
