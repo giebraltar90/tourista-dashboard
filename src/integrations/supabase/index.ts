@@ -1,5 +1,6 @@
 
-import { supabase, testSupabaseConnection } from './client';
+import { supabase } from './client';
+import { testSupabaseConnection } from './connectionTest';
 import { checkDatabaseConnection } from './connectivity/databaseCheck';
 import { logger } from '@/utils/logger';
 
@@ -10,6 +11,8 @@ export * from './connectivity';
 export * from './retry';
 export * from './cache';
 export * from './constants';
+export * from './connectionTest';
+export * from './helpers';
 
 // Run a connection test on module import
 logger.setDebugMode(true);
