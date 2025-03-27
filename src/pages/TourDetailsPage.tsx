@@ -25,6 +25,7 @@ const TourDetailsPage = () => {
   
   const { guide1Info, guide2Info, guide3Info, isLoading: guidesLoading } = useTourGuideInfo(tour);
 
+  // Effect to log errors
   useEffect(() => {
     if (error) {
       logger.error(`Failed to load tour with ID ${tourId}:`, error);
@@ -34,16 +35,19 @@ const TourDetailsPage = () => {
     }
   }, [error, tourId]);
   
+  // Effect to log successful tour load
   useEffect(() => {
     if (tour) {
       logger.debug(`Successfully loaded tour: ${tour.tourName}`, {
         tourId: tour.id,
-        date: tour.date,
+        date: tour.date instanceof Date ? tour.date.toISOString() : 'Not a Date object',
+        tourDateType: typeof tour.date,
         location: tour.location,
       });
     }
   }, [tour]);
 
+  // Function to try using mock tour data as fallback
   const tryUseMockTour = () => {
     const mockTour = mockTours.find(t => t.id === tourId);
     if (mockTour) {
@@ -66,8 +70,8 @@ const TourDetailsPage = () => {
         <div className="container mx-auto py-6 space-y-8">
           <div className="flex mb-4">
             <Button 
-              variant="secondary"
-              className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+              variant="outline"
+              className="bg-amber-50 text-amber-800 hover:bg-amber-100 border-amber-200"
               onClick={() => navigate("/tours")}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />

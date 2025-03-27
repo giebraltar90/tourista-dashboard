@@ -4,14 +4,20 @@ import { Badge } from "@/components/ui/badge";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { CalendarIcon, Clock, Map, Tag } from "lucide-react";
 import { format, isValid, parseISO } from "date-fns";
+import { logger } from "@/utils/logger";
 
 interface TourInfoGridProps {
   tour: TourCardProps;
 }
 
 export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
-  // Format the date properly, handling both Date objects and string dates
-  const formatTourDate = (date: Date | string) => {
+  // Format the date properly, handling both Date objects and string dates safely
+  const formatTourDate = (date: Date | string | undefined | null) => {
+    if (!date) {
+      logger.warn("Tour date is null or undefined");
+      return "Date unavailable";
+    }
+    
     try {
       // First determine what type of date we're working with
       let dateObj: Date;
@@ -24,31 +30,26 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
           // ISO format likely
           dateObj = parseISO(date);
         } else {
-          // Simple date format
-          dateObj = new Date(date);
+          // Simple date format - force to noon UTC to avoid timezone issues
+          dateObj = new Date(`${date}T12:00:00Z`);
         }
       } else {
-        console.error("Unsupported date format:", date);
+        logger.error("Unsupported date format:", date);
         return "Date unavailable";
       }
       
       // Check if the date is valid before formatting
       if (!isValid(dateObj)) {
-        console.warn("Invalid date object created from:", date);
-        return "Invalid date";
+        logger.warn("Invalid date object created from:", date);
+        return "Date unavailable";
       }
       
       return format(dateObj, 'PP');
     } catch (error) {
-      console.error("Error formatting date:", error, "Original value:", date);
+      logger.error("Error formatting date:", error);
       return "Date unavailable";
     }
   };
-
-  // Add debug logging 
-  console.log("TourInfoGrid rendering with tour date:", tour.date, 
-    "Type:", typeof tour.date, 
-    "Formatted as:", formatTourDate(tour.date));
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -71,7 +72,7 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
           </div>
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Start Time</h3>
-            <p className="font-semibold">{tour.startTime}</p>
+            <p className="font-semibold">{tour.startTime || "Time unavailable"}</p>
           </div>
         </CardContent>
       </Card>
@@ -83,7 +84,7 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
           </div>
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Location</h3>
-            <p className="font-semibold">{tour.location}</p>
+            <p className="font-semibold">{tour.location || "Location unavailable"}</p>
           </div>
         </CardContent>
       </Card>
@@ -96,7 +97,7 @@ export const TourInfoGrid = ({ tour }: TourInfoGridProps) => {
           <div>
             <h3 className="text-sm font-medium text-muted-foreground">Tour Type</h3>
             <Badge variant="outline" className="mt-1">
-              {tour.tourType}
+              {tour.tourType || "Standard"}
             </Badge>
           </div>
         </CardContent>

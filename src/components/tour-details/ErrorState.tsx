@@ -1,7 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ArrowLeft, RefreshCw, HelpCircle } from "lucide-react";
+import { ArrowLeft, RefreshCw, HelpCircle, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect } from "react";
 import { logger } from "@/utils/logger";
@@ -34,7 +34,7 @@ export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
       </div>
       
       <Alert variant="destructive">
-        <HelpCircle className="h-4 w-4" />
+        <AlertTriangle className="h-4 w-4" />
         <AlertTitle>Error Loading Tour</AlertTitle>
         <AlertDescription>
           {message || "There was an error loading the tour information. Please try again."}
@@ -47,7 +47,7 @@ export const ErrorState = ({ message, tourId, onRetry }: ErrorStateProps) => {
           We couldn't load the tour with ID: {tourId || "Unknown"}
         </p>
         <p className="text-sm text-muted-foreground">
-          {message || "There was an error loading the tour information."}
+          This may be due to invalid data, connection issues, or the tour may no longer exist.
         </p>
         
         <div className="flex justify-center gap-4 mt-6">

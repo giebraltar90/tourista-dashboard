@@ -24,27 +24,20 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     const tourData = await fetchTourFromSupabase(tourId);
     
     if (tourData) {
-      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`, {
-        tourId: tourData.id,
-        tourName: tourData.tourName,
-        dateType: typeof tourData.date,
-        dateValue: JSON.stringify(tourData.date),
-        groupCount: tourData.tourGroups?.length || 0
-      });
+      logger.debug(`Tour data fetched successfully from Supabase for ID ${tourId}`);
       
-      // Normalize data to ensure consistent format
-      const normalizedTour = normalizeTourData(tourData, tourId);
-      
-      // Log the normalized data
-      logger.debug(`Tour data normalized for ID ${tourId}`, {
-        tourId: normalizedTour.id,
-        dateType: typeof normalizedTour.date,
-        dateValue: normalizedTour.date instanceof Date 
-          ? normalizedTour.date.toISOString() 
-          : JSON.stringify(normalizedTour.date)
-      });
-      
-      return normalizedTour;
+      // Normalize data to ensure consistent format and safe date handling
+      try {
+        const normalizedTour = normalizeTourData(tourData, tourId);
+        
+        // Log successful normalization
+        logger.debug(`Tour data normalized successfully for ID ${tourId}`);
+        
+        return normalizedTour;
+      } catch (normalizeError) {
+        logger.error(`Failed to normalize tour data for ID ${tourId}:`, normalizeError);
+        throw normalizeError;
+      }
     }
     
     // If no data found in Supabase, use fallback to mock data
@@ -53,7 +46,13 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     
     if (mockTour) {
       logger.debug(`Found matching mock tour for ID ${tourId}`);
-      return normalizeTourData(mockTour, tourId);
+      try {
+        return normalizeTourData(mockTour, tourId);
+      } catch (normalizeError) {
+        logger.error(`Failed to normalize mock tour data for ID ${tourId}:`, normalizeError);
+        // Return the raw mock data as a last resort
+        return { ...mockTour, id: tourId } as TourCardProps;
+      }
     }
     
     // If neither source has the tour, log the issue
@@ -72,7 +71,13 @@ export const fetchTourData = async (tourId: string): Promise<TourCardProps | nul
     
     if (mockTour) {
       logger.debug(`Found matching mock tour for ID ${tourId} to use as fallback`);
-      return normalizeTourData(mockTour, tourId);
+      try {
+        return normalizeTourData(mockTour, tourId);
+      } catch (normalizeError) {
+        logger.error(`Failed to normalize mock tour fallback data for ID ${tourId}:`, normalizeError);
+        // Return the raw mock data as a last resort
+        return { ...mockTour, id: tourId } as TourCardProps;
+      }
     }
     
     return null;
