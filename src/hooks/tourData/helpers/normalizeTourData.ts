@@ -1,3 +1,4 @@
+
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTour } from "@/types/ventrata";
 import { logger } from "@/utils/logger";
@@ -65,17 +66,18 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     
     // Handle snake_case to camelCase conversion for database properties
     // The issue is that the database returns snake_case but our frontend uses camelCase
-    if ((tourData as any).tour_name && !result.tourName) result.tourName = (tourData as any).tour_name;
-    if ((tourData as any).tour_type && !result.tourType) result.tourType = (tourData as any).tour_type;
-    if ((tourData as any).start_time && !result.startTime) result.startTime = (tourData as any).start_time;
-    if ((tourData as any).reference_code && !result.referenceCode) result.referenceCode = (tourData as any).reference_code;
+    const dbData = tourData as Record<string, any>;
+    if (dbData.tour_name && !result.tourName) result.tourName = dbData.tour_name;
+    if (dbData.tour_type && !result.tourType) result.tourType = dbData.tour_type;
+    if (dbData.start_time && !result.startTime) result.startTime = dbData.start_time;
+    if (dbData.reference_code && !result.referenceCode) result.referenceCode = dbData.reference_code;
     
     // Fix tour groups data if present from database
-    if ((tourData as any).tour_groups && Array.isArray((tourData as any).tour_groups) && !result.tourGroups.length) {
+    if (dbData.tour_groups && Array.isArray(dbData.tour_groups) && !result.tourGroups.length) {
       logger.debug(`Converting tour_groups to tourGroups format for tour ${tourId}`);
       
       // Transform tour_groups (database format) to tourGroups (frontend format)
-      result.tourGroups = (tourData as any).tour_groups.map((group: any) => ({
+      result.tourGroups = dbData.tour_groups.map((group: any) => ({
         id: group.id,
         name: group.name || `Group ${group.id.slice(0, 6)}`,
         size: group.size || 0,
@@ -92,9 +94,9 @@ export const normalizeTourData = (tourData: any, tourId: string): TourCardProps 
     result.guide3 = result.guide3 || "";
     
     // Handle guide ID conversions from snake_case to camelCase
-    if (!result.guide1Id) result.guide1Id = (tourData as any).guide1_id || "";
-    if (!result.guide2Id) result.guide2Id = (tourData as any).guide2_id || "";
-    if (!result.guide3Id) result.guide3Id = (tourData as any).guide3_id || "";
+    if (!result.guide1Id) result.guide1Id = dbData.guide1_id || "";
+    if (!result.guide2Id) result.guide2Id = dbData.guide2_id || "";
+    if (!result.guide3Id) result.guide3Id = dbData.guide3_id || "";
     
     logger.debug(`Successfully normalized tour ${tourId} data`);
     return result as TourCardProps;
