@@ -1,3 +1,4 @@
+
 import { useMemo } from "react";
 import { TourCardProps } from "@/components/tours/tour-card/types";
 import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
@@ -28,6 +29,9 @@ interface GroupGridProps {
   handleMoveParticipant: (toGroupIndex: number) => void;
   isMovePending: boolean;
   onRefreshParticipants: () => void;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
 export const GroupGrid = ({ 
@@ -43,13 +47,11 @@ export const GroupGrid = ({
   setSelectedParticipant,
   handleMoveParticipant,
   isMovePending,
-  onRefreshParticipants
+  onRefreshParticipants,
+  guide1Info,
+  guide2Info,
+  guide3Info
 }: GroupGridProps) => {
-  // Get guide information - fixed by using direct objects instead of query results
-  const guide1Info = tour?.guide1 ? tour.guide1Info : null;
-  const guide2Info = tour?.guide2 ? tour.guide2Info : null;
-  const guide3Info = tour?.guide3 ? tour.guide3Info : null;
-  
   console.log("DATABASE DEBUG: GroupGrid rendering with", {
     localTourGroupsLength: localTourGroups?.length || 0,
     tourGroupsLength: tour?.tourGroups?.length || 0,

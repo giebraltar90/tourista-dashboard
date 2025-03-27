@@ -55,7 +55,7 @@ export const NormalizedTourContent = ({
             />
           </TabsContent>
           
-          <TabsContent value="groups" className="p-0">
+          <TabsContent value="groups" className="p-6">
             <GroupsManagement 
               tour={tour} 
               tourId={tourId}

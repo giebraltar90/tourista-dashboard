@@ -1,6 +1,6 @@
 
 import { TourCardProps } from "@/components/tours/tour-card/types";
-import { VentrataTourGroup, VentrataParticipant } from "@/types/ventrata";
+import { VentrataTourGroup, VentrataParticipant, GuideInfo } from "@/types/ventrata";
 import { GroupGrid } from "./group-assignment/GroupGrid";
 
 interface GuideAssignment {
@@ -26,6 +26,9 @@ interface GroupsGridProps {
   isMovePending: boolean;
   onRefreshParticipants: () => void;
   onOpenAssignGuide: (groupIndex: number) => void;
+  guide1Info?: GuideInfo | null;
+  guide2Info?: GuideInfo | null;
+  guide3Info?: GuideInfo | null;
 }
 
 export const GroupsGrid = ({
@@ -42,7 +45,10 @@ export const GroupsGrid = ({
   handleMoveParticipant,
   isMovePending,
   onRefreshParticipants,
-  onOpenAssignGuide
+  onOpenAssignGuide,
+  guide1Info,
+  guide2Info,
+  guide3Info
 }: GroupsGridProps) => {
   console.log("GroupsGrid rendering with localTourGroups:", localTourGroups?.length || 0);
 
@@ -61,6 +67,9 @@ export const GroupsGrid = ({
       handleMoveParticipant={handleMoveParticipant}
       isMovePending={isMovePending}
       onRefreshParticipants={onRefreshParticipants}
+      guide1Info={guide1Info}
+      guide2Info={guide2Info}
+      guide3Info={guide3Info}
     />
   );
 };
